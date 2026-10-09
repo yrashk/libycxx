@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Leak check of the committed similarity files: see tools/similarity/lib/leak.py.
+
+    tools/similarity/leakcheck [--quick]           hashed-vocabulary check (tools/test policy stage)
+    tools/similarity/leakcheck --full [--cache D]  also 12-token windows against the pinned sources
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import leak  # noqa: E402
+
+sys.exit(leak.main())

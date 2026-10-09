@@ -44,7 +44,7 @@ private:
         for (auto n = static_cast<size_t>(std::ranges::size(r)); n != 0;) {
           const size_t k = n < chunk ? n : chunk;
           bulk(std::span<_Tp>(__buf, k));
-          for (size_t i = 0; i < k; ++i, ++__it)
+          for (size_t i = 0; i < k; ++i, (void)++__it)
             *__it = __buf[i];
           n -= k;
         }

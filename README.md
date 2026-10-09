@@ -1,9 +1,49 @@
 # libycxx
 
-A clean-room C++26 standard library for the newest GCC (16.2) and Clang (23.1), with its own
-Itanium C++ ABI runtime. It is layered: a freestanding core, a hosted layer, and a small
+An independent C++26 standard library for the newest GCC (16.2) and Clang (23.1), implemented
+from the working draft, with its own Itanium C++ ABI runtime. It is layered: a freestanding core, a hosted layer, and a small
 platform abstraction layer (PAL). See `STATUS.md` for what is implemented and `DECISIONS.md`
 for the design rules.
+
+## How it was written
+
+libycxx was implemented by AI agents (Claude, directed by the author) from the C++ working
+draft, WG21 papers, POSIX and the Itanium C++ ABI. During development the agents had no access
+to the sources or headers of other standard libraries or C++ runtimes (libstdc++, libc++, the
+MSVC STL, libsupc++, libc++abi, libcxxrt) or of glibc, and did not read their generated code.
+The libc++ and libstdc++ test suites are run unmodified as external oracles: their *test* files
+were read to triage failures, and none is copied into this repository.
+
+This is not a clean-room claim in the legal sense. The models the agents run on were trained on
+public code that very likely includes those libraries, so no separation from them can be shown,
+only that no implementation source was consulted while libycxx was written. A similarity
+analysis compares libycxx with libstdc++, libc++ and the MSVC STL, and those three with each
+other, by token and structure metrics and fingerprints, against known derived code as a positive
+control; it is regenerated from pinned sources on every build of
+[libycxx.org/similarity](https://libycxx.org/similarity/). Its method, thresholds and curated
+judgments are in [docs/similarity/METHOD.md](docs/similarity/METHOD.md). Agents implementing
+libycxx must not read the rendered pages or the Pages workflow's artifacts, which quote the
+other implementations.
+
+## Quick start
+
+From an empty directory to `import std;` with libycxx, with only git, CMake (3.28 or later),
+Ninja, curl and the host's C toolchain installed (the Xcode Command Line Tools on macOS,
+`build-essential` on Linux):
+
+```sh
+mkdir hello && cd hello
+curl -fsSL --remote-name-all https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
+cmake -B build -G Ninja
+cmake --build build
+./build/hello
+```
+
+The project (`examples/quickstart`) fetches libycxx with FetchContent and uses its toolchain file,
+which finds Clang 23 or downloads it into `~/.local/share/ycxx/toolchains` (`-DYCXX_COMPILER=gcc`
+for GCC 16). **`examples/quickstart/README.md`** explains each step, the first run's time and the
+options. `tests/quickstart/run.sh` runs these commands as written on every CI run (`cmake` stage)
+and, nightly, with Clang downloaded into an empty cache on Linux and macOS.
 
 ## Toolchains
 

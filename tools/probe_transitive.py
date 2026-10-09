@@ -9,7 +9,7 @@ standard header G, tools/data/transitive-probe/items.txt), compiles
 
 with -fsyntax-only and records only whether it compiles. Nothing else is looked at: no
 preprocessor output, no include trees, no headers, no diagnostics (stderr is discarded), so the
-probe is safe to run against libstdc++ and libc++ (the clean-room rule, CONTRIBUTING notes in
+probe is safe to run against libstdc++ and libc++ (the no-source-access rule, CONTRIBUTING notes in
 DECISIONS §6).
 
     tools/probe_transitive.py [-j N] [--lib NAME]... [--headers H,...] [--items ID,...]

@@ -11,7 +11,8 @@
 #   2. one already installed (g++-16 / clang++-23, unsuffixed g++ / clang++ with the right
 #      version, Homebrew's gcc and llvm kegs), unless YCXX_USE_SYSTEM_COMPILERS is OFF;
 #   3. only with YCXX_PROVISION=ON: download and install it into the cache directory (Clang
-#      from the LLVM release tarball; GCC built from source, which takes a while).
+#      from the LLVM release tarball, a 2 GB download of which the compiler, lld, the module
+#      scanner and the binutils are kept, 0.8 GB; GCC built from source, which takes a while).
 # Otherwise a missing or unsupported compiler stops the configuration.
 # YCXX_GCC_VERSION / YCXX_LLVM_VERSION select other versions.
 #
@@ -241,8 +242,24 @@ function(_ycxx_install_clang)
   _ycxx_download("https://github.com/llvm/llvm-project/releases/download/llvmorg-${YCXX_LLVM_VERSION}/${asset}.tar.xz"
                  "${YCXX_TOOLCHAINS}/${asset}.tar.xz")
   file(REMOVE_RECURSE "${dest}" "${YCXX_TOOLCHAINS}/${asset}")
-  message(STATUS "libycxx toolchain: extracting ${asset}")
-  file(ARCHIVE_EXTRACT INPUT "${YCXX_TOOLCHAINS}/${asset}.tar.xz" DESTINATION "${YCXX_TOOLCHAINS}")
+  # Only the compiler, the module scanner, the binutils and the resource directory (builtin
+  # headers, compiler-rt): about 0.8 GB of the release's 11.6 GB (MLIR, Flang, LLDB, static
+  # libraries). tools/toolchain/provision extracts everything; both installations serve both.
+  set(keep "")
+  foreach(tool clang-${_ycxx_llvm_major} clang clang++ clang-cpp clang-scan-deps lld ld.lld ld64.lld
+               llvm-ar llvm-ranlib llvm-nm llvm-symbolizer llvm-addr2line llvm-cxxfilt llvm-objcopy
+               llvm-strip llvm-readobj llvm-readelf llvm-objdump)
+    list(APPEND keep "${asset}/bin/${tool}")
+  endforeach()
+  list(APPEND keep "${asset}/lib/clang")
+  if(_ycxx_host STREQUAL "Darwin")
+    # Clang on Darwin passes -lto_library <prefix>/lib/libLTO.dylib to Apple's ld on every link
+    # (a warning when the file is missing, a failure with -flto).
+    list(APPEND keep "${asset}/lib/libLTO*")
+  endif()
+  message(STATUS "libycxx toolchain: extracting Clang from ${asset} (a few minutes)")
+  file(ARCHIVE_EXTRACT INPUT "${YCXX_TOOLCHAINS}/${asset}.tar.xz" DESTINATION "${YCXX_TOOLCHAINS}"
+       PATTERNS ${keep})
   file(RENAME "${YCXX_TOOLCHAINS}/${asset}" "${dest}")
   file(REMOVE "${YCXX_TOOLCHAINS}/${asset}.tar.xz")
 endfunction()

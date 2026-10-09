@@ -507,7 +507,7 @@ failure must end in one of the rows above, and until it does it fails the run.
 `tools/triage.py` groups failures by missing header or first error message.
 
 Why not a baseline, a generated list of the tests that failed last time (which libycxx had until
-commit `49a167c`): such a list says that a test fails, not why. A regression in a listed test
+commit `9789326`): such a list says that a test fails, not why. A regression in a listed test
 stays hidden among the "known failures"; CI is green while tests fail, so the red state that
 should prompt a fix never comes; and the cause lives elsewhere (here `TRIAGE.md`), drifts from the
 list, and is lost when the list is regenerated. With the rule above every non-passing result
@@ -732,7 +732,7 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 
 **What libycxx does better.** Hermetic by default (no opt-in, no consumer link flags, tested with a
 second runtime in the process); one generated set of flags behind three delivery paths, with
-compiler provisioning; a clean-room own suite written from the draft alone, validated by reference
+compiler provisioning; an own suite written from the draft alone, validated by reference
 runs; external suites never vendored, pinned and fetched; no list of known failures: every FAIL
 fails CI and every skip or expected failure carries its reason into the output, with XPASS
 failing the run; reports that show the evidence for passing tests.
@@ -839,7 +839,7 @@ says what was done.
 
 ## Validation record
 
-Run on 2026-10-05 in a worktree at `6f13096`, Linux x86_64, GCC 16.2.0 (`/opt/gcc-16`), Clang 23.1
+Run on 2026-10-05 in a worktree at `3eaf09d`, Linux x86_64, GCC 16.2.0 (`/opt/gcc-16`), Clang 23.1
 (apt.llvm.org), lit 23.1.2 through `uvx`.
 
 | What | Command | Result |

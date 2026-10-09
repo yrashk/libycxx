@@ -1,0 +1,96 @@
+name: pages
+
+# Publishes site/ (libycxx.org) to GitHub Pages. Runs only for the main branch: on a push to
+# main that changes the site or what the API reference is generated from (the headers, the std
+# module's export list, tools/gen-apidocs and its templates), or by hand (workflow_dispatch)
+# with main selected. A dispatch on any other branch is skipped by the job's condition.
+# The API reference (site/api/) and the cppreference pages it shows (site/cppref/) are not in
+# the repository: tools/gen-apidocs generates them here, with the pinned MrDocs release and
+# cppreference.com offline archive (both checked against their SHA-256).
+# The similarity analysis (site/similarity/) is not in the repository either: tools/similarity/run
+# fetches the sources pinned in tools/similarity/sources.json, compares them with this checkout and
+# renders the pages against the committed judgments in docs/similarity/. If it fails or times out,
+# a "report unavailable" page is published instead, never stale numbers; the leak check of the
+# committed similarity files runs last and turns the run red without holding back the deploy.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'include/**'
+      - 'modules/std.cppm'
+      - 'tools/gen-apidocs'
+      - 'tools/apidocs/**'
+      - 'src/**'
+      - 'tools/similarity/**'
+      - 'docs/similarity/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      # The downloads tools/gen-apidocs pins (MrDocs, the cppreference.com archive).
+      - uses: actions/cache@v4
+        with:
+          path: build/apidocs/cache
+          key: apidocs-downloads-mrdocs-2026.9.29-cppref-20250209-${{ hashFiles('tools/gen-apidocs') }}
+
+      # site/ is static HTML, CSS and self-hosted fonts, plus the generated API reference
+      # (site/api/) and cppreference pages (site/cppref/).
+      - name: Generate the API reference
+        run: python3 tools/gen-apidocs --install -j 4
+
+      # The similarity analysis: pinned sources and JPlag, cached by the pins.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/cache@v4
+        with:
+          path: build/similarity/cache
+          key: similarity-sources-${{ hashFiles('tools/similarity/sources.json') }}
+
+      - name: Similarity analysis
+        id: similarity
+        continue-on-error: true
+        timeout-minutes: 15
+        env:
+          SIM_JOBS: '4'
+        run: python3 tools/similarity/run
+
+      - name: Similarity report unavailable
+        if: steps.similarity.outcome != 'success'
+        run: python3 tools/similarity/run --unavailable "the analysis step did not finish (${{ steps.similarity.outcome }})"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # Nothing from the other implementations in the committed similarity files: the hashed
+      # vocabulary check (also in tools/test's policy stage) and 12-token windows against the
+      # pinned sources fetched above.
+      - name: Similarity leak check
+        run: python3 tools/similarity/leakcheck --full

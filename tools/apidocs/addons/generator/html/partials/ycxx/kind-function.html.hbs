@@ -1,0 +1,12 @@
+{{~#if functionObjectImpl}}function object
+{{~else if (eq funcClass "constructor")}}constructor
+{{~else if (eq funcClass "destructor")}}destructor
+{{~else if (eq funcClass "conversion")}}conversion function
+{{~else if isRecordMethod~}}
+  {{~#if (eq storageClass "static")}}static {{/if~}}
+  {{~#if overloadedOperator}}operator{{else}}member function{{/if~}}
+  {{~#if template}} template{{/if~}}
+{{~else~}}
+  {{~#if overloadedOperator}}operator{{else}}function{{/if~}}
+  {{~#if template}} template{{/if~}}
+{{~/if~}}

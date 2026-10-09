@@ -7,12 +7,15 @@
 # Stages (default: policy build freestanding ycxx; "all": every stage but realworld):
 #   policy        preprocessor, include-layering, namespace-visibility and shell-portability
 #                 checks (tools/check_*.py), the headers' reserved names (tools/uglify.py --check)
-#                 the std modules' export lists (tools/gen_std_module.py --check) and the
-#                 transitive includes (tools/gen_transitive_includes.py --check)
+#                 the std modules' export lists (tools/gen_std_module.py --check), the
+#                 transitive includes (tools/gen_transitive_includes.py --check), the website's
+#                 code samples (tools/gen-site-snippets --check) and the similarity leak check
+#                 (tools/similarity/leakcheck --quick)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
-#   cmake         CMake package, add_subdirectory and toolchain file (tests/cmake/run.sh)
+#   cmake         CMake package, add_subdirectory and toolchain file (tests/cmake/run.sh), and the
+#                 quickstart's commands as documented (tests/quickstart/run.sh)
 #   ycxx          libycxx's own spec-derived suite (tests/ycxx)
 #                 (each suite lists every test with the steps it ran and their exit statuses,
 #                 and writes build/test-logs/<suite>-<cc>.html, a report of every test with the
@@ -263,6 +266,11 @@ for stage in $stages; do
       # The export lists of the modules std and std.compat are read from the headers by both
       # compilers (Clang's AST, GCC's reflection): stale when a header adds or removes a name.
       step "std modules up to date with the headers" policy-std-modules python3 tools/gen_std_module.py --check || :
+      # The website's code samples are the files tests/quickstart/run.sh runs (examples/quickstart).
+      step "website code samples match their sources" policy-site-snippets python3 tools/gen-site-snippets --check || :
+      # The committed similarity tools and judgments contain nothing from the other implementations
+      # (docs/similarity/METHOD.md, "Leak check"); the hashed vocabulary is committed.
+      step "similarity files free of other implementations' code" policy-similarity-leak python3 tools/similarity/leakcheck --quick || :
       ;;
     build)
       for c in $compilers; do
@@ -283,7 +291,11 @@ for stage in $stages; do
       direct "freestanding headers, bare-metal smoke link" freestanding "" tools/check_freestanding.sh || :
       ;;
     cmake)
-      direct "CMake package and toolchain file" cmake "" tests/cmake/run.sh $compilers || :
+      # cmake --build takes the job count from CMAKE_BUILD_PARALLEL_LEVEL.
+      direct "CMake package and toolchain file" cmake "" \
+        env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/cmake/run.sh $compilers || :
+      direct "quickstart commands, as documented (examples/quickstart)" quickstart "" \
+        env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh $compilers || :
       ;;
     realworld)
       for c in $compilers; do

@@ -1,0 +1,88 @@
+{
+  "_comment": "Where tools/similarity/lib/tuning.py reads each tuning constant or design choice of the other implementations, at the versions pinned in sources.json. Paths and line numbers only; the values are read at build time and shown only on the rendered site. A null entry means no location is pinned, and the cell says so. The libycxx column, the row labels and the notes are in docs/similarity/tuning.toml. Bumping a pinned version means re-checking these line numbers (the extractor reports a cell as not determined when the pinned lines no longer hold what the kind expects).",
+  "sort_algorithm": {
+    "gnu": {"kind": "algorithm-names", "files": ["include/bits/stl_algo.h"]},
+    "llvm": {"kind": "algorithm-names", "files": ["libcxx/include/__algorithm/sort.h"]},
+    "msvc": {"kind": "algorithm-names", "files": ["stl/inc/algorithm"]}
+  },
+  "sort_insertion_cutoff": {
+    "gnu": {"kind": "int", "file": "include/bits/stl_algo.h", "lines": [1807, 1807]},
+    "llvm": {"kind": "int", "file": "libcxx/include/__algorithm/sort.h", "lines": [726, 726]},
+    "msvc": {"kind": "int", "file": "stl/inc/algorithm", "lines": [596, 596]}
+  },
+  "sort_ninther_threshold": {
+    "gnu": null,
+    "llvm": {"kind": "int", "file": "libcxx/include/__algorithm/sort.h", "lines": [728, 728]},
+    "msvc": {"kind": "int", "file": "stl/inc/algorithm", "lines": [8990, 8990]}
+  },
+  "sort_block_size": {
+    "gnu": null,
+    "llvm": {"kind": "text", "file": "libcxx/include/__algorithm/sort.h", "lines": [61, 61]},
+    "msvc": null
+  },
+  "stable_sort_cutoff": {
+    "gnu": {"kind": "int", "file": "include/bits/stl_algo.h", "lines": [2675, 2675]},
+    "llvm": {"kind": "text", "file": "libcxx/include/__algorithm/stable_sort.h", "lines": [196, 198]},
+    "msvc": {"kind": "int", "file": "stl/inc/algorithm", "lines": [596, 596]}
+  },
+  "temp_buffer_policy": {
+    "gnu": {"kind": "halving", "file": "include/bits/stl_tempbuf.h", "lines": [140, 160]},
+    "llvm": {"kind": "halving", "file": "libcxx/include/__memory/unique_temporary_buffer.h", "lines": [75, 90]},
+    "msvc": {"kind": "halving", "file": "stl/inc/xmemory", "lines": [1593, 1610]}
+  },
+  "vector_growth": {
+    "gnu": {"kind": "growth", "file": "include/bits/stl_vector.h", "lines": [2192, 2200]},
+    "llvm": {"kind": "growth", "file": "libcxx/include/__vector/vector.h", "lines": [863, 871]},
+    "msvc": {"kind": "growth", "file": "stl/inc/vector", "lines": [2014, 2028]}
+  },
+  "deque_block": {
+    "gnu": {"kind": "text", "file": "include/bits/stl_deque.h", "lines": [95, 101]},
+    "llvm": {"kind": "text", "file": "libcxx/include/deque", "lines": [268, 270]},
+    "msvc": {"kind": "text", "file": "stl/inc/deque", "lines": [550, 554]}
+  },
+  "string_sso_capacity": {
+    "gnu": {"kind": "text", "file": "include/bits/basic_string.h", "lines": [217, 217]},
+    "llvm": {"kind": "text", "file": "libcxx/include/string", "lines": [865, 865]},
+    "msvc": {"kind": "text", "file": "stl/inc/xstring", "lines": [424, 424]}
+  },
+  "string_layout": {
+    "gnu": {"kind": "text", "file": "include/bits/basic_string.h", "lines": [214, 223]},
+    "llvm": {"kind": "text", "file": "libcxx/include/string", "lines": [849, 888]},
+    "msvc": {"kind": "text", "file": "stl/inc/xstring", "lines": [490, 498]}
+  },
+  "hash_bucket_counts": {
+    "gnu": {"kind": "prime-table", "files": ["src/shared/hashtable-aux.cc"]},
+    "llvm": {"kind": "prime-table", "files": ["libcxx/src/hash.cpp"]},
+    "msvc": {"kind": "text", "file": "stl/inc/xhash", "lines": [300, 300]}
+  },
+  "to_chars_algorithm": {
+    "gnu": {"kind": "algorithm-names", "files": ["src/c++17/floating_to_chars.cc"]},
+    "llvm": {"kind": "algorithm-names", "files": ["libcxx/src/include/to_chars_floating_point.h", "libcxx/src/ryu/d2s.cpp"]},
+    "msvc": {"kind": "algorithm-names", "files": ["stl/inc/xcharconv_ryu.h", "stl/inc/charconv"]}
+  },
+  "from_chars_algorithm": {
+    "gnu": {"kind": "algorithm-names", "files": ["src/c++17/floating_from_chars.cc"]},
+    "llvm": {"kind": "algorithm-names", "files": ["libcxx/src/include/from_chars_floating_point.h", "libcxx/src/charconv.cpp"]},
+    "msvc": {"kind": "algorithm-names", "files": ["stl/inc/charconv"]}
+  },
+  "type_traits_approach": {
+    "gnu": {"kind": "intrinsic-count", "area": "type_traits"},
+    "llvm": {"kind": "intrinsic-count", "area": "type_traits"},
+    "msvc": {"kind": "intrinsic-count", "area": "type_traits"}
+  },
+  "tuple_storage": {
+    "gnu": {"kind": "tuple-shape", "area": "tuple"},
+    "llvm": {"kind": "tuple-shape", "area": "tuple"},
+    "msvc": {"kind": "tuple-shape", "area": "tuple"}
+  },
+  "variant_storage": {
+    "gnu": {"kind": "recursive-union", "area": "variant"},
+    "llvm": {"kind": "recursive-union", "area": "variant"},
+    "msvc": {"kind": "recursive-union", "area": "variant"}
+  },
+  "iterator_dispatch": {
+    "gnu": {"kind": "tag-dispatch", "areas": ["iterator", "algorithm"]},
+    "llvm": {"kind": "tag-dispatch", "areas": ["iterator", "algorithm"]},
+    "msvc": {"kind": "tag-dispatch", "areas": ["iterator", "algorithm"]}
+  }
+}

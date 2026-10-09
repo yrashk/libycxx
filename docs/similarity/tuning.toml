@@ -1,0 +1,146 @@
+# Tuning constants and design choices (libycxx.org/similarity/tuning.html): one row per decision.
+# Committed here: the row labels, libycxx's column and the notes. The other libraries' cells are
+# read from the pinned sources at build time (tools/similarity/lib/tuning.py, at the locations in
+# tools/similarity/tuning-pins.json) and appear only on the site. Notes say whether a decision is
+# forced or arbitrary, in libycxx's terms, without the other libraries' values.
+# `verdict` is the label shown, `kind` its style (expected, notable, none).
+
+lede = """Decisions an implementation makes that the standard leaves open: algorithm choices, cutoffs, growth \
+factors and representations. Where libycxx's choice coincides with one library's arbitrary choice, \
+that is a fingerprint; where the choice is forced or is a published algorithm's, it is not."""
+
+[[row]]
+id = "sort_algorithm"
+label = "std::sort algorithm"
+ycxx = "pattern-defeating quicksort (O. R. L. Peters) with branchless block partitioning; heapsort fallback"
+verdict = "published algorithm"
+kind = "expected"
+note = "Introsort and its descendants are published algorithms; the cell lists the algorithm names each source mentions."
+
+[[row]]
+id = "sort_insertion_cutoff"
+label = "sort: insertion-sort cutoff"
+ycxx = "24 elements (pdqsort's published value); 16 in the other sorting paths"
+verdict = "published / conventional"
+kind = "expected"
+note = "pdqsort's reference implementation fixes this value; the smaller cutoff is the classic HP STL value."
+
+[[row]]
+id = "sort_ninther_threshold"
+label = "sort: Tukey ninther above"
+ycxx = "128 elements (pdqsort's published value)"
+verdict = "published"
+kind = "expected"
+note = "From the pdqsort reference implementation."
+
+[[row]]
+id = "sort_block_size"
+label = "sort: partition block"
+ycxx = "64 elements (pdqsort's published value)"
+verdict = "published"
+kind = "expected"
+note = "From BlockQuicksort and the pdqsort reference implementation."
+
+[[row]]
+id = "stable_sort_cutoff"
+label = "stable_sort: small-range cutoff"
+ycxx = "16 elements, then a top-down buffered merge; integers above 512 elements go to an LSD radix sort"
+verdict = "arbitrary"
+kind = "none"
+note = "Any small cutoff works; the radix path is finding F05."
+
+[[row]]
+id = "temp_buffer_policy"
+label = "Temporary buffer when allocation fails"
+ycxx = "halves the request until an allocation succeeds; in-place rotation algorithms without a buffer"
+verdict = "common practice"
+kind = "expected"
+note = "Halving on failure is the long-standing practice of get_temporary_buffer, which the standard used to specify."
+
+[[row]]
+id = "vector_growth"
+label = "vector growth factor"
+ycxx = "2× (doubles the capacity)"
+verdict = "arbitrary, common"
+kind = "none"
+note = "Doubling and 1.5× are both widespread choices; the standard requires only amortised constant time."
+
+[[row]]
+id = "deque_block"
+label = "deque block size"
+ycxx = "about 1 KiB per block, a power of two, at least 16 elements"
+verdict = "arbitrary"
+kind = "none"
+note = "Each library picks its own size; libycxx's rule is its own."
+
+[[row]]
+id = "string_sso_capacity"
+label = "basic_string inline capacity"
+ycxx = "16 bytes of characters, so 15 chars"
+verdict = "arbitrary, common"
+kind = "notable"
+note = "A widespread size; see finding F06 for the layout."
+
+[[row]]
+id = "string_layout"
+label = "basic_string layout"
+ycxx = "data pointer, size, then a union of the capacity and the inline buffer; long when the pointer is not the buffer"
+verdict = "arbitrary"
+kind = "notable"
+note = "Finding F06."
+
+[[row]]
+id = "hash_bucket_counts"
+label = "Hash table bucket counts"
+ycxx = "zero or a power of two; Fibonacci hashing picks the bucket; no prime table"
+verdict = "arbitrary"
+kind = "none"
+note = "Prime tables and power-of-two counts are both well known; libycxx's Fibonacci hashing is its own choice."
+
+[[row]]
+id = "to_chars_algorithm"
+label = "Floating-point to_chars"
+ycxx = "Schubfach (R. Giulietti) for binary32/64; Steele–White / Burger–Dybvig on big integers otherwise"
+verdict = "published algorithm"
+kind = "expected"
+note = "All are published algorithms; libycxx's choice differs from the one the other libraries share."
+
+[[row]]
+id = "from_chars_algorithm"
+label = "Floating-point from_chars"
+ycxx = "Eisel–Lemire (D. Lemire, 2021), then an exact big-integer computation"
+verdict = "published algorithm"
+kind = "expected"
+note = "Published algorithms."
+
+[[row]]
+id = "type_traits_approach"
+label = "type_traits"
+ycxx = "compiler intrinsics wherever one exists, few class-template specializations"
+verdict = "common practice"
+kind = "expected"
+note = "The counts are measured over each library's type_traits area; intrinsics are the compilers' public interface."
+
+[[row]]
+id = "tuple_storage"
+label = "tuple storage"
+ycxx = "one base per element over an index sequence (flat multiple inheritance)"
+verdict = "arbitrary, published"
+kind = "notable"
+note = "Finding F03. The counts are raw base-clause shapes in each tuple area, a weak signal: read them with the finding."
+
+[[row]]
+id = "variant_storage"
+label = "variant storage"
+ycxx = "recursive union with conditionally trivial special members"
+verdict = "common practice"
+kind = "expected"
+note = "The recursive union is the established technique for a constexpr variant."
+
+[[row]]
+id = "iterator_dispatch"
+label = "Iterator-category dispatch"
+ycxx = "if constexpr on the category or concept; few tag overloads"
+verdict = "arbitrary, common"
+kind = "none"
+note = "Tag-dispatch overloads are the pre-C++17 idiom, if constexpr the modern one; the counts are measured over the iterator and algorithm areas."

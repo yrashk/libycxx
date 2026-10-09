@@ -1,0 +1,1003 @@
+# Curated findings of the similarity analysis (docs/similarity/METHOD.md).
+#
+# Each [[finding]] locates its libycxx range(s) by an anchor, not a line number: `anchor` is a text
+# the libycxx line contains, `anchor_sha` the hash of the whole line (tools/similarity/lib/judge.py
+# line_sha; used where the line's text should not be repeated here), `from`/`to` are line offsets
+# from the anchor. No `anchor` means the whole file. `other` is the library it matches ("all" for
+# all three), `also` further libraries that show the same; `claims` the kinds of computed result it
+# accounts for (matches, ident_exact, ident_core, numbers, tables, strings, comment_lines, typos).
+# [[finding.foreign]] gives the other library's file and lines at the pinned version, for the
+# excerpt shown on the site.
+#
+# Rationale is written in libycxx's terms only: nothing quoted from the other implementations (no
+# identifiers, literals, constants or comments); their file paths are fine. The policy leak check
+# (tools/similarity/leakcheck) enforces it.
+
+lede = """Each finding is a judgment made in advance and committed in docs/similarity/findings.toml, with \
+its rationale; the excerpts below are generated at build time from the pinned sources. Results that \
+no finding, reviewed group or automatic rule covers are listed under Unreviewed."""
+
+severity_criteria = """**none**: no similarity beyond chance. **expected**: forced by the standard, an ABI, a platform \
+or a registry, or by a published algorithm or reference implementation. **notable**: an arbitrary \
+choice matching one library in a short or isolated place, where coincidence or diffuse influence is \
+plausible. **significant**: an extended arbitrary match (structure together with internal names, \
+comments or constants over tens of lines), suggesting derivation."""
+
+[rules]
+standard-shaped = "The match shares no internal (reserved, non-standard) name with the other library, and at least 70% of libycxx's identifiers in it are the standard's own vocabulary: code whose shape the standard specifies (synopses, \"Equivalent to\" bodies, exposition-only classes)."
+shape-only = "The match shares no internal name and the spelling differs (lexical ratio below 0.5): only the token structure is alike."
+
+# ------------------------------------------------------------------------------------- notable
+
+[[finding]]
+id = "F01"
+title = "Floating-point midpoint"
+severity = "notable"
+category = "local variable names and numeric thresholds"
+other = "gnu"
+also = ["llvm"]
+claims = ["matches", "ident_exact", "ident_core", "numbers"]
+rationale = """The floating-point branch of `std::midpoint` has the same four-way case analysis, the same two \
+threshold expressions and the same local-variable names as libstdc++'s. libc++ has the same algorithm \
+and thresholds with different names. About twelve lines. The proposal that introduced midpoint \
+(P0811R3) shows a different formula, so this form is not from the paper; it is, however, already \
+shared by two established implementations."""
+[[finding.at]]
+file = "include/ycxx/core/numeric.hpp"
+anchor = "// [numeric.ops.midpoint]"
+to = 27
+[[finding.foreign]]
+lib = "gnu"
+file = "include/std/numeric"
+lines = [243, 256]
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/__numeric/midpoint.h"
+lines = [60, 75]
+
+[[finding]]
+id = "F02"
+title = "Sorting helper names from the HP/SGI STL"
+severity = "notable"
+category = "internal helper names"
+other = "gnu"
+claims = ["ident_exact", "ident_core"]
+rationale = """Four sorting helpers in algo_sort.hpp (the unguarded insertion sort, the buffered stable \
+partition, the buffered merge and the buffered stable sort) carry the same names as libstdc++'s \
+corresponding helpers, and the buffered merge uses the same two local names for the cut lengths. \
+The algorithms are written differently: the merge recurses on the smaller side, stable_sort is a \
+top-down merge sort with its own cutoff, and sort is pdqsort. The names come from the 1994 HP/SGI \
+STL and are reproduced in many books, so this is a naming echo rather than copied code."""
+[[finding.at]]
+file = "include/ycxx/core/algo_sort.hpp"
+anchor_sha = "764df43069b42ed1"
+to = 12
+[[finding.at]]
+file = "include/ycxx/core/algo_sort.hpp"
+anchor_sha = "24c496c808d4b426"
+to = 52
+[[finding.at]]
+file = "include/ycxx/core/algo_sort.hpp"
+anchor_sha = "1c1b0dbcf7641b39"
+to = 76
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/stl_algo.h"
+lines = [2361, 2400]
+
+[[finding]]
+id = "F03"
+title = "tuple stored as one base per element"
+severity = "notable"
+category = "implementation strategy and helper name"
+other = "llvm"
+claims = ["matches", "ident_exact", "ident_core"]
+rationale = """tuple stores each element in its own base class, indexed by an index sequence and combined by \
+multiple inheritance. libc++ uses this strategy, and the per-element base has the same name as \
+libc++'s; libstdc++ and the MSVC STL use recursive inheritance instead. The strategy is widely \
+published. libycxx holds the element as a `[[no_unique_address]]` member rather than through \
+empty-base inheritance, and its allocator-construction plumbing differs."""
+[[finding.at]]
+file = "include/ycxx/core/tuple.hpp"
+anchor = "// Layout: one base subobject per element"
+from = -3
+to = 76
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/tuple"
+lines = [270, 330]
+
+[[finding]]
+id = "F04"
+title = "shared_ptr control-block operation names"
+severity = "notable"
+category = "internal helper names"
+other = "llvm"
+claims = ["matches", "ident_exact", "ident_core"]
+rationale = """The control block's four reference-count operations have the same names as libc++'s. The \
+counting convention, the atomic operations, the class layout and the disposal hook differ; the \
+disposal hook and the control block's class name follow a third library's naming style."""
+[[finding.at]]
+file = "include/ycxx/core/shared_ptr.hpp"
+anchor = "Increments are relaxed"
+from = -12
+to = 75
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/__memory/shared_count.h"
+lines = [48, 110]
+
+[[finding]]
+id = "F05"
+title = "Radix sort inside stable_sort for integers"
+severity = "notable"
+category = "design choice"
+other = "llvm"
+claims = ["matches", "ident_exact", "ident_core", "numbers"]
+rationale = """stable_sort of integers under a standard comparison object switches to an LSD radix sort above \
+a size threshold, a design only libc++ also has, and the helper and concept names match libc++'s. \
+The threshold value, the byte-skipping logic and the code are different."""
+[[finding.at]]
+file = "include/ycxx/core/algo_sort.hpp"
+anchor = "// ---- stable_sort of integers"
+to = 100
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/__algorithm/stable_sort.h"
+lines = [195, 260]
+
+[[finding]]
+id = "F06"
+title = "Small-string layout"
+severity = "notable"
+category = "data layout"
+other = "gnu"
+also = ["msvc"]
+claims = ["matches", "ident_exact", "ident_core"]
+rationale = """basic_string's layout is the libstdc++ layout: the data pointer and the size first, then a union \
+of the capacity and an inline buffer, with the long mode recognised by comparing the pointer with \
+the buffer. The MSVC STL's inline capacity is the same size. The accessor for the long-mode test has \
+libc++'s name, whose layout is different. A common, documented design."""
+[[finding.at]]
+file = "include/ycxx/core/basic_string.hpp"
+anchor = "// Inline buffer: 16 bytes' worth"
+from = -2
+to = 15
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/basic_string.h"
+lines = [210, 225]
+
+[[finding]]
+id = "F07"
+title = "Red-black tree header"
+severity = "notable"
+category = "representation"
+other = "llvm"
+claims = ["matches", "ident_exact", "ident_core"]
+rationale = """The tree's header node holds the root as its left child and the tree object caches the leftmost \
+node, as libc++ does, with the same rationale given in the comment and the same accessor name. \
+Unlike libc++, the header also tracks the rightmost node, as libstdc++ and the MSVC STL do. A \
+hybrid of known designs."""
+[[finding.at]]
+file = "include/ycxx/core/rb_tree.hpp"
+to = 21
+anchor = "// libycxx core: the red-black tree"
+[[finding.at]]
+file = "include/ycxx/core/rb_tree.hpp"
+anchor_sha = "fdefa2a8f9a5d074"
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/__tree"
+lines = [40, 110]
+
+[[finding]]
+id = "F08"
+title = "Single internal names shared with libstdc++"
+severity = "notable"
+category = "internal helper names"
+other = "gnu"
+claims = ["ident_exact", "ident_core", "matches"]
+rationale = """Several single internal names in different headers match libstdc++'s exactly: \
+the shared_from_this hook (shared_ptr.hpp), the reallocating insertion (vector.hpp), the \
+string-view alias (basic_string.hpp), the base of the atomic smart pointers (atomic_smart_ptr.hpp), \
+the generator's copy awaiter (generator.hpp), the width and precision kind fields of the format \
+specification (format_base.hpp), three concepts of the comparison customization points \
+(compare_alg.hpp) and two concat_view helper predicates (ranges_join.hpp). Each is a short \
+descriptive name; the code around them is structured differently (for example, the atomic smart \
+pointers use a striped lock table and the concat predicates use pack indexing)."""
+[[finding.at]]
+file = "include/ycxx/core/shared_ptr.hpp"
+anchor_sha = "1d6d4350b795801a"
+to = 14
+[[finding.at]]
+file = "include/ycxx/core/vector.hpp"
+anchor_sha = "dc125a0849caac47"
+to = 30
+[[finding.at]]
+file = "include/ycxx/core/basic_string.hpp"
+anchor_sha = "43aab797fb198d97"
+[[finding.at]]
+file = "include/ycxx/core/atomic_smart_ptr.hpp"
+anchor_sha = "91773bc6dd6cada5"
+to = 20
+[[finding.at]]
+file = "include/ycxx/core/generator.hpp"
+anchor_sha = "ded41b3d3fe5ec6b"
+to = 20
+[[finding.at]]
+file = "include/ycxx/core/format_base.hpp"
+anchor_sha = "d5cbebe89ee9a8f8"
+from = -5
+to = 135
+[[finding.at]]
+file = "include/ycxx/core/compare_alg.hpp"
+anchor_sha = "add1c6ea0b5b9f48"
+to = 4
+[[finding.at]]
+file = "include/ycxx/core/ranges_join.hpp"
+anchor = "// The pack without its last element, as a check over each of them."
+to = 22
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/shared_ptr_base.h"
+lines = [1555, 1572]
+
+[[finding]]
+id = "F09"
+title = "io_errc message text"
+severity = "notable"
+category = "error-message string"
+other = "msvc"
+claims = ["strings"]
+rationale = """The message text for the one io_errc value is identical to the MSVC STL's. It is the category \
+name followed by the enumerator's name, so it may well be an independent composition."""
+[[finding.at]]
+file = "src/hosted/ios.cpp"
+anchor = "class iostream_error_category final"
+to = 10
+[[finding.foreign]]
+lib = "msvc"
+file = "stl/inc/system_error"
+lines = [560, 572]
+
+# ------------------------------------------------------------------------------------- expected
+
+[[finding]]
+id = "E01"
+title = "chrono::round follows the published date library"
+severity = "expected"
+category = "published reference implementation"
+other = "gnu"
+claims = ["matches", "ident_exact", "ident_core"]
+rationale = """chrono::round uses the same four local names and steps as libstdc++; both follow H. Hinnant's \
+public date library, the reference implementation behind the chrono proposals, which uses those \
+names."""
+[[finding.at]]
+file = "include/ycxx/core/chrono_base.hpp"
+anchor_sha = "3a8ecf3807e43df4"
+to = 12
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/chrono.h"
+lines = [436, 452]
+
+[[finding]]
+id = "E02"
+title = "pdqsort's published constants"
+severity = "expected"
+category = "published algorithm constants"
+other = "llvm"
+also = ["gnu", "msvc"]
+claims = ["matches", "numbers", "ident_exact", "ident_core"]
+rationale = """std::sort is pattern-defeating quicksort with branchless block partitioning. Its four tuning \
+constants are those of the published pdqsort reference implementation (O. R. L. Peters, 2021), which \
+libc++ also adopted. The insertion-sort cutoff of the other sorting paths is the classic value used \
+across STL implementations since the HP STL."""
+[[finding.at]]
+file = "include/ycxx/core/algo_sort.hpp"
+anchor = "O. R. L. Peters, \"Pattern-defeating Quicksort\""
+from = -4
+to = 400
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/include/__algorithm/sort.h"
+lines = [720, 760]
+
+[[finding]]
+id = "E03"
+title = "IANA registry data and the standard's encoding ids"
+severity = "expected"
+category = "registry and standard data"
+other = "all"
+claims = ["matches", "strings", "numbers", "tables", "ident_exact", "ident_core"]
+rationale = """The text_encoding alias table is generated from the IANA Character Sets registry by \
+tools/gen_text_encoding.py, in registry order, and the encoding ids are enumerated by the standard. \
+The largest token matches of the whole analysis are this data, and so are most string literals \
+shared with libstdc++."""
+[[finding.at]]
+file = "include/ycxx/core/text_encoding_table.hpp"
+[[finding.at]]
+file = "include/ycxx/core/text_encoding.hpp"
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/text_encoding-data.h"
+lines = [30, 60]
+
+[[finding]]
+id = "E04"
+title = "Itanium demangler output conventions"
+severity = "expected"
+category = "ABI and de facto output format"
+other = "all"
+claims = ["matches", "strings", "comment_lines", "numbers", "ident_exact", "ident_core"]
+rationale = """The demangler shares output strings and grammar comments with the GNU demangler (and a few with \
+libc++abi's): the Itanium C++ ABI's mangling grammar and the demangled-output conventions any \
+compatible demangler reproduces. The demangler's code shows no structural similarity (its k-gram \
+similarities are near zero)."""
+[[finding.at]]
+file = "src/hosted/demangle.cpp"
+[[finding.at]]
+file = "src/hosted/demangle.hpp"
+[[finding.at]]
+file = "src/hosted/cxa_demangle.cpp"
+[[finding.foreign]]
+lib = "gnu"
+file = "libiberty/cp-demangle.c"
+lines = [1550, 1560]
+
+[[finding]]
+id = "E05"
+title = "Itanium C++ ABI type_info declarations"
+severity = "expected"
+category = "ABI-specified declarations"
+other = "all"
+also = ["cxxrt"]
+claims = ["matches", "ident_exact", "ident_core", "numbers"]
+rationale = """The type_info subclasses, their data members and their flag masks (names and values) are \
+specified by the Itanium C++ ABI and match all three ABI runtimes."""
+[[finding.at]]
+file = "src/abi/rtti.hpp"
+[[finding.at]]
+file = "src/abi/rtti.cpp"
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxxabi/src/private_typeinfo.h"
+lines = [170, 230]
+
+[[finding]]
+id = "E06"
+title = "Standard-specified engine parameters"
+severity = "expected"
+category = "standard-specified constants"
+other = "all"
+claims = ["numbers", "tables"]
+rationale = """The random-number engines' parameters, seeds and constants (Mersenne twister, philox, the \
+default seeds) are specified by [rand.predef] and [rand.eng]."""
+[[finding.at]]
+file = "include/ycxx/core/random_engines.hpp"
+[[finding.foreign]]
+lib = "gnu"
+file = "include/bits/random.h"
+lines = [2300, 2330]
+
+[[finding]]
+id = "E07"
+title = "POSIX collating-element names"
+severity = "expected"
+category = "POSIX-specified data"
+other = "llvm"
+claims = ["matches", "strings"]
+rationale = """The regex collating-element table lists the names of the POSIX portable character set (Base \
+Definitions 6.1); its shape (pairs of a name and a character) follows from that."""
+[[finding.at]]
+file = "src/hosted/regex.cpp"
+anchor = "// The collating-symbol names of the POSIX"
+to = 40
+[[finding.foreign]]
+lib = "llvm"
+file = "libcxx/src/regex.cpp"
+lines = [70, 110]
+
+# ------------------------------------------------------------------------------------- reviewed groups
+# Items reviewed and judged together. Keys are hashes (tools/similarity/lib/judge.py) of the
+# category, the other library and the value, or of the libycxx region for matches; the values
+# themselves are shown only on the site's fingerprint-items page.
+
+[[group]]
+id = "G-matches"
+severity = "expected"
+title = "Reviewed matches of standard-specified code"
+rationale = """Long matches the automatic rules could not dismiss because they contain a generic internal name (an '_impl' helper, an 'is_' test, a throw helper, an allocator-traits alias) or have a lower share of standard vocabulary. Reviewed: each reproduces code the standard specifies (comparison and constraint formulas, deleted copy operations, container member lists, formatter defaults, node-iterator boilerplate) or a compiler builtin."""
+keys = [
+  "076fe2bd0f585620",
+  "0f40281479fd5d4d",
+  "2e9dc24ce1e6fc87",
+  "3d9990aba993531a",
+  "411b602067b5571c",
+  "4d0aed02f4d6d80f",
+  "4f9b42e41a5252f9",
+  "656f630bb95c10f3",
+  "6ca221033475868d",
+  "6fe2f3be56823272",
+  "7aa24e96ee7e647e",
+  "7b50cd208d45ec72",
+  "8a23d5dd7777b3ce",
+  "8ac78b011f607d5b",
+  "8f71e5919c946fb4",
+  "9c8d7d9c39f95824",
+  "a13eb3928fa2f86c",
+  "ad3f3b5000c8f3f6",
+  "adb47a85d5aa5cdf",
+  "ade6afc002ae0a57",
+  "c4de85a422b6c188",
+  "ca0390c11108a9a1",
+  "caba48418ba64c5e",
+  "cf5cb16f0b5574cf",
+  "d66bfa91c09852ff",
+  "ee61473d7f7d5e50",
+  "f0e6b33ba732fb3d",
+  "f3954db9a302610e",
+  "f7c2b368a6e37b8c",
+]
+
+[[group]]
+id = "G-names"
+severity = "expected"
+title = "Descriptive and conventional internal names"
+rationale = """Internal names libycxx shares with exactly one library that are descriptive compounds of the standard's names or of terms of art (an 'is_' test, an '_impl' or '_fn' helper, a '_t' alias, a '_base' class), names of compiler attributes and platform symbols, and naming-convention coincidences. Reviewed as a list; the distinctive names are findings F02 to F08."""
+keys = [
+  "001abce83f93e7db",
+  "01592e0e22576120",
+  "0198e40b048825ec",
+  "023943bbe5bfb07b",
+  "0280f4686ebb9741",
+  "02aec80cf14a6c9e",
+  "02bf6141362c2e63",
+  "02cfff63a63867db",
+  "034636e762e497cb",
+  "03469419bdf7b03a",
+  "03607d434b4873fe",
+  "03c2dcd0f91a839a",
+  "03e402f4348afb52",
+  "0516528d91c11744",
+  "0537f18d7c17e554",
+  "05f2e27ba5a11edf",
+  "062129554340d341",
+  "06836ec61b8c457c",
+  "06997a1e4b81e8c4",
+  "06c8f48532ba413a",
+  "0730847b53d4f7a4",
+  "07de6b4737fe8265",
+  "088c7480a8c0d626",
+  "088da626cbae05f7",
+  "08b7ec3aedc0a623",
+  "08ffe1facfe490bf",
+  "09078db8f9305537",
+  "0981ffa4db6311f3",
+  "09900dfa6a2fea75",
+  "09904a5ee20ff2f7",
+  "09f12ed8e2eb2378",
+  "0a416663fdffdc94",
+  "0a5a185781983e75",
+  "0aa563fe918c8a3a",
+  "0bce70dc157b7b35",
+  "0c287dbcd5a11ff1",
+  "0de655fc8df478d0",
+  "0e19b4195583f46f",
+  "0edce17416ec19c5",
+  "0ff0becf05086296",
+  "116cf3c4fbd156ef",
+  "124a28cf13e395d2",
+  "12926a9c54238555",
+  "13da5252da2f7321",
+  "164f53b419fff966",
+  "1779941eff8bde0e",
+  "187395cc2283d164",
+  "1914b667c5e1c9fb",
+  "192f08a96bdb9442",
+  "1935c7a3ea157c8f",
+  "1a02bdb82b7eb1f6",
+  "1a438d470aff4579",
+  "1a5d7ba4c3803d91",
+  "1af4d960dd7f8bd4",
+  "1c5a0bbb3cf98c3d",
+  "1ca179b2443a3a19",
+  "1d88aea036ebd8bb",
+  "1d8e50a2fccc93b5",
+  "1e2bc4beb8934a69",
+  "1f6be52c8cba3242",
+  "203df596d2bb2f03",
+  "22103f4bea5c781f",
+  "223bbd33fb1c14c2",
+  "22a1eed7a8f82114",
+  "2339d982bdf42b95",
+  "236d5334a8549567",
+  "23c35573e359135a",
+  "24609b199fcb323d",
+  "24bc2332331a5745",
+  "2538805487ebf2ac",
+  "262a01f5f7ba4c8d",
+  "263eadab11e8eca0",
+  "26900316bed71df4",
+  "28b44cd191bbaa38",
+  "28d49a9111418e6d",
+  "2915934ec0b137f7",
+  "2a4b55f9208020bf",
+  "2ac265e94cc74620",
+  "2b00159e20fdbc38",
+  "2cb263b6d8252be3",
+  "2cd01637f234524f",
+  "2cf1319a2e52c92c",
+  "2d019e2cdfa51266",
+  "2d1c46b2f487e46f",
+  "2d99c1319d5f5cc0",
+  "2db79302803f62f5",
+  "2eb48a82673ba9a4",
+  "2ec8b333fa7bc99e",
+  "327c4892cf761c5e",
+  "33506486c3fecf03",
+  "33fe3b094832aebb",
+  "34a944096532b856",
+  "35321c6b27e328f7",
+  "353489468ea0ca81",
+  "35679cc8c5003049",
+  "359a4a57979cc78d",
+  "35f177b8b05ce8eb",
+  "365d55e61d9d286b",
+  "3678fbf4e3a586a1",
+  "372062580fe67d41",
+  "37467dd00e545354",
+  "3827ba98db794f93",
+  "38e8da5c2d74e7f3",
+  "39463d4989a98431",
+  "39707b96900c0b4a",
+  "3b38069d4a5089c6",
+  "3c391763e8addfcb",
+  "3d0a5cf5a3596f27",
+  "3dd76a9f74a4eac4",
+  "3fb2dd7ffd9c2d2e",
+  "4064147f8a832d69",
+  "412c9698b006c4d0",
+  "4196d14aa11fc779",
+  "42b5fe8275ec3b4b",
+  "4344ba8ef6432d09",
+  "446d90f0854eff37",
+  "45565446b9a31346",
+  "45ee664492339205",
+  "46133e579e5fd6f7",
+  "466b68f69233a5a1",
+  "4688341ef51ef5d2",
+  "4728679740964a2f",
+  "47a0e126af577521",
+  "48085d68bd657e53",
+  "48095b85c313851b",
+  "48dd4fd845ab342a",
+  "4903962517ec13bf",
+  "4945db70bc1a368c",
+  "4a00436bc7e57e53",
+  "4bacf88869cef420",
+  "4bbcd775751c864f",
+  "4c0018831f4d8bcb",
+  "4c474134d115fea7",
+  "4c57031320edf5e4",
+  "4c592aaf57ca6126",
+  "4c914685414c2511",
+  "4d6e03b865c3578c",
+  "4e4af3be86dc9547",
+  "4e7c56623e044db8",
+  "4ea52ce430fbf2e8",
+  "4ecbafcb1586b1dc",
+  "506e0851b5a0732b",
+  "50e31e56e8d6063d",
+  "50f1ad3cafc53cc5",
+  "513079e31261b86e",
+  "52c17696d58105d0",
+  "53043105e99c833b",
+  "53be73460759d432",
+  "543b94873d1a1300",
+  "547ee5f3aa94e6d2",
+  "56e980926d385eb3",
+  "5756b2d21bb65c30",
+  "579bf6ad6867e9f9",
+  "57f983f48b47430b",
+  "581e1f913e187ace",
+  "5835e2ed5d9bb18a",
+  "58392d9152a3dc2e",
+  "5863f3d1d34478a0",
+  "586d750ba80ae1bc",
+  "59fd238d0e1a23e2",
+  "5a4c172f375a7ed1",
+  "5c5b79ee0f5d72d1",
+  "5cc49ca9a0221c2d",
+  "5d0dfef6334385a5",
+  "5d78523461658de4",
+  "5dcf85de01ec6b83",
+  "5e3d863822e11b20",
+  "5ef9dac7a52692ec",
+  "5f6865479e3382b8",
+  "60b3f66c0fe4f51a",
+  "60ff9f182875ed37",
+  "61ec87d3a5206e2e",
+  "6204968f61e62973",
+  "628aa068de640d68",
+  "629569225f014c20",
+  "62ce93e8a24d847c",
+  "6466aca2fef6b28f",
+  "6503fdf79b5dddaa",
+  "66206701426f868c",
+  "671a721bd90898e8",
+  "67203556befe8e6d",
+  "67345f5ca8624e92",
+  "67b28f957744fa80",
+  "67e946183a5c8ab3",
+  "6813e15cebfbbcbd",
+  "686dbd06ec493887",
+  "695030772412662b",
+  "6c0dcdbd4a0640a5",
+  "6c0fd843afdf142e",
+  "6c26ff49a8fdeec6",
+  "6c92e65ee2df4219",
+  "6c9cfa6fa4f950d9",
+  "6cb343010794c1b9",
+  "6cf497ba4817d589",
+  "6deb4a3231d7410f",
+  "6dfa2d81c5637810",
+  "6e18404f371daddb",
+  "6e1abad2ccd21f75",
+  "6fd6f1cc5b01b228",
+  "70a32528250b76b4",
+  "7105b3e690240731",
+  "7107e2e29d8eb6fc",
+  "719bcaa9ca732233",
+  "71dcbdf8d9045b75",
+  "71e17abcb5b127bc",
+  "73f36cc883c9a3b4",
+  "74568f65193537dd",
+  "7475661fe97f8448",
+  "74800eb08572ce1c",
+  "759f7bf27f195248",
+  "75d6b12440d92d33",
+  "76547a8d4671f753",
+  "76f3a7b7916e78c1",
+  "77d2bfa0ec1ba1db",
+  "77fc9dc57b6c29dd",
+  "786ce116bea6e36d",
+  "78909b81fec381e9",
+  "7ab5227e397b9f98",
+  "7c2478b261e940f1",
+  "7cd05ddb8afc3b32",
+  "7df85c4fce29a206",
+  "7e2668970b8e3d94",
+  "7ed476b7bc220f8d",
+  "7f118200648cb4a1",
+  "7fb884a66965eab0",
+  "7fc3bd41f26d84c4",
+  "8007e35824f4b557",
+  "81cb88844cc31566",
+  "81e95d425aba9c18",
+  "8381e19e9d41fbce",
+  "84b5c9271dd042e7",
+  "85cd8de96277b8ff",
+  "875f32020f40b656",
+  "87ca757ef44ae5ce",
+  "881dfa47c551da3b",
+  "895ab53fc861ed3f",
+  "89a4e41897f154ca",
+  "8a5f6a546900715d",
+  "8a74311de8471a4c",
+  "8b414534bf2bc29b",
+  "8c1a1357dd48cdea",
+  "8de865288caaca22",
+  "8ec70960c4fdad1b",
+  "8fc9df388c72b853",
+  "903db4d1e7ad3599",
+  "904d37d3c3035484",
+  "907f4aa2313b708d",
+  "912672c8fe0742ae",
+  "91bc8002b3b89b22",
+  "91c746f781c5b5b4",
+  "934e1911bb63ebb8",
+  "93518043c9ab6b98",
+  "93aae83c7f692b5b",
+  "93af2e28ec97395b",
+  "93eb610a777e496d",
+  "962834b03e7bbe17",
+  "9681509e34e23c57",
+  "96bd5f5aa56ade21",
+  "970e39281882e35c",
+  "97456ec8dea5c7d1",
+  "97734547df5dadd0",
+  "98b23d3382488ccc",
+  "98ed8a05f77cc31c",
+  "98f09c1cbbc022a3",
+  "9a3b6a8435bcbc3e",
+  "9be96c7ca3221830",
+  "9dcab0f8dfa369b8",
+  "9e1a6286cb509fc6",
+  "9eb2377788cef754",
+  "9ebe6c0dc3ea135d",
+  "9ebe9f494a9fb9e3",
+  "9f5ae7056eb10c7e",
+  "a0222d72a7287da7",
+  "a0284b36c4ed211a",
+  "a02868f2a4459536",
+  "a08b23bb4389b319",
+  "a0b99f39e545202d",
+  "a13037872549a531",
+  "a157b444f831bdd2",
+  "a15dbc6fc88c49d8",
+  "a190de85a72c3950",
+  "a1b2275cc527333c",
+  "a1d746099f3e39db",
+  "a214b753ea8b6b1a",
+  "a229e8e907716491",
+  "a2d1b375cd7e0b36",
+  "a38c852b9137a9a1",
+  "a40052bd8e69831f",
+  "a448031cbe9df057",
+  "a477633fc36146ac",
+  "a5876ae411aa1be9",
+  "a5d2fad6d13304d8",
+  "a62f236fc61ba448",
+  "a664a56e88a30805",
+  "a67f20b43499eba5",
+  "a7117613bd7bd5e5",
+  "a76af2180926583d",
+  "a861bf0fb65e230f",
+  "a9104b4ef04333d0",
+  "a9fa4bf51c7a58f5",
+  "aaaadee38fabaa49",
+  "aadb3f0c997fbedb",
+  "ab0444681f83ab38",
+  "ab948f8765d52b8d",
+  "ac100f48c085034c",
+  "ac2feff2651a008b",
+  "ac78637ecb58e079",
+  "ad14fd9330a48adb",
+  "ad3db4d555005871",
+  "aef6dfafff0a4fe2",
+  "af73653ac02c9938",
+  "b1164437b60baf1e",
+  "b13f9cf1a731e363",
+  "b1418f4a9368793e",
+  "b1459fa0c7cb52d5",
+  "b1cbcbafae7ea7bf",
+  "b20260c3afc9c289",
+  "b2dce20981eb9d87",
+  "b37cac706e74d99a",
+  "b3fb03cf920e0824",
+  "b524e815ec024b5e",
+  "b6ff92a1401fb040",
+  "b7bc4f3c738dcfca",
+  "b7d6698c0ccf14e6",
+  "b8072180ac0baa3c",
+  "b80c06a812c1ad03",
+  "b815f64f9d122ea5",
+  "b8af628fa8374d1b",
+  "b95ae94bfcf05bb6",
+  "b96498d4c5edd903",
+  "b9b902fc97d7b9bf",
+  "ba7c3687fa36d489",
+  "bacc9f2ad04905c4",
+  "bbbe3df7f7342bf2",
+  "bbc289bba43dbc03",
+  "bbd4844736651c9e",
+  "bbd6c3997c966194",
+  "bc6e5c5631a35e8d",
+  "bd3d5d63b550ae93",
+  "be1ae437b8b8708f",
+  "be6ef2f3950cde6b",
+  "beb70eb90b038992",
+  "bf18cb6405781ba0",
+  "c01aae1966890aa2",
+  "c0d261b246ea45b8",
+  "c1bee878329ec6e5",
+  "c1edb45698a6bb1e",
+  "c2130e1df793af51",
+  "c256c5703ab5e7db",
+  "c27bbe1227758a11",
+  "c36a6cdf7cc93ef3",
+  "c39ae02b50d1dd87",
+  "c4214d3564881423",
+  "c6a216fd70761e1a",
+  "c79314d92b53ce48",
+  "c900d64b37095f29",
+  "c9a8084d86f31e08",
+  "c9ccc508f7d1392e",
+  "ca0c8ac35a946f1a",
+  "ca1313a696645166",
+  "cb1213cb2c0b8109",
+  "cb62fa59295dd541",
+  "cc4424a5c9fc5426",
+  "cc6b6008b8d59824",
+  "cc93744d78518003",
+  "cce201840fcdd258",
+  "cd05adf3d7a66fea",
+  "cf9acdde88058470",
+  "d096b7b80da18cc5",
+  "d3324cef9e8b98c9",
+  "d38b19b777777fcc",
+  "d3b17c2d975618c9",
+  "d3eb69e5e1fbd564",
+  "d4583dd10b59bef2",
+  "d48f4f3759c5b6df",
+  "d4d32bbb40922ea0",
+  "d515e12b19ef9830",
+  "d632eb4413cf0a23",
+  "d68dfc61947c4add",
+  "d6a3a1b14a63f3fe",
+  "d6ba594061c50cd4",
+  "d7a0addb9a020237",
+  "d83e97822f6474c4",
+  "d8d0a2ae69025a2d",
+  "d9735a7ae728c535",
+  "d9f1bd8a3a18716b",
+  "da5cb54c332ae4de",
+  "db5e62206c711eb8",
+  "dc7e8c6d9a822659",
+  "dca97d770649bda4",
+  "dcb496fc8522a495",
+  "dd6c464d21714942",
+  "de42acf7817ce459",
+  "de575a7e25a4e958",
+  "deaf35a2eb330ec2",
+  "deb04034b93d1743",
+  "defbcb95815fe166",
+  "df7a667264ef2801",
+  "df815437befeb75b",
+  "e06920b1d3e49fdd",
+  "e07a40143617d151",
+  "e16afa18e2a8dbb0",
+  "e1c3178a6e1edc42",
+  "e238107c51fce40b",
+  "e31cb0968fdf5aff",
+  "e3bb643e9c803391",
+  "e473a2ad107a6c37",
+  "e5afdc59ff27b4ad",
+  "e60d87ceecd8d106",
+  "e63ebfbb3755ac1f",
+  "e63f2bfdf08d7180",
+  "e674e5aa8d0678be",
+  "e6a46f964ee0947d",
+  "e6c8ef6a41731e65",
+  "e740c8aff2ccb4a6",
+  "e7a2f1e1fffccca6",
+  "e80fccd366de68a0",
+  "e811f52170799d1c",
+  "e81a958ecdea0966",
+  "e83702033ac433bb",
+  "e86c8651874a285e",
+  "e8ebf1fc4ba79ded",
+  "e938d93a2954124c",
+  "e98ff21dde37b818",
+  "ea71541295090042",
+  "ea9b3aae4940455c",
+  "eb89caf2fb5cbe16",
+  "ec1ae183e19d76a1",
+  "ec3926257740953d",
+  "ec6d26457712bac0",
+  "eca32bb6c9c13a75",
+  "eca765c3e1c14c80",
+  "ecbea47f0c12856d",
+  "ed006d4583bf00ee",
+  "ed9a03c7cf5a210f",
+  "ed9af8d4c620483d",
+  "eda4642561296515",
+  "ede186e2f1b569af",
+  "ee44707e29c80366",
+  "ef2e332db7cc893c",
+  "ef36d66941b957ed",
+  "ef80d1b74c05b387",
+  "f029d542b7fcd1ee",
+  "f02ce5841115d901",
+  "f0ddcaaa034850c4",
+  "f338b6242c3de188",
+  "f57a543ae1274bec",
+  "f5b4b3b4c2df7d7e",
+  "f72e7f3532e52ef2",
+  "f83536869d9d6ae5",
+  "f896ff5873cc3af4",
+  "f96c46b045ab653c",
+  "f970da9f6a7ae2c8",
+  "f98b6f20062e0bf5",
+  "f98ff1d0294bf767",
+  "f9a11ae85f47b2f8",
+  "f9affe6c0bafe5bd",
+  "fa67ad4433618d4f",
+  "fa76539447a4a6e7",
+  "fa96fa987e3b2ba0",
+  "fb0cb8b81f57a208",
+  "fb15c78999695eae",
+  "fb315855fe06e54b",
+  "fb6d60cdb89d0fc5",
+  "fba087958ec4b977",
+  "fbe951a128169322",
+  "fd2ec9189424ab57",
+  "fd9ac8c973d87f57",
+  "fe0284f5f5f7b13b",
+  "fed55323882f2720",
+  "fefc21d01e883458",
+  "ff13e8470e3670e9",
+  "ff38c7d5a6d3f14f",
+  "ff704cd7f4a57c9d",
+  "ff888cc3acd6d638",
+]
+
+[[group]]
+id = "G-strings"
+severity = "expected"
+title = "Platform names, environment variables and generic phrases"
+rationale = """Strings shared with one library that are file system paths and file names of the operating system and the time zone database, environment variable names, locale category names, POSIX collating names, demangler fragments outside the demangler's files, and short generic phrases naming the standard's own classes and errors."""
+keys = [
+  "0b2f3f4c02ac7970",
+  "0da69951e61acd91",
+  "199dc8192bb783e4",
+  "1d5ff978175a7ca8",
+  "1df225e67830ff57",
+  "1e850f2b5d715ecd",
+  "1fce153a274e3029",
+  "2828e670f7066668",
+  "320ac4c39c0b44dc",
+  "3294f3d1523df9db",
+  "61ecb93789878448",
+  "7ca31867a982a1a0",
+  "812c7101b27a3f0b",
+  "86c880f51ed6392d",
+  "89db5b92571b6fa8",
+  "8b10bb6ff981d3a3",
+  "8c9392f2a187143c",
+  "976aef9955200d9f",
+  "9b106e54cf3fe790",
+  "a3364f6c566f63cc",
+  "a6b6bb167029ac98",
+  "a6d79200e4239d60",
+  "ab5f968cd027b4ea",
+  "b728ffb35d39d07d",
+  "d06982fe909bcb75",
+  "d0b1a0f1ded502fb",
+  "e77c69a079635918",
+]
+
+[[group]]
+id = "G-numbers"
+severity = "expected"
+title = "Specified, published and mathematical constants"
+rationale = """Numbers and tables shared with one library: standard-specified parameters, published-algorithm constants (Marsaglia and Tsang's gamma method, Hinnant's civil-date arithmetic), IEEE floating-point limits, ECMAScript line terminators, calendar data, powers of small integers and coincidences of small values."""
+keys = [
+  "12093e30d4fe801d",
+  "17801e013e69dcbf",
+  "20a1cf0f79196af9",
+  "2b671dede93c3cf1",
+  "32a5b8f7d774a7a2",
+  "4991684cc72bbf1e",
+  "547f97aec3271c02",
+  "5dc384d3c7bbece2",
+  "5dd1742cba56387f",
+  "78f9e5edbced830a",
+  "8f4dba26a699e90e",
+  "9dd0ed6535aefaf6",
+  "b2cdeb19610a6e18",
+  "be729a0bc3bb57d3",
+  "c0fe35da95c2abe2",
+  "c941082b8ee1d78a",
+  "cfe1233a3c0dd1d8",
+  "d162f2f4a342860a",
+  "f9cf73aba9c56486",
+]
+
+[[group]]
+id = "G-typos"
+severity = "none"
+title = "Not misspellings"
+rationale = """The misspelling heuristic's hits for libycxx are correctly spelled words, British spellings and identifiers mentioned in comments: no shared misspelling."""
+keys = [
+  "1ce2f6a06243083c",
+  "98f7d9e448301d72",
+  "ab1f34f477592a65",
+  "bd46737972276a84",
+  "cca4900c327e9b2f",
+  "d0ad130cb8d3cdec",
+  "df780f6d72f98579",
+  "ffdac1ca3072c486",
+]

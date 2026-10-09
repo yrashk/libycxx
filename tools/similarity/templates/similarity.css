@@ -1,0 +1,66 @@
+/* libycxx.org/similarity/: rules of the similarity pages; the shared design is ../assets/site.css. */
+.banner{border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:10px;padding:16px 20px;margin:0 0 24px;background:var(--surface)}
+.banner.warn{border-left-color:#b45309}
+.banner h3{margin:0 0 8px;font-size:17px}
+.banner p:last-child{margin-bottom:0}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:0 0 24px}
+.kpis div{padding:16px 18px}
+.kpis div+div{border-left:1px solid var(--rule)}
+.kpis b{display:block;font:700 24px/1.15 var(--sans);font-variant-numeric:tabular-nums}
+.kpis span{display:block;font:600 11.5px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-top:6px}
+.kpis small{display:block;font-size:13px;color:var(--muted);margin-top:4px;line-height:1.4}
+table.data td.l,table.data th.l{text-align:left}
+table.mx td,table.mx th{text-align:center;white-space:nowrap}
+table.mx th[scope=row]{text-align:left}
+table.mx td small{display:block;font-size:11.5px;color:var(--muted)}
+table.heat td.num{min-width:64px}
+.cell-strong{color:#fff!important}
+.sev{font:600 12px/1 var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:4px 8px;border-radius:999px;border:1px solid var(--rule);white-space:nowrap}
+.sev-notable{color:#9a5b00;border-color:#e8c48a}
+.sev-significant{color:#b42318;border-color:#f1a39b}
+.sev-expected{color:var(--ok)}
+.sev-none{color:var(--faint)}
+.sev-unreviewed{color:#b42318;border-color:#f1a39b}
+@media (prefers-color-scheme:dark){.sev-notable{color:#f2b45a;border-color:#6b4a16}.sev-significant,.sev-unreviewed{color:#ff8a80;border-color:#6b2a24}.banner.warn{border-left-color:#f2b45a}}
+.finding{border:1px solid var(--rule);border-radius:10px;padding:18px 20px;margin:0 0 20px}
+.finding h3{margin:0 0 10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.finding .meta{font-size:13.5px;color:var(--muted);margin:0 0 10px}
+.side-by-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:12px 0 0}
+.excerpt{margin:0;border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--code-bg)}
+.excerpt figcaption{font:500 11.5px/1.4 var(--mono);color:var(--faint);padding:8px 12px;border-bottom:1px solid var(--rule)}
+.excerpt pre{margin:0;padding:8px 12px;overflow-x:auto;font:12.5px/1.5 var(--mono)}
+.excerpt .lic{font-size:11.5px;color:var(--faint);padding:6px 12px;border-top:1px solid var(--rule)}
+.chart{margin:8px 0 24px}
+.chart svg text{fill:var(--fg);font:12px var(--sans)}
+.chart .axis{stroke:var(--rule)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--muted);margin:8px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.md h2{margin:48px 0 16px}
+.md h3{margin:32px 0 10px}
+.md pre{background:var(--code-bg);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;overflow-x:auto;font:13px/1.5 var(--mono)}
+.md pre code{white-space:pre;background:none;border:0;padding:0}
+.md ul,.md ol{max-width:46em;padding-left:1.3em}
+.md li{margin-bottom:6px}
+.md code{white-space:normal}
+details.list summary{cursor:pointer;color:var(--accent);font-size:14.5px;margin:8px 0}
+td code{white-space:normal;overflow-wrap:anywhere}
+.tiny{font-size:12.5px;color:var(--muted)}
+pre.src{margin:6px 0 0;font:12px/1.45 var(--mono);background:var(--code-bg);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;overflow-x:auto;max-width:42em}
+@media (max-width:860px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpis div:nth-child(3){border-left:0}
+  .kpis div:nth-child(n+3){border-top:1px solid var(--rule)}
+  .side-by-side{grid-template-columns:minmax(0,1fr)}
+}
+main{max-width:1240px}
+table.mx td,table.mx th{padding:8px 10px}
+table.heat th,table.heat td{padding:7px 8px;font-size:12.5px}
+.cell-strong small{color:#e6ecf8!important}
+table.tune{table-layout:fixed;min-width:960px}
+table.tune col.c-dec{width:12%}table.tune col.c-y{width:18%}table.tune col.c-o{width:18%}table.tune col.c-n{width:16%}
+table.tune pre.src{max-width:none;white-space:pre-wrap;word-break:break-all;max-height:11em;overflow:auto}
+.why-box{border:1px solid var(--rule);border-radius:10px;padding:4px 22px 6px;margin:0 0 24px}
+.why-box h2{font-size:20px;margin:16px 0 8px}
+.why-box ul{margin:0 0 10px}
+.why-box li{font-size:15.5px}
+p.why{margin:-4px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--rule)}

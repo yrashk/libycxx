@@ -13,8 +13,8 @@ Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
 ## Conformance summary (full runs of 2026-10-05)
 | Suite | GCC 16.2 | Clang 23.1 |
 |---|---|---|
-| Own suite `tests/ycxx` (2146 tests, `65e7235`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
-| libc++ `libcxx/test/std` (8543 tests, `7e6a93f`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
+| Own suite `tests/ycxx` (2146 tests, `3171eb2`) | 2131 pass / 10 fail / 5 xfail | 2124 pass / 6 fail / 16 xfail |
+| libc++ `libcxx/test/std` (8543 tests, `088e60c`) | 7494 pass / 211 fail (209 + 2 unresolved: compile timeouts under load) / 836 unsupported (was 7439 / 532 raw) | 7495 pass / 215 fail / 832 unsupported (was 7440 / 536 raw) |
 | libstdc++ testsuite (8555 tests; 2026-10-06, testsuite helpers and tests without `dg-do` running) | 6206 pass / 13 fail / 1 xfail / 2335 unsupported (was 4823 / 141 on 2026-10-05) | 6161 pass / 13 fail / 37 xfail / 2344 unsupported (projected from the full run with the final lists; was 4786 / 175) |
 | Own suite against libstdc++ (reference, `tests/ycxx/REFERENCE.md`) | 1754 pass / 387 fail / 5 xfail | 1718 pass / 412 fail / 16 xfail |
 
@@ -277,17 +277,17 @@ when parsing, `fractional_width` of ratio<1, 2^62>, `hh_mm_ss` layout, an error 
   constexpr (184 GCC / 185 Clang undecided for their sample values); 513 macro checks (the
   [version.syn] values of these headers, the synopses' macros, Annex D, [zombie.names]), with the
   freestanding declarations also compiled with `-ffreestanding`. Fixed by the audit: volatile
-  `store_*` of non-lock-free atomics (`f222ebf`), `stop_token`/`stop_source::operator==` as
-  members (`9446019`), constant-evaluated `compare_exchange` of `long double` on Clang (`370b7e3`).
+  `store_*` of non-lock-free atomics (`ac5c18a`), `stop_token`/`stop_source::operator==` as
+  members (`a4a84d6`), constant-evaluated `compare_exchange` of `long double` on Clang (`ab14937`).
   Fixed since (gap fixes): G2 `chrono::parse` in the stream's locale (names, `%c %x %X %r %p`,
-  eras and alternative digits, a program's `time_get`; `331fde9` `8b7d190` `735d0a0`), G3 `{:L}`
-  through the locale's `num_put` (`ee9b9ea`), G4 (POSIX regex subexpressions with back-references
+  eras and alternative digits, a program's `time_get`; `f648b48` `04a0668` `7988528`), G3 `{:L}`
+  through the locale's `num_put` (`eeb9d56`), G4 (POSIX regex subexpressions with back-references
   and large counted repetitions) and G5 (multi-character collating elements; `transform_primary`
-  per [re.traits]/7 but for the classic locale, a deliberate divergence; `3919455`, `a161e22`),
+  per [re.traits]/7 but for the classic locale, a deliberate divergence; `15fed2e`, `8717356`),
   G6 (`rcu_barrier` inside a scheduled evaluation evaluates what was scheduled before it; after a
   retire in the caller's own region it blocks, a hardened precondition), G7 (the
   `*_at_thread_exit` actions of the thread that calls `exit` or returns from `main`) and G8, the
-  completion schedulers and domains of when_all, let and the other adaptors (`5a1705c`; 2
+  completion schedulers and domains of when_all, let and the other adaptors (`25ce008`; 2
   behaviour probes, `exec.when.all#1`, `exec.let#1`, so 6367 declarations and 13237 checks).
   Open: `__cpp_lib_constexpr_exceptions` on Clang (compiler gap), G9/G10 (implementation-defined
   `<filesystem>` root names and tzdb source; none planned).
@@ -372,11 +372,14 @@ Not yet done:
 Target: Apple Silicon (arm64) first, x86_64 kept in mind, with Homebrew GCC 16.2 and Clang 23.1
 against Apple's SDK and libSystem (`tools/toolchain/provision`, `activate.sh`, `tools/ycxx-cxx`,
 `cmake/ycxx-toolchain.cmake`). CI: job `macos` (macos-15, arm64), `tools/test -j3 policy build
-freestanding ycxx`. **Nothing below has run on macOS yet**: it was checked on Linux and, for the
-Darwin code paths, with Clang `-target arm64-apple-macos14` / `x86_64-apple-macos13
--fsyntax-only` against stand-in SDK declarations (`src/abi`, the PAL, `cmath_check.cpp`,
-`<system_error>`, `<cmath>`; every core header and the freestanding runtime compile for both
-Darwin targets). The first CI run is the real test.
+freestanding cmake ycxx`; nightly, `full.yml`'s `macos-suites` (libc++'s and libstdc++'s suites,
+both compilers). Run on a Mac on 2026-10-08 (macOS 26.6 on Apple M5 Pro, SDK 27.0, Homebrew
+GCC 16.2.0, Clang 23.1.2): `tools/test -c gcc -c clang policy build freestanding cmake ycxx`
+passes on both compilers (GCC: 2858 passed, 17 XFAIL, 80 UNSUPPORTED; Clang: 2832 passed, 43
+XFAIL, 80 UNSUPPORTED), the `cmake` stage with `pkg-config` installed (Homebrew's `pkgconf`; the
+moved-installation and `activate.sh --use` steps of `tests/integration/run.sh` need it, as the
+CI runners have it). x86_64 is compiled for (Clang `-target x86_64-apple-macos13
+-fsyntax-only`), never run.
 
 Ported:
 - C-library values core spells out, selected once in `config.hpp` (`YCXX_TARGET_DARWIN`,
@@ -431,13 +434,19 @@ shared cache. Fixed by hidden visibility (DECISIONS §2): nothing of libycxx is 
 weak-definition binds remain. GCC's fundamental type_info objects are hidden too (the list comes
 from a configure-time probe of the compiler): on aarch64-apple-darwin GCC 16.2 emits 300 such
 symbols, 150 of which (the SVE, `__bf16`, `__mfp8`, decimal and `_FloatN` forms) Apple's libc++abi
-does not export, so tolerating them as "libc++abi's objects" was wrong. Expected in CI: `exception`, `except`, `rtti`, `future` pass on both
-compilers apart from the documented `except/handler_pointer_reference{,_exact}` (both) and
-`handler_array_decay`, `handler_function_pointer` (GCC) handler limitation;
-`linkage/no_exported_library_symbols` passes;
-`tests/cmake/run.sh` (not in CI) shows no exports and "mine 3 other 3" with Apple's libc++.
+does not export, so tolerating them as "libc++abi's objects" was wrong. On the Mac: `exception`,
+`except`, `rtti`, `future` pass on both compilers apart from the documented XFAILs:
+`except/handler_pointer_reference{,_exact}` (both), `handler_array_decay`,
+`handler_function_pointer` (GCC), `handler_internal_linkage_types` (Clang), and Clang 23's missing
+constexpr exceptions (`exception/constexpr_*`, `stdexcept/constexpr_*`);
+`linkage/no_exported_library_symbols` passes, and so does `tests/cmake/run.sh`'s visibility test.
+The thread-end actions (DECISIONS §3, G7) pass on both compilers, Clang included:
+`future/at_thread_exit_by_{exit,main_return,thread_exit}`, `review_at_thread_exit_retry`,
+`at_thread_exit_foreign_thread`, `thread/many_at_thread_exit_registrations`,
+`linkage/thread_local_at_thread_exit`, `condition_variable/notify_all_at_thread_exit`: the
+design's "everything passing" outcome.
 
-Unverified or known gaps on macOS:
+Known gaps and platform differences on macOS:
 - Darwin's C library predates C23 in places libycxx forwards to it: its printf has neither `%b`
   nor `%B` (macOS 26: `snprintf("%b", 5u)` gives "b"), so own test `cstdio/c23_conversions` fails
   there (a C library gap: libycxx's `<cstdio>` is the C library's printf) and `PRIBN` stay
@@ -452,17 +461,20 @@ Unverified or known gaps on macOS:
 - `<cuchar>` fallback: assumes Darwin's conversion states use at most the first 16 of
   mbstate_t's 128 bytes; `mbsinit` does not see code units still to be delivered. macOS has no
   "C.UTF-8" locale, so the own test checks the UTF-8 forms only where the C library has one.
-- Named locales (`src/hosted/locale_named.cpp`), written for Darwin but never run there; the macOS
-  session must check: the `_l` functions come from `<xlocale.h>` (`is*_l`, `isw*_l`, `tow*_l`,
-  `strcoll_l`, `strxfrm_l`, `wcscoll_l`, `wcsxfrm_l`, `strftime_l`, `wcsftime_l`,
-  `nl_langinfo_l`) and `localeconv_l` is found by the `requires` probe (no lock then);
-  `mbrtowc`/`wcrtomb`/`btowc`/`MB_CUR_MAX` follow the thread's `uselocale`; `catopen` with
+- Named locales (`src/hosted/locale_named.cpp`): the own tests `locale/named_*`,
+  `chrono/parse_named_locale*`, `format/named_locale_L` and `regex/collating_elements` pass on
+  both compilers (macOS has no C.UTF-8; a name the machine lacks is UNSUPPORTED). Darwin's
+  `LC_TIME` data differs from glibc's in ways the code now reads from strftime rather than
+  assumes: ja_JP's D_T_FMT has strftime flags (`"%a %_m/%e %T %Y"`) and its `%b` is not
+  ABMON_n; de_DE leaves am/pm and t_fmt_ampm empty, which strftime writes as nothing while
+  `nl_langinfo` returns the C locale's `AM`, `PM` and `"%I:%M:%S %p"` for the empty fields, so
+  `%p` reads nothing there; collation primary keys are empty. Still unchecked: `catopen` with
   `NL_CAT_LOCALE` may read the global LC_MESSAGES rather than the thread's; the ctype<char> table
   of a UTF-8 locale gives bytes 0x80-0xFF no class (Darwin's `is*_l` would classify them as
-  Latin-1); `strxfrm_l`/`wcsxfrm_l` sizes; `tm_zone`/`tm_gmtoff` reach `strftime_l` for `{:L%c}`
-  ([time.format]); the own tests `locale/named_*` (UNSUPPORTED for a name the machine lacks:
-  macOS has de_DE.UTF-8, fr_FR.ISO8859-15, en_US.UTF-8 but no C.UTF-8) and the chrono L
-  conversions (`to_utf8` assumes wchar_t is Unicode only in ISO-8859-1 locales there).
+  Latin-1); `to_utf8` assumes wchar_t is Unicode only in ISO-8859-1 locales.
+- Darwin's `<wchar.h>` includes `<stdio.h>` itself, so `<string>` (which includes it for
+  `char_traits<wchar_t>`) provides `EOF` even with `YCXX_NO_TRANSITIVE_INCLUDES`
+  (`transitive_includes/strict/string_eof` is `REQUIRES: !darwin`).
 - Possible test-environment differences: APFS is case-insensitive by default, `/tmp` and
   `$TMPDIR` lie behind symbolic links (`/private`), `statvfs` block counts are 32-bit; the zoneinfo
   tree has no `tzdata.zi`, so every TZif file counts as a zone and only symbolic links as links

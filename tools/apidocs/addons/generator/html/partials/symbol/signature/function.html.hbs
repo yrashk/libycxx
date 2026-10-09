@@ -1,0 +1,40 @@
+{{!--
+    libycxx: a function declaration as the standard's synopses write it: the template head on
+    its own line, then the specifiers, the return type, the name and the parameters on one line
+    (tools/apidocs/render.py wraps a long parameter list), the trailing requires-clause last.
+    Expected context: {Symbol Object}; force-link: link the name to the function's page.
+--}}
+{{#if template}}{{>template/head template}}
+{{/if~}}
+{{#if isFriend}}friend {{/if~}}
+{{#if attributes}}{{#unless isFriend}}{{>symbol/signature/attributes}} {{/unless}}{{/if~}}
+{{#if explicit}}{{explicit}} {{/if~}}
+{{#if isVirtual}}virtual {{/if~}}
+{{#if storageClass}}{{storageClass}} {{/if~}}
+{{#if constexpr}}{{constexpr}} {{/if~}}
+{{#if (eq funcClass "normal")}}{{>type/declarator-prefix returnType}} {{/if~}}
+{{~#if force-link~}}
+{{>symbol/name symbol }}
+{{~else if (eq funcClass "conversion")~}}
+{{>symbol/name symbol }}
+{{~else if template.primary~}}
+{{>symbol/name (@root.mrdocs.corpus.get template.primary) ~}}{{>template/args-text args=template.args ~}}
+{{~else~}}
+{{>symbol/name-text symbol }}
+{{~/if~}}
+({{#if isExplicitObjectMemberFunction}}this {{/if}}{{#each params}}{{>type/declarator type decl-name=name~}}
+    {{#if default}} = {{default}}{{/if~}}
+    {{#unless @last}}, {{/unless~}}
+{{/each~}}{{#if isVariadic}}{{#if params}}, {{/if}}{{ str "..." }}{{/if}})
+{{~#if isConst}} const{{/if~}}
+{{#if isVolatile}} volatile{{/if~}}
+{{#if refQualifier}} {{refQualifier}}{{/if~}}
+{{#if noexcept}} {{noexcept}}{{/if~}}
+{{#if (eq funcClass "normal")}}{{>type/declarator-suffix returnType}}{{/if~}}
+{{#if hasOverrideAttr}} override{{/if~}}
+{{#if isFinal}} final{{/if~}}
+{{#if isPure}} = 0{{/if~}}
+{{#if isDeleted}} = delete{{/if~}}
+{{#if isDefaulted}} = default{{/if~}}
+{{#if requires}}
+  requires {{requires}}{{/if}};

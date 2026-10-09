@@ -1,0 +1,9 @@
+{{!--
+    libycxx: a template head on one line, as the standard's synopses write it:
+    template<class T, class Allocator = allocator<T>> (tools/apidocs/render.py wraps a long one).
+    Expected context: {Template Info}
+--}}
+template{{ str '<' }}{{#each params}}{{>template/param link-components-impl=link-components-impl~}}
+    {{#unless @last}}, {{/unless~}}
+{{/each}}{{ str '>' }}{{#if requires}}
+  requires {{requires}}{{/if~}}

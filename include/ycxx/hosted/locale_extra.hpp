@@ -92,6 +92,7 @@ struct __time_era {
 template <class __charT>
 struct __time_data {
   // weekdays (full Sunday-Saturday, then abbreviated), months (full, then abbreviated), AM, PM
+  // (AM and PM empty where strftime_l writes %p as nothing)
   std::basic_string<__charT> __names[14 + 24 + 2];
   // the same as strftime_l writes them (%A %a %B %b %p), where that differs from the names above
   // (empty where it does not): Darwin's ja_JP, for one, writes %b as " 6" for an ABMON_6 of "6月"

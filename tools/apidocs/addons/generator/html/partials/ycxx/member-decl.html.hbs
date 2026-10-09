@@ -1,0 +1,14 @@
+{{!-- A one-line declaration for a members table. Expected context: {Symbol Object} --}}
+{{~#if (eq kind "overloads")~}}
+<code class="cpp">{{#with (@root.mrdocs.corpus.get (front members))}}{{> ycxx/short-function . }}{{/with}}</code>{{#if (gt (size members) 1)}} <span class="m-more">+{{sub (size members) 1}} more</span>{{/if}}
+{{~else if (eq kind "function")~}}
+<code class="cpp">{{> ycxx/short-function . }}</code>
+{{~else if (eq kind "typedef")~}}
+<code class="cpp">= {{> type/declarator-text type }}</code>
+{{~else if (eq kind "variable")~}}
+<code class="cpp">{{> type/declarator-text type }}</code>
+{{~else if (eq kind "record")~}}
+<code class="cpp">{{#if template}}template {{/if}}{{keyKind}} {{> symbol/name-text . }}</code>
+{{~else if (eq kind "enum")~}}
+<code class="cpp">enum {{#if scoped}}class {{/if}}{{> symbol/name-text . }}</code>
+{{~/if~}}

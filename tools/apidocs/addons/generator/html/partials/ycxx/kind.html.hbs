@@ -1,0 +1,24 @@
+{{!-- The kind of a symbol, in the words the standard uses. Expected context: {Symbol Object} --}}
+{{~#if (eq kind "namespace")}}namespace
+{{~else if (eq kind "record")~}}
+  {{~#if template.primary}}{{#if template.params}}{{> ycxx/class-key . }} template partial specialization{{else}}{{> ycxx/class-key . }} template specialization{{/if}}
+  {{~else if template}}{{> ycxx/class-key . }} template
+  {{~else}}{{> ycxx/class-key . }}{{/if~}}
+  {{~#if (eq (lookup (@root.mrdocs.corpus.get parent) "kind") "record")}} · nested{{/if~}}
+{{~else if (eq kind "overloads")~}}
+  {{~#with (@root.mrdocs.corpus.get (front members))~}}{{> ycxx/kind-function . }}{{~/with}} · {{size members}} overloads
+{{~else if (eq kind "function")}}{{> ycxx/kind-function . }}
+{{~else if (eq kind "typedef")}}{{#if template}}alias template{{else}}type alias{{/if}}{{#if (eq (lookup (@root.mrdocs.corpus.get parent) "kind") "record")}} · member type{{/if}}
+{{~else if (eq kind "variable")~}}
+  {{~#if isRecordField}}data member
+  {{~else if (eq (lookup (@root.mrdocs.corpus.get parent) "kind") "record")}}static data member
+  {{~else if template}}variable template
+  {{~else if isConstexpr}}constant
+  {{~else}}variable{{/if~}}
+{{~else if (eq kind "concept")}}concept
+{{~else if (eq kind "enum")}}{{#if scoped}}scoped enumeration{{else}}enumeration{{/if}}
+{{~else if (eq kind "enum-constant")}}enumerator
+{{~else if (eq kind "guide")}}deduction guide
+{{~else if (eq kind "using")}}using-declaration
+{{~else if (eq kind "namespace-alias")}}namespace alias
+{{~else}}{{kind}}{{/if~}}

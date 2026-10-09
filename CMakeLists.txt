@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(libycxx VERSION 0.1.0
-        DESCRIPTION "A clean-room C++26 standard library for GCC 16 and Clang 23"
+        DESCRIPTION "An independent C++26 standard library, implemented from the working draft, for GCC 16 and Clang 23"
         LANGUAGES C CXX)
 
 # Use from another CMake project, either way:
@@ -304,6 +304,14 @@ inline constexpr const char* fundamental_type_info_symbols[] = {
 ]=] @ONLY)
 target_include_directories(ycxx_abi PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 message(STATUS "libycxx: ${_ycxx_ti_count} fundamental type_info symbols to hide (src/abi/rtti.cpp)")
+# src/abi/rtti_float16.cpp defines the _Float16 type_info objects for a compiler whose rtti.cpp does
+# not emit them (Clang). Where the probe shows that the compiler emits them itself (GCC), it is
+# left out: GCC on Darwin emits them non-weak, so both definitions in one image (a -force_load or
+# --whole-archive link of libycxx-abi.a) are duplicate symbols.
+if(_ycxx_ti_list MATCHES "(^|;)_?_ZTIDF16_(;|$)")
+  set_source_files_properties(src/abi/rtti_float16.cpp PROPERTIES HEADER_FILE_ONLY ON)
+  message(STATUS "libycxx: the compiler emits the _Float16 type_info objects; src/abi/rtti_float16.cpp not built")
+endif()
 
 set_source_files_properties(src/abi/exception_classes.cpp src/hosted/stdexcept.cpp
                             PROPERTIES COMPILE_DEFINITIONS _YCXX_EXCEPTION_KEY_FUNCTIONS)

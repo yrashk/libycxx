@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+"""Run the similarity analysis and render libycxx.org/similarity/ (docs/similarity/METHOD.md).
+
+    tools/similarity/run [--cache DIR] [--work DIR] [--out DIR] [--gcc-tarball FILE] [--skip-jplag]
+    tools/similarity/run --refresh-vocab     rewrite tools/similarity/data/foreign-vocab.txt
+    tools/similarity/run --unavailable WHY   write only the "report unavailable" page
+
+Fetches the pinned sources (tools/similarity/sources.json) into the cache (default
+build/similarity/cache), compares them with libycxx's include/ and src/ in this checkout, matches
+the results against the committed judgments (docs/similarity/*.toml) and renders site/similarity/
+(not committed, like site/api/). If any step fails, the pages are replaced by one page saying the
+report is unavailable for this build, so stale or partial numbers are never published; the exit
+status is 0 so the rest of the site still deploys, unless --strict is given.
+
+The Pages workflow (.github/workflows/pages.yml) runs it on every site build. The rendered pages
+quote other implementations; agents implementing libycxx must not read them (README.md).
+"""
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent.parent
+LIB = HERE / "lib"
+sys.path.insert(0, str(LIB))
+
+STEP_TIMES = []
+
+
+def step(name, fn, *a, **k):
+    t = time.time()
+    print(f"[similarity] {name} ...", flush=True)
+    r = fn(*a, **k)
+    STEP_TIMES.append((name, round(time.time() - t, 1)))
+    print(f"[similarity] {name}: {STEP_TIMES[-1][1]} s", flush=True)
+    return r
+
+
+def py(script, *args, env=None):
+    subprocess.run([sys.executable, "-I", str(LIB / script), *map(str, args)], check=True, env=env)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cache", default=str(REPO / "build" / "similarity" / "cache"))
+    ap.add_argument("--work", default=str(REPO / "build" / "similarity" / "work"))
+    ap.add_argument("--out", default=str(REPO / "site" / "similarity"))
+    ap.add_argument("--gcc-tarball")
+    ap.add_argument("--skip-jplag", action="store_true")
+    ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--refresh-vocab", action="store_true")
+    ap.add_argument("--unavailable")
+    args = ap.parse_args()
+    cache, work, out = Path(args.cache), Path(args.work), Path(args.out)
+
+    import render  # noqa: E402
+
+    if args.unavailable:
+        render.unavailable(out, args.unavailable)
+        return 0
+    try:
+        import fetch  # noqa: E402
+        r = step("fetch pinned sources", fetch.fetch_all, cache, args.gcc_tarball)
+        roots = {"ycxx": str(REPO), "gnu": str(r["gnu"]), "gnu_extra": str(r["gnu_extra"]), "llvm": str(r["llvm"]),
+                 "llvm03": str(r["llvm"]), "msvc": str(r["msvc"]), "cxxrt": str(r["cxxrt"]),
+                 "kokkos": str(r["kokkos"]), "beman": str(r["beman"])}
+        os.environ["SIM_ROOTS"] = json.dumps(roots)
+        env = dict(os.environ)
+        if args.refresh_vocab:
+            work.mkdir(parents=True, exist_ok=True)
+            py("std_vocab.py", r["draft"], work / "std_vocab.json", env=env)
+            import leak  # noqa: E402
+            leak.refresh_vocab(work)
+            return 0
+        if work.exists():
+            shutil.rmtree(work)
+        work.mkdir(parents=True)
+        meta = render.collect_meta(REPO, r)
+        (work / "meta.json").write_text(json.dumps(meta, indent=1))
+        step("standard vocabulary", py, "std_vocab.py", r["draft"], work / "std_vocab.json", env=env)
+        if not args.skip_jplag:
+            step("JPlag per area", py, "jplag_run.py", work, r["jplag"], "c", 12, env=env)
+        step("k-gram comparison per area", py, "kgram.py", work, env=env)
+        # The style control (docs/similarity/METHOD.md, "Style control"): era and control areas,
+        # then everything again with style normalisation.
+        for name, extra in (("sa", {"SIM_AREASET": "style"}), ("sn", {"SIM_STYLE": "1"}),
+                            ("sasn", {"SIM_AREASET": "style", "SIM_STYLE": "1"})):
+            e = dict(env, SIM_OUTNAME=f"jplag_{name}", **extra)
+            if not args.skip_jplag:
+                step(f"style control {name}: JPlag", py, "jplag_run.py", work, r["jplag"], "c", 12, env=e)
+            step(f"style control {name}: k-gram", py, "kgram.py", work, env=e)
+        import fingerprints  # noqa: E402
+        step("fingerprints", fingerprints.main, work)
+        step("triage of long matches", py, "annotate.py", work, 40, env=env)
+        import tuning  # noqa: E402
+        step("tuning constants and design choices", tuning.run, work)
+        summary = step("judgments and rendering", render.build, work, out)
+        print(f"[similarity] steps: " + ", ".join(f"{n} {t}s" for n, t in STEP_TIMES))
+        print(f"[similarity] dispositions: {json.dumps(summary['dispositions'])}")
+        if summary["unreviewed"]:
+            print(f"::warning title=similarity::{summary['unreviewed']} match(es) or fingerprint item(s) are "
+                  f"unreviewed; they are listed on the findings page")
+        if summary["needs_review"]:
+            print(f"::warning title=similarity::the verdict is replaced by 'needs review': "
+                  f"{'; '.join(summary['needs_review'])}")
+        print(f"[similarity] wrote {out}")
+        return 0
+    except Exception as e:  # noqa: BLE001
+        traceback.print_exc()
+        why = f"{type(e).__name__}: {e}"
+        render.unavailable(out, why)
+        print(f"::error title=similarity::report unavailable for this build: {why}")
+        return 1 if args.strict else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

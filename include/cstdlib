@@ -45,6 +45,12 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 int __strfrom(char* s, __SIZE_TYPE__ n, const char* format, double __fp) noexcept;
 int __strfrom(char* s, __SIZE_TYPE__ n, const char* format, long double __fp) noexcept;
 }} // namespace __ycxx::__detail
+// quick_exit (C11, [cstdlib.syn]): Darwin's <stdlib.h> declares it only without a strict POSIX
+// feature-test macro (_XOPEN_SOURCE 600 hides it, libstdc++'s PR 93151 test), as for timegm
+// (<ctime>). The C library's declaration, its __dead2 as gnu::noreturn.
+#if _YCXX_TARGET_DARWIN
+extern "C" [[__gnu__::__noreturn__]] void quick_exit(int status);
+#endif
 #endif
 
 #if _YCXX_HOSTED

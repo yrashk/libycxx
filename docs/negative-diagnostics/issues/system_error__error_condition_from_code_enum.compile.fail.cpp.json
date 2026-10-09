@@ -1,0 +1,89 @@
+{
+  "test": "tests/ycxx/system_error/error_condition_from_code_enum.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "syserr.errcondition.constructors",
+    "system.error.syn"
+  ],
+  "normative_text": {
+    "syserr.errcondition.constructors": "19.5.5.2 Constructors [syserr.errcondition.constructors]\n\ud83d\udd17\nerror_condition() noexcept;\n1\n#\nEffects: Initializes val_ with 0\nand cat_ with &generic_category().\n\ud83d\udd17\nerror_condition(int val, const error_category& cat) noexcept;\n2\n#\nEffects: Initializes val_ with val\nand cat_ with &cat.\n\ud83d\udd17\ntemplate<class ErrorConditionEnum>\n  error_condition(ErrorConditionEnum e) noexcept;\n3\n#\nConstraints: is_error_condition_enum_v<ErrorConditionEnum> is true.\n4\n#\nEffects: Equivalent to:\nerror_condition ec = make_error_condition(e);\nassign(ec.value(), ec.category());\n",
+    "system.error.syn": "19.5.2 Header <system_error> synopsis [system.error.syn]\n'>\ud83d\udd17\n#include <compare>              // see [compare.syn]\nnamespace std {\n  class error_category;\n  const error_category& generic_category() noexcept;\n  const error_category& system_category() noexcept;\n  class error_code;\n  class error_condition;\n  class system_error;\n  template<class T>\n    struct is_error_code_enum : public false_type {};\n  template<class T>\n    struct is_error_condition_enum : public false_type {};\n  enum class errc {                                                     // freestanding\n    address_family_not_supported,       // EAFNOSUPPORT\n    address_in_use,                     // EADDRINUSE\n    address_not_available,              // EADDRNOTAVAIL\n    already_connected,                  // EISCONN\n    argument_list_too_long,             // E2BIG\n    argument_out_of_domain,             // EDOM\n    bad_address,                        // EFAULT\n    bad_file_descriptor,                // EBADF\n    bad_message,                        // EBADMSG\n    broken_pipe,                        // EPIPE\n    connection_aborted,                 // ECONNABORTED\n    connection_already_in_progress,     // EALREADY\n    connection_refused,                 // ECONNREFUSED\n    connection_reset,                   // ECONNRESET\n    cross_device_link,                  // EXDEV\n    destination_address_required,       // EDESTADDRREQ\n    device_or_resource_busy,            // EBUSY\n    directory_not_empty,                // ENOTEMPTY\n    executable_format_error,            // ENOEXEC\n    file_exists,                        // EEXIST\n    file_too_large,                     // EFBIG\n    filename_too_long,                  // ENAMETOOLONG\n    function_not_supported,             // ENOSYS\n    host_unreachable,                   // EHOSTUNREACH\n    identifier_removed,                 // EIDRM\n    illegal_byte_sequence,              // EILSEQ\n    inappropriate_io_control_operation, // ENOTTY\n    interrupted,                        // EINTR\n    invalid_argument,                   // EINVAL\n    invalid_seek,                       // ESPIPE\n    io_error,                           // EIO\n    is_a_directory,                     // EISDIR\n    message_size,                       // EMSGSIZE\n    network_down,                       // ENETDOWN\n    network_reset,                      // ENETRESET\n    network_unreachable,                // ENETUNREACH\n    no_buffer_space,                    // ENOBUFS\n    no_child_process,                   // ECHILD\n    no_link,                            // ENOLINK\n    no_lock_available,                  // ENOLCK\n    no_message,                         // ENOMSG\n    no_protocol_option,                 // ENOPROTOOPT\n    no_space_on_device,                 // ENOSPC\n    no_such_device_or_address,          // ENXIO\n    no_such_device,                     // ENODEV\n    no_such_file_or_directory,          // ENOENT\n    no_such_process,                    // ESRCH\n    not_a_directory,                    // ENOTDIR\n    not_a_socket,                       // ENOTSOCK\n    not_connected,                      // ENOTCONN\n    not_enough_memory,                  // ENOMEM\n    not_supported,                      // ENOTSUP\n    operation_canceled,                 // ECANCELED\n    operation_in_progress,              // EINPROGRESS\n    operation_not_permitted,            // EPERM\n    operation_not_supported,            // EOPNOTSUPP\n    operation_would_block,              // EWOULDBLOCK\n    owner_dead,                         // EOWNERDEAD\n    permission_denied,                  // EACCES\n    protocol_error,                     // EPROTO\n    protocol_not_supported,             // EPROTONOSUPPORT\n    read_only_file_system,              // EROFS\n    resource_deadlock_would_occur,      // EDEADLK\n    resource_unavailable_try_again,     // EAGAIN\n    result_out_of_range,                // ERANGE\n    state_not_recoverable,              // ENOTRECOVERABLE\n    text_file_busy,                     // ETXTBSY\n    timed_out,                          // ETIMEDOUT\n    too_many_files_open_in_system,      // ENFILE\n    too_many_files_open,                // EMFILE\n    too_many_links,                     // EMLINK\n    too_many_symbolic_link_levels,      // ELOOP\n    value_too_large,                    // EOVERFLOW\n    wrong_protocol_type,                // EPROTOTYPE\n  };\n  template<> struct is_error_condition_enum<errc> : true_type {};\n  // [syserr.errcode.nonmembers], non-member functions\n  error_code make_error_code(errc e) noexcept;\n  template<class charT, class traits>\n    basic_ostream<charT, traits>&\n      operator<<(basic_ostream<charT, traits>& os, const error_code& ec);\n  // [syserr.errcondition.nonmembers], non-member functions\n  error_condition make_error_condition(errc e) noexcept;\n  // [syserr.compare], comparison operator functions\n  bool operator==(const error_code& lhs, const error_code& rhs) noexcept;\n  bool operator==(const error_code& lhs, const error_condition& rhs) noexcept;\n  bool operator==(const error_condition& lhs, const error_condition& rhs) noexcept;\n  strong_ordering operator<=>(const error_code& lhs, const error_code& rhs) noexcept;\n  strong_ordering operator<=>(const error_condition& lhs, const error_condition& rhs) noexcept;\n  // [syserr.hash], hash support\n  template<class T> struct hash;\n  template<> struct hash<error_code>;\n  template<> struct hash<error_condition>;\n  // [syserr], system error support\n  template<class T>\n    constexpr bool is_error_code_enum_v = is_error_code_enum<T>::value;\n  template<class T>\n    constexpr bool is_error_condition_enum_v = is_error_condition_enum<T>::value;\n  // [syserr.fmt], formatter\n  template<class T> struct formatter<error_code, charT>;\n}\n1\n#\nThe value of each enum errc enumerator is the same as\nthe value of the __'><cerrno> macro shown in the above synopsis.\n Whether or not the _'><system_error> implementation\nexposes the ___'><cerrno> macros is unspecified.\n2\n#\nThe is_error_code_enum and is_error_condition_enum templates may be\nspecialized for program-defined types to indicate that such types are eligible\nfor class error_code and class error_condition implicit\nconversions, respectively.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: conversion from 'lib::E' to non-scalar type 'std::error_condition'"
+    ],
+    "clang": [
+      "error: no viable conversion from 'lib::E' to 'std::error_condition'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -19,6 +19,3 @@\n struct std::is_error_code_enum<lib::E> : std::true_type {};\n \n std::error_code ok = lib::E::a;  // control: registered as an error code enum\n-std::error_condition bad = lib::E::a;\n-\n-int main() { return ok.value() + bad.value(); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/system_error/error_condition_from_code_enum.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable conversion from 'lib::E' to 'std::error_condition'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/system_error/error_condition_from_code_enum.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/system_error__error_condition_from_code_enum.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "conversion from 'lib::E' to non-scalar type 'std::error_condition' requested"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

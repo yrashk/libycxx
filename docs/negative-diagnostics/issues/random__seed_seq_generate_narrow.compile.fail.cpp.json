@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/random/seed_seq_generate_narrow.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "rand.util.seedseq"
+  ],
+  "normative_text": {
+    "rand.util.seedseq": "29.5.8.1 Class seed_seq [rand.util.seedseq]\n\ud83d\udd17\nnamespace std {\n  class seed_seq {\n  public:\n    // types\n    using result_type = uint_least32_t;\n    // constructors\n    seed_seq() noexcept;\n    template<class T>\n      seed_seq(initializer_list<T> il);\n    template<class InputIterator>\n      seed_seq(InputIterator begin, InputIterator end);\n    // generating functions\n    template<class RandomAccessIterator>\n      void generate(RandomAccessIterator begin, RandomAccessIterator end);\n    // property functions\n    size_t size() const noexcept;\n    template<class OutputIterator>\n      void param(OutputIterator dest) const;\n    // no copy functions\n    seed_seq(const seed_seq&) = delete;\n    void operator=(const seed_seq&) = delete;\n  private:\n    vector<result_type> v;      // exposition only\n  };\n}\n\ud83d\udd17\nseed_seq() noexcept;\n1\n#\nPostconditions: v.empty() is true.\n\ud83d\udd17\ntemplate<class T>\n  seed_seq(initializer_list<T> il);\n2\n#\nConstraints: T is an integer type.\n3\n#\nEffects: Same as seed_seq(il.begin(), il.end()).\n\ud83d\udd17\ntemplate<class InputIterator>\n  seed_seq(InputIterator begin, InputIterator end);\n4\n#\nMandates: iterator_traits<InputIterator>\u200b::\u200bvalue_type\n  is an integer type.\n5\n#\nPreconditions: InputIterator meets the\n  Cpp17InputIterator requirements ([input.iterators]).\n6\n#\nEffects: Initializes v\nby the following algorithm:\nfor (InputIterator s = begin; s != end; ++s)\n v.push_back((*s)mod232);\n\ud83d\udd17\ntemplate<class RandomAccessIterator>\n  void generate(RandomAccessIterator begin, RandomAccessIterator end);\n7\n#\nMandates: iterator_traits<RandomAccessIterator>\u200b::\u200b\u200bvalue_type\n  is an unsigned integer type capable of accommodating 32-bit quantities.\n8\n#\nPreconditions: RandomAccessIterator meets the\n  Cpp17RandomAccessIterator requirements ([random.access.iterators])\n  and the requirements of a mutable iterator.\n9\n#\nEffects: Does nothing if begin == end.\n Otherwise,\n with s=v.size()\n and  n=end\u2212begin,\n fills the supplied range [begin,end)\n according to the following algorithm\n in which\n each operation is to be carried out modulo 232,\n each indexing operator applied to begin is to be taken modulo n,\n and T(x) is defined as x xor(x rshift27):\n(9.1)\nBy way of initialization,\n   set each element of the range to the value 0x8b8b8b8b.\n Additionally,\n   for use in subsequent steps,\n   let p=(n\u2212t)/2\n   and let q=p+t,\n   where\nt=(n\u2265623)\u00a0?\u00a011\u00a0:\u00a0(n\u226568)\u00a0?\u00a07\u00a0:\u00a0(n\u226539)\u00a0?\u00a05\u00a0:\u00a0(n\u22657)\u00a0?\u00a03\u00a0:\u00a0(n\u22121)/2;\n(9.2)\nWith m as the larger of s+1 and n,\n   transform the elements of the range:\n   iteratively for k=0,\u2026,m\u22121,\n   calculate values\nr1=1664525\u22c5T(begin[k]xorbegin[k+p]xorbegin[k\u22121])r2=r1+\u23a7\u23aa\u23a8\u23aa\u23a9s,\u00a0k=0kmodn+v[k\u22121],\u00a00<k\u2264skmodn,\u00a0s<k\n   and, in order,\n   increment begin[k+p] by r1,\n   increment begin[k+q] by r2,\n   and\n   set begin[k] to r2.\n(9.3)\nTransform the elements of the range again,\n   beginning where the previous step ended:\n   iteratively for k=m,\u2026,m+n\u22121,\n   calculate values\nr3=1566083941\u22c5T(begin[k]+begin[k+p]+begin[k\u22121])r4=r3\u2212(kmodn)\n   and, in order,\n   update begin[k+p] by xoring it with r3,\n   update begin[k+q] by xoring it with r4,\n   and\n   set begin[k] to r4.\n10\n#\nThrows: What and when RandomAccessIterator operations of begin\nand end throw.\n\ud83d\udd17\nsize_t size() const noexcept;\n11\n#\nReturns: The number of 32-bit units\n that would be returned\n by a call to param().\n12\n#\nComplexity: Constant time.\n\ud83d\udd17\ntemplate<class OutputIterator>\n  void param(OutputIterator dest) const;\n13\n#\nMandates: Values of type result_type are writable ([iterator.requirements.general]) to dest.\n14\n#\nPreconditions: OutputIterator meets the\n  Cpp17OutputIterator requirements ([output.iterators]).\n15\n#\nEffects: Copies the sequence of prepared 32-bit units\n to the given destination,\n as if by executing the following statement:\ncopy(v.begin(), v.end(), dest);\n16\n#\nThrows: What and when OutputIterator operations of dest throw.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*seed_seq::generate: the iterator's value_type must be an unsigned integer type of at least 32 bits"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,5 +6,4 @@\n int main() {\n   std::seed_seq q{1, 2, 3};\n   std::uint16_t out[4];\n-  q.generate(out, out + 4);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/seed_seq_generate_narrow.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'sizeof(unsigned short) >= sizeof(unsigned int)': [rand.util.seedseq]/7 requires the value_type of the iterator to be an unsigned integer capable of accommodating 32-bit quantities."
+    },
+    "libstdcxx.gcc": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/seed_seq_generate_narrow.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__seed_seq_generate_narrow.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": null
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

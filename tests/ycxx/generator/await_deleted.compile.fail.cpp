@@ -1,3 +1,6 @@
+// EXPECT-ERROR-GCC: error: no matching function [^\n]*std::generator<int>::promise_type::await_transform\(
+// EXPECT-ERROR-CLANG: error: attempt to use a deleted function
+// EXPECT-ERROR-CLANG: \bawait_transform\(\) = delete
 // [coro.generator.promise]: promise_type declares `void await_transform() = delete;`, so a
 // co_await expression in a generator coroutine is ill-formed ([expr.await]/3.2: the
 // await_transform lookup finds a declaration, and the call is ill-formed).

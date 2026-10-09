@@ -1,3 +1,6 @@
+// Libycxx performance policy: N ceil(log2 N) comparisons for the fixed merge workloads.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [alg.merge]: inplace_merge "Merges two sorted consecutive ranges [first, middle) and
 // [middle, last), putting the result of the merge into the range [first, last). The
 // resulting range is sorted with respect to comp and proj." "Remarks: Stable." Bidirectional
@@ -72,10 +75,18 @@ int main() {
       std::stable_sort(big, big + mid);
       std::stable_sort(big + mid, big + 2000);
       for (int i = 0; i < 2000; ++i) big[i].id = i;
+      int key_for_id[2000];
+      for (int i = 0; i < 2000; ++i) key_for_id[i] = big[i].key;
       int comps = 0, projs = 0;
       std::ranges::inplace_merge(big, big + mid, [&comps](int x, int y) { ++comps; return x < y; },
                                  [&projs](const KV& v) { ++projs; return v.key; });
       CHECK(stable_sorted(big, 2000));
+      bool seen[2000] = {};
+      for (const KV& e : big) {
+        CHECK(0 <= e.id && e.id < 2000 && !seen[e.id]);
+        seen[e.id] = true;
+        CHECK(e.key == key_for_id[e.id]);
+      }
       CHECK(comps <= 2000 * ceil_log2(2000));
       CHECK(projs <= 2 * comps);
     }

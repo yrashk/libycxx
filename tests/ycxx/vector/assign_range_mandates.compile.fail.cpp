@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::vector::assign_range: T\& must be assignable from the range's reference type
 // [sequence.reqmts]/61: a.assign_range(rg): "Mandates: assignable_from<T&,
 // ranges::range_reference_t<R>> is modeled." Here the range's elements are convertible to T
 // (so R is a container-compatible-range<T> and the call is not rejected by a constraint) but

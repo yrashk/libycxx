@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/span/last_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "span.sub"
+  ],
+  "normative_text": {
+    "span.sub": "23.7.2.2.4 Subviews [span.sub]\n\ud83d\udd17\ntemplate<size_t Count> constexpr span<element_type, Count> first() const;\n1\n#\nMandates: Count <= Extent is true.\n2\n#\nHardened preconditions: Count <= size() is true.\n3\n#\nEffects: Equivalent to: return R(data(), Count);\nwhere R is the return type.\n\ud83d\udd17\ntemplate<size_t Count> constexpr span<element_type, Count> last() const;\n4\n#\nMandates: Count <= Extent is true.\n5\n#\nHardened preconditions: Count <= size() is true.\n6\n#\nEffects: Equivalent to: return R(data() + (size() - Count), Count);\nwhere R is the return type.\n\ud83d\udd17\ntemplate<size_t Offset, size_t Count = dynamic_extent>\n  constexpr span<element_type, see below> subspan() const;\n7\n#\nMandates: Offset <= Extent && (Count == dynamic_extent || Count <= Extent - Offset)\nis true.\n8\n#\nHardened preconditions: Offset <= size() && (Count == dynamic_extent || Count <= size() - Offset)\nis true.\n9\n#\nEffects: Equivalent to:\nreturn span<ElementType, see below>(\n  data() + Offset, Count != dynamic_extent ? Count : size() - Offset);\n10\n#\nRemarks: The second template argument of the returned span type is:\nCount != dynamic_extent ? Count\n                        : (Extent != dynamic_extent ? Extent - Offset\n                                                    : dynamic_extent)\n\ud83d\udd17\nconstexpr span<element_type, dynamic_extent> first(size_type count) const;\n11\n#\nHardened preconditions: count <= size() is true.\n12\n#\nEffects: Equivalent to: return R(data(), count);\nwhere R is the return type.\n\ud83d\udd17\nconstexpr span<element_type, dynamic_extent> last(size_type count) const;\n13\n#\nHardened preconditions: count <= size() is true.\n14\n#\nEffects: Equivalent to: return R(data() + (size() - count), count);\nwhere R is the return type.\n\ud83d\udd17\nconstexpr span<element_type, dynamic_extent> subspan(\n  size_type offset, size_type count = dynamic_extent) const;\n15\n#\nHardened preconditions: offset <= size() && (count == dynamic_extent || count <= size() - offset)\nis true.\n16\n#\nEffects: Equivalent to:\nreturn R(data() + offset, count == dynamic_extent ? size() - offset : count);\nwhere R is the return type.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::span::last: Count > Extent"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [span.sub]/4: last<Count>(): \"Mandates: Count <= Extent is true.\"\n #include <span>\n \n-void f(std::span<int, 2> s) { (void)s.last<3>(); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/last_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '3UL <= 2UL': span<T, N>::last<Count>(): Count out of range"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/last_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__last_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

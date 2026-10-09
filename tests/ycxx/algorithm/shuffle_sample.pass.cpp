@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [alg.random.shuffle]: shuffle "Permutes the elements in the range [first, last)"; the
 // result is a permutation; "Complexity: Exactly (last - first) - 1 swaps"; ranges::shuffle
 // returns last; g is the source of randomness. [alg.random.sample]: "Copies min(last - first,
@@ -59,6 +65,7 @@ int main() {
   for (int t = 0; t < 600; ++t) {
     int s[3] = {0, 1, 2};
     std::shuffle(s, s + 3, g);
+    CHECK(is_perm_of_iota(s, 3));
     perms[s[0]][s[1]][s[2]] = true;
   }
   int distinct = 0;
@@ -74,7 +81,7 @@ int main() {
   int* e = std::sample(pop, pop + 20, out, 7, g);
   CHECK(e == out + 7);
   for (int i = 0; i < 7; ++i) {
-    CHECK(out[i] % 3 == 0 && out[i] < 60);
+    CHECK(0 <= out[i] && out[i] % 3 == 0 && out[i] < 60);
     if (i) CHECK(out[i - 1] < out[i]);  // stable: increasing like the population
   }
   e = std::sample(pop, pop + 20, out, 100, g);
@@ -86,7 +93,12 @@ int main() {
   int out2[5] = {};
   int* e2 = std::sample(InputIter<int>(pop), InputIter<int>(pop + 20), out2, 5L, g);
   CHECK(e2 == out2 + 5);
-  for (int i = 0; i < 5; ++i) CHECK(out2[i] % 3 == 0);
+  bool selected[20] = {};
+  for (int i = 0; i < 5; ++i) {
+    CHECK(0 <= out2[i] && out2[i] < 60 && out2[i] % 3 == 0);
+    CHECK(!selected[out2[i] / 3]);
+    selected[out2[i] / 3] = true;
+  }
 
   // ranges::sample
   int out3[4] = {};
@@ -101,6 +113,7 @@ int main() {
   for (int t = 0; t < 200; ++t) {
     int one;
     std::sample(pop, pop + 20, &one, 1, g);
+    CHECK(0 <= one && one < 60 && one % 3 == 0);
     chosen[one / 3] = true;
   }
   for (bool c : chosen) CHECK(c);

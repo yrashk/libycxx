@@ -1455,7 +1455,8 @@
       "changes": "Use std::lock for final six-mutex release verification; retain mixed types, reversed/rotated orders and overlapping contention.",
       "boundary_investigation": "Reviewed lock algorithm rollback and complete 4*3000 counter stress, recursive subset and unique_lock ownership checks. No actual defect found; all libraries pass.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "21c18c48fbec7f495ebfe9aa8b9d55f06f73b9a6"
     },
     {
       "id": "C31",
@@ -1473,7 +1474,7 @@
       ],
       "remedy": "Accept either failure index for real mutexes; use the Spy to verify exact traversal order.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1505,7 +1506,12 @@
           "exit": 0,
           "log": "build/test-logs/own-audit/C31-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "thread.lock.algorithm/2-3 prescribes traversal order and rollback, but real y.try_lock may fail spuriously under mutex.general/15 before reaching held x.",
+      "changes": "Accept index 0 or 1 for real mutexes; additionally block-lock y to establish prefix rollback. Keep exact Spy traversal/throwing rollback checks.",
+      "boundary_investigation": "Reviewed complete Spy and opposite-order real mutex fixtures; added prefix-release boundary and preserved exact deterministic failure-index oracle. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C11",

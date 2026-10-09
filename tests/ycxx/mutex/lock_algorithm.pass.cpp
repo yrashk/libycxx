@@ -93,7 +93,9 @@ int main() {
   x.lock();
   int r = 0;
   std::thread([&] { r = std::try_lock(y, x); }).join();
-  CHECK(r == 1);  // x held elsewhere
+  CHECK(r == 0 || r == 1);  // y may fail spuriously; x is held elsewhere
+  y.lock();  // any acquired prefix must have been released
+  y.unlock();
   x.unlock();
   return 0;
 }

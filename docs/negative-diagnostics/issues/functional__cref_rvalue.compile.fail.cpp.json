@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/functional/cref_rvalue.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "functional.syn"
+  ],
+  "normative_text": {
+    "functional.syn": "22.10.2 Header <functional> synopsis [functional.syn]\n'>\ud83d\udd17\n#include <initializer_list>     // see [initializer.list.syn]\n#include <typeinfo>             // see [typeinfo.syn]\nnamespace std {\n  // [func.invoke], invoke\n  template<class F, class... Args>\n    constexpr invoke_result_t<F, Args...> invoke(F&& f, Args&&... args)             // freestanding\n      noexcept(is_nothrow_invocable_v<F, Args...>);\n  template<class R, class F, class... Args>\n    constexpr R invoke_r(F&& f, Args&&... args)                                     // freestanding\n      noexcept(is_nothrow_invocable_r_v<R, F, Args...>);\n  // [refwrap], reference_wrapper\n  template<class T> class reference_wrapper;                                        // freestanding\n  template<class T> constexpr reference_wrapper<T> ref(T&) noexcept;                // freestanding\n  template<class T> constexpr reference_wrapper<const T> cref(const T&) noexcept;   // freestanding\n  template<class T> void ref(const T&&) = delete;                                   // freestanding\n  template<class T> void cref(const T&&) = delete;                                  // freestanding\n  template<class T>\n    constexpr reference_wrapper<T> ref(reference_wrapper<T>) noexcept;              // freestanding\n  template<class T>\n    constexpr reference_wrapper<const T> cref(reference_wrapper<T>) noexcept;       // freestanding\n  // [refwrap.common.ref], common_reference related specializations\n  template<class R, class T, template<class> class RQual, template<class> class TQual>\n    requires see below\n  struct basic_common_reference<R, T, RQual, TQual>;\n  template<class T, class R, template<class> class TQual, template<class> class RQual>\n    requires see below\n  struct basic_common_reference<T, R, TQual, RQual>;\n  // [arithmetic.operations], arithmetic operations\n  template<class T = void> struct plus;                                             // freestanding\n  template<class T = void> struct minus;                                            // freestanding\n  template<class T = void> struct multiplies;                                       // freestanding\n  template<class T = void> struct divides;                                          // freestanding\n  template<class T = void> struct modulus;                                          // freestanding\n  template<class T = void> struct negate;                                           // freestanding\n  template<> struct plus<void>;                                                     // freestanding\n  template<> struct minus<void>;                                                    // freestanding\n  template<> struct multiplies<void>;                                               // freestanding\n  template<> struct divides<void>;                                                  // freestanding\n  template<> struct modulus<void>;                                                  // freestanding\n  template<> struct negate<void>;                                                   // freestanding\n  // [comparisons], comparisons\n  template<class T = void> struct equal_to;                                         // freestanding\n  template<class T = void> struct not_equal_to;                                     // freestanding\n  template<class T = void> struct greater;                                          // freestanding\n  template<class T = void> struct less;                                             // freestanding\n  template<class T = void> struct greater_equal;                                    // freestanding\n  template<class T = void> struct less_equal;                                       // freestanding\n  template<> struct equal_to<void>;                                                 // freestanding\n  template<> struct not_equal_to<void>;                                             // freestanding\n  template<> struct greater<void>;                                                  // freestanding\n  template<> struct less<void>;                                                     // freestanding\n  template<> struct greater_equal<void>;                                            // freestanding\n  template<> struct less_equal<void>;                                               // freestanding\n  // [comparisons.three.way], class compare_three_way\n  struct compare_three_way;                                                         // freestanding\n  // [logical.operations], logical operations\n  template<class T = void> struct logical_and;                                      // freestanding\n  template<class T = void> struct logical_or;                                       // freestanding\n  template<class T = void> struct logical_not;                                      // freestanding\n  template<> struct logical_and<void>;                                              // freestanding\n  template<> struct logical_or<void>;                                               // freestanding\n  template<> struct logical_not<void>;                                              // freestanding\n  // [bitwise.operations], bitwise operations\n  template<class T = void> struct bit_and;                                          // freestanding\n  template<class T = void> struct bit_or;                                           // freestanding\n  template<class T = void> struct bit_xor;                                          // freestanding\n  template<class T = void> struct bit_not;                                          // freestanding\n  template<> struct bit_and<void>;                                                  // freestanding\n  template<> struct bit_or<void>;                                                   // freestanding\n  template<> struct bit_xor<void>;                                                  // freestanding\n  template<> struct bit_not<void>;                                                  // freestanding\n  // [func.identity], identity\n  struct identity;                                                                  // freestanding\n  // [func.not.fn], function template not_fn\n  template<class F> constexpr unspecified not_fn(F&& f);                            // freestanding\n  template<auto f> constexpr unspecified not_fn() noexcept;                         // freestanding\n  // [func.bind.partial], function templates bind_front and bind_back\n  template<class F, class... Args>\n    constexpr unspecified bind_front(F&&, Args&&...);                               // freestanding\n  template<auto f, class... Args>\n    constexpr unspecified bind_front(Args&&...);                                    // freestanding\n  template<class F, class... Args>\n    constexpr unspecified bind_back(F&&, Args&&...);                                // freestanding\n  template<auto f, class... Args>\n    constexpr unspecified bind_back(Args&&...);                                     // freestanding\n  // [func.bind], bind\n  template<class T> struct is_bind_expression;                                      // freestanding\n  template<class T>\n    constexpr bool is_bind_expression_v =                                           // freestanding\n      is_bind_expression<T>::value;\n  template<class T> struct is_placeholder;                                          // freestanding\n  template<class T>\n    constexpr int is_placeholder_v =                                                // freestanding\n      is_placeholder<T>::value;\n  template<class F, class... BoundArgs>\n    constexpr unspecified bind(F&&, BoundArgs&&...);                                // freestanding\n  template<class R, class F, class... BoundArgs>\n    constexpr unspecified bind(F&&, BoundArgs&&...);                                // freestanding\n  namespace placeholders {\n    // M is the implementation-defined number of placeholders\n    see below _1;                                                                   // freestanding\n    see below _2;                                                                   // freestanding\n               \u22ee\n    see below _M;                                                                   // freestanding\n  }\n  // [func.memfn], member function adaptors\n  template<class R, class T>\n    constexpr unspecified mem_fn(R T::*) noexcept;                                  // freestanding\n  // [func.wrap], polymorphic function wrappers\n  // [func.wrap.badcall], class bad_function_call\n  class bad_function_call;\n  // [func.wrap.func], class template function\n  template<class> class function;       // not defined\n  template<class R, class... ArgTypes> class function<R(ArgTypes...)>;\n  // [func.wrap.func.alg], function specialized algorithms\n  template<class R, class... ArgTypes>\n    void swap(function<R(ArgTypes...)>&, function<R(ArgTypes...)>&) noexcept;\n  // [func.wrap.func.nullptr], function null pointer comparison operator functions\n  template<class R, class... ArgTypes>\n    bool operator==(const function<R(ArgTypes...)>&, nullptr_t) noexcept;\n  // [func.wrap.move], move-only wrapper\n  template<class... S> class move_only_function;                        // not defined\n  template<class R, class... ArgTypes>\n    class move_only_function<R(ArgTypes...) cv ref noexcept(noex)>;     // see below\n  // [func.wrap.copy], copyable wrapper\n  template<class... S> class copyable_function;                         // not defined\n  template<class R, class... ArgTypes>\n    class copyable_function<R(ArgTypes...) cv ref noexcept(noex)>;      // see below\n  // [func.wrap.ref], non-owning wrapper\n  template<class... S> class function_ref;                              // freestanding, not defined\n  template<class R, class... ArgTypes>\n    class function_ref<R(ArgTypes...) cv noexcept(noex)>;               // freestanding, see below\n  // [func.search], searchers\n  template<class ForwardIterator1, class BinaryPredicate = equal_to<>>\n    class default_searcher;                                                         // freestanding\n  template<class RandomAccessIterator,\n           class Hash = hash<typename iterator_traits<RandomAccessIterator>::value_type>,\n           class BinaryPredicate = equal_to<>>\n    class boyer_moore_searcher;\n  template<class RandomAccessIterator,\n           class Hash = hash<typename iterator_traits<RandomAccessIterator>::value_type>,\n           class BinaryPredicate = equal_to<>>\n    class boyer_moore_horspool_searcher;\n  // [unord.hash], class template hash\n  template<class T>\n    struct hash;                                                                    // freestanding\n  namespace ranges {\n    // [range.cmp], concept-constrained comparisons\n    struct equal_to;                                                                // freestanding\n    struct not_equal_to;                                                            // freestanding\n    struct greater;                                                                 // freestanding\n    struct less;                                                                    // freestanding\n    struct greater_equal;                                                           // freestanding\n    struct less_equal;                                                              // freestanding\n  }\n  template<class Fn, class... Args>\n    concept callable =                                                  // exposition only\n      requires (Fn&& fn, Args&&... args) {\n        std::forward<Fn>(fn)(std::forward<Args>(args)...);\n      };\n  template<class Fn, class... Args>\n    concept nothrow-callable =                                          // exposition only\n      callable<Fn, Args...> &&\n      requires (Fn&& fn, Args&&... args) {\n        { std::forward<Fn>(fn)(std::forward<Args>(args)...) } noexcept;\n      };\n  template<class Fn, class... Args>\n    using call-result-t = decltype(declval<Fn>()(declval<Args>()...));  // exposition only\n  template<const auto& T>\n    using decayed-typeof = decltype(auto(T));                           // exposition only\n}\n1\n#\n[Example\u00a01:\u2002If a C++ program wants to have a by-element addition of two vectors a\nand b containing double and put the result into a,\nit can do:\ntransform(a.begin(), a.end(), b.begin(), a.begin(), plus<double>());\n \u2014\u00a0end example]\n2\n#\n[Example\u00a02:\u2002To negate every element of a:\ntransform(a.begin(), a.end(), a.begin(), negate<double>());\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::cref\\(const _Tp&&\\)"
+    ],
+    "clang": [
+      "error: call to deleted function 'cref'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [functional.syn]: \"template<class T> void cref(const T&&) = delete;\"\n #include <functional>\n \n-auto r = std::cref(42);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/cref_rvalue.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted function 'cref'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/cref_rvalue.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__cref_rvalue.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'void std::cref(const _Tp&&) [with _Tp = int]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,88 @@
+{
+  "test": "tests/ycxx/variant/assign_converting_ambiguous.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.assign"
+  ],
+  "normative_text": {
+    "variant.assign": "22.6.3.4 Assignment [variant.assign]\n\ud83d\udd17\nconstexpr variant& operator=(const variant& rhs);\n1\n#\nLet j be rhs.index().\n2\n#\nEffects: (2.1)\nIf neither *this nor rhs holds a value, there is no effect.\n(2.2)\nOtherwise, if *this holds a value but rhs does not, destroys the value\ncontained in *this and sets *this to not hold a value.\n(2.3)\nOtherwise, if index() == j, assigns the value contained in rhs\nto the value contained in *this.\n(2.4)\nOtherwise, if either is_nothrow_copy_constructible_v<Tj>\nis true or\nis_nothrow_move_constructible_v<Tj> is false,\nequivalent to emplace<j>(GET<j>(rhs)).\n(2.5)\nOtherwise, equivalent to operator=(variant(rhs)).\n3\n#\nPostconditions: index() == rhs.index().\n4\n#\nReturns: *this.\n5\n#\nRemarks: This operator is defined as deleted unless\nis_copy_constructible_v<Ti> &&\nis_copy_assignable_v<Ti>\nis true for all i.\n If is_trivially_copy_constructible_v<Ti> &&\nis_trivially_copy_assignable_v<Ti> &&\nis_trivially_destructible_v<Ti>\nis true for all i, this assignment operator is trivial.\n\ud83d\udd17\nconstexpr variant& operator=(variant&& rhs) noexcept(see below);\n6\n#\nLet j be rhs.index().\n7\n#\nConstraints: is_move_constructible_v<Ti> &&\nis_move_assignable_v<Ti> is\ntrue for all i.\n8\n#\nEffects: (8.1)\nIf neither *this nor rhs holds a value, there is no effect.\n(8.2)\nOtherwise, if *this holds a value but rhs does not, destroys the value\ncontained in *this and sets *this to not hold a value.\n(8.3)\nOtherwise, if index() == j, assigns GET<j>(std\u200b::\u200bmove(rhs)) to\nthe value contained in *this.\n(8.4)\nOtherwise, equivalent to emplace<j>(GET<j>(std\u200b::\u200bmove(rhs))).\n9\n#\nReturns: *this.\n10\n#\nRemarks: If is_trivially_move_constructible_v<Ti> &&\nis_trivially_move_assignable_v<Ti> &&\nis_trivially_destructible_v<Ti>\nis true for all i, this assignment operator is trivial.\n The exception specification is equivalent to\nis_nothrow_move_constructible_v<Ti> && is_nothrow_move_assignable_v<Ti> for all i.\n (10.1)\nIf an exception is thrown during the call to Tj's move construction\n(with j being rhs.index()), the variant will hold no value.\n(10.2)\nIf an exception is thrown during the call to Tj's move assignment,\nthe state of the contained value is as defined by the exception safety\nguarantee of Tj's move assignment; index() will be j.\n\ud83d\udd17\ntemplate<class T> constexpr variant& operator=(T&& t) noexcept(see below);\n11\n#\nLet Tj be a type that is determined as follows:\nbuild an imaginary function FUN(Ti)\nfor each alternative type Ti\nfor which Ti x[] = {std\u200b::\u200bforward<T>(t)};\nis well-formed for some invented variable x.\n The overload FUN(Tj) selected by overload\nresolution for the expression FUN(std\u200b::\u200bforward<T>(\u200bt)) defines\nthe alternative Tj which is the type of the contained value after\nassignment.\n12\n#\nConstraints: (12.1)\nis_same_v<remove_cvref_t<T>, variant> is false,\n(12.2)\nis_assignable_v<Tj&, T> && is_constructible_v<Tj, T>\nis true, and\n(12.3)\nthe expression FUN(std\u200b::\u200bforward<T>(t))\n(with FUN being the above-mentioned set\nof imaginary functions) is well-formed. [Note\u00a01:\u2002variant<string, string> v;\nv = \"abc\";\nis ill-formed, as both alternative types have an equally viable constructor\nfor the argument.\n \u2014\u00a0end note]\n13\n#\nEffects: (13.1)\nIf *this holds a Tj, assigns std\u200b::\u200bforward<T>(t) to\nthe value contained in *this.\n(13.2)\nOtherwise, if is_nothrow_constructible_v<Tj, T> ||\n!is_nothrow_move_constructible_v<Tj> is true,\nequivalent to emplace<j>(std\u200b::\u200bforward<T>(t)).\n(13.3)\nOtherwise, equivalent to emplace<j>(Tj(std\u200b::\u200bforward<T>(t))).\n14\n#\nPostconditions: holds_alternative<Tj>(*this) is true, with Tj\nselected by the imaginary function overload resolution described above.\n15\n#\nReturns: *this.\n16\n#\nRemarks: The exception specification is equivalent to:\nis_nothrow_assignable_v<Tj&, T> && is_nothrow_constructible_v<Tj, T>\n(16.1)\nIf an exception is thrown during the assignment of std\u200b::\u200bforward<T>(t)\nto the value contained in *this, the state of the contained value and\nt are as defined by the exception safety guarantee of the assignment\nexpression; valueless_by_exception() will be false.\n(16.2)\nIf an exception is thrown during the initialization of the contained value,\nthe variant object is permitted to not hold a value.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no match for 'operator=' \\(operand types are 'std::variant<S, S>'"
+    ],
+    "clang": [
+      "error: no viable overloaded '='",
+      "note: candidate template ignored: substitution failure[^\\n]*call to 'fun' is ambiguous"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,5 +6,4 @@\n \n void f() {\n   std::variant<S, S> v;\n-  v = \"abc\";\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/assign_converting_ambiguous.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable overloaded '='"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/assign_converting_ambiguous.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__assign_converting_ambiguous.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no match for 'operator=' (operand types are 'std::variant<S, S>' and 'const char [4]')"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

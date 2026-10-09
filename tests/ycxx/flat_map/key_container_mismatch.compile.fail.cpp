@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*flat_map: Key must be KeyContainer::value_type \(\[flat\.map\.overview\]/8\)
 // [flat.map.overview]/8: "The program is ill-formed if Key is not the same type as
 // KeyContainer::value_type or T is not the same type as MappedContainer::value_type."
 // Here KeyContainer::value_type is long for Key int (the same program with vector<int>

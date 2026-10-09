@@ -484,6 +484,17 @@ if(YCXX_FREESTANDING_RUNTIME)
     # One allocation function per file; no zero fill of the charconv work buffers (see above).
     $<$<CXX_COMPILER_ID:GNU>:-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized>
     PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-ffreestanding>)
+  if(CMAKE_CXX_COMPILER_TARGET)
+    set(_ycxx_freestanding_target "${CMAKE_CXX_COMPILER_TARGET}")
+  else()
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpmachine
+                    OUTPUT_VARIABLE _ycxx_freestanding_target OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+  if(_ycxx_freestanding_target MATCHES "^(aarch64|arm64)")
+      # Outline atomics probe libc for LSE support; neither the bare-metal runtime nor
+      # its consumers have libc. Use the base ISA's inline atomics in both.
+      target_compile_options(ycxx_freestanding PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-mno-outline-atomics>)
+  endif()
   add_library(ycxx::freestanding ALIAS ycxx_freestanding)
 endif()
 

@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/functional/copyable_function_call_const.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.copy.class"
+  ],
+  "normative_text": {
+    "func.wrap.copy.class": "22.10.17.5.2 Class template copyable_function [func.wrap.copy.class]\n\ud83d\udd17\nnamespace std {\n  template<class R, class... ArgTypes>\n  class copyable_function<R(ArgTypes...) cv ref noexcept(noex)> {\n  public:\n    using result_type = R;\n    // [func.wrap.copy.ctor], constructors, assignments, and destructor\n    copyable_function() noexcept;\n    copyable_function(nullptr_t) noexcept;\n    copyable_function(const copyable_function&);\n    copyable_function(copyable_function&&) noexcept;\n    template<class F> copyable_function(F&&);\n    template<class T, class... Args>\n      explicit copyable_function(in_place_type_t<T>, Args&&...);\n    template<class T, class U, class... Args>\n      explicit copyable_function(in_place_type_t<T>, initializer_list<U>, Args&&...);\n    copyable_function& operator=(const copyable_function&);\n    copyable_function& operator=(copyable_function&&);\n    copyable_function& operator=(nullptr_t) noexcept;\n    template<class F> copyable_function& operator=(F&&);\n    ~copyable_function();\n    // [func.wrap.copy.inv], invocation\n    explicit operator bool() const noexcept;\n    R operator()(ArgTypes...) cv ref noexcept(noex);\n    // [func.wrap.copy.util], utility\n    void swap(copyable_function&) noexcept;\n    friend void swap(copyable_function&, copyable_function&) noexcept;\n    friend bool operator==(const copyable_function&, nullptr_t) noexcept;\n  private:\n    template<class VT>\n      static constexpr bool is-callable-from = see below;       // exposition only\n  };\n}\n1\n#\nThe copyable_function class template provides polymorphic wrappers\nthat generalize the notion of a callable object ([func.def]).\n These wrappers can store, copy, move, and call arbitrary callable objects,\ngiven a call signature.\n2\n#\nRecommended practice: Implementations should avoid the use of dynamically allocated memory\nfor a small contained value.\n [Note\u00a01:\u2002Such small-object optimization can only be applied to a type T\nfor which is_nothrow_move_constructible_v<T> is true.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no match for call[^\\n]*std::copyable_function<"
+    ],
+    "clang": [
+      "error: no matching function for call to object[^\\n]*std::copyable_function<"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n #include <functional>\n #include <utility>\n \n-int f(const std::copyable_function<int(int)>& c) { return c(1); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/copyable_function_call_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no template named 'copyable_function' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/copyable_function_call_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_call_const.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no match for call to '(const std::copyable_function<int(int)>) (int)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: assignment of read-only location [^\n]*operator\*
+// EXPECT-ERROR-CLANG: error: cannot assign to return value because function 'operator\*' returns a const value
 // [unord.req.general]/8: "For unordered containers where the value type is the same as the
 // key type, both iterator and const_iterator are constant iterators." Assigning through an
 // unordered_set::iterator is therefore ill-formed.

@@ -21,3 +21,28 @@ used for reference diagnostics. Upstream suites are available under ~/.local/sha
 Four random-engine/distribution tests overlap a separate semantic investigation. Their
 supported-type policy remains that investigation's responsibility; any expectation here must
 be documented as an implementation rejection if universal ill-formedness is not established.
+
+Completed: all 422 baseline tests, with 422 separate test commits. `commits.json` maps each test
+to its full SHA; `issues/` contains its draft clauses, changes, own-harness validation, causal
+controls and reference commands. `summary.json` records final counts and exact aggregate commands.
+`reference-comparison.json` classifies all installed-library observations, and
+`upstream-comparison.json` records the 43 COUNTERPART mappings and original upstream runs.
+
+The final 472-test negative suite has no failures: GCC 470 PASS / 2 UNSUPPORTED, Clang 469 PASS /
+3 UNSUPPORTED. The two Linux-only policy cases are `depr/vol_store_add_big` and
+`transitive_includes/strict/string_eof`; Clang also lacks the extended float32 type needed for
+`cmath/nexttoward_extended`. The assigned queue is 422 PASS on GCC, and 421 PASS / 1 UNSUPPORTED
+on Clang. There are no pending diagnostic repairs. All 472 files have valid, nonempty patterns
+applicable to both compilers; prerequisites decide whether a configuration can execute a test.
+
+The pair constructor fix passed 100 own utility/tuple tests on each compiler and the selected
+upstream constructor tests. The final library builds passed on both compilers. Eight harness
+regressions passed. The mapped upstream runs reported libstdc++ 2 PASS / 14 UNSUPPORTED and
+libc++ 18 PASS / 20 UNSUPPORTED (warning-only tests, existing documented divergences, and older
+language profiles); these skips are individually recorded and are not claimed as validation.
+
+The four overlapping random tests have localized diagnostic-only commits. Their source policy
+assertions are left for the separate semantic investigation. The 66 pre-existing deprecation
+tests remain explicitly documented libycxx attribute policy tests: Annex D permits those
+attributes, and `-Werror=deprecated-declarations` makes their warnings compilation failures.
+Installed reference feature gaps and observed acceptance differences did not weaken the oracles.

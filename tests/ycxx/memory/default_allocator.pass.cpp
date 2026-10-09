@@ -56,7 +56,16 @@ int main() {
   std::allocator<double> ad;
   double* x = ad.allocate(10);
   double* y = ad.allocate(10);
-  CHECK(x + 10 <= y || y + 10 <= x);
+  for (int i = 0; i < 10; ++i) {
+    std::construct_at(x + i, double(i));
+    std::construct_at(y + i, double(100 + i));
+  }
+  for (int i = 0; i < 10; ++i) {
+    CHECK(x[i] == i && y[i] == 100 + i);
+    for (int j = 0; j < 10; ++j) CHECK(x + i != y + j);
+  }
+  std::destroy(y, y + 10);
+  std::destroy(x, x + 10);
   ad.deallocate(y, 10);
   ad.deallocate(x, 10);
   return 0;

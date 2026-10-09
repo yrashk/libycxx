@@ -280,7 +280,8 @@
       "changes": "Check returned iterators and <= N calls, duplicate first-match and zero calls on empty input.",
       "boundary_investigation": "Reviewed find and ranges projection paths; duplicate-match and empty boundary checks pass. No actual library defect found. libc++ lacks C++26 braced value default template parameter.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "04ab3703ca9006739d39fe76c4e66a5c04ddb3b9"
     },
     {
       "id": "C09",
@@ -298,7 +299,44 @@
       ],
       "remedy": "Compare each pair of live element pointers for inequality, or explicitly make this a platform-address test.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc memory/default_allocator.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C09', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang memory/default_allocator.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C09', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc memory/default_allocator.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C09', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang memory/default_allocator.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C09', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -L/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Wl,-rpath,/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Itests/ycxx/support tests/ycxx/memory/default_allocator.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C09-libcxx.exe\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C09', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C09-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "expr.rel/4-5 leaves relational comparison between unequal unrelated-array pointers unspecified. allocator.members requires distinct live storage; element pointer equality is specified.",
+      "changes": "Construct both arrays, compare every live element pointer pair for inequality, verify independent values, destroy then deallocate.",
+      "boundary_investigation": "Reviewed allocation alignment/constexpr coverage and runtime allocation path; added interleaved contents catch overlap. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C10",

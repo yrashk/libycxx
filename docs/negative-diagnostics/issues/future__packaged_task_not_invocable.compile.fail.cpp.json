@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/future/packaged_task_not_invocable.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "futures.task.members"
+  ],
+  "normative_text": {
+    "futures.task.members": "32.10.10.2 Member functions [futures.task.members]\n\ud83d\udd17\npackaged_task() noexcept;\n1\n#\nEffects: The object has no shared state and no stored task.\n\ud83d\udd17\ntemplate<class F>\n  explicit packaged_task(F&& f);\n2\n#\nEffects: Equivalent to\npackaged_task(allocator_arg, allocator<int>(), std\u200b::\u200bforward<F>(f)).\n\ud83d\udd17\ntemplate<class F, class Allocator>\n  explicit packaged_task(allocator_arg_t, const Allocator& a, F&& f);\n3\n#\nConstraints: remove_cvref_t<F>\nis not the same type as packaged_task<R(ArgTypes...)>.\n4\n#\nMandates: is_invocable_r_v<R, decay_t<F>&, ArgTypes...> is true.\n5\n#\nPreconditions: Allocator meets the Cpp17Allocator requirements ([allocator.requirements.general]).\n6\n#\nEffects: Let A2 be\nallocator_traits<Allocator>\u200b::\u200brebind_alloc<unspecified>\nand let a2 be an object of type A2 initialized with\nA2(a).\n Constructs a new packaged_task object with\na stored task of type decay_t<F> and a shared state.\n Initializes the object's stored task with std\u200b::\u200bforward<F>(f).\n Uses a2 to allocate storage for the shared state and stores a copy\nof a2 in the shared state.\n7\n#\nThrows: Any exceptions thrown by the initialization of the stored task.\n If storage for the shared state cannot be allocated, any exception thrown by\nA2\u200b::\u200ballocate.\n\ud83d\udd17\ntemplate<class F> packaged_task(F) -> packaged_task<see below>;\n8\n#\nConstraints: &F\u200b::\u200boperator() is well-formed when\ntreated as an unevaluated operand ([expr.context]) and either\n(8.1)\nF\u200b::\u200boperator() is a non-static member function and\ndecltype(\u200b&F\u200b::\u200boperator()) is either of the form\nR(G\u200b::\u200b*)(A...) cv &opt noexceptopt\nor of the form\nR(*)(G, A...) noexceptopt\nfor a type G, or\n(8.2)\nF\u200b::\u200boperator() is a static member function and\ndecltype(&F\u200b::\u200boperator()) is of the form\nR(*)(A...) noexceptopt.\n9\n#\nRemarks: The deduced type is packaged_task<R(A...)>.\n\ud83d\udd17\npackaged_task(packaged_task&& rhs) noexcept;\n10\n#\nEffects: Transfers ownership of\nrhs's shared state to *this, leaving rhs with no\nshared state.\n Moves the stored task from rhs to *this.\n11\n#\nPostconditions: rhs has no shared state.\n\ud83d\udd17\npackaged_task& operator=(packaged_task&& rhs) noexcept;\n12\n#\nEffects: Equivalent to\npackaged_task(std\u200b::\u200bmove(rhs)).swap(*this).\n13\n#\nReturns: *this.\n\ud83d\udd17\n~packaged_task();\n14\n#\nEffects: Abandons any shared state ([futures.state]).\n\ud83d\udd17\nvoid swap(packaged_task& other) noexcept;\n15\n#\nEffects: Exchanges the shared states and stored tasks of *this and other.\n16\n#\nPostconditions: *this has the same shared state\nand stored task (if any) as other\nprior to the call to swap.\n other has the same shared state\nand stored task (if any)\nas *this prior to the call to swap.\n\ud83d\udd17\nbool valid() const noexcept;\n17\n#\nReturns: true only if *this has a shared state.\n\ud83d\udd17\nfuture<R> get_future();\n18\n#\nSynchronization: Calls to this function do not introduce\ndata races  ([intro.multithread]) with calls to\noperator() or\nmake_ready_at_thread_exit.\n [Note\u00a01:\u2002Such calls need not synchronize with each other.\n \u2014\u00a0end note]\n19\n#\nReturns: A future object that shares the same shared state as *this.\n20\n#\nThrows: A future_error object if an error occurs.\n21\n#\nError conditions: (21.1)\nfuture_already_retrieved if get_future has already been called on\na packaged_task object with the same shared state as *this.\n(21.2)\nno_state if *this has no shared state.\n\ud83d\udd17\nvoid operator()(ArgTypes... args);\n22\n#\nEffects: As if by INVOKE<R>(f, t1, t2, \u2026, tN) ([func.require]),\nwhere f is the\nstored task of *this and\nt1, t2, \u2026, tN are the values in args....\n If the task returns normally,\nthe return value is stored as the asynchronous result in the shared state of\n*this, otherwise the exception thrown by the task is stored.\n The\nshared state of *this is made ready, and any threads blocked in a\nfunction waiting for\nthe shared state of *this to become ready are unblocked.\n23\n#\nThrows: A future_error exception object if there is no shared\nstate or the stored task has already been invoked.\n24\n#\nError conditions: (24.1)\npromise_already_satisfied if\nthe stored task has already been invoked.\n(24.2)\nno_state if *this has no shared state.\n\ud83d\udd17\nvoid make_ready_at_thread_exit(ArgTypes... args);\n25\n#\nEffects: As if by INVOKE<R>(f, t1, t2, \u2026, tN) ([func.require]),\nwhere f is the stored task and\nt1, t2, \u2026, tN are the values in args....\n If the task returns normally,\nthe return value is stored as the asynchronous result in the shared state of\n*this, otherwise the exception thrown by the task is stored.\n In either\ncase, this is done without making that state ready ([futures.state]) immediately.\n Schedules\nthe shared state to be made ready when the current thread exits,\nafter all objects with thread storage duration associated with the current thread\nhave been destroyed.\n26\n#\nThrows: future_error if an error condition occurs.\n27\n#\nError conditions: (27.1)\npromise_already_satisfied if the\nstored task has already been invoked.\n(27.2)\nno_state if *this has no shared state.\n\ud83d\udd17\nvoid reset();\n28\n#\nEffects: Equivalent to:\nif (!valid()) {\n  throw future_error(future_errc::no_state);\n}\n*this = packaged_task(allocator_arg, a, std::move(f));\nwhere\nf is the task stored in\n*this and a is the allocator stored in the shared state.\n [Note\u00a02:\u2002This constructs a new shared state for *this.\n The\nold state is abandoned ([futures.state]).\n \u2014\u00a0end note]\n29\n#\nThrows: (29.1)\nAny exception thrown by the packaged_task constructor.\n(29.2)\nfuture_error with an error condition of no_state if *this\nhas no shared state.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*packaged_task: the task is not invocable with ArgTypes returning R"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n \n struct NotInvocable {};\n void g() {\n-  std::packaged_task<int(int)> t{NotInvocable{}};\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/future/packaged_task_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to '__invoke'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/future/packaged_task_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/future__packaged_task_not_invocable.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

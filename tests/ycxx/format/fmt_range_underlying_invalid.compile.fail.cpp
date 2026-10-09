@@ -1,3 +1,6 @@
+// EXPECT-ERROR-GCC: error: uncaught exception of type 'std::format_error';[^\n]*std::format: invalid presentation type for the argument
+// EXPECT-ERROR-CLANG: error: call to consteval function [^\n]*std::basic_format_string[^\n]*is not a constant expression
+// EXPECT-ERROR-CLANG: note: in call to [^\n]*std::format: invalid presentation type for the argument
 // [format.range.formatter]/3, /9: the format-spec of a range-underlying-spec is parsed by
 // formatter<T, charT>; for T = int, "s" is not a valid type (Table 107), so "{::s}" with a
 // vector<int> is not a format string ([format.string.general]/5, [format.fmt.string]/3).

@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/functional/function_call_extra_argument.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.func.general"
+  ],
+  "normative_text": {
+    "func.wrap.func.general": "22.10.17.3.1 General [func.wrap.func.general]\n\ud83d\udd17\nnamespace std {\n  template<class R, class... ArgTypes>\n  class function<R(ArgTypes...)> {\n  public:\n    using result_type = R;\n    // [func.wrap.func.con], construct/copy/destroy\n    function() noexcept;\n    function(nullptr_t) noexcept;\n    function(const function&);\n    function(function&&) noexcept;\n    template<class F> function(F&&);\n    function& operator=(const function&);\n    function& operator=(function&&);\n    function& operator=(nullptr_t) noexcept;\n    template<class F> function& operator=(F&&);\n    template<class F> function& operator=(reference_wrapper<F>) noexcept;\n    ~function();\n    // [func.wrap.func.mod], function modifiers\n    void swap(function&) noexcept;\n    // [func.wrap.func.cap], function capacity\n    explicit operator bool() const noexcept;\n    // [func.wrap.func.inv], function invocation\n    R operator()(ArgTypes...) const;\n    // [func.wrap.func.targ], function target access\n    const type_info& target_type() const noexcept;\n    template<class T>       T* target() noexcept;\n    template<class T> const T* target() const noexcept;\n  };\n  template<class R, class... ArgTypes>\n    function(R(*)(ArgTypes...)) -> function<R(ArgTypes...)>;\n  template<class F> function(F) -> function<see below>;\n}\n1\n#\nThe function class template provides polymorphic wrappers that\ngeneralize the notion of a function pointer.\n Wrappers can store, copy,\nand call arbitrary callable objects ([func.def]), given a call\nsignature ([func.def]).\n2\n#\nThe function class template is a call\nwrapper ([func.def]) whose call signature ([func.def])\nis R(ArgTypes...).\n3\n#\n[Note\u00a01:\u2002The types deduced by the deduction guides for function\nmight change in future revisions of C++.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no match for call[^\\n]*std::function<"
+    ],
+    "clang": [
+      "error: no matching function for call to object[^\\n]*std::function<"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n #include <functional>\n #include <utility>\n \n-int f(const std::function<int(int)>& fn) { return fn(1, 2); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_call_extra_argument.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to object of type 'const std::function<int (int)>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_call_extra_argument.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_call_extra_argument.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no match for call to '(const std::function<int(int)>) (int, int)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

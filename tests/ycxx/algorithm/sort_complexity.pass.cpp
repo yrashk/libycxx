@@ -1,3 +1,6 @@
+// Libycxx performance policy: 4 N ceil(log2 N) comparisons and 8 N ceil(log2 N) projections for the fixed shapes.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [sort]/5: "Complexity: Let N be last - first. O(N log N) comparisons and projections."
 // Checked at run time on several input shapes (including ones that defeat naive pivot
 // choices) for N = 2000, with a generous constant: at most 4 N log2 N comparisons and as
@@ -28,6 +31,7 @@ int main() {
     CHECK(comps <= bound);
     CHECK(projs <= 2 * bound);
     CHECK(sorted_by(a, a + N));
+    CHECK(same_multiset(a, orig, N));
   }
   return 0;
 }

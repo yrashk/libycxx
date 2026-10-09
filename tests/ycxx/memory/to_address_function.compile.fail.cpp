@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::to_address: function pointer
 // [pointer.conversion]/1: template<class T> constexpr T* to_address(T* p) noexcept;
 // "Mandates: T is not a function type."
 #include <memory>

@@ -143,6 +143,12 @@ class YcxxFormat(lit.formats.FileBasedTest):
         lines (the command and its exit status) are left out, since the command names the test."""
         expected = [m.group(2) for m in EXPECT_ERROR.finditer(src)
                     if m.group(1) in (None, self.compiler.upper())]
+        if not expected:
+            return lit.Test.Result(lit.Test.FAIL, 'failed to compile, but no EXPECT-ERROR pattern '
+                                   f'applies to {self.compiler}\n' + out)
+        if any(not rx for rx in expected):
+            return lit.Test.Result(lit.Test.FAIL, 'EXPECT-ERROR: an empty pattern cannot identify '
+                                   'the intended diagnostic\n' + out)
         diagnostics = out.split('\n', 2)[2] if out.count('\n') >= 2 else ''
         missed = []
         for rx in expected:

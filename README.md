@@ -279,9 +279,13 @@ transcript names each regex that did not match, so a test cannot pass on an unre
 // EXPECT-ERROR-CLANG: call to deleted constructor of 'std::string'
 ```
 
+Every negative test must have a nonempty expectation applicable to the compiler running it;
+a failed compilation without one is a test failure.
+
 `// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
 it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
-`exceptions`, `rtti`. Tests that throw or catch say `// REQUIRES: exceptions`.
+`exceptions`, `rtti`, `extended-float32` (the compiler advertises `std::float32_t`).
+Tests that throw or catch say `// REQUIRES: exceptions`.
 `// MODULES: std` (or `std.compat`) compiles a test that imports the standard library modules
 (`tests/ycxx/modules`): they are built for the compiler and the test's flags (cached under the
 run's build directory) and passed with `--std-modules`; UNSUPPORTED with the compiler's reason

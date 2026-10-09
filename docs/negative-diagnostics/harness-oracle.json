@@ -1,0 +1,8 @@
+{
+  "issue": "negative compilation requires an applicable nonempty diagnostic oracle",
+  "baseline": "check_expected_errors accepted every compiler failure when the applicable expected list was empty",
+  "change": "Fail without a pattern for the current compiler, and fail empty patterns; continue requiring every applicable regex to match diagnostic output only",
+  "validation_command": "PYTHONPATH=tests:/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L python3 -m unittest ycxxlit.test_expected_errors -v",
+  "result": "8 regression tests passed",
+  "transcript": "build/test-logs/negative-diagnostics/harness-regression.log"
+}

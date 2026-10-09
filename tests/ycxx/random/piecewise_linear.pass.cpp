@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.samp.plinear]: x in [b_0, b_n) with density linear between rho_i at b_i and
 // rho_{i+1} at b_{i+1}; rho_k = w_k / S with S = 1/2 sum (w_k + w_{k+1})(b_{k+1} - b_k).
 // Defaults n = 1, rho_0 = rho_1 = 1, b = {0, 1}; the initializer_list form uses w_k = fw(b_k);
@@ -11,7 +17,7 @@ template <class D>
 void expect(const D& d, std::initializer_list<double> b, std::initializer_list<double> rho) {
   std::vector<double> iv = d.intervals(), dv = d.densities();
   CHECK(iv.size() == b.size());
-  CHECK(dv.size() >= rho.size());  // rho_0 ... rho_n are all accessible
+  CHECK(dv.size() == rho.size());  // [rand.dist.samp.plinear]: exactly rho_0 ... rho_n
   std::size_t i = 0;
   for (double x : b) CHECK(rs::near(iv[i++], x, 1e-12));
   i = 0;

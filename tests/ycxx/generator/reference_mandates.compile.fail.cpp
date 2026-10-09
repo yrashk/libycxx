@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::generator: the reference type must be a reference or a copy\-constructible cv\-unqualified object type
 // [coro.generator.class]/1.3: Mandates: reference is either a reference type, or a
 // cv-unqualified object type that models copy_constructible.
 // generator<const int, int>: reference = Ref = const int, a cv-qualified object type.

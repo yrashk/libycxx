@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: codecvt<char16_t, char, mbstate_t> is deprecated \(\[depr\.locale\.category\]\)[^\n]*W(?:error|deprecated)
 // [depr.locale.category] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

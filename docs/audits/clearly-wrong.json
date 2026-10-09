@@ -1344,7 +1344,8 @@
       "changes": "Move second real shared_lock acquisition to another thread; fall back to blocking shared_lock.lock if try fails; final exclusive lock verifies release.",
       "boundary_investigation": "Reviewed complete recursive Spy contract separately (user Lockable permits it); real-reader overlap, CTAD, fallback ownership and release pass all comparisons. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "47a9ec74cc028bfc4dd7adb8b42a4b1e1d50018f"
     },
     {
       "id": "C29",
@@ -1361,7 +1362,44 @@
       ],
       "remedy": "Use lock() to establish availability; treat the bounded retry as a policy/watchdog test.",
       "priority": 2,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/mutex_basic.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C29', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/mutex_basic.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C29', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/mutex_basic.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C29', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/mutex_basic.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C29', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/mutex/mutex_basic.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C29-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C29', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "thread.mutex.requirements.mutex.general/15 allows spurious failure and specifies no retry bound; /7-9 blocking lock guarantees acquisition.",
+      "changes": "Replace bounded retry helper with blocking lock on released mutex; retain a non-required free try with conditional unlock.",
+      "boundary_investigation": "Reviewed ownership synchronization and cross-thread held try failure; released acquisition on worker and main pass all comparisons. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C30",
@@ -1379,7 +1417,39 @@
       ],
       "remedy": "Use std::lock to verify the released locks can all be acquired.",
       "priority": 2,
-      "disposition": "pending"
+      "disposition": "pending",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/lock_many.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C30', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/lock_many.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C30', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/lock_many.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C30', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/lock_many.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C30', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/mutex/lock_many.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C30-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C30', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libcxx-clang.log"
+        }
+      ]
     },
     {
       "id": "C31",
@@ -1397,7 +1467,39 @@
       ],
       "remedy": "Accept either failure index for real mutexes; use the Spy to verify exact traversal order.",
       "priority": 2,
-      "disposition": "pending"
+      "disposition": "pending",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/lock_algorithm.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C31', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/lock_algorithm.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C31', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc mutex/lock_algorithm.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C31', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang mutex/lock_algorithm.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C31', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/mutex/lock_algorithm.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C31-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C31', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libcxx-clang.log"
+        }
+      ]
     },
     {
       "id": "C11",

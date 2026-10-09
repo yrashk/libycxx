@@ -1,0 +1,89 @@
+{
+  "test": "tests/ycxx/numeric/saturating_div_zero.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "numeric.sat.func"
+  ],
+  "normative_text": {
+    "numeric.sat.func": "26.10.17.1 Arithmetic functions [numeric.sat.func]\n1\n#\nIn the following descriptions, an arithmetic operation\nis performed as a mathematical operation with infinite range and then\nit is determined whether the mathematical result fits into the result type.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T saturating_add(T x, T y) noexcept;\n2\n#\nConstraints: T is a signed or unsigned integer type ([basic.fundamental]).\n3\n#\nReturns: If x+y is representable as a value of type T, x+y;\notherwise, either the largest or smallest representable value of type T,\nwhichever is closer to the value of x+y.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T saturating_sub(T x, T y) noexcept;\n4\n#\nConstraints: T is a signed or unsigned integer type ([basic.fundamental]).\n5\n#\nReturns: If x\u2212y is representable as a value of type T, x\u2212y;\notherwise, either the largest or smallest representable value of type T,\nwhichever is closer to the value of x\u2212y.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T saturating_mul(T x, T y) noexcept;\n6\n#\nConstraints: T is a signed or unsigned integer type ([basic.fundamental]).\n7\n#\nReturns: If x \u00d7y is representable as a value of type T, x \u00d7y;\notherwise, either the largest or smallest representable value of type T,\nwhichever is closer to the value of x \u00d7y.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T saturating_div(T x, T y) noexcept;\n8\n#\nConstraints: T is a signed or unsigned integer type ([basic.fundamental]).\n9\n#\nPreconditions: y != 0 is true.\n10\n#\nReturns: If T is a signed integer type\nand x == numeric_limits<T>\u200b::\u200bmin() && y == -1 is true,\nnumeric_limits<T>\u200b::\u200bmax(), otherwise, x / y.\n11\n#\nRemarks: A function call expression\nthat violates the precondition in the Preconditions element\nis not a core constant expression ([expr.const.core]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: call to non-'constexpr' function [^\\n]*__assertion_failed",
+      "in 'constexpr' expansion of [^\\n]*std::saturating_div: division by zero"
+    ],
+    "clang": [
+      "error: constexpr variable 'r' must be initialized by a constant expression",
+      "note: in call to [^\\n]*saturating_div: division by zero"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,8 +3,3 @@\n // not a core constant expression.\" So it cannot initialize a constexpr variable.\n #include <numeric>\n \n-constexpr int r = std::saturating_div(1, 0);\n-\n-int main() {\n-  return r;\n-}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/saturating_div_zero.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "constexpr variable 'r' must be initialized by a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/saturating_div_zero.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__saturating_div_zero.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "call to non-'constexpr' function 'void std::__glibcxx_assert_fail(const char*, int, const char*, const char*)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

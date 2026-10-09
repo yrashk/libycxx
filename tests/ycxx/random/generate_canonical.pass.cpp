@@ -1,3 +1,8 @@
+// Only the final sample-mean check is a statistical smoke test (chosen tolerance, ideal
+// independent draws, possible outliers). The C++26 arithmetic/count/rejection cases below
+// are deterministic requirements. Replay generators are arithmetic protocol probes, not
+// evidence of a random distribution; [rand.req.urng]/2 is checked through range/complexity,
+// and [rand.util.canonical]/6 explicitly conditions uniformity on uniformly distributed draws.
 // [rand.util.canonical] (C++26 wording): with r = radix, R = g.max() - g.min() + 1,
 // d = min(digits, numeric_limits<RealType>::digits), k the smallest integer with R^k >= r^d and
 // x = floor(R^k / r^d), an attempt is k invocations of g giving S = sum (g_i - g.min()) * R^i;
@@ -94,6 +99,12 @@ int main() {
       CHECK(std::generate_canonical<long double, std::numeric_limits<long double>::digits>(g) < 1.0L);
       CHECK(std::generate_canonical<float, 64>(g) < 1.0f);
     }
+  }
+  {  // d == 0: k == 0, S == 0, no draws.
+    const std::uint32_t values[] = {7};
+    g10 g(values, 1);
+    CHECK((std::generate_canonical<double, 0>(g) == 0.0));
+    CHECK(g.calls == 0);
   }
   {  // With a real engine: in [0, 1) and roughly uniform.
     std::mt19937 e(12345);

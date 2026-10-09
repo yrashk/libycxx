@@ -6,7 +6,9 @@
   "initial_state": "Clean detached HEAD, identical to baseline; no AGENTS.md found in checkout or parent directories.",
   "integration": [
     "Diagnostic-pattern chat owns EXPECT-ERROR blocks in P09 files; this chat owns semantic/type policy changes.",
-    "No test-file overlap with clearly-wrong queue; any shared helper/library edits must be noted."
+    "No test-file overlap with clearly-wrong queue; any shared helper/library edits must be noted.",
+    "Canonical repair extends include/ycxx/core/random_base.hpp accumulator to 256 bits and adds a full-width generator path. Preserve any parallel diagnostic or clearly-wrong shared-header edits; no public random type-subset changes.",
+    "Uniform integer repair independently modifies __rand_uniform_upto in include/ycxx/core/random_base.hpp; preserve both full-width repairs when integrating. Common statistical label wording corrected by af5f7cf2; independent exponential/gamma statistical label committed as 224b0542 without deciding endpoint policy."
   ],
   "issues": [
     {
@@ -39,12 +41,13 @@
       ],
       "validation": [
         "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P02 tests/ycxx/vector/range_allocations.pass.cpp: all four pass; commands/transcripts in P02/<library>/*.log.",
-        "source tools/toolchain/activate.sh; tools/ycxx-cxx gcc -Ibuild/test-logs/possibly-wrong/P02/mutation/include -Itests/ycxx/support tests/ycxx/vector/range_allocations.pass.cpp -o build/test-logs/possibly-wrong/P02/mutation/test; .../mutation/test: exit 134, detects reserved-storage reallocation."
+        "source tools/toolchain/activate.sh; tools/ycxx-cxx gcc -Ibuild/test-logs/possibly-wrong/P02/mutation/include -Itests/ycxx/support tests/ycxx/vector/range_allocations.pass.cpp -o build/test-logs/possibly-wrong/P02/mutation/test; .../mutation/test: exit 134, detects reserved-storage reallocation.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
       ],
       "negative_search": "Inspected __allocate_block, __append_counted/input, insert_range and reserve behavior, plus existing range_kinds coverage of approximately-sized hints in both directions. Added empty and exactly-full-capacity boundaries; no actual library defect found. Temporary shadow vector.hpp forces emplace_back reallocation with reserved capacity, rejected by the normative storage oracle at line 63; no library source changes.",
       "reference_comparison": "Corrected test passes GCC libstdc++ and Clang libc++; relevant upstream range constructors/insertion/reserve tests selected through suite tooling (P02/upstream-*.log).",
-      "commit": "pending commit",
-      "review": "Precommit review: policy bounds unchanged, all value assertions independent; no shared helpers or library source changes."
+      "commit": "b1520020",
+      "review": "Postcommit review: no P0-P2 findings. Upstream libc++ 4/4 pass; libstdc++ capacity 1/1 pass and from_range unsupported due inherited allocate_at_least bypassing tracker bookkeeping. No shared source integration needed."
     },
     {
       "id": "P03",
@@ -117,13 +120,28 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy and confirmed library defect",
+      "normative_review": [
+        "c7015b [sort]/3-5; [random.access.iterators]; [iterator.concept.contiguous]; [algorithms.requirements]",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Added missing multiset oracle for ranges::sort. Relevant upstream tests exposed deleted-comma rejection for valid contiguous iterators; new sort_overloaded_comma.pass.cpp fails before library fix on GCC and Clang and passes after.",
+        "Cast both loop-update operands to void in two branchless partition loops in include/ycxx/core/algo_sort.hpp; add independent valid contiguous-iterator regression with deleted comma overload."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Before: sort_overloaded_comma.pass.cpp compile fails on GCC/Clang at selected deleted comma; libstdc++/libc++ pass. After: both libycxx compilers pass new regression and original complexity test.",
+        "Affected Clang own sorting suite 14/14; upstream libc++ sorting/binary search/merge: 20 pass, 5 documented unsupported (25 selected); both previous deleted-comma failures fixed. libstdc++ relevant algorithms: 26/26 pass.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Added missing multiset oracle for ranges::sort. Relevant upstream tests exposed deleted-comma rejection for valid contiguous iterators; new sort_overloaded_comma.pass.cpp fails before library fix on GCC and Clang and passes after.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "d09674c8",
+      "review": "Postcommit review: no P0-P2 findings. Iterator meets contiguous/sortable requirements; only library changes are void casts selecting built-in comma. New .pass.cpp proves well-formed support and runtime values, not expected rejection.",
+      "integration": "include/ycxx/core/algo_sort.hpp changed only two void casts; potential shared-file overlap with clearly-wrong queue must retain both fixes."
     },
     {
       "id": "P03",
@@ -196,13 +214,23 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [lower.bound]/1-4; [upper.bound]/1-4; [alg.binary.search.general]",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed every empty, partitioned-not-sorted, duplicate, descending, heterogeneous one-direction and forward/sentinel case, and every search value around the 1000-element endpoints. No library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "d5b218178e419e89ec349964f30079a9ff690a8d",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -275,13 +303,23 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [equal.range]/1-4; [binary.search]/1-4",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Checked comparator equivalence differing from ==, duplicate bounds, empty/missing endpoints, forward/sentinel/projection forms and 1000-element exhaustive query sweep. No library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "2a45c582ac1f9540c5ee162997f38f14af1cca91",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -354,13 +392,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [alg.merge]/8-12, especially /11: N-1 only if enough additional memory; otherwise O(N log N); twice as many projections",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Added independent key/identity permutation preservation to existing empty/one-element half, duplicate-stability, bidirectional, noncommon and uneven split cases. No library defect found. Exact twice-projection relation retained; finite comparison budget documented as policy."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Added independent key/identity permutation preservation to existing empty/one-element half, duplicate-stability, bidirectional, noncommon and uneven split cases. No library defect found. Exact twice-projection relation retained; finite comparison budget documented as policy.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "8dda6303341f6ec868f3c5ba93936796c3003319",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -433,13 +482,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [alg.nth.element]/1-5: partition and selected value, linear on average for nonparallel overloads",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Added missing permutation checks for every seed/rank and ranges input pattern; retained all-pairs partition checks on the small cases and empty/nth==last boundaries. No nth_element defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Added missing permutation checks for every seed/rank and ranges input pattern; retained all-pairs partition checks on the small cases and empty/nth==last boundaries. No nth_element defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "85670556b0faba367973073feabe9edf012404f7",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -512,13 +572,23 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [partial.sort]/1-5: smallest sorted prefix, approximately N log M comparisons and twice as many projections",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed middle==first/last, M==1, equal/duplicate, descending, projected, noncommon ranges and full multisets. No library defect found; explicitly retained twice-projection bound.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "f5456f222b1882668e47ab1a728b03a92ceebff6",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -591,13 +661,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [partial.sort.copy]/1-7: input unchanged, output smallest N, return ends, approximately N log N comparisons/twice projections",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Added input preservation and ranges result.in oracle; checked output shorter/longer/empty, converted destination values and independent source/output projections. No library defect found; exact projection relation retained."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Added input preservation and ranges result.in oracle; checked output shorter/longer/empty, converted destination values and independent source/output projections. No library defect found; exact projection relation retained.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "5694ac63a2a9faf79bda29285fca58a0246c87a6",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -670,13 +751,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [container.requirements.pre]/2; [associative.reqmts.general] constructors, hint insertion, lookup, erasure, merging; [flat.map.overview]/2 and [flat.map.cons]/2,/4 with corresponding flat_set clauses",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. libstdc++ map/set/flat fixed-budget failures are policy differences, not proof of a complexity violation; libc++ passes.",
+      "commit": "a29868cec3b5fa42d14324052b800d1f879b401b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -749,13 +841,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [container.requirements.pre]/2; [associative.reqmts.general] constructors, hint insertion, lookup, erasure, merging; [flat.map.overview]/2 and [flat.map.cons]/2,/4 with corresponding flat_set clauses",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. libstdc++ map/set/flat fixed-budget failures are policy differences, not proof of a complexity violation; libc++ passes.",
+      "commit": "a29868cec3b5fa42d14324052b800d1f879b401b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -828,13 +931,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [container.requirements.pre]/2; [associative.reqmts.general] constructors, hint insertion, lookup, erasure, merging; [flat.map.overview]/2 and [flat.map.cons]/2,/4 with corresponding flat_set clauses",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. libstdc++ map/set/flat fixed-budget failures are policy differences, not proof of a complexity violation; libc++ passes.",
+      "commit": "a29868cec3b5fa42d14324052b800d1f879b401b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -907,13 +1021,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [container.requirements.pre]/2; [associative.reqmts.general] constructors, hint insertion, lookup, erasure, merging; [flat.map.overview]/2 and [flat.map.cons]/2,/4 with corresponding flat_set clauses",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Shared helper originally discarded lookup results; added independent linear-scan lower/upper/find/contains/count/equal_range oracle. Examined rb_tree lower/upper/range and hint/extraction requirements; unique/multi fixtures valid with stable node hints, tagged flat containers sorted and appropriately unique/equivalent. No library defect found; counters do not certify pointer traversal complexity.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}. libstdc++ map/set/flat fixed-budget failures are policy differences, not proof of a complexity violation; libc++ passes.",
+      "commit": "a29868cec3b5fa42d14324052b800d1f879b401b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P03",
@@ -986,13 +1111,24 @@
         "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved finite performance policy",
+      "normative_review": [
+        "c7015b [hive.operations]/13-16; [hive.capacity]; [hive.modifiers]; [container.reqmts]",
+        "Finite constants/seed average do not follow exactly from asymptotic, approximate or average-case wording. Audit confirmed for comparison thresholds; explicit projection relations and all normative effects preserved. User chose to retain thresholds as documented libycxx performance policy."
+      ],
+      "changes": [
+        "Document fixed comparison budgets as policies, preserve existing thresholds and valid normative assertions.",
+        "Add missing independent effects coverage: Added independent pre/post sort multiset preservation for move-only heap-owning elements; inspected sort invalidation permission (hive need not be stable) and valid reshape/splice limits. No hive defect found. References lack hive."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P03 <all 12 P03 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'compile-failed', 'libcxx': 'compile-failed'}. Exact commands/results: P03/<library>/*.log and P03/<library>.json.",
+        "Relevant upstream sorting suite runs and result triage in P03/upstream-*.log; before repair libc++ 2 compile failures for deleted comma, after repair being verified; libstdc++ 26 passed.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Added independent pre/post sort multiset preservation for move-only heap-owning elements; inspected sort invalidation permission (hive need not be stable) and valid reshape/splice limits. No hive defect found. References lack hive.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'compile-failed', 'libcxx': 'compile-failed'}. Hive is unimplemented in installed references.",
+      "commit": "1c176f8f9cf8890c520cda9050b3877cba8c6bc1",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P04",
@@ -1079,13 +1215,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [alg.random.shuffle]/1-4, [alg.random.sample]/1-9; [rand.req.urng]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: LCG has full-period 64-bit state and high-32-bit draws within [0,2^32-1]; valid uniform marginals, no iid claim. Checked empty/singleton, rvalue generator, each shuffle permutation, zero/oversized samples and forward stability. Added safe membership/uniqueness for input samples and every sampled index before array access; no library defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "LCG has full-period 64-bit state and high-32-bit draws within [0,2^32-1]; valid uniform marginals, no iid claim. Checked empty/singleton, rvalue generator, each shuffle permutation, zero/oversized samples and forward stability. Added safe membership/uniqueness for input samples and every sampled index before array access; no library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "2f21b2b51a45b1cc0bff5a8156af95cd53b29dc2",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1172,13 +1324,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [alg.random.shuffle], [alg.random.sample], [rand.req.urng] permits extended unsigned results",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: 128-bit concatenated mt19937_64 draws, 66-bit masking and rejection produce the intended 2^65+1 or 2^128 range; no illegal narrow UIntType template instantiation. Added strict increasing uniqueness/range checks for sampled subsets. Existing frequency margins unchanged; no library defect found in shuffle/sample adaptation."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "128-bit concatenated mt19937_64 draws, 66-bit masking and rejection produce the intended 2^65+1 or 2^128 range; no illegal narrow UIntType template instantiation. Added strict increasing uniqueness/range checks for sampled subsets. Existing frequency margins unchanged; no library defect found in shuffle/sample adaptation.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "de8aaf1c690522add0e0114807fed11263ad52a7",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1265,13 +1433,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.bern.bernoulli]/1-4; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Checked exact p=0/p=1 degeneracies, param_type p=.9, default p=.5 with a nonpower generator. Inspected Bernoulli <p endpoint mapping; valid boundaries preserved and no actual defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Checked exact p=0/p=1 degeneracies, param_type p=.9, default p=.5 with a nonpower generator. Inspected Bernoulli <p endpoint mapping; valid boundaries preserved and no actual defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "c177bc6665530a9aae675f71de2300407911611a",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1358,13 +1542,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.bern.bin]/1-5; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Checked t=0, p=0/p=1 degeneracies, signed/unsigned types, inversion/transformed-rejection regimes and exact t=2 mass. Added support check before c[value] indexing so a bad output cannot make the oracle undefined. No library defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Checked t=0, p=0/p=1 degeneracies, signed/unsigned types, inversion/transformed-rejection regimes and exact t=2 mass. Added support check before c[value] indexing so a bad output cannot make the oracle undefined. No library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "c8b2c757cb9f80655811a2bafa78f2820d50ee57",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1451,13 +1651,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.norm.chisq], [rand.dist.norm.cauchy], [rand.dist.norm.f], [rand.dist.norm.t]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed all shape/scale preconditions, chi-square nonintegral n=.5, Cauchy quartiles, F median symmetry and n>2 mean, t n=1 Cauchy CDF and n=6 finite variance. Moments/CDF tolerances are empirical. Positive gamma endpoint ambiguity cross-linked to exponential_gamma; no independent defect found in nominal tests."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed all shape/scale preconditions, chi-square nonintegral n=.5, Cauchy quartiles, F median symmetry and n>2 mean, t n=1 Cauchy CDF and n=6 finite variance. Moments/CDF tolerances are empirical. Positive gamma endpoint ambiguity cross-linked to exponential_gamma; no independent defect found in nominal tests.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "0749b8d411db4c404df088ba4d2f1a42bf12539d",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1544,13 +1760,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.req.dist] Table 128 d.param(p), d(g), d(g,p); [rand.dist.general]/3",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Inspected actual normal cache (stores standard z), negative-binomial gamma/Poisson setup, student_t and F param forwarding. Warmed the distribution before param replacement to exercise cached state; retained exact setter postcondition and added post-sampling active-param check. No libycxx defect found; libstdc++ still fails mean after stale parameter setup."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Inspected actual normal cache (stores standard z), negative-binomial gamma/Poisson setup, student_t and F param forwarding. Warmed the distribution before param replacement to exercise cached state; retained exact setter postcondition and added post-sampling active-param check. No libycxx defect found; libstdc++ still fails mean after stale parameter setup.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'run-failed', 'libcxx': 'passed'} GCC libstdc++ parameter sample fails due stale student_t/F/negbin setup; not a deterministic oracle verdict by itself but supported by implementation inspection. libc++ passes.",
+      "commit": "7eb7a91609f43b1191de6fd5735f75373514e6a3",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1637,13 +1869,28 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "pending user decision: positive-support endpoint policy",
+      "normative_review": [
+        "c7015b [rand.dist.pois.exp]/1 and [rand.dist.pois.gamma]/1: x > 0; [rand.dist.general]/3-4; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Statistical assumptions labeled under the existing user authorization; no endpoint assertions or library algorithm changed pending the separate user decision."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Full-cycle standard LCG<uint64_t,1,1,0> first draw zero gives exponential(1) result zero on all three libraries; gamma alpha=1 same inversion path. Draft positive support vs implicit floating approximation remains an interpretation/policy question; user decision requested. No invalid constant-output generator or arbitrary retry limit used.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "pending independent commit",
+      "review": "Precommit: no statistical oracle weakened, no new XFAIL, support checked before indexing where applicable; no invalid negative fixture introduced.",
+      "label_commit": "224b0542"
     },
     {
       "id": "P04",
@@ -1730,13 +1977,30 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: statistical policy clarified; confirmed wide-generator library defect",
+      "normative_review": [
+        "c7015b [rand.util.canonical]/1-6 defines exact R, d, k, x, S, rejection threshold and result. The final sample mean remains a user-approved statistical smoke check; other original expectations are deterministic formula oracles.",
+        "[rand.req.urng]/2 requires range and amortized-constant draws; extended unsigned generators are permitted. No IntType/UIntType width cap applies to the URBG parameter. P0952R0 explicitly motivates d==0 -> no draws and exact finite entropy lattice; later changes are not used to alter the declared snapshot."
+      ],
+      "changes": [
+        "Document statistical mean as a smoke check; add d==0 exact zero/no-draw case.",
+        "Minimized a valid 65-bit generator returning 2^64: exact formula gives 0.5 but old libycxx returned 0. Add generate_canonical_wide_generator.pass.cpp for 65/128-bit powers, full-width result range, high nonzero min, nonpower rejection/bucket boundaries and binary128 225-bit intermediate arithmetic.",
+        "Preserve full generator-width draws; add separate wide arithmetic path, extend shared big accumulator from 192 to 256 bits. Existing <=64-bit generator fast path remains."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} canonical-wide-before build/test-logs/possibly-wrong/canonical-wide-probe.pass.cpp: libycxx fails both, libc++ passes, libstdc++ fails. Exact commands/results in canonical-wide-before/<library>/*.log.",
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang} canonical-wide-after tests/ycxx/random/{generate_canonical_wide_generator,generate_canonical}.pass.cpp: both pass; reference extended regression outcomes in canonical-wide-after/<library>/*.log.",
+        "Affected own random+shuffle suites: P04/own-{gcc,clang}-after.log.",
+        "python3 tools/uglify.py --check: policy result in policy-uglify.log; no new reserved-name issue.",
+        "Affected own random+shuffle suites after library repair: 77/77 pass on each GCC and Clang. Binary128 path is active under GCC (__STDCPP_FLOAT128_T__=1); 225-bit intermediate exact case passes.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Probe canonical-wide-probe.pass.cpp failed at value==0.5 on both unfixed libycxx compilers (value 0), while libc++ returned 0.5 and libstdc++ also returned 0. Corrected generator regression passes GCC/Clang. GCC defines __STDCPP_FLOAT128_T__ and exercises the 225-bit R^2 case. All counter probes traverse every [min,max] value with equal marginal frequency and constant-time draws, and make only exact arithmetic assertions.",
+      "reference_comparison": "Original probe: libc++ correct, libstdc++ incorrect. Original canonical protocol test still exposes pre-C++26 libc++ behavior; GCC libstdc++ rejects d==0 with a nonnormative static assertion. Full new extended regression reference limitations separately logged; no XFAIL or weakened exact arithmetic.",
+      "commit": "baf29eeb",
+      "integration": "include/ycxx/core/random_base.hpp now uses a 256-bit accumulator and full-width URBG path; possible shared-header overlap with another queue. Preserve unrelated type-constraint or diagnostic changes.",
+      "review": "Postcommit review: core normal/wide generation exact paths preserve all bits and k/count; fourth limb handles 225-bit GCC binary128 test. Full new regression passes both libycxx compilers. References reject d==0 or retain pre-C++26 behavior; no policy weakening."
     },
     {
       "id": "P04",
@@ -1823,13 +2087,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.bern.geo] p in (0,1); [rand.dist.bern.negbin] k>0 and p in (0,1]; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed valid p ranges (geometric excludes 1, negbin permits 1), all declared moment formulas, signed widths and support. Inspected negbin mixture handling and existing sibling negbin_p_one coverage. No actual new defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed valid p ranges (geometric excludes 1, negbin permits 1), all declared moment formulas, signed widths and support. Inspected negbin mixture handling and existing sibling negbin_p_one coverage. No actual new defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "67f55e649f7b1cd9773d096db0a69b9e431ae371",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -1916,13 +2196,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.norm.normal], [rand.dist.norm.lognormal], [rand.req.dist] reset and sequence independence",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed mu/sigma and m/s parameters, finite moments, lognormal median, empirical normal tail check, and deterministic reset independence with identical subsequent engines. Inspected standard-z cache/reset implementation. No actual new defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed mu/sigma and m/s parameters, finite moments, lognormal median, empirical normal tail check, and deterministic reset independence with identical subsequent engines. Inspected standard-z cache/reset implementation. No actual new defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "9e0fea47351f4aeaf53af0e7f3c953b415fea1d0",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2009,13 +2305,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.samp.pconst] boundaries/normalized densities and constructors; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed strictly ordered boundaries, zero-mass interval, empty/one-boundary defaults, midpoint/nw constructors, correct density normalization by interval width, param invocation and float range. Independent parameter oracles already cover the meaningful boundaries. No library defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed strictly ordered boundaries, zero-mass interval, empty/one-boundary defaults, midpoint/nw constructors, correct density normalization by interval width, param invocation and float range. Independent parameter oracles already cover the meaningful boundaries. No library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "e8c96449f375bf29995a6d290a81ac7efb82c9bb",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2102,13 +2414,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.samp.plinear] n+1 boundaries and densities, finite nonnegative weights with positive mass; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed linear/trapezoidal normalization, zero endpoint density, triangular mean/CDF, empty/one-boundary defaults and n+1 fw bound. Tightened returned densities vector size from >=n+1 to exactly n+1 as specified. No library defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed linear/trapezoidal normalization, zero endpoint density, triangular mean/CDF, empty/one-boundary defaults and n+1 fw bound. Tightened returned densities vector size from >=n+1 to exactly n+1 as specified. No library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "a4dd4cd995e8152ff793dcf4f1fbda142394e80b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2195,13 +2523,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.pois.poisson] mean>0 and result>=0; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed positive means .05 through 1e5, support, inversion/PTRS transition and zero mass e^-2; integer result widths valid. Inspected rejection and conversion paths. No actual new defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed positive means .05 through 1e5, support, inversion/PTRS transition and zero mass e^-2; integer result widths valid. Inspected rejection and conversion paths. No actual new defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "ea133f3d497038f771a5fc2f9d975fb3e5fe1f02",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2288,13 +2632,34 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check; confirmed wide-generator library defect",
+      "normative_review": [
+        "c7015b [rand.dist.uni.int]/1-5, [rand.req.dist], [rand.req.urng] arbitrary unsigned generator result width",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Original signed/unsigned extrema, small/growing source ranges, singleton, param and full-width bit checks pass. Added bounds before frequency indexing. Wide-generator boundary revealed unbounded recursion: 65-bit [0,2^65] narrowed to zero range, base=1 recurses without consuming any draw for n>0. Both old libycxx compilers segfault; both references pass the same valid seeded-mt wide probe. Added full 128-bit/high-offset range coverage and unbiased 64-bit reduction.",
+        "Normalize >64-bit generator ranges via rejection to a whole number of 2^64 blocks before low-limb mapping; add uniform_int_wide_generator.pass.cpp for 65-bit nonpower, full 128-bit and high-minimum sources."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "uniform-int-wide-before/<library>/*.log: valid 65-bit seeded-mt probe segfaults (-11) on both old libycxx compilers; GCC libstdc++ and libc++ pass.",
+        "uniform-int-wide-after/<library>/*.log: corrected original test plus new regression pass on both compilers and both installed references.",
+        "Affected own random+shuffle after this repair: 78/78 pass on each compiler, P04/own-{gcc,clang}-uniform-wide.log.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Original signed/unsigned extrema, small/growing source ranges, singleton, param and full-width bit checks pass. Added bounds before frequency indexing. Wide-generator boundary revealed unbounded recursion: 65-bit [0,2^65] narrowed to zero range, base=1 recurses without consuming any draw for n>0. Both old libycxx compilers segfault; both references pass the same valid seeded-mt wide probe. Added full 128-bit/high-offset range coverage and unbiased 64-bit reduction.",
+      "reference_comparison": "Corrected original/new wide tests pass GCC libstdc++ and Clang libc++; both references also pass the minimized unfixed-libycxx crashing probe.",
+      "commit": "103f86aa",
+      "review": "Postcommit math/diff review: no P0-P2 findings; exactly whole 2^64 blocks are accepted, high minima subtracted before narrowing, narrow mapping preserved. Both reference libraries pass the original/new regression. Affected own random+shuffle 78/78 on each compiler.",
+      "integration": "include/ycxx/core/random_base.hpp is shared with canonical and type constraints; this independent fix changes only __rand_uniform_upto wide source normalization. Retain any other queues' changes.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2381,13 +2746,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.uni.real]/1-5 and [rand.req.dist] with b-a<=max and support [a,b)",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed finite precondition b-a<=max for the large interval, float/double/long-double ranges, extreme small span and parameter override. Added support/bin checks before index conversion/use. No independent defect found; canonical wide repair covers its source transform."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed finite precondition b-a<=max for the large interval, float/double/long-double ranges, extreme small span and parameter override. Added support/bin checks before index conversion/use. No independent defect found; canonical wide repair covers its source transform.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "24b4d886120db635428b1f13bd429c741682ca36",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2474,13 +2855,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.pois.weibull], [rand.dist.pois.extreme], [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed all positive a/b preconditions, Weibull a=1 exponential and a=2 moments, exact CDF targets at b, extreme-value CDF at a and negative location. No independent new defect found; positive endpoint issue affects only separately discussed transforms."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed all positive a/b preconditions, Weibull a=1 exponential and a=2 moments, exact CDF targets at b, extreme-value CDF at a and negative location. No independent new defect found; positive endpoint issue affects only separately discussed transforms.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "0009ea4db93ecfa88357b872f452363dbb44bd2b",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P04",
@@ -2567,13 +2964,29 @@
         "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.dist.samp.discrete] probability normalization, nonnegative weights, positive total; [rand.req.dist]",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed zero weights, positive total, exact default/empty unit mass, input-iterator convertible weights, nw==0 default, midpoint fw and at-most-n calls, param_type constructors. Deterministic normalized probabilities independent of frequencies remain; no library defect found."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed zero weights, positive total, exact default/empty unit mass, input-iterator convertible weights, nw==0 default, midpoint fw and at-most-n calls, param_type constructors. Deterministic normalized probabilities independent of frequencies remain; no library defect found.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "cf6eb6315af6e282c98e554b833d87c1f4347ac3",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite.",
+      "label_review_fix": "af5f7cf2"
     },
     {
       "id": "P01",
@@ -2596,13 +3009,24 @@
         "remedy": "Review insertion and erasure separately; distinguish overload forwarding that is explicitly specified from an assumed relocation strategy.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "unresolved policy question: retain selected-rvalue relocation?",
+      "normative_review": [
+        "c7015b [sequence.reqmts]/insert/emplace/erase requirements, [vector.modifiers]/1-6, [deque.modifiers], [inplace.vector.modifiers] and [alg.remove]/2-7 reviewed independently. MoveInsertable/MoveAssignable make operations available and impose value semantics; the cited erase counts assignment calls without explicitly choosing copy versus move. Erase/erase_if invokes remove/remove_if, whose effects/stability and MoveAssignable prerequisite do not by themselves specify every selected-overload call.",
+        "M defaulted copy operations are trivial; a template accepting only U=M wins for rvalues. Marks are encoded in v but == compares identity modulo 2000. No signed overflow occurs at N=30. The selected-move strategy can be a useful libycxx policy, but needs to be stated as such. Whole-file review also found missing independent complete value/order checks: moved marks alone can miss lost or duplicated values.",
+        "Proposed repair after user choice: preserve logical int value separately from move instrumentation, use independent expected sequences for all insert/erase forms; retain selected-rvalue checks only if adopted as policy."
+      ],
+      "changes": [
+        "No original source change while policy decision is pending.",
+        "REFERENCE.md records the observed reference difference as a pending policy interpretation instead of asserting a certified portable violation. Test assertions remain unchanged pending the user decision."
+      ],
+      "validation": [
+        "Baseline commands/results and exact transcripts in baseline/{gcc,clang,stdgcc,libcxx}/tests_ycxx_containers_relocation_uses_selected_move.pass.cpp.log. GCC/Clang libycxx pass; libstdc++ fails selected-move check; libc++ full file cannot compile because inplace_vector is missing.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Baseline all operations pass on libycxx GCC/Clang. Inspected __memmove_assign and __shift_in plus range_source guards in vector and analogous selected overload intent. User decision requested on retaining the stronger relocation policy; no dependent source edits made. Existing reference failure occurs at expect_moved, not a complete value oracle.",
+      "reference_comparison": "libstdc++ failure of selected moves is not established as a normative violation. libc++ lacks inplace_vector; narrower per-container probing can follow the policy decision.",
+      "commit": null,
+      "integration": "If retained as policy, REFERENCE.md row classifying all selected-move failures as draft bugs must be reclassified; staged documentation deliberately leaves this pending row unchanged."
     },
     {
       "id": "P12",
@@ -2623,13 +3047,23 @@
         "remedy": "Keep node identity/stability checks; document the zero-temporary-copy expectation as implementation policy unless a stronger requirement is identified.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved zero-copy policy plus normative immovable coverage",
+      "normative_review": [
+        "c7015b [list.ops]/1,/33-35 identity, stability, approximately N log N comparisons. Explicit no-copy text occurs for merge (/30), not sort. Sort has no CopyInsertable/MoveInsertable/assignable requirement; immovable elements are valid.",
+        "K copy constructor preserves key/tag values; comparator induces strict weak ordering; tag monotonicity correctly tests stability within equivalent keys. Saved iterators remain valid. User chose to preserve zero-temporary-copy policy."
+      ],
+      "changes": [
+        "Correct explanation of zero-copy policy, preserve copy-count checks; verify saved identities after descending sort too. Add fully immovable stable node-sorting case."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P12 tests/ycxx/list/sort.pass.cpp: all four pass; exact commands/results in P12/<library>/*.log.",
+        "Shadow list::sort copies front(): tools/ycxx-cxx gcc -Ibuild/test-logs/possibly-wrong/P12/mutation/include -Itests/ycxx/support tests/ycxx/list/sort.pass.cpp ...: fails on Immovable deleted copy; P12/mutation.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Examined linked-node sort and chain-merges; stable identity cases across 40 input sizes/equivalence configurations pass. Newly tested noncopyable/nonmovable type supported; temporary copying mutation is rejected. No actual list library defect found.",
+      "reference_comparison": "GCC libstdc++ and Clang libc++ pass both policy and immovable-type oracle.",
+      "commit": "1066ba5d6de8aa1b1b060efbca5b4e23452c3468",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained policy budget and normative oracle are distinct."
     },
     {
       "id": "P10",
@@ -2662,7 +3096,8 @@
       "validation": [
         "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P10 tests/ycxx/charconv/to_chars_float_precision.pass.cpp: all 4 pass, exact transcripts and commands in P10/<library>/*.log.",
         "YCXX_LIT=\"python3 build/test-logs/possibly-wrong/run_lit.py\" YCXX_CONFIG_NAME=P10 tools/run-conformance ycxx gcc charconv -- -j4: 28/28 pass.",
-        "Upstream suite commands/logs P10/upstream-lib{cxx,stdcxx}.log: mapped libc++ charconv.msvc test skipped for pre-P3505/other divergence; libstdc++ double/float likewise, long_double unsupported for target support. Inspected pinned fp_to_chars implementation and upstream hex precision tables; no upstream skip changes."
+        "Upstream suite commands/logs P10/upstream-lib{cxx,stdcxx}.log: mapped libc++ charconv.msvc test skipped for pre-P3505/other divergence; libstdc++ double/float likewise, long_double unsupported for target support. Inspected pinned fp_to_chars implementation and upstream hex precision tables; no upstream skip changes.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
       ],
       "negative_search": "Old source with tc(1.0,hex,3) output injected as 1.000p0x compiled and ran exit 0. The same injection into repaired source aborts at hex_precision_syntax(s,3). Files P10/{old,new}-malformed.pass.cpp; P10/malformed.log. Inspected fp_to_chars hex layout; additional signs/exponents and one-byte-short buffer searches passed, no actual library defect found.",
       "reference_comparison": "GCC 16.2 libstdc++ and Clang 23 Apple libc++ pass corrected test including buffer boundaries. Baseline also passed both despite malformed oracle gap.",
@@ -2693,13 +3128,25 @@
         "remedy": "Use strong CAS for the deterministic padding check; separate bounded retries as a practical watchdog.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed unbounded-spurious-failure oracle defect",
+      "normative_review": [
+        "c7015b [atomics.types.operations]/23-28 and [atomics.ref.ops]/25-27 compare value representations, ignore nonparticipating padding and permit weak spurious failure without retry limit; note recommends strong when weak would require a loop. Audit confirmed.",
+        "Padded trivially copyable fixtures have valid members, explicit atomic_ref required alignment and exclusively atomic accesses while references exist; supplied padding is not part of their value representation."
+      ],
+      "changes": [
+        "Replace bounded weak-CAS retry oracle with a single weak attempt, accept either permitted outcome, verify failure values and use strong CAS to complete the deterministic padding check.",
+        "Verify all reported mismatch members, not only the first char (atomic_ref case)."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P06 tests/ycxx/atomic/cas_padding.pass.cpp: GCC/Clang libycxx pass; reference outcomes and exact commands in P06/<library>/*.log.",
+        "P06-mutation-result/gcc: wrapper forces matching weak attempts to fail spuriously indefinitely and reports current value. Original tests abort on retry limit; corrected tests pass. This is a permitted outcome demonstration, not an actual library bug.",
+        "Upstream libstdc++ atomic and atomic_ref compare_exchange_padding: 2/2 pass against libycxx; libc++ strong/weak atomic and atomic_ref tests selected plus list sort tests in P06/upstream-libcxx-list.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Examined padding representation masking and tested large nonlockfree atomic_ref, successful strong match, weak failure and real mismatch. New mismatch/member and spurious-outcome coverage passes; no actual libycxx defect found.",
+      "reference_comparison": "libstdc++/libc++ both fail the first strong padded match in atomic<T>, before any weak test. Retained this independent normative assertion; documented reference/compiler padding difference.",
+      "commit": "338f926e6c20c806b8030293f21ff4a490a0f930",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P06",
@@ -2725,13 +3172,25 @@
         "remedy": "Use strong CAS for the deterministic padding check; separate bounded retries as a practical watchdog.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed unbounded-spurious-failure oracle defect",
+      "normative_review": [
+        "c7015b [atomics.types.operations]/23-28 and [atomics.ref.ops]/25-27 compare value representations, ignore nonparticipating padding and permit weak spurious failure without retry limit; note recommends strong when weak would require a loop. Audit confirmed.",
+        "Padded trivially copyable fixtures have valid members, explicit atomic_ref required alignment and exclusively atomic accesses while references exist; supplied padding is not part of their value representation."
+      ],
+      "changes": [
+        "Replace bounded weak-CAS retry oracle with a single weak attempt, accept either permitted outcome, verify failure values and use strong CAS to complete the deterministic padding check.",
+        "Verify all reported mismatch members, not only the first char (atomic_ref case)."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P06 tests/ycxx/atomic/ref_cas_padding.pass.cpp: GCC/Clang libycxx pass; reference outcomes and exact commands in P06/<library>/*.log.",
+        "P06-mutation-result/gcc: wrapper forces matching weak attempts to fail spuriously indefinitely and reports current value. Original tests abort on retry limit; corrected tests pass. This is a permitted outcome demonstration, not an actual library bug.",
+        "Upstream libstdc++ atomic and atomic_ref compare_exchange_padding: 2/2 pass against libycxx; libc++ strong/weak atomic and atomic_ref tests selected plus list sort tests in P06/upstream-libcxx-list.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Examined padding representation masking and tested large nonlockfree atomic_ref, successful strong match, weak failure and real mismatch. New mismatch/member and spurious-outcome coverage passes; no actual libycxx defect found.",
+      "reference_comparison": "Both libstdc++ and libc++ pass the corrected atomic_ref test.",
+      "commit": "f04263b25d0a00b30950de94f06ad6a64b21c9b0",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P05",
@@ -2752,13 +3211,28 @@
         "remedy": "Retain the return-type/range/entropy checks and identify bit coverage as a statistical smoke test.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: user-approved statistical smoke check",
+      "normative_review": [
+        "c7015b [rand.device]/1-7 allows deterministic engine fallback and implementation-defined generation/token choices; entropy bound/noexcept and unsigned type/range normative",
+        "Finite moments/frequencies/coverage are probabilistic, not deterministic conformance guarantees. Fixed seeds do not fix unspecified distribution/shuffle algorithms. User explicitly chose to retain labeled smoke checks. Ideal iid draws/large-sample assumptions are stated without a universal family-wise error guarantee.",
+        "Original whole test and shared random_support.hpp, moments.hpp, iterator helpers reviewed. All original valid parameter, support, special-case and return-position checks retained."
+      ],
+      "changes": [
+        "Document statistical assumptions and retain thresholds.",
+        "Targeted deterministic coverage/search: Reviewed all type/min/max/concept/noncopyability/noexcept/entropy assertions, random-device source buffering and error paths. Added explicit return-range checks; preserved probable bit/difference smoke. No library defect found; deterministic source protocol error testing exists in sibling tests and does not override supported token policy."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py <library> P04 <all 18 P04/P05 paths>: {'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}; exact per-command transcripts P04/<library>/*.log.",
+        "Changed warmed param test specifically rerun on all four libraries in P04-param/<library>/*.log.",
+        "Relevant upstream random tests: libc++ 64 pass/36 documented unsupported (100 selected); libstdc++ 7 pass/13 documented unsupported (20 selected). P04/upstream-*.log records reasons, including old-draft min/max and inherited fixture constraints.",
+        "Affected own random+shuffle after canonical repair: 77/77 pass on each compiler; after uniform integer repair: 78/78 pass on each compiler.",
+        "Random+shuffle after both width repairs: 78/78 passed on GCC and Clang; P04/own-<compiler>-uniform-wide.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed all type/min/max/concept/noncopyability/noexcept/entropy assertions, random-device source buffering and error paths. Added explicit return-range checks; preserved probable bit/difference smoke. No library defect found; deterministic source protocol error testing exists in sibling tests and does not override supported token policy.",
+      "reference_comparison": "{'gcc': 'passed', 'clang': 'passed', 'stdgcc': 'passed', 'libcxx': 'passed'}",
+      "commit": "8bb2abf318ad6af2ad42420db6bf4f9bac863724",
+      "review": "Postcommit diff/check review: no P0-P2 findings; retained statistical budgets and independent deterministic oracles; checked every fixture prerequisite."
     },
     {
       "id": "P09",
@@ -2791,13 +3265,25 @@
         "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: valid documented supported-type policy; normative implication corrected",
+      "normative_review": [
+        "c7015b [rand.req.genl]/1.6-1.7 permits implementation-defined extra IntType/UIntType subsets. DECISIONS.md section 10 already chooses empty subsets; no new policy decision required. Plain char/bool are outside mandatory IntType; unsigned char on this target is narrower than short, outside mandatory UIntType.",
+        "Audit confirmed as a classification/documentation defect, not a defect in the existing chosen rejection behavior. On hypothetical CHAR_BIT/short-equal-width targets the narrow-type rationale would not apply; current supported targets have 8-bit char, 16-bit short."
+      ],
+      "changes": [
+        "Replace misleading universal rejection comment with precise libycxx empty-subset policy and target prerequisite. Leave bodies and diagnostic directives unchanged.",
+        "Correct REFERENCE.md classification and separate policy/statistical results from normative conformance verdicts."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang} P09 <four compile-fail paths>: all four rejected for named template static assertions; exact diagnostics/commands P09/<compiler>/*.log.",
+        "P09-supported.pass.cpp probes all ten mandatory standard IntTypes and all four mandatory UIntTypes with valid singleton distributions, LCG recurrence and independent-bit result range. GCC/Clang libycxx and both installed references pass; P09-supported/<library>/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed shared type checks and width preconditions; positive probes exclude accidental rejection of mandatory types. All four rejections name the intended type constraint; no library defect found. No new compile-fail expectations or invalid negative cases introduced.",
+      "reference_comparison": "Baseline GCC libstdc++ accepts char and both narrow engine types but rejects bool. libc++ rejects char/bool/lcong<unsigned char> but accepts independent_bits_engine<unsigned char>. These are permitted extra-subset differences; not universal draft violations.",
+      "commit": "6336159f96ee578ab2aae368a80bfdaaf57182b3",
+      "integration": "Diagnostic-pattern chat owns EXPECT-ERROR additions in these four files. This chat changes only normative/policy comments preceding #include and does not duplicate diagnostic-only work. Preserve its directives during integration.",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P09",
@@ -2830,13 +3316,25 @@
         "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: valid documented supported-type policy; normative implication corrected",
+      "normative_review": [
+        "c7015b [rand.req.genl]/1.6-1.7 permits implementation-defined extra IntType/UIntType subsets. DECISIONS.md section 10 already chooses empty subsets; no new policy decision required. Plain char/bool are outside mandatory IntType; unsigned char on this target is narrower than short, outside mandatory UIntType.",
+        "Audit confirmed as a classification/documentation defect, not a defect in the existing chosen rejection behavior. On hypothetical CHAR_BIT/short-equal-width targets the narrow-type rationale would not apply; current supported targets have 8-bit char, 16-bit short."
+      ],
+      "changes": [
+        "Replace misleading universal rejection comment with precise libycxx empty-subset policy and target prerequisite. Leave bodies and diagnostic directives unchanged.",
+        "Correct REFERENCE.md classification and separate policy/statistical results from normative conformance verdicts."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang} P09 <four compile-fail paths>: all four rejected for named template static assertions; exact diagnostics/commands P09/<compiler>/*.log.",
+        "P09-supported.pass.cpp probes all ten mandatory standard IntTypes and all four mandatory UIntTypes with valid singleton distributions, LCG recurrence and independent-bit result range. GCC/Clang libycxx and both installed references pass; P09-supported/<library>/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed shared type checks and width preconditions; positive probes exclude accidental rejection of mandatory types. All four rejections name the intended type constraint; no library defect found. No new compile-fail expectations or invalid negative cases introduced.",
+      "reference_comparison": "Baseline GCC libstdc++ accepts char and both narrow engine types but rejects bool. libc++ rejects char/bool/lcong<unsigned char> but accepts independent_bits_engine<unsigned char>. These are permitted extra-subset differences; not universal draft violations.",
+      "commit": "7ff44e013c05578ae22105fc94c9649143050a7e",
+      "integration": "Diagnostic-pattern chat owns EXPECT-ERROR additions in these four files. This chat changes only normative/policy comments preceding #include and does not duplicate diagnostic-only work. Preserve its directives during integration.",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P09",
@@ -2869,13 +3367,25 @@
         "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: valid documented supported-type policy; normative implication corrected",
+      "normative_review": [
+        "c7015b [rand.req.genl]/1.6-1.7 permits implementation-defined extra IntType/UIntType subsets. DECISIONS.md section 10 already chooses empty subsets; no new policy decision required. Plain char/bool are outside mandatory IntType; unsigned char on this target is narrower than short, outside mandatory UIntType.",
+        "Audit confirmed as a classification/documentation defect, not a defect in the existing chosen rejection behavior. On hypothetical CHAR_BIT/short-equal-width targets the narrow-type rationale would not apply; current supported targets have 8-bit char, 16-bit short."
+      ],
+      "changes": [
+        "Replace misleading universal rejection comment with precise libycxx empty-subset policy and target prerequisite. Leave bodies and diagnostic directives unchanged.",
+        "Correct REFERENCE.md classification and separate policy/statistical results from normative conformance verdicts."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang} P09 <four compile-fail paths>: all four rejected for named template static assertions; exact diagnostics/commands P09/<compiler>/*.log.",
+        "P09-supported.pass.cpp probes all ten mandatory standard IntTypes and all four mandatory UIntTypes with valid singleton distributions, LCG recurrence and independent-bit result range. GCC/Clang libycxx and both installed references pass; P09-supported/<library>/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed shared type checks and width preconditions; positive probes exclude accidental rejection of mandatory types. All four rejections name the intended type constraint; no library defect found. No new compile-fail expectations or invalid negative cases introduced.",
+      "reference_comparison": "Baseline GCC libstdc++ accepts char and both narrow engine types but rejects bool. libc++ rejects char/bool/lcong<unsigned char> but accepts independent_bits_engine<unsigned char>. These are permitted extra-subset differences; not universal draft violations.",
+      "commit": "c72e793d5f27640517e4d1ed86faee87f89813e9",
+      "integration": "Diagnostic-pattern chat owns EXPECT-ERROR additions in these four files. This chat changes only normative/policy comments preceding #include and does not duplicate diagnostic-only work. Preserve its directives during integration.",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P09",
@@ -2908,13 +3418,25 @@
         "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: valid documented supported-type policy; normative implication corrected",
+      "normative_review": [
+        "c7015b [rand.req.genl]/1.6-1.7 permits implementation-defined extra IntType/UIntType subsets. DECISIONS.md section 10 already chooses empty subsets; no new policy decision required. Plain char/bool are outside mandatory IntType; unsigned char on this target is narrower than short, outside mandatory UIntType.",
+        "Audit confirmed as a classification/documentation defect, not a defect in the existing chosen rejection behavior. On hypothetical CHAR_BIT/short-equal-width targets the narrow-type rationale would not apply; current supported targets have 8-bit char, 16-bit short."
+      ],
+      "changes": [
+        "Replace misleading universal rejection comment with precise libycxx empty-subset policy and target prerequisite. Leave bodies and diagnostic directives unchanged.",
+        "Correct REFERENCE.md classification and separate policy/statistical results from normative conformance verdicts."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang} P09 <four compile-fail paths>: all four rejected for named template static assertions; exact diagnostics/commands P09/<compiler>/*.log.",
+        "P09-supported.pass.cpp probes all ten mandatory standard IntTypes and all four mandatory UIntTypes with valid singleton distributions, LCG recurrence and independent-bit result range. GCC/Clang libycxx and both installed references pass; P09-supported/<library>/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed shared type checks and width preconditions; positive probes exclude accidental rejection of mandatory types. All four rejections name the intended type constraint; no library defect found. No new compile-fail expectations or invalid negative cases introduced.",
+      "reference_comparison": "Baseline GCC libstdc++ accepts char and both narrow engine types but rejects bool. libc++ rejects char/bool/lcong<unsigned char> but accepts independent_bits_engine<unsigned char>. These are permitted extra-subset differences; not universal draft violations.",
+      "commit": "85c48dd9dce98f4f90887221cfedfb5c11788956",
+      "integration": "Diagnostic-pattern chat owns EXPECT-ERROR additions in these four files. This chat changes only normative/policy comments preceding #include and does not duplicate diagnostic-only work. Preserve its directives during integration.",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P07",
@@ -2935,13 +3457,24 @@
         "remedy": "Check the depth cap per call; do not infer successful later capture from an earlier one.",
         "priority": 3
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed separate-capture oracle defect",
+      "normative_review": [
+        "c7015b [stacktrace.basic.cons]/1-6 permits empty on each capture failure; frames approximately represent each current evaluation. /5 requires no skip+max_depth wraparound. [stacktrace.basic.obs] for container access.",
+        "The original full/skipped/limited calls do not capture the same evaluation. Also a magic skip=100000 is not a universal depth bound; maximum representable size_type covers every possible hypothetical t.size()."
+      ],
+      "changes": [
+        "Check per-call depth caps for skip 0/1 and depth 0/1/3; replace magic skip with maximum representable size_type; cover max-skip with zero depth without overflow.",
+        "Add CountingAlloc failure for all three current overloads and check no outstanding allocation."
+      ],
+      "validation": [
+        "Focused GCC/Clang libycxx pass; P08-P07/<library>/*.log; affected Clang stacktrace/indirect suite P07-P08/own-clang.log.",
+        "Forced permitted failure only in current(skip,max_depth): baseline aborts at limited.size()==1 despite full success; corrected test passes. Exact commands/results: signature-mutations/gcc/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Examined capture construction, allocation exception handling, skip+depth bounds and existing access/serialization assertions. Forced allocator failure deterministically returns empty in all overloads, with no leak. Max-skip boundary passes. No actual library defect found.",
+      "reference_comparison": "Both installed reference configurations lack stacktrace types on Darwin; libstdc++exp exists but cannot add the missing header feature configuration.",
+      "commit": "a646afac5aaec7290ca0589ed56e0518029db60a",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P08",
@@ -2968,13 +3501,26 @@
         "remedy": "Require noexcept in the mandated true cases; do not infer a prohibition on permitted strengthening.",
         "priority": 3
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed noexcept oracle overconstraint",
+      "normative_review": [
+        "c7015b [res.on.exception.handling]/5 permits strengthening nonvirtual exception specifications; [indirect.swap]/1-3 supplies noexcept true cases and ownership/allocator behavior; [indirect.ctor]/15-16, [indirect.assign]/6-9 checked independently.",
+        "All three negative noexcept traits in the original fixture were reviewed, not only cited swap. They are not universal signature requirements. Positive mandated cases and successful allocator/state contracts are retained."
+      ],
+      "changes": [
+        "Remove negative noexcept assertions for allocator-extended move, move assignment and swap; add always-equal and propagating-swap positive assertions.",
+        "Add owned-object pointer identities, owned/valueless swap and explicitly guaranteed self-move boundary."
+      ],
+      "validation": [
+        "Focused GCC/Clang libycxx corrected test passes; P08-P07/<library> logs.",
+        "Shadow indirect.hpp mutation exchanges underlying int values instead of owned pointers: old audit-baseline test passes; corrected test aborts on identity check (P08-indirect-mutation-result/gcc).",
+        "Affected own indirect/stacktrace Clang suite selected via P07-P08/own-clang.log.",
+        "Permitted member-swap noexcept strengthening mutation: baseline fails negative static_assert, corrected test passes. Exact commands/results: signature-mutations/gcc/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed allocator-extended move, unequal move assignment, no-effect self move, valueless swaps, allocation/construct counts and ownership pointer preservation. Added coherent boundaries; no actual library defect found. Controlled owned-value-swap mutation exposes original identity gap.",
+      "reference_comparison": "GCC libstdc++ fails original and corrected test because unequal-allocator extended move leaves source non-valueless, contradicting declared [indirect.ctor]/16; installed libc++ lacks indirect. No oracle weakened to accommodate the reference.",
+      "commit": "a3b132d7c022935ed45aa8c7d88212d799b3ae20",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P08",
@@ -3001,13 +3547,25 @@
         "remedy": "Require noexcept in the mandated true cases; do not infer a prohibition on permitted strengthening.",
         "priority": 3
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed noexcept and capture oracle overconstraints",
+      "normative_review": [
+        "c7015b [res.on.exception.handling]/5; [stacktrace.basic.mod]/1; [stacktrace.basic.nonmem]/1; [stacktrace.basic.cmp]/1-2; [stacktrace.basic.cons]/1-6,/10.",
+        "Beyond P08 synopsis false branch, whole-file review found another P07-style depth assumption: separate deeper() capture need not succeed or have greater depth. Copy capture initialization can become empty upon allocation failure under /10 strengthening."
+      ],
+      "changes": [
+        "Require noexcept only when mandated true.",
+        "Compare actual observed depths/entries, permit independent capture or copy initialization failure, retain equality/hash/swap checks for successful copies."
+      ],
+      "validation": [
+        "Focused GCC/Clang libycxx pass; P08-P07/<library>/*.log.",
+        "Affected Clang indirect/stacktrace suite P07-P08/own-clang.log.",
+        "Permitted member-swap noexcept strengthening mutation: baseline fails negative static_assert, corrected test passes. Exact commands/results: signature-mutations/gcc/*.log.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Reviewed independent failed captures, equal/unequal sizes, different allocator copy, empty/nonempty swap and hash relation. New observed-size comparison passes; failed allocator capture is exercised by repaired P07 test. No actual library defect found.",
+      "reference_comparison": "Installed libstdc++ and libc++ do not define stacktrace for these Darwin configurations (compile fails at missing std::stacktrace types); not a behavior verdict.",
+      "commit": "3d3402dc2d28d2ccf63862c08ebb09ea4da372f0",
+      "review": "Postcommit diff/check review: no P0-P2 findings; no library source changes; retained independent normative behavior."
     },
     {
       "id": "P11",
@@ -3030,12 +3588,22 @@
         "remedy": "Keep as an explicitly supported libycxx reentrancy test; do not infer portable permission solely from different stream character types.",
         "priority": 3
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
+      "status": "unresolved policy question: document supported facet reentrancy?",
+      "normative_review": [
+        "c7015b [reentrancy]/1 makes recursive library reentry implementation-defined; /2 forbids conflicting object reaccess through unrelated glvalues. [locale.facet]/3 lifetime, [locale.statics]/1-2 global exchange, [facet.num.put.virtuals]/[facet.num.get.virtuals] stage 2 and locale punctuation requirements reviewed.",
+        "The original assertion that different character types prevent every recursive library call is false for DtorUser. Releasing a global locale destroys its facet; the facet destructor constructs/destroys locale objects and calls locale::global. Destruction/global-management functions can be recursively active regardless of stream character type. The outer object/facet is not directly accessed through conflicting unrelated glvalues in these fixtures, but recursive support still needs a documented implementation choice.",
+        "Inspected src/hosted/locale.cpp release/global: global lock is released before its returned old locale can release facets, consistent with intended nondeadlocking reentry. Character-type switching still avoids direct same-specialization numeric recursion; it does not resolve locale destruction recursion."
+      ],
+      "changes": [
+        "Concrete scope and normative evidence prepared; source/documentation changes dependent on the user choice are pending.",
+        "REFERENCE.md records the observed reference difference as a pending policy interpretation instead of asserting a certified portable violation. Test assertions remain unchanged pending the user decision."
+      ],
+      "validation": [
+        "Baseline exact command/results baseline/<library>/tests_ycxx_locale_facets_reenter_library.pass.cpp.log. Both libycxx compilers and libc++ pass; libstdc++ fails inner_failures==0. Aggregate tests also select this facility while policy clarification remains pending.",
+        "Final full assigned queue: both GCC/Clang pass intended outcome (40 runtime passes + 4 compile rejections), final-queue/<compiler>.json and exact per-file .log transcripts."
+      ],
+      "negative_search": "Read all Punct, Collate, DtorUser, depth guard and watchdog behavior. Punct virtuals preserve locale punctuation and use bounded depth; callback state is local/global test instrumentation. Baseline libycxx and libc++ pass; libstdc++ fails nested punctuation early. Asked whether to document this tested reentrancy as a libycxx policy; no dependent original source edits made.",
+      "reference_comparison": "libstdc++ nested punctuation failure is a real observed difference but does not certify the entire reentry test as portable. The original REFERENCE.md characterization must be corrected if the policy is retained.",
       "commit": null
     }
   ],
@@ -3054,5 +3622,44 @@
     "draft_evidence": "build/test-logs/possibly-wrong/draft-{full.html,sections.json}: original rendered snapshot has source links pinned to c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1; independently compared vector.cons to pinned raw containers.tex.",
     "toolchains": "macOS arm64; Homebrew GCC 16.2; LLVM Clang 23.1.2; both pinned upstream suites available.",
     "authorization": "Inspect original tests/helpers and implementations; fix tests/library defects; separate coherent commits; do not push/merge/PR."
+  },
+  "policy_answers": {
+    "performance": "User explicitly requested retaining extra allocator-call, finite complexity and zero-temporary-copy checks as documented libycxx policies.",
+    "statistical": "User explicitly requested retaining finite statistical smoke checks, documenting assumptions, and correcting invalid fixtures/coverage gaps.",
+    "selected_move": "awaiting explicit user decision",
+    "facet_reentrancy": "awaiting explicit user decision",
+    "positive_random_endpoint": "awaiting explicit user decision"
+  },
+  "aggregate_validation": {
+    "host": "macOS arm64, Homebrew GCC 16.2 and LLVM Clang 23.1.2",
+    "command": "source tools/toolchain/activate.sh; YCXX_LIT='python3 build/test-logs/possibly-wrong/run_lit.py' YCXX_CONFIG_NAME=possibly-aggregate tools/run-conformance ycxx <gcc|clang> 'vector/|algorithm/|map/|set/|flat_map/|flat_set/|hive/|list/|indirect/|stacktrace/|atomic/|random/|locale/|containers/relocation_uses_selected_move' -- -j4",
+    "gcc": "492 passed / 1 failed of 493 selected; aggregate-gcc.log and build/test-logs/ycxx-gcc-possibly-aggregate.{html,md,tsv}",
+    "clang": "492 passed / 1 failed of 493 selected; aggregate-clang.log and build/test-logs/ycxx-clang-possibly-aggregate.{html,md,tsv}",
+    "baseline_failure": {
+      "path": "tests/ycxx/locale/named_time_get_flagged_formats.pass.cpp",
+      "disposition": "Outside the assigned 44-file queue, unchanged by this audit. Reproduces against archived baseline 2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec with a separately configured/built GCC runtime. Darwin strftime(\"%r\") returns empty text for de_DE.UTF-8 despite a nonempty T_FMT_AMPM pattern; the test then attempts to parse that empty C fixture. No unrelated test weakening or locale source change.",
+      "proof": "build/test-logs/possibly-wrong/named-time-baseline.log, baseline-configure.log, baseline-build.log; archived source under baseline-checkout/",
+      "command": "git archive 2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec | tar -x -C build/test-logs/possibly-wrong/baseline-checkout; source tools/toolchain/activate.sh; cmake -S build/test-logs/possibly-wrong/baseline-checkout -B build/test-logs/possibly-wrong/baseline-checkout/build/gcc -G Ninja -DCMAKE_C_COMPILER=\"$YCXX_GCC\" -DCMAKE_CXX_COMPILER=\"$YCXX_GXX\" -DCMAKE_BUILD_TYPE=RelWithDebInfo; ninja -C build/test-logs/possibly-wrong/baseline-checkout/build/gcc -j4; build/test-logs/possibly-wrong/baseline-checkout/tools/ycxx-cxx gcc -Ibuild/test-logs/possibly-wrong/baseline-checkout/tests/ycxx/support build/test-logs/possibly-wrong/baseline-checkout/tests/ycxx/locale/named_time_get_flagged_formats.pass.cpp -o build/test-logs/possibly-wrong/named-time-baseline; build/test-logs/possibly-wrong/named-time-baseline",
+      "runtime_exit": 134
+    },
+    "policy": "source tools/toolchain/activate.sh; tools/test -j4 policy: 7/7 passed. Transcript build/test-logs/possibly-wrong/policy.log.",
+    "review": "Final aggregate diff review inspected source arithmetic and all edited oracle/helper assertions. No unresolved P0-P2 findings in completed changes; correction of implementation-defined shuffle wording recorded in af5f7cf2. Three explicitly recorded user decisions remain pending.",
+    "queue": {
+      "command": "python3 build/test-logs/possibly-wrong/run.py <gcc|clang> final-queue",
+      "gcc": "40 passed + 4 expected compile rejections; all 44 intended outcomes passed",
+      "clang": "40 passed + 4 expected compile rejections; all 44 intended outcomes passed",
+      "proof": "build/test-logs/possibly-wrong/final-queue-<compiler>.log; final-queue/<compiler>.json and per-command .log transcripts"
+    }
+  },
+  "checkpoint": {
+    "resolved_entries": 41,
+    "pending_entries": 3,
+    "scope": "Every assigned file independently investigated. Three policy-dependent changes remain pending; general performance/statistical decisions were explicitly answered and applied. No push, merge, or PR.",
+    "confirmed_library_fixes": {
+      "d09674c8": "sort loop bookkeeping selects an unrelated deleted comma overload for a valid iterator",
+      "baf29eeb": "generate_canonical truncates extended generator draws/range, producing incorrect specified arithmetic",
+      "103f86aa": "uniform_int_distribution narrows a valid 65-bit range to zero and recurses without drawing, eventually crashing"
+    },
+    "documentation_review": "REFERENCE.md reclassifies policy/statistical reference failures, removes inaccurate universal oracle certification, and explicitly records the three pending interpretations. Completed code diffs and final documentation reviewed with no unresolved P0-P2 findings."
   }
 }

@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/span/as_writable_bytes_const.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "span.objectrep"
+  ],
+  "normative_text": {
+    "span.objectrep": "23.7.2.3 Views of object representation [span.objectrep]\n\ud83d\udd17\ntemplate<class ElementType, size_t Extent>\n  span<const byte, Extent == dynamic_extent ? dynamic_extent : sizeof(ElementType) * Extent>\n    as_bytes(span<ElementType, Extent> s) noexcept;\n1\n#\nConstraints: is_volatile_v<ElementType> is false.\n2\n#\nEffects: Equivalent to: return R{reinterpret_cast<const byte*>(s.data()), s.size_bytes()};\nwhere R is the return type.\n\ud83d\udd17\ntemplate<class ElementType, size_t Extent>\n  span<byte, Extent == dynamic_extent ? dynamic_extent : sizeof(ElementType) * Extent>\n    as_writable_bytes(span<ElementType, Extent> s) noexcept;\n3\n#\nConstraints: is_const_v<ElementType> is false and\nis_volatile_v<ElementType> is false.\n4\n#\nEffects: Equivalent to: return R{reinterpret_cast<byte*>(s.data()), s.size_bytes()};\nwhere R is the return type.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'as_writable_bytes\\(std::span<const int>&\\)'"
+    ],
+    "clang": [
+      "error: no matching function for call to 'as_writable_bytes'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [span.objectrep]/3: as_writable_bytes \"Constraints: is_const_v<ElementType> is false\".\n #include <span>\n \n-void f(std::span<const int> s) { (void)std::as_writable_bytes(s); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/as_writable_bytes_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'as_writable_bytes'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/as_writable_bytes_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__as_writable_bytes_const.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'as_writable_bytes(std::span<const int>&)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

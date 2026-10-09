@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*pair index out of range
 // [pair.astuple]/1: tuple_element<I, pair<T1, T2>>: "Mandates: I<2."
 #include <utility>
 

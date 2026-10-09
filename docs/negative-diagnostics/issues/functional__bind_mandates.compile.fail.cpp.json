@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/functional/bind_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.bind.bind"
+  ],
+  "normative_text": {
+    "func.bind.bind": "22.10.15.4 Function template bind [func.bind.bind]\n1\n#\nIn the text that follows:\n(1.1)\ng is a value of the result of a bind invocation,\n(1.2)\nFD is the type decay_t<F>,\n(1.3)\nfd is an lvalue that\n  is a target object of g ([func.def]) of type FD\n  direct-non-list-initialized with std\u200b::\u200bforward<F>(f),\n(1.4)\nTi is the ith type in the template parameter pack BoundArgs,\n(1.5)\nTDi is the type decay_t<Ti>,\n(1.6)\nti is the ith argument in the function parameter pack bound_args,\n(1.7)\ntdi is a bound argument entity\n  of g ([func.def]) of type TDi\n  direct-non-list-initialized with\n  std\u200b::\u200bforward<\u200bTi>(ti),\n(1.8)\nUj is the jth deduced type of the UnBoundArgs&&... parameter\n  of the argument forwarding call wrapper, and\n(1.9)\nuj is the jth argument associated with Uj.\n\ud83d\udd17\ntemplate<class F, class... BoundArgs>\n  constexpr unspecified bind(F&& f, BoundArgs&&... bound_args);\ntemplate<class R, class F, class... BoundArgs>\n  constexpr unspecified bind(F&& f, BoundArgs&&... bound_args);\n2\n#\nMandates: is_constructible_v<FD, F> is true.\n For each Ti\nin BoundArgs, is_constructible_v<TDi, Ti> is true.\n3\n#\nPreconditions: FD and each TDi meet\nthe Cpp17MoveConstructible and Cpp17Destructible requirements.\n INVOKE(fd, w1, w2, \u2026,\nwN) ([func.require]) is a valid expression for some\nvalues w1, w2, \u2026, wN, where\nN has the value sizeof...(bound_args).\n4\n#\nReturns: An argument forwarding call wrapper g ([func.require]).\n A program that attempts to invoke a volatile-qualified g\nis ill-formed.\n When g is not volatile-qualified, invocation of\ng(u1, u2, \u2026, uM)\nis expression-equivalent ([defns.expression.equivalent]) to\nINVOKE(static_cast<Vfd>(vfd),\n       static_cast<V1>(v1), static_cast<V2>(v2), \u2026, static_cast<VN>(vN))\nfor the first overload, and\nINVOKE<R>(static_cast<Vfd>(vfd),\n          static_cast<V1>(v1), static_cast<V2>(v2), \u2026, static_cast<VN>(vN))\nfor the second overload,\nwhere the values and types of the target argument vfd and\nof the bound arguments\nv1, v2, \u2026, vN are determined as specified below.\n5\n#\nThrows: Any exception thrown by the initialization of\nthe state entities of g.\n6\n#\n[Note\u00a01:\u2002If all of FD and TDi meet\nthe requirements of Cpp17CopyConstructible, then\nthe return type meets the requirements of Cpp17CopyConstructible.\n \u2014\u00a0end note]\n7\n#\nThe values of the bound arguments v1, v2, \u2026, vN and their\ncorresponding types V1, V2, \u2026, VN depend on the\ntypes TDi derived from\nthe call to bind and the\ncv-qualifiers cv of the call wrapper g as follows:\n(7.1)\nif TDi is reference_wrapper<T>, the\nargument is tdi.get() and its type Vi is T&;\n(7.2)\nif the value of is_bind_expression_v<TDi>\nis true, the argument is\nstatic_cast<cv TDi&>(tdi)(std::forward<Uj>(uj)...)\nand its type Vi is\ninvoke_result_t<cv TDi&, Uj...>&&;\n(7.3)\nif the value j of is_placeholder_v<TDi>\nis not zero, the  argument is std\u200b::\u200bforward<Uj>(uj)\nand its type Vi\nis Uj&&;\n(7.4)\notherwise, the value is tdi and its type Vi\nis cv TDi&.\n8\n#\nThe value of the target argument vfd is fd and\nits corresponding type Vfd is cv FD&.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::bind: the target and bound arguments must be constructible from the arguments"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -12,6 +12,4 @@\n \n void test() {\n   const NoCopy nc;\n-  auto g = std::bind(f, nc);\n-  (void)g;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/bind_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching constructor for initialization of '_Td' (aka 'tuple<NoCopy>')"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/bind_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__bind_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'std::tuple<NoCopy>::tuple(const NoCopy&)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

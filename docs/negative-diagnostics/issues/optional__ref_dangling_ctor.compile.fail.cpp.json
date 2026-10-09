@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/optional/ref_dangling_ctor.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "optional.ref.ctor"
+  ],
+  "normative_text": {
+    "optional.ref.ctor": "22.5.4.2 Constructors [optional.ref.ctor]\n\ud83d\udd17\ntemplate<class Arg>\n  constexpr explicit optional(in_place_t, Arg&& arg);\n1\n#\nConstraints: (1.1)\nis_constructible_v<T&, Arg> is true, and\n(1.2)\nreference_constructs_from_temporary_v<T&, Arg> is false.\n2\n#\nEffects: Equivalent to: convert-ref-init-val(std\u200b::\u200bforward<Arg>(arg)).\n3\n#\nPostconditions: *this contains a value.\n\ud83d\udd17\ntemplate<class U>\n  constexpr explicit(!is_convertible_v<U, T&>)\n  optional(U&& u) noexcept(is_nothrow_constructible_v<T&, U>);\n4\n#\nConstraints: (4.1)\nis_same_v<remove_cvref_t<U>, optional> is false,\n(4.2)\nis_same_v<remove_cvref_t<U>, in_place_t> is false, and\n(4.3)\nis_constructible_v<T&, U> is true.\n5\n#\nEffects: Equivalent to: convert-ref-init-val(std\u200b::\u200bforward<U>(u)).\n6\n#\nPostconditions: *this contains a value.\n7\n#\nRemarks: This constructor is defined as deleted if\nreference_constructs_from_temporary_v<T&, U>\n is true.\n\ud83d\udd17\ntemplate<class U>\n  constexpr explicit(!is_convertible_v<U&, T&>)\n  optional(optional<U>& rhs) noexcept(is_nothrow_constructible_v<T&, U&>);\n8\n#\nConstraints: (8.1)\nis_same_v<remove_cv_t<T>, optional<U>> is false,\n(8.2)\nis_same_v<T&, U> is false, and\n(8.3)\nis_constructible_v<T&, U&> is true.\n9\n#\nEffects: Equivalent to:\nif (rhs.has_value()) convert-ref-init-val(rhs.operator*());\n10\n#\nRemarks: This constructor is defined as deleted if\nreference_constructs_from_temporary_v<T&, U&>\nis true.\n\ud83d\udd17\ntemplate<class U>\n  constexpr explicit(!is_convertible_v<const U&, T&>)\n  optional(const optional<U>& rhs) noexcept(is_nothrow_constructible_v<T&, const U&>);\n11\n#\nConstraints: (11.1)\nis_same_v<remove_cv_t<T>, optional<U>> is false,\n(11.2)\nis_same_v<T&, U> is false, and\n(11.3)\nis_constructible_v<T&, const U&> is true.\n12\n#\nEffects: Equivalent to:\nif (rhs.has_value()) convert-ref-init-val(rhs.operator*());\n13\n#\nRemarks: This constructor is defined as deleted if\nreference_constructs_from_temporary_v<T&, const U&>\nis true.\n\ud83d\udd17\ntemplate<class U>\n  constexpr explicit(!is_convertible_v<U, T&>)\n  optional(optional<U>&& rhs) noexcept(is_nothrow_constructible_v<T&, U>);\n14\n#\nConstraints: (14.1)\nis_same_v<remove_cv_t<T>, optional<U>> is false,\n(14.2)\nis_same_v<T&, U> is false, and\n(14.3)\nis_constructible_v<T&, U> is true.\n15\n#\nEffects: Equivalent to:\nif (rhs.has_value()) convert-ref-init-val(std::move(rhs).operator*());\n16\n#\nRemarks: This constructor is defined as deleted if\nreference_constructs_from_temporary_v<T&, U>\nis true.\n\ud83d\udd17\ntemplate<class U>\n  constexpr explicit(!is_convertible_v<const U, T&>)\n  optional(const optional<U>&& rhs) noexcept(is_nothrow_constructible_v<T&, const U>);\n17\n#\nConstraints: (17.1)\nis_same_v<remove_cv_t<T>, optional<U>> is false,\n(17.2)\nis_same_v<T&, U> is false, and\n(17.3)\nis_constructible_v<T&, const U> is true.\n18\n#\nEffects: Equivalent to:\nif (rhs.has_value()) convert-ref-init-val(std::move(rhs).operator*());\n19\n#\nRemarks: This constructor is defined as deleted if\nreference_constructs_from_temporary_v<T&, const U>\nis true.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::optional[^\\n]*optional\\(_Up&&\\)"
+    ],
+    "clang": [
+      "error: call to deleted constructor of 'std::optional<const int &>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,6 +3,4 @@\n #include <optional>\n \n void f() {\n-  std::optional<const int&> o(42L);  // would bind to a temporary int\n-  (void)o;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/optional/ref_dangling_ctor.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted constructor of 'std::optional<const int &>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/optional/ref_dangling_ctor.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/optional__ref_dangling_ctor.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'constexpr std::optional<_Tp&>::optional(_Up&&) [with _Up = long int; _Tp = const int]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

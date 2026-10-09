@@ -46,6 +46,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: uv and Python for the documentation tools
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: '3.13'
+
       - uses: actions/configure-pages@v5
 
       # The downloads tools/gen-apidocs pins (MrDocs, the cppreference.com archive).
@@ -57,7 +62,7 @@ jobs:
       # site/ is static HTML, CSS and self-hosted fonts, plus the generated API reference
       # (site/api/) and cppreference pages (site/cppref/).
       - name: Generate the API reference
-        run: python3 tools/gen-apidocs --install -j 4
+        run: uv run --no-project python tools/gen-apidocs --install -j 4
 
       # The similarity analysis: pinned sources and JPlag, cached by the pins.
       - uses: actions/setup-java@v4
@@ -76,11 +81,11 @@ jobs:
         timeout-minutes: 15
         env:
           SIM_JOBS: '4'
-        run: python3 tools/similarity/run
+        run: uv run --no-project python tools/similarity/run
 
       - name: Similarity report unavailable
         if: steps.similarity.outcome != 'success'
-        run: python3 tools/similarity/run --unavailable "the analysis step did not finish (${{ steps.similarity.outcome }})"
+        run: uv run --no-project python tools/similarity/run --unavailable "the analysis step did not finish (${{ steps.similarity.outcome }})"
 
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -93,4 +98,4 @@ jobs:
       # vocabulary check (also in tools/test's policy stage) and 12-token windows against the
       # pinned sources fetched above.
       - name: Similarity leak check
-        run: python3 tools/similarity/leakcheck --full
+        run: uv run --script tools/similarity/leakcheck --full

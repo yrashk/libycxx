@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: visit_format_arg is deprecated \(\[depr\.format\.arg\]\); use basic_format_arg::visit[^\n]*W(?:error|deprecated)
 // [depr.format.arg] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

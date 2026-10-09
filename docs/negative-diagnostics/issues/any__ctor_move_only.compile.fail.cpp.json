@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/any/ctor_move_only.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "any.cons"
+  ],
+  "normative_text": {
+    "any.cons": "22.7.4.2 Construction and destruction [any.cons]\n\ud83d\udd17\nconstexpr any() noexcept;\n1\n#\nPostconditions: has_value() is false.\n\ud83d\udd17\nany(const any& other);\n2\n#\nEffects: If other.has_value() is false, constructs an object that has no value.\n Otherwise, equivalent to any(in_place_type<T>, any_cast<const T&>(other))\nwhere T is the type of the contained value.\n3\n#\nThrows: Any exceptions arising from calling the selected constructor for the contained value.\n\ud83d\udd17\nany(any&& other) noexcept;\n4\n#\nEffects: If other.has_value() is false, constructs an object that has no value.\n Otherwise, constructs an object of type any that\ncontains either the contained value of other, or\ncontains an object of the same type constructed from\nthe contained value of other considering that contained value as an rvalue.\n\ud83d\udd17\ntemplate<class T>\n  any(T&& value);\n5\n#\nLet VT be decay_t<T>.\n6\n#\nConstraints: VT is not the same type as any,\nVT is not a specialization of in_place_type_t,\nand is_copy_constructible_v<VT> is true.\n7\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n8\n#\nEffects: Constructs an object of type any that contains an object of type VT direct-initialized with std\u200b::\u200bforward<T>(value).\n9\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\ntemplate<class T, class... Args>\n  explicit any(in_place_type_t<T>, Args&&... args);\n10\n#\nLet VT be decay_t<T>.\n11\n#\nConstraints: is_copy_constructible_v<VT> is true and\nis_constructible_v<VT, Args...> is true.\n12\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n13\n#\nEffects: Direct-non-list-initializes the contained value of type VT\nwith std\u200b::\u200bforward<Args>(args)....\n14\n#\nPostconditions: *this contains a value of type VT.\n15\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  explicit any(in_place_type_t<T>, initializer_list<U> il, Args&&... args);\n16\n#\nLet VT be decay_t<T>.\n17\n#\nConstraints: is_copy_constructible_v<VT> is true and\nis_constructible_v<VT, initializer_list<U>&, Args...> is true.\n18\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n19\n#\nEffects: Direct-non-list-initializes the contained value of type VT\nwith il, std\u200b::\u200bforward<Args>(\u200bargs)....\n20\n#\nPostconditions: *this contains a value.\n21\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\n~any();\n22\n#\nEffects: As if by reset().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: conversion from 'MoveOnly' to non-scalar type 'std::any'"
+    ],
+    "clang": [
+      "error: no viable conversion from 'MoveOnly' to 'std::any'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -7,4 +7,3 @@\n   MoveOnly(MoveOnly&&) = default;\n };\n \n-std::any a = MoveOnly{};\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/any/ctor_move_only.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable conversion from 'MoveOnly' to 'std::any'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/any/ctor_move_only.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/any__ctor_move_only.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "conversion from 'MoveOnly' to non-scalar type 'std::any' requested"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

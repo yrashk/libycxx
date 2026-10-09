@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/algorithm/is_permutation_value_type.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "alg.is.permutation"
+  ],
+  "normative_text": {
+    "alg.is.permutation": "26.6.14 Is permutation [alg.is.permutation]\n\ud83d\udd17\ntemplate<class ForwardIterator1, class ForwardIterator2>\n  constexpr bool is_permutation(ForwardIterator1 first1, ForwardIterator1 last1,\n                                ForwardIterator2 first2);\ntemplate<class ForwardIterator1, class ForwardIterator2,\n         class BinaryPredicate>\n  constexpr bool is_permutation(ForwardIterator1 first1, ForwardIterator1 last1,\n                                ForwardIterator2 first2, BinaryPredicate pred);\ntemplate<class ForwardIterator1, class ForwardIterator2>\n  constexpr bool is_permutation(ForwardIterator1 first1, ForwardIterator1 last1,\n                                ForwardIterator2 first2, ForwardIterator2 last2);\ntemplate<class ForwardIterator1, class ForwardIterator2,\n         class BinaryPredicate>\n  constexpr bool is_permutation(ForwardIterator1 first1, ForwardIterator1 last1,\n                                ForwardIterator2 first2, ForwardIterator2 last2,\n                                BinaryPredicate pred);\n1\n#\nLet last2 be first2 + (last1 - first1)\nfor the overloads with no parameter named last2,\nand let pred be equal_to{}\nfor the overloads with no parameter pred.\n2\n#\nMandates: ForwardIterator1 and ForwardIterator2 have the same value type.\n3\n#\nPreconditions: The comparison function is an equivalence relation.\n4\n#\nReturns: If last1 - first1 != last2 - first2, return false.\n Otherwise return true\nif there exists a permutation of the elements\nin the range [first2, last2),\nbeginning with ForwardIterator2 begin,\nsuch that equal(first1, last1, begin, pred) returns true;\notherwise, returns false.\n5\n#\nComplexity: No applications of the corresponding predicate\nif ForwardIterator1 and ForwardIterator2\nmeet the requirements of random access iterators and\nlast1 - first1 != last2 - first2.\n Otherwise, exactly last1 - first1 applications\nof the corresponding predicate\nif equal(first1, last1, first2, last2, pred) would return true;\notherwise, at worst O(N2), where N has the value last1 - first1.\n\ud83d\udd17\ntemplate<forward_iterator I1, sentinel_for<I1> S1, forward_iterator I2,\n         sentinel_for<I2> S2, class Proj1 = identity, class Proj2 = identity,\n         indirect_equivalence_relation<projected<I1, Proj1>,\n                                       projected<I2, Proj2>> Pred = ranges::equal_to>\n  constexpr bool ranges::is_permutation(I1 first1, S1 last1, I2 first2, S2 last2,\n                                        Pred pred = {},\n                                        Proj1 proj1 = {}, Proj2 proj2 = {});\ntemplate<forward_range R1, forward_range R2,\n         class Proj1 = identity, class Proj2 = identity,\n         indirect_equivalence_relation<projected<iterator_t<R1>, Proj1>,\n                                       projected<iterator_t<R2>, Proj2>> Pred = ranges::equal_to>\n  constexpr bool ranges::is_permutation(R1&& r1, R2&& r2, Pred pred = {},\n                                        Proj1 proj1 = {}, Proj2 proj2 = {});\n6\n#\nReturns: If last1 - first1 != last2 - first2, return false.\n Otherwise return true if there exists a permutation of the elements\nin the range [first2, last2), bounded by [pfirst, plast),\nsuch that\nranges\u200b::\u200bequal(first1, last1, pfirst, plast, pred, proj1, proj2)\nreturns true;\notherwise, returns false.\n7\n#\nComplexity: No applications of the corresponding predicate and projections if\n(7.1)\nfor the first overload,\n(7.1.1)\nS1 and I1 model sized_sentinel_for<S1, I1>,\n(7.1.2)\nS2 and I2 model sized_sentinel_for<S2, I2>, and\n(7.1.3)\nlast1 - first1 != last2 - first2;\n(7.2)\nfor the second overload,\nR1 and R2 each model sized_range, and\nranges\u200b::\u200bdistance(r1) != ranges\u200b::\u200bdistance(r2).\nOtherwise, exactly last1 - first1 applications\nof the corresponding predicate and projections\nif ranges\u200b::\u200bequal(\u200bfirst1, last1, first2, last2, pred, proj1, proj2)\nwould return true;\notherwise, at worst O(N2), where N has the value last1 - first1.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::is_permutation: the two ranges must have the same value type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,5 +5,4 @@\n int main() {\n   int a[] = {1, 2};\n   long b[] = {2, 1};\n-  return std::is_permutation(a, a + 2, b) ? 0 : 1;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/algorithm/is_permutation_value_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.libcxx.clang.log",
+      "first_error": null
+    },
+    "libstdcxx.gcc": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/algorithm/is_permutation_value_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/algorithm__is_permutation_value_type.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": null
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

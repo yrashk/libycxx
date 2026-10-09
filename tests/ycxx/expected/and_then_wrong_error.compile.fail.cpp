@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::expected::and_then: F must return a specialization of expected with the same error_type
 // [expected.object.monadic]/3: "Mandates: U is a specialization of expected and
 // is_same_v<typename U::error_type, E> is true."
 #include <expected>

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: atomic_init is deprecated \(\[depr\.atomics\.nonmembers\]\); use store\(desired, memory_order::relaxed\)[^\n]*W(?:error|deprecated)
 // [depr.atomics.nonmembers] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

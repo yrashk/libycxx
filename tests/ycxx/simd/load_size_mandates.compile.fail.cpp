@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::simd: unchecked load/store: the range is smaller than V::size\(\)
 // [simd.loadstore]/2: unchecked_load Mandates: if ranges::size(r) is a constant expression then
 // ranges::size(r) >= V::size(). (partial_load has no such requirement: the control.)
 #include <simd>

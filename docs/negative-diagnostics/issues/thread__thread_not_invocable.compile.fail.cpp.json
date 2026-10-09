@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/thread/thread_not_invocable.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "thread.thread.constr"
+  ],
+  "normative_text": {
+    "thread.thread.constr": "32.4.3.4 Constructors [thread.thread.constr]\n\ud83d\udd17\nthread() noexcept;\n1\n#\nEffects: The object does not represent a thread of execution.\n2\n#\nPostconditions: get_id() == id().\n\ud83d\udd17\ntemplate<class... Args> explicit thread(Args&&... args);\n3\n#\nConstraints: (3.1)\nArgs is not an empty pack, and\n(3.2)\nremove_cvref_t<Args...[0]> is not the same type as thread.\n4\n#\nLet i be the smallest value such that\ndecay_t<Args...[i]>\nis not a thread attribute type,\nif such a value exists.\n Then the following notation is used:\n(4.1)\nLet F be Args...[i].\n(4.2)\nLet f be args...[i].\n(4.3)\nLet Attrs be a pack of the types\nArgs...[j] for each j\nsuch that 0\u2264j<i.\n(4.4)\nLet attrs be a pack of the expressions\nargs...[j] for each j\nsuch that 0\u2264j<i.\n(4.5)\nLet FArgs be a pack of the types\nArgs...[j] for each j\nsuch that i<j<sizeof...(args).\n(4.6)\nLet fargs be a pack of the expressions\nargs...[j] for each j\nsuch that i<j<sizeof...(args).\n5\n#\nMandates: The value i exists, and the following are all true:\n(5.1)\nis_constructible_v<decay_t<F>, F>,\n(5.2)\n(is_constructible_v<decay_t<FArgs>, FArgs> && ...),\n(5.3)\nis_invocable_v<decay_t<F>, decay_t<FArgs>...>, and\n(5.4)\nno type is present more than once in the pack remove_cvref_t<Attrs>.\n6\n#\nEffects: The new thread of execution executes\ninvoke(auto(std::forward<F>(f)),                // for invoke, see [func.invoke]\n       auto(std::forward<FArgs>(fargs))...)\nwith the values produced by auto\nbeing materialized ([conv.rval]) in the constructing thread.\n Any return value from this invocation is ignored.\n [Note\u00a01:\u2002This implies that any exceptions not thrown from the invocation of the copy\nof f will be thrown in the constructing thread, not the new thread.\n \u2014\u00a0end note]\nIf the invocation of invoke terminates with an uncaught exception,\nterminate is invoked ([except.terminate]).\n [Note\u00a02:\u2002The parameters attrs...\ncan affect the behavior of the new thread ([thread.attributes]).\n \u2014\u00a0end note]\n7\n#\nSynchronization: The completion of the invocation of the constructor\nsynchronizes with the beginning of the invocation of the copy of f.\n8\n#\nPostconditions: get_id() != id().\n *this represents the newly started thread.\n9\n#\nThrows: system_error if unable to start the new thread.\n10\n#\nError conditions: (10.1)\nresource_unavailable_try_again \u2014 the system lacked the necessary\nresources to create another thread, or the system-imposed limit on the number of\nthreads in a process would be exceeded.\n\ud83d\udd17\nthread(thread&& x) noexcept;\n11\n#\nPostconditions: x.get_id() == id() and get_id() returns the\nvalue of x.get_id() prior to the start of construction.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*thread: the callable is not invocable with the decayed arguments"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n \n void f(int*);\n void g() {\n-  std::thread t(f, 1.5);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/thread/thread_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '__is_invocable_v<void (*)(int *), double>':"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/thread/thread_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/thread__thread_not_invocable.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::thread arguments must be invocable after conversion to rvalues"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

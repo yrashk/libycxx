@@ -1,0 +1,89 @@
+{
+  "test": "tests/ycxx/cmath/constexpr_signaling_nan_call.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "library.c"
+  ],
+  "normative_text": {
+    "library.c": "16.2 The C standard library [library.c]\n1\n#\nThe C++ standard library also makes available the facilities of the C standard library,\nsuitably adjusted to ensure static type safety.\n2\n#\nThe descriptions of many library functions rely on the C standard library for\nthe semantics of those functions.\n In some cases,\nthe signatures specified in this document\nmay be different from the signatures in the C standard library,\nand additional overloads may be declared in this document,\nbut the behavior and the preconditions\n(including any preconditions implied by the use of\na C restrict qualifier)\nare the same unless otherwise stated.\n3\n#\nA call to a C standard library function is\na non-constant library call ([defns.nonconst.libcall])\nif it raises a floating-point exception other than FE_INEXACT.\n The semantics of a call to a C standard library function\nevaluated as a core constant expression\nare those specified in ISO/IEC 9899:2024, Annex F\u00b9\u00b2\u2070\nto the extent applicable to the floating-point types ([basic.fundamental])\nthat are parameter types of the called function.\n [Note\u00a01:\u2002ISO/IEC 9899:2024, Annex F specifies\nthe conditions under which floating-point exceptions are raised and\nthe behavior when NaNs and/or infinities are passed as arguments.\n \u2014\u00a0end note]\n [Note\u00a02:\u2002Equivalently, a call to a C standard library function is\na non-constant library call\nif errno is set\nwhen math_errhandling & MATH_ERRNO is true.\n \u2014\u00a0end note]\n120)120) See also ISO/IEC 9899:2024, 7.6.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: call to non-'constexpr' function [^\\n]*__fp_raise",
+      "in 'constexpr' expansion of 'std::sqrt<>\\("
+    ],
+    "clang": [
+      "error: constexpr variable 'bad' must be initialized by a constant expression",
+      "note: in call to 'sqrt<double>\\(nan\\)'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -8,6 +8,3 @@\n \n constexpr double snan = std::numeric_limits<double>::signaling_NaN();\n constexpr bool ok = std::isnan(snan) && std::sqrt(4.0) == 2.0;  // control\n-constexpr double bad = std::sqrt(snan);\n-\n-int main() { return ok + static_cast<int>(bad == bad); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/cmath/constexpr_signaling_nan_call.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "constexpr variable 'ok' must be initialized by a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/cmath/constexpr_signaling_nan_call.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/cmath__constexpr_signaling_nan_call.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'sqrt(+SNaN)' is not a constant expression"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,89 @@
+{
+  "test": "tests/ycxx/memory/unique_ptr_array_derived.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "unique.ptr.runtime.general",
+    "unique.ptr.runtime.ctor"
+  ],
+  "normative_text": {
+    "unique.ptr.runtime.general": "20.4.1.4.1 General [unique.ptr.runtime.general]\n\ud83d\udd17\nnamespace std {\n  template<class T, class D> class unique_ptr<T[], D> {\n  public:\n    using pointer      = see below;\n    using element_type = T;\n    using deleter_type = D;\n    // [unique.ptr.runtime.ctor], constructors\n    constexpr unique_ptr() noexcept;\n    template<class U> constexpr explicit unique_ptr(U p) noexcept;\n    template<class U> constexpr unique_ptr(U p, see below d) noexcept;\n    template<class U> constexpr unique_ptr(U p, see below d) noexcept;\n    constexpr unique_ptr(unique_ptr&& u) noexcept;\n    template<class U, class E>\n      constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;\n    constexpr unique_ptr(nullptr_t) noexcept;\n    // destructor\n    constexpr ~unique_ptr();\n    // assignment\n    constexpr unique_ptr& operator=(unique_ptr&& u) noexcept;\n    template<class U, class E>\n      constexpr unique_ptr& operator=(unique_ptr<U, E>&& u) noexcept;\n    constexpr unique_ptr& operator=(nullptr_t) noexcept;\n    // [unique.ptr.runtime.observers], observers\n    constexpr T& operator[](size_t i) const;\n    constexpr pointer get() const noexcept;\n    constexpr deleter_type& get_deleter() noexcept;\n    constexpr const deleter_type& get_deleter() const noexcept;\n    constexpr explicit operator bool() const noexcept;\n    // [unique.ptr.runtime.modifiers], modifiers\n    constexpr pointer release() noexcept;\n    template<class U> constexpr void reset(U p) noexcept;\n    constexpr void reset(nullptr_t = nullptr) noexcept;\n    constexpr void swap(unique_ptr& u) noexcept;\n    // disable copy from lvalue\n    unique_ptr(const unique_ptr&) = delete;\n    unique_ptr& operator=(const unique_ptr&) = delete;\n  };\n}\n1\n#\nA specialization for array types is provided with a slightly altered\ninterface.\n(1.1)\nConversions between different types of\nunique_ptr<T[], D>\nthat would be disallowed for the corresponding pointer-to-array types,\nand conversions to or from the non-array forms of\nunique_ptr, produce an ill-formed program.\n(1.2)\nPointers to types derived from T are\nrejected by the constructors, and by reset.\n(1.3)\nThe observers operator* and\noperator-> are not provided.\n(1.4)\nThe indexing observer operator[] is provided.\n(1.5)\nThe default deleter will call delete[].\n2\n#\nDescriptions are provided below only for members that\ndiffer from the primary template.\n3\n#\nThe template argument T shall be a complete type.\n",
+    "unique.ptr.runtime.ctor": "20.4.1.4.2 Constructors [unique.ptr.runtime.ctor]\n\ud83d\udd17\ntemplate<class U> constexpr explicit unique_ptr(U p) noexcept;\n1\n#\nThis constructor behaves the same as\nthe constructor in the primary template that\ntakes a single parameter of type pointer.\n2\n#\nConstraints: (2.1)\nU is the same type as pointer, or\n(2.2)\npointer is the same type as element_type*,\nU is a pointer type V*, and\nV(*)[] is convertible to element_type(*)[].\n\ud83d\udd17\ntemplate<class U> constexpr unique_ptr(U p, see below d) noexcept;\ntemplate<class U> constexpr unique_ptr(U p, see below d) noexcept;\n3\n#\nThese constructors behave the same as\nthe constructors in the primary template that\ntake a parameter of type pointer and a second parameter.\n4\n#\nConstraints: (4.1)\nU is the same type as pointer,\n(4.2)\nU is nullptr_t, or\n(4.3)\npointer is the same type as element_type*,\n      U is a pointer type V*, and\n      V(*)[] is convertible to element_type(*)[].\n\ud83d\udd17\ntemplate<class U, class E> constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;\n5\n#\nThis constructor behaves the same as in the primary template.\n6\n#\nConstraints: Where UP is unique_ptr<U, E>:\n(6.1)\nU is an array type, and\n(6.2)\npointer is the same type as element_type*, and\n(6.3)\nUP\u200b::\u200bpointer is the same type as UP\u200b::\u200belement_type*, and\n(6.4)\nUP\u200b::\u200belement_type(*)[] is convertible to element_type(*)[], and\n(6.5)\neither D is a reference type and E is the same type as D,\n      or D is not a reference type and E is implicitly convertible to D.\n[Note\u00a01:\u2002This replaces the Constraints: specification of the primary template.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function.*std::unique_ptr<Base \\[\\]>::unique_ptr\\(Derived\\*\\)"
+    ],
+    "clang": [
+      "error: no matching constructor for initialization of 'std::unique_ptr<Base\\[\\]>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -9,5 +9,4 @@\n struct Derived : Base {};\n \n int main() {\n-  std::unique_ptr<Base[]> p(new Derived[2]);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_array_derived.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching constructor for initialization of 'std::unique_ptr<Base[]>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_array_derived.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_array_derived.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'std::unique_ptr<Base []>::unique_ptr(Derived*)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

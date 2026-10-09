@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::generator: allocator_traits<Allocator>::pointer must be a pointer type
 // [coro.generator.promise]/17-18: B is allocator_traits<A>::rebind_alloc<U>; "Mandates:
 // allocator_traits<B>::pointer is a pointer type." An Allocator whose pointer is a class
 // type (a fancy pointer) makes the coroutine's operator new ill-formed. Control

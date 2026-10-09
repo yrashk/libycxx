@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::simd::permute: the index map gives an index out of range
 // [simd.permute.static]/3: Mandates: gen-fn(i) is a constant expression whose value is
 // zero_element, uninit_element, or in [0, V::size()), for all i in [0, N). Index 8 is out of
 // range for vec<int, 8>; the control maps to 7.

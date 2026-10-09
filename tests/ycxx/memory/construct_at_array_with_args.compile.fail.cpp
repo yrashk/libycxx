@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::construct_at: arrays take no arguments
 // [specialized.construct]/2: construct_at "Mandates: If is_array_v<T> is true,
 // sizeof...(Args) is zero."
 #include <memory>

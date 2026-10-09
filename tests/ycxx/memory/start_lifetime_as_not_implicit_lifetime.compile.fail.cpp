@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::start_lifetime_as: T must be an implicit\-lifetime type
 // [obj.lifetime]/3: start_lifetime_as "Mandates: T is an implicit-lifetime type and not an
 // incomplete type." A class whose only constructors are user-provided and that has a
 // user-provided destructor is not an implicit-lifetime type ([class.prop]/8).

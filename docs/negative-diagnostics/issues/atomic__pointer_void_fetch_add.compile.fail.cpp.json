@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/atomic/pointer_void_fetch_add.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "atomics.types.pointer"
+  ],
+  "normative_text": {
+    "atomics.types.pointer": "32.5.8.5 Partial specialization for pointers [atomics.types.pointer]\n'>\nnamespace std {\n  template<class T> struct atomic<T*> {\n    using value_type = T*;\n    using difference_type = ptrdiff_t;\n    static constexpr bool is_always_lock_free = implementation-defined;\n    bool is_lock_free() const volatile noexcept;\n    bool is_lock_free() const noexcept;\n    constexpr atomic() noexcept;\n    constexpr atomic(T*) noexcept;\n    atomic(const atomic&) = delete;\n    atomic& operator=(const atomic&) = delete;\n    atomic& operator=(const atomic&) volatile = delete;\n    void store(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr void store(T*, memory_order = memory_order::seq_cst) noexcept;\n    T* operator=(T*) volatile noexcept;\n    constexpr T* operator=(T*) noexcept;\n    T* load(memory_order = memory_order::seq_cst) const volatile noexcept;\n    constexpr T* load(memory_order = memory_order::seq_cst) const noexcept;\n    operator T*() const volatile noexcept;\n    constexpr operator T*() const noexcept;\n    T* exchange(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr T* exchange(T*, memory_order = memory_order::seq_cst) noexcept;\n    bool compare_exchange_weak(T*&, T*, memory_order, memory_order) volatile noexcept;\n    constexpr bool compare_exchange_weak(T*&, T*, memory_order, memory_order) noexcept;\n    bool compare_exchange_strong(T*&, T*, memory_order, memory_order) volatile noexcept;\n    constexpr bool compare_exchange_strong(T*&, T*, memory_order, memory_order) noexcept;\n    bool compare_exchange_weak(T*&, T*,\n                               memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr bool compare_exchange_weak(T*&, T*,\n                                         memory_order = memory_order::seq_cst) noexcept;\n    bool compare_exchange_strong(T*&, T*,\n                                 memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr bool compare_exchange_strong(T*&, T*,\n                                           memory_order = memory_order::seq_cst) noexcept;\n    T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr T* fetch_add(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;\n    T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr T* fetch_sub(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;\n    T* fetch_max(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr T* fetch_max(T*, memory_order = memory_order::seq_cst) noexcept;\n    T* fetch_min(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr T* fetch_min(T*, memory_order = memory_order::seq_cst) noexcept;\n    void store_add(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr void store_add(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;\n    void store_sub(ptrdiff_t, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr void store_sub(ptrdiff_t, memory_order = memory_order::seq_cst) noexcept;\n    void store_max(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr void store_max(T*, memory_order = memory_order::seq_cst) noexcept;\n    void store_min(T*, memory_order = memory_order::seq_cst) volatile noexcept;\n    constexpr void store_min(T*, memory_order = memory_order::seq_cst) noexcept;\n    T* operator++(int) volatile noexcept;\n    constexpr T* operator++(int) noexcept;\n    T* operator--(int) volatile noexcept;\n    constexpr T* operator--(int) noexcept;\n    T* operator++() volatile noexcept;\n    constexpr T* operator++() noexcept;\n    T* operator--() volatile noexcept;\n    constexpr T* operator--() noexcept;\n    T* operator+=(ptrdiff_t) volatile noexcept;\n    constexpr T* operator+=(ptrdiff_t) noexcept;\n    T* operator-=(ptrdiff_t) volatile noexcept;\n    constexpr T* operator-=(ptrdiff_t) noexcept;\n    void wait(T*, memory_order = memory_order::seq_cst) const volatile noexcept;\n    constexpr void wait(T*, memory_order = memory_order::seq_cst) const noexcept;\n    void notify_one() volatile noexcept;\n    constexpr void notify_one() noexcept;\n    void notify_all() volatile noexcept;\n    constexpr void notify_all() noexcept;\n  };\n}\n_'>\n1\n#\nThere is a partial specialization of the atomic class template for pointers.\n Specializations of this partial specialization are standard-layout structs.\n They each have a trivial destructor.\n2\n#\nExcept during constant evaluation,\nwhen an operation on an atomic pointer\nwould otherwise result in a pointer value p\nthat is not valid in the context of the evaluation ([basic.compound]),\nthat result instead is\nreinterpret_cast<T*>(reinterpret_cast<uintptr_t>(p)).\n3\n#\nDescriptions are provided below only for members that differ from the primary template.\n4\n#\nThe following operations perform pointer arithmetic.\n The correspondence among key, operator, and computation is specified\nin Table 156.\nTable 156 \u2014 Atomic pointer computations\u2003[tab:atomic.types.pointer.comp]\n\ud83d\udd17\nkey\nOp\nComputation\nkey\nOp\nComputation\n\ud83d\udd17\nadd\n+\naddition\nsub\n-\nsubtraction\n\ud83d\udd17\nmax\nmaximum\nmin\nminimum\n,fetch_sub'>'>,fetch_min'>'>,fetch_max'>'>,fetch_add'>'>\ud83d\udd17\nT* fetch_key(see above operand, memory_order order = memory_order::seq_cst) volatile noexcept;\nconstexpr T* fetch_key(see above operand, memory_order order = memory_order::seq_cst) noexcept;\n5\n#\nConstraints: For the volatile overload of this function,\nis_always_lock_free is true.\n6\n#\nMandates: T is a complete object type.\n [Note\u00a01:\u2002Pointer arithmetic on void* or function pointers is ill-formed.\n \u2014\u00a0end note]\n7\n#\nEffects: Atomically replaces the value pointed to by\nthis with the result of the computation applied to the\nvalue pointed to by this and the given operand.\n Memory is affected according to the value of order.\n These operations are atomic read-modify-write operations ([intro.multithread]).\n8\n#\nReturns: Atomically, the value pointed to by this immediately before the effects.\n9\n#\nRemarks: The result may be an undefined address,\nbut the operations otherwise have no undefined behavior.\n10\n#\nFor fetch_max and fetch_min, the maximum and minimum\ncomputation is performed as if by max and min\nalgorithms ([alg.min.max]), respectively, with the object value and the first\nparameter as the arguments.\n[Note\u00a02:\u2002If the pointers point to different complete objects (or subobjects thereof),\nthe < operator does not establish a strict weak ordering\n(Table 29, [expr.rel]).\n \u2014\u00a0end note]\n,store_sub'>'>,store_min'>'>,store_max'>'>,store_add'>'>\ud83d\udd17\nvoid store_key(see above operand, memory_order order = memory_order::seq_cst) volatile noexcept;\nconstexpr void store_key(see above operand, memory_order order = memory_order::seq_cst) noexcept;\n11\n#\nConstraints: For the volatile overload of this function,\nis_always_lock_free is true.\n12\n#\nMandates: T is a complete object type.\n [Note\u00a03:\u2002Pointer arithmetic on void* or function pointers is ill-formed.\n \u2014\u00a0end note]\n13\n#\nEffects: Atomically replaces the value pointed to by this\nwith the result of the computation applied to\nthe value pointed to by this and the given operand.\n Memory is affected according to the value of order.\n These operations are atomic modify-write operations ([atomics.order]).\n14\n#\nRemarks: The result may be an undefined address,\nbut the operations otherwise have no undefined behavior.\n For store_max and store_min,\nthe maximum and minimum computation is performed\nas if by max and min algorithms ([alg.min.max]), respectively,\nwith the value pointed to by this and\nthe first parameter as the arguments.\n [Note\u00a04:\u2002If the pointers point to different complete objects (or subobjects thereof),\nthe < operator does not establish\na strict weak ordering (Table 29, [expr.rel]).\n \u2014\u00a0end note]\n,operator-=__'>__'>,operator+=__'>__'>\ud83d\udd17\nT* operator op=(ptrdiff_t operand) volatile noexcept;\nconstexpr T* operator op=(ptrdiff_t operand) noexcept;\n15\n#\nConstraints: For the volatile overload of this function,\nis_always_lock_free is true.\n16\n#\nEffects: Equivalent to: return fetch_key(operand) op operand;\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: static assertion failed[^\\n]*atomic pointer arithmetic needs a pointer to a complete object type"
+    ],
+    "clang": [
+      "error: invalid application of 'sizeof' to an incomplete type [^\\n]*\\(aka 'void'\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n #include <atomic>\n \n void f(std::atomic<void*>& p) {\n-  p.fetch_add(1);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/pointer_void_fetch_add.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "incomplete type 'void' where a complete type is required"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/pointer_void_fetch_add.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__pointer_void_fetch_add.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: pointer to object type"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

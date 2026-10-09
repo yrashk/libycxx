@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/simd/load_convert_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "simd.loadstore"
+  ],
+  "normative_text": {
+    "simd.loadstore": "29.10.8.6 Load and store functions [simd.loadstore]\n\ud83d\udd17\ntemplate<class V = see below, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr V unchecked_load(R&& r, flags<Flags...> f = {});\ntemplate<class V = see below, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr V unchecked_load(R&& r, const typename V::mask_type& mask, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, class... Flags>\n  constexpr V unchecked_load(I first, iter_difference_t<I> n, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, class... Flags>\n  constexpr V unchecked_load(I first, iter_difference_t<I> n, const typename V::mask_type& mask,\n                             flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr V unchecked_load(I first, S last, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr V unchecked_load(I first, S last, const typename V::mask_type& mask,\n                             flags<Flags...> f = {});\n1\n#\nLet\n(1.1)\nmask be V\u200b::\u200bmask_type(true) for the overloads with no\n   mask parameter;\n(1.2)\nR be span<const iter_value_t<I>> for the overloads with no\n   template parameter R;\n(1.3)\nr be R(first, n) for the overloads with an n\n   parameter and R(first, last) for the overloads with a last\n   parameter.\n2\n#\nMandates: If ranges\u200b::\u200bsize(r) is a constant expression then\nranges\u200b::\u200bsize(r) \u2002\u2265\u2002 V\u200b::\u200bsize().\n3\n#\nPreconditions: (3.1)\n[first, first + n) is a valid range for the overloads with an\n  n parameter.\n(3.2)\n[first, last) is a valid range for the overloads with a\n  last parameter.\n(3.3)\nranges\u200b::\u200bsize(r) \u2002\u2265\u2002 V\u200b::\u200bsize()\n4\n#\nEffects: Equivalent to: return partial_load<V>(r, mask, f);\n5\n#\nRemarks: The default argument for template parameter V is\nbasic_vec<ranges\u200b::\u200brange_value_t<R>>.\n\ud83d\udd17\ntemplate<class V = see below, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr V partial_load(R&& r, flags<Flags...> f = {});\ntemplate<class V = see below, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr V partial_load(R&& r, const typename V::mask_type& mask, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, class... Flags>\n  constexpr V partial_load(I first, iter_difference_t<I> n, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, class... Flags>\n  constexpr V partial_load(I first, iter_difference_t<I> n, const typename V::mask_type& mask,\n                           flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr V partial_load(I first, S last, flags<Flags...> f = {});\ntemplate<class V = see below, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr V partial_load(I first, S last, const typename V::mask_type& mask,\n                           flags<Flags...> f = {});\n6\n#\nLet\n(6.1)\nmask be V\u200b::\u200bmask_type(true) for the overloads with no\n   mask parameter;\n(6.2)\nR be span<const iter_value_t<I>> for the overloads with no\n   template parameter R;\n(6.3)\nr be R(first, n) for the overloads with an n\n   parameter and R(first, last) for the overloads with a last\n   parameter;\n(6.4)\nT be typename V\u200b::\u200bvalue_type.\n7\n#\nMandates: (7.1)\nranges\u200b::\u200brange_value_t<R> is a vectorizable type and\n   satisfies explicitly-convertible-to<T>,\n(7.2)\nsame_as<remove_cvref_t<V>, V> is true,\n(7.3)\nV is an enabled specialization of basic_vec, and\n(7.4)\nif the template parameter pack Flags does not contain\n   convert-flag, then the conversion from\n   ranges\u200b::\u200brange_value_t<R> to V\u200b::\u200bvalue_type is\n   value-preserving.\n8\n#\nPreconditions: (8.1)\n[first, first + n) is a valid range for the overloads with an\n   n parameter.\n(8.2)\n[first, last) is a valid range for the overloads with a last\n   parameter.\n(8.3)\nIf the template parameter pack Flags contains\n   aligned-flag, ranges\u200b::\u200bdata(r) points to storage\n   aligned by alignment_v<V, ranges\u200b::\u200brange_value_t<R>>.\n(8.4)\nIf the template parameter pack Flags contains\n   overaligned-flag<N>, ranges\u200b::\u200bdata(r) points to\n   storage aligned by N.\n9\n#\nReturns: A basic_vec object whose ith element is initialized with\nmask[i] && i < ranges\u200b::\u200bsize(r) ?\nstatic_cast<T>(\u200branges\u200b::\u200bdata(r)[i]) : T() for all i in the range of\n[0, V\u200b::\u200bsize()),\nwhere T is V\u200b::\u200bvalue_type.\n10\n#\nRemarks: The default argument for template parameter V is\nbasic_vec<ranges\u200b::\u200brange_value_t<R>>.\n\ud83d\udd17\ntemplate<class T, class Abi, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, R&& r, flags<Flags...> f = {});\ntemplate<class T, class Abi, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, R&& r,\n                                 const typename basic_vec<T, Abi>::mask_type& mask,\n                                 flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, class... Flags>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, I first, iter_difference_t<I> n,\n                                 flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, class... Flags>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, I first, iter_difference_t<I> n,\n                                 const typename basic_vec<T, Abi>::mask_type& mask,\n                                 flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, I first, S last,\n                                 flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr void unchecked_store(const basic_vec<T, Abi>& v, I first, S last,\n                                 const typename basic_vec<T, Abi>::mask_type& mask,\n                                 flags<Flags...> f = {});\n11\n#\nLet\n(11.1)\nmask be basic_vec<T, Abi>\u200b::\u200bmask_type(true) for the\n   overloads with no mask parameter;\n(11.2)\nR be span<iter_value_t<I>> for the overloads with no\n   template parameter R;\n(11.3)\nr be R(first, n) for the overloads with an n\n   parameter and R(first, last) for the overloads with a last\n   parameter.\n12\n#\nMandates: If ranges\u200b::\u200bsize(r) is a constant expression then\nranges\u200b::\u200bsize(r) \u2002\u2265\u2002 simd-size-v<T, Abi>.\n13\n#\nPreconditions: (13.1)\n[first, first + n) is a valid range for the overloads with an\n   n parameter.\n(13.2)\n[first, last) is a valid range for the overloads with a last\n   parameter.\n(13.3)\nranges\u200b::\u200bsize(r) \u2002\u2265\u2002 simd-size-v<T, Abi>\n14\n#\nEffects: Equivalent to: partial_store(v, r, mask, f).\n\ud83d\udd17\ntemplate<class T, class Abi, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, R&& r, flags<Flags...> f = {});\ntemplate<class T, class Abi, ranges::contiguous_range R, class... Flags>\n  requires ranges::sized_range<R>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, R&& r,\n                               const typename basic_vec<T, Abi>::mask_type& mask,\n                               flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, class... Flags>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, I first, iter_difference_t<I> n,\n                               flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, class... Flags>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, I first, iter_difference_t<I> n,\n                               const typename basic_vec<T, Abi>::mask_type& mask,\n                               flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, I first, S last,\n                               flags<Flags...> f = {});\ntemplate<class T, class Abi, contiguous_iterator I, sized_sentinel_for<I> S, class... Flags>\n  constexpr void partial_store(const basic_vec<T, Abi>& v, I first, S last,\n                               const typename basic_vec<T, Abi>::mask_type& mask,\n                               flags<Flags...> f = {});\n15\n#\nLet\n(15.1)\nmask be basic_vec<T, Abi>\u200b::\u200bmask_type(true) for the\n   overloads with no mask parameter;\n(15.2)\nR be span<iter_value_t<I>> for the overloads with no\n   template parameter R;\n(15.3)\nr be R(first, n) for the overloads with an n\n   parameter and R(first, last) for the overloads with a last\n   parameter.\n16\n#\nConstraints: (16.1)\nranges\u200b::\u200biterator_t<R> models\n   indirectly_writable<ranges\u200b::\u200brange_value_t<R>>, and\n(16.2)\nT satisfies\n  explicitly-convertible-to<ranges\u200b::\u200brange_value_t<R>>.\n17\n#\nMandates: (17.1)\nranges\u200b::\u200brange_value_t<R> is a vectorizable type, and\n(17.2)\nif the template parameter pack Flags does not contain\n   convert-flag, then the conversion from T to\n   ranges\u200b::\u200brange_value_t<R> is value-preserving.\n18\n#\nPreconditions: (18.1)\n[first, first + n) is a valid range for the overloads with an\n   n parameter.\n(18.2)\n[first, last) is a valid range for the overloads with a last\n   parameter.\n(18.3)\nIf the template parameter pack Flags contains\n   aligned-flag, ranges\u200b::\u200bdata(r) points to storage\n   aligned by alignment_v<basic_vec<T, Abi>,\n   ranges\u200b::\u200brange_value_t<R>>.\n(18.4)\nIf the template parameter pack Flags contains\n   overaligned-flag<N>, ranges\u200b::\u200bdata(r) points to\n   storage aligned by N.\n19\n#\nEffects: For all i in the range of [0, basic_vec<T, Abi>\u200b::\u200bsize()), if\nmask[i] && i < ranges\u200b::\u200b\u200bsize(r) is true, evaluates\nranges\u200b::\u200bdata(r)[i] = static_cast<ranges\u200b::\u200brange_value_t<R>>(v[\u200bi]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::simd: the conversion from the range's value type to V::value_type is not value\\-preserving \\(pass flag_convert\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [simd.loadstore]/7.4: partial_load (and so unchecked_load) Mandates: without convert-flag the\n // conversion from range_value_t<R> to V::value_type is value-preserving. int -> short is not.\n #include <simd>\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/load_convert_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "'simd' file not found"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/load_convert_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__load_convert_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'std::simd' has not been declared"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

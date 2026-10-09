@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/chrono/duration_period_not_ratio.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "time.duration.general"
+  ],
+  "normative_text": {
+    "time.duration.general": "30.5.1 General [time.duration.general]\n1\n#\nA duration type measures time between two points in time (time_points).\n A duration has a representation which holds a count of ticks and a tick period.\n The tick period is the amount of time which occurs from one tick to the next, in units\nof seconds.\n It is expressed as a rational constant using the template ratio.\n\ud83d\udd17\nnamespace std::chrono {\n  template<class Rep, class Period = ratio<1>>\n  class duration {\n  public:\n    using rep    = Rep;\n    using period = Period::type;\n  private:\n    rep rep_;       // exposition only\n  public:\n    // [time.duration.cons], construct/copy/destroy\n    constexpr duration() = default;\n    template<class Rep2>\n      constexpr explicit duration(const Rep2& r);\n    template<class Rep2, class Period2>\n      constexpr duration(const duration<Rep2, Period2>& d);\n    ~duration() = default;\n    duration(const duration&) = default;\n    duration& operator=(const duration&) = default;\n    // [time.duration.observer], observer\n    constexpr rep count() const;\n    // [time.duration.arithmetic], arithmetic\n    constexpr common_type_t<duration> operator+() const;\n    constexpr common_type_t<duration> operator-() const;\n    constexpr duration& operator++();\n    constexpr duration  operator++(int);\n    constexpr duration& operator--();\n    constexpr duration  operator--(int);\n    constexpr duration& operator+=(const duration& d);\n    constexpr duration& operator-=(const duration& d);\n    constexpr duration& operator*=(const rep& rhs);\n    constexpr duration& operator/=(const rep& rhs);\n    constexpr duration& operator%=(const rep& rhs);\n    constexpr duration& operator%=(const duration& rhs);\n    // [time.duration.special], special values\n    static constexpr duration zero() noexcept;\n    static constexpr duration min() noexcept;\n    static constexpr duration max() noexcept;\n  };\n}\n2\n#\nRep shall be an arithmetic type or a class emulating an arithmetic type.\n If a specialization of duration\nis instantiated with\na cv-qualified type or a specialization of duration\nas the argument for the template\nparameter Rep, the program is ill-formed.\n3\n#\nIf Period is not a specialization of ratio, the program is ill-formed.\n If Period\u200b::\u200bnum is not positive, the program is ill-formed.\n4\n#\nMembers of duration do not throw exceptions other than\nthose thrown by the indicated operations on their representations.\n5\n#\nThe defaulted copy constructor of duration shall be a\nconstexpr function if and only if the required initialization\nof the member rep_ for copy and move, respectively, would\nbe constexpr-suitable ([dcl.constexpr]).\n6\n#\n[Example\u00a01:\u2002duration<long, ratio<60>> d0;       // holds a count of minutes using a long\nduration<long long, milli> d1;      // holds a count of milliseconds using a long long\nduration<double, ratio<1, 30>>  d2; // holds a count with a tick period of 130 of a second\n                                    // (30 Hz) using a double\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*duration: Period must be a specialization of ratio"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,6 +5,5 @@\n   static constexpr long long num = 1, den = 1;\n   using type = fake_ratio;\n };\n-std::chrono::duration<int, fake_ratio> d{};\n \n int main() {}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/duration_period_not_ratio.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '__is_ratio_v<fake_ratio>': Second template parameter of duration must be a std::ratio"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/duration_period_not_ratio.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__duration_period_not_ratio.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: period must be a specialization of std::ratio"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/chrono/time_point_not_duration.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "time.point.general"
+  ],
+  "normative_text": {
+    "time.point.general": "30.6.1 General [time.point.general]\n\ud83d\udd17\nnamespace std::chrono {\n  template<class Clock, class Duration = typename Clock::duration>\n  class time_point {\n  public:\n    using clock    = Clock;\n    using duration = Duration;\n    using rep      = duration::rep;\n    using period   = duration::period;\n  private:\n    duration d_;                                                // exposition only\n  public:\n    // [time.point.cons], construct\n    constexpr time_point();                                     // has value epoch\n    constexpr explicit time_point(const duration& d);           // same as time_point() + d\n    template<class Duration2>\n      constexpr time_point(const time_point<clock, Duration2>& t);\n    // [time.point.observer], observer\n    constexpr duration time_since_epoch() const;\n    // [time.point.arithmetic], arithmetic\n    constexpr time_point& operator++();\n    constexpr time_point operator++(int);\n    constexpr time_point& operator--();\n    constexpr time_point operator--(int);\n    constexpr time_point& operator+=(const duration& d);\n    constexpr time_point& operator-=(const duration& d);\n    // [time.point.special], special values\n    static constexpr time_point min() noexcept;\n    static constexpr time_point max() noexcept;\n  };\n}\n1\n#\nIf Duration is not a specialization of duration,\nthe program is ill-formed.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*time_point: Duration must be a specialization of duration"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,6 +2,5 @@\n // ill-formed.\"\n #include <chrono>\n \n-std::chrono::time_point<std::chrono::system_clock, long long> tp{};\n \n int main() {}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/time_point_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '__is_duration_v<long long>': Second template parameter of time_point must be a std::chrono::duration"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/time_point_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__time_point_not_duration.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: duration must be a specialization of std::chrono::duration"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

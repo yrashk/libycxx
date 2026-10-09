@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/variant/visit_mismatched_category.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.visit"
+  ],
+  "normative_text": {
+    "variant.visit": "22.6.7 Visitation [variant.visit]\n\ud83d\udd17\ntemplate<class Visitor, class... Variants>\n  constexpr see below visit(Visitor&& vis, Variants&&... vars);\ntemplate<class R, class Visitor, class... Variants>\n  constexpr R visit(Visitor&& vis, Variants&&... vars);\n1\n#\nLet as-variant denote the following exposition-only function templates:\ntemplate<class... Ts>\n  constexpr auto&& as-variant(variant<Ts...>& var) { return var; }\ntemplate<class... Ts>\n  constexpr auto&& as-variant(const variant<Ts...>& var) { return var; }\ntemplate<class... Ts>\n  constexpr auto&& as-variant(variant<Ts...>&& var) { return std::move(var); }\ntemplate<class... Ts>\n  constexpr auto&& as-variant(const variant<Ts...>&& var) { return std::move(var); }\nLet n be sizeof...(Variants).\n For each 0\u2264i<n, let\nVi denote the type\ndecltype(as-variant(std\u200b::\u200bforward<Variantsi>(varsi))).\n2\n#\nConstraints: Vi is a valid type for all 0\u2264i<n.\n3\n#\nLet V denote the pack of types Vi.\n4\n#\nLet m be a pack of n values of type size_t.\n Such a pack is valid if\n0\u2264mi<variant_size_v<remove_reference_t<Vi>>\nfor all 0\u2264i<n.\n For each valid pack m, let e(m) denote the expression:\nINVOKE(std::forward<Visitor>(vis), GET<m>(std::forward<V>(vars))...)  // see [func.require]\nfor the first form and\nINVOKE<R>(std::forward<Visitor>(vis), GET<m>(std::forward<V>(vars))...)  // see [func.require]\nfor the second form.\n5\n#\nMandates: For each valid pack m, e(m) is a valid expression.\n All such expressions are of the same type and value category.\n6\n#\nReturns: e(m), where m is the pack for which\nmi is as-variant(varsi).index() for all 0\u2264i<n.\n The return type is decltype(e(m))\nfor the first form.\n7\n#\nThrows: bad_variant_access if\n(as-variant(vars).valueless_by_exception() || ...)\nis true.\n8\n#\nComplexity: For n \u2002\u2264\u20021, the invocation of the callable object is\nimplemented in constant time, i.e., for n=1, it does not depend on\nthe number of alternative types of V0.\n For n>1, the invocation of the callable object has\nno complexity requirements.\n\ud83d\udd17\ntemplate<class Self, class Visitor>\n  constexpr decltype(auto) visit(this Self&& self, Visitor&& vis);\n9\n#\nLet V be\nOVERRIDE_REF(Self&&, COPY_CONST(remove_reference_t<Self>, variant)) ([forward]).\n10\n#\nConstraints: The call to visit does not use\nan explicit template-argument-list that\nbegins with a type template-argument.\n11\n#\nEffects: Equivalent to: return std\u200b::\u200bvisit(std\u200b::\u200bforward<Visitor>(vis), (V)self);\n\ud83d\udd17\ntemplate<class R, class Self, class Visitor>\n  constexpr R visit(this Self&& self, Visitor&& vis);\n12\n#\nLet V be\nOVERRIDE_REF(Self&&, COPY_CONST(remove_reference_t<Self>, variant)) ([forward]).\n13\n#\nEffects: Equivalent to: return std\u200b::\u200bvisit<R>(std\u200b::\u200bforward<Visitor>(vis), (V)self);\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::visit: the visitor must return the same type and value category for all alternatives"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -11,5 +11,4 @@\n void f() {\n   std::variant<int, double> v;\n   F fn;\n-  std::visit(fn, v);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/visit_mismatched_category.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::__all<false>::value': `std::visit` requires the visitor to have a single return type."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/visit_mismatched_category.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__visit_mismatched_category.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::visit requires the visitor to have the same return type for all alternatives of a variant"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

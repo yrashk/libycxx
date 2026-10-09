@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*\[ratio\.arithmetic\]/2: the result of the std::ratio arithmetic is not representable by intmax_t
 // [ratio.arithmetic]/2, Table 65: ratio_divide<R1, R2> is X/Y with X = R1::num * R2::den,
 // Y = R1::den * R2::num; INTMAX_MAX / (1/2) = 2 * INTMAX_MAX is not representable: "If it is
 // not possible to represent U or V with intmax_t, the program is ill-formed."

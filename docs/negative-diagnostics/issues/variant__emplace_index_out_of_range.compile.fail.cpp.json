@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/variant/emplace_index_out_of_range.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.mod"
+  ],
+  "normative_text": {
+    "variant.mod": "22.6.3.5 Modifiers [variant.mod]\n\ud83d\udd17\ntemplate<class T, class... Args> constexpr T& emplace(Args&&... args);\n1\n#\nConstraints: is_constructible_v<T, Args...> is true, and\nT occurs exactly once in Types.\n2\n#\nEffects: Equivalent to:\nreturn emplace<I>(std::forward<Args>(args)...);\nwhere I is the zero-based index of T in Types.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  constexpr T& emplace(initializer_list<U> il, Args&&... args);\n3\n#\nConstraints: is_constructible_v<T, initializer_list<U>&, Args...> is true,\nand T occurs exactly once in Types.\n4\n#\nEffects: Equivalent to:\nreturn emplace<I>(il, std::forward<Args>(args)...);\nwhere I is the zero-based index of T in Types.\n\ud83d\udd17\ntemplate<size_t I, class... Args>\n  constexpr variant_alternative_t<I, variant<Types...>>& emplace(Args&&... args);\n5\n#\nMandates: I < sizeof...(Types).\n6\n#\nConstraints: is_constructible_v<TI, Args...> is true.\n7\n#\nEffects: Destroys the currently contained value if valueless_by_exception()\nis false.\n Then direct-non-list-initializes the contained value of type TI\nwith the arguments std\u200b::\u200bforward<Args>(args)....\n8\n#\nPostconditions: index() is I.\n9\n#\nReturns: A reference to the new contained value.\n10\n#\nThrows: Any exception thrown during the initialization of the contained value.\n11\n#\nRemarks: If an exception is thrown during the initialization of the contained value,\nthe variant is permitted to not hold a value.\n\ud83d\udd17\ntemplate<size_t I, class U, class... Args>\n  constexpr variant_alternative_t<I, variant<Types...>>&\n    emplace(initializer_list<U> il, Args&&... args);\n12\n#\nMandates: I < sizeof...(Types).\n13\n#\nConstraints: is_constructible_v<TI, initializer_list<U>&, Args...> is true.\n14\n#\nEffects: Destroys the currently contained value if valueless_by_exception()\nis false.\n Then direct-non-list-initializes the contained value of type TI\nwith il, std\u200b::\u200bforward<Args>(args)....\n15\n#\nPostconditions: index() is I.\n16\n#\nReturns: A reference to the new contained value.\n17\n#\nThrows: Any exception thrown during the initialization of the contained value.\n18\n#\nRemarks: If an exception is thrown during the initialization of the contained value,\nthe variant is permitted to not hold a value.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*variant_alternative index out of range"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n \n void f() {\n   std::variant<int, long> v;\n-  v.emplace<2>(1);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/emplace_index_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching member function for call to 'emplace'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/emplace_index_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__emplace_index_out_of_range.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'std::enable_if_t<(!(_Np < sizeof... (_Types)))> std::variant<_Types>::emplace(_Args&& ...) [with long unsigned int _Np = 2; _Args = {int}; _Types = {int, long int}; std::enable_if_t<(!(_Np < sizeof... (_Types)))> = void]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

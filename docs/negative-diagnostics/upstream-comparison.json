@@ -1,0 +1,1231 @@
+{
+  "method": "Inspect matched counterpart directives and upstream negative/warning annotations in their installed suites; run those original paths with the repository suite tools. Upstream sources are not copied or modified. Added pair constructor tests exercise the shared library fix.",
+  "commands": {
+    "libstdcxx-gcc": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/gcc\" YCXX_QUIET=1 tools/run-conformance libstdcxx gcc \"$(cat build/test-logs/negative-diagnostics/upstream-libstdcxx-filter.txt)\" -- -j 6",
+    "libcxx-clang": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/clang\" YCXX_QUIET=1 tools/run-conformance libcxx clang \"$(cat build/test-logs/negative-diagnostics/upstream-libcxx-filter.txt)\" -- -j 6"
+  },
+  "mapping_count": 43,
+  "counterparts": [
+    {
+      "test": "tests/ycxx/depr/aligned_storage.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/aligned_storage_t.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/aligned_union.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/aligned_union_t.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/atomic_init.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/atomic_init_v.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt16.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt16_8.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char8_t.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char8_t.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char8_t.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt32.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt32_8.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char8_t.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char8_t.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char8_t.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt_byname16.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt_byname16_8.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char8_t.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char8_t.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char8_t.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt_byname32.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/codecvt_byname32_8.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char8_t.depr_in_cxx20.verify.cpp",
+      "matches": [
+        "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char8_t.depr_in_cxx20.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char8_t.depr_in_cxx20.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/denorm_present.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+      "matches": [
+        "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 43,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/errc_nodata.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr.cerro/system.error.syn.verify.cpp",
+      "matches": [
+        "depr.cerro/system.error.syn.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr.cerro/system.error.syn.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 4,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/errc_nosr.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr.cerro/system.error.syn.verify.cpp",
+      "matches": [
+        "depr.cerro/system.error.syn.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr.cerro/system.error.syn.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 4,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/errc_nostr.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr.cerro/system.error.syn.verify.cpp",
+      "matches": [
+        "depr.cerro/system.error.syn.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr.cerro/system.error.syn.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 4,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/errc_time.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr.cerro/system.error.syn.verify.cpp",
+      "matches": [
+        "depr.cerro/system.error.syn.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr.cerro/system.error.syn.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 4,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/float_denorm_style.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+      "matches": [
+        "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 43,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/has_denorm.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+      "matches": [
+        "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 43,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/has_denorm_loss.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+      "matches": [
+        "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 43,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/is_pod.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/is_pod_v.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/is_trivial.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/is_trivial_v.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp",
+      "matches": [
+        "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 2,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/iterator.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "iterators/iterator.primitives/iterator.basic/deprecated.verify.cpp",
+      "matches": [
+        "iterators/iterator.primitives/iterator.basic/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "iterators/iterator.primitives/iterator.basic/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/move_arrow.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "iterators/predef.iterators/move.iterators/move.iter.ops/move.iter.op.ref/deprecated.verify.cpp",
+      "matches": [
+        "iterators/predef.iterators/move.iterators/move.iter.ops/move.iter.op.ref/deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "iterators/predef.iterators/move.iterators/move.iter.ops/move.iter.op.ref/deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/depr/visit_format_arg.compile.fail.cpp",
+      "suite": "libcxx",
+      "pattern": "utilities/format/format.arguments/format.arg/visit_format_arg.deprecated.verify.cpp",
+      "matches": [
+        "utilities/format/format.arguments/format.arg/visit_format_arg.deprecated.verify.cpp"
+      ],
+      "observations": [
+        {
+          "path": "utilities/format/format.arguments/format.arg/visit_format_arg.deprecated.verify.cpp",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "warning-only verify test"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 1,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/deque/deque_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/deque/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/deque/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/deque/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/forward_list/forward_list_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/forward_list/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/forward_list/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/forward_list/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/list/list_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/list/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/list/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/list/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/map/map_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/map/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/map/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/map/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/map/multimap_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/multimap/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/multimap/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/multimap/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/memory/shared_ptr_reset_void_pointer.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "20_util/shared_ptr/modifiers/reset_sfinae.cc",
+      "matches": [
+        "20_util/shared_ptr/modifiers/reset_sfinae.cc"
+      ],
+      "observations": [
+        {
+          "path": "20_util/shared_ptr/modifiers/reset_sfinae.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (divergence): expects shared_ptr<const void>::reset(void*) to be valid; [util.smartptr.shared.const]/3 requires `delete p` to be well-formed, which [expr.delete]/2 rules out for void*"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/random/seed_seq_generate_signed.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "26_numerics/random/seed_seq/97311.cc",
+      "matches": [
+        "26_numerics/random/seed_seq/97311.cc"
+      ],
+      "observations": [
+        {
+          "path": "26_numerics/random/seed_seq/97311.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (divergence): pre-C++26 generate_canonical expectations; seed_seq::generate with a signed value type violates its Mandates"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/set/multiset_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/multiset/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/multiset/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/multiset/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/set/set_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/set/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/set/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/set/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/unordered_map/unordered_map_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/unordered_map/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/unordered_map/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/unordered_map/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/unordered_map/unordered_multimap_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/unordered_multimap/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/unordered_multimap/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/unordered_multimap/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/unordered_set/unordered_multiset_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/unordered_multiset/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/unordered_multiset/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/unordered_multiset/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/unordered_set/unordered_set_allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/unordered_set/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/unordered_set/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/unordered_set/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    },
+    {
+      "test": "tests/ycxx/vector/allocator_value_type_mismatch.compile.fail.cpp",
+      "suite": "libstdcxx",
+      "pattern": "23_containers/vector/requirements/explicit_instantiation/3.cc",
+      "matches": [
+        "23_containers/vector/requirements/explicit_instantiation/3.cc"
+      ],
+      "observations": [
+        {
+          "path": "23_containers/vector/requirements/explicit_instantiation/3.cc",
+          "suite_result": {
+            "result": "UNSUPPORTED",
+            "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+          },
+          "diagnostic_annotations": {
+            "expected_error": 0,
+            "expected_warning": 0,
+            "dg_error": 0,
+            "dg_warning": 0
+          }
+        }
+      ]
+    }
+  ],
+  "suite_results": {
+    "libstdcxx-gcc": {
+      "20_util/pair/dangling_ref.cc": {
+        "result": "PASS",
+        "reason": null
+      },
+      "20_util/pair/p2165r4.cc": {
+        "result": "PASS",
+        "reason": null
+      },
+      "20_util/shared_ptr/modifiers/reset_sfinae.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (divergence): expects shared_ptr<const void>::reset(void*) to be valid; [util.smartptr.shared.const]/3 requires `delete p` to be well-formed, which [expr.delete]/2 rules out for void*"
+      },
+      "23_containers/deque/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/forward_list/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/list/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/map/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/multimap/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/multiset/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/set/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/unordered_map/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/unordered_multimap/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/unordered_multiset/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/unordered_set/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "23_containers/vector/requirements/explicit_instantiation/3.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (extension): instantiates a container with an allocator of another value_type; [container.alloc.reqmts]/5 Mandates rejects it"
+      },
+      "26_numerics/random/seed_seq/97311.cc": {
+        "result": "UNSUPPORTED",
+        "reason": "skipped (divergence): pre-C++26 generate_canonical expectations; seed_seq::generate with a signed value type violates its Mandates"
+      }
+    },
+    "libcxx-clang": {
+      "depr.cerro/system.error.syn.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "depr/depr.atomics/depr.atomics.nonmembers/atomic_init.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "depr/depr.numeric.limits.has.denorm/deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "iterators/iterator.primitives/iterator.basic/deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "iterators/predef.iterators/move.iterators/move.iter.ops/move.iter.op.ref/deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char16_t_char8_t.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt.byname/codecvt_byname_char32_t_char8_t.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char16_t_char8_t.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "localization/locale.categories/category.ctype/locale.codecvt/codecvt_char32_t_char8_t.depr_in_cxx20.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/format/format.arguments/format.arg/visit_format_arg.deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/meta/meta.trans/meta.trans.other/aligned_storage.depr.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/meta/meta.trans/meta.trans.other/aligned_union.depr.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/meta/meta.unary/meta.unary.prop/is_pod.deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/meta/meta.unary/meta.unary.prop/is_trivial.deprecated.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "warning-only verify test"
+      },
+      "utilities/utility/pairs/pair.astuple/tuple_element.verify.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.U_V.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.brace-init.P1951.pass.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "Test requires the following unavailable features: c++11 || c++14 || c++17 || c++20"
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.brace-init.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.const_first_const_second.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.const_first_const_second_cxx03.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.copy.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.copy_move_trivial.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.default.explicit_LWG2510.verify.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.default.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.default.sfinae_LWG2367.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.move.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.not_constexpr_cxx11.verify.cpp": {
+        "result": "UNSUPPORTED",
+        "reason": "Test requires the following unavailable features: c++11"
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_U_V_const_move.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_U_V_const_ref.cxx03.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_U_V_const_ref.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_U_V_move.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_U_V_ref.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.pair_like.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      },
+      "utilities/utility/pairs/pairs.pair/ctor.piecewise_construct.pass.cpp": {
+        "result": "PASS",
+        "reason": null
+      }
+    }
+  },
+  "counts": {
+    "libstdcxx-gcc": {
+      "PASS": 2,
+      "UNSUPPORTED": 14
+    },
+    "libcxx-clang": {
+      "UNSUPPORTED": 20,
+      "PASS": 18
+    }
+  }
+}

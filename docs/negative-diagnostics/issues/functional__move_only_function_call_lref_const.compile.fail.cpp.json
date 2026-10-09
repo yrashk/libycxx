@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/functional/move_only_function_call_lref_const.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.move.class"
+  ],
+  "normative_text": {
+    "func.wrap.move.class": "22.10.17.4.2 Class template move_only_function [func.wrap.move.class]\n\ud83d\udd17\nnamespace std {\n  template<class R, class... ArgTypes>\n  class move_only_function<R(ArgTypes...) cv ref noexcept(noex)> {\n  public:\n    using result_type = R;\n    // [func.wrap.move.ctor], constructors, assignments, and destructor\n    move_only_function() noexcept;\n    move_only_function(nullptr_t) noexcept;\n    move_only_function(move_only_function&&) noexcept;\n    template<class F> move_only_function(F&&);\n    template<class T, class... Args>\n      explicit move_only_function(in_place_type_t<T>, Args&&...);\n    template<class T, class U, class... Args>\n      explicit move_only_function(in_place_type_t<T>, initializer_list<U>, Args&&...);\n    move_only_function& operator=(move_only_function&&);\n    move_only_function& operator=(nullptr_t) noexcept;\n    template<class F> move_only_function& operator=(F&&);\n    ~move_only_function();\n    // [func.wrap.move.inv], invocation\n    explicit operator bool() const noexcept;\n    R operator()(ArgTypes...) cv ref noexcept(noex);\n    // [func.wrap.move.util], utility\n    void swap(move_only_function&) noexcept;\n    friend void swap(move_only_function&, move_only_function&) noexcept;\n    friend bool operator==(const move_only_function&, nullptr_t) noexcept;\n  private:\n    template<class VT>\n      static constexpr bool is-callable-from = see below;       // exposition only\n  };\n}\n1\n#\nThe move_only_function class template provides polymorphic wrappers\nthat generalize the notion of a callable object ([func.def]).\n These wrappers can store, move, and call arbitrary callable objects,\ngiven a call signature.\n2\n#\nRecommended practice: Implementations should avoid the use of dynamically allocated memory\nfor a small contained value.\n [Note\u00a01:\u2002Such small-object optimization can only be applied to a type T\nfor which is_nothrow_move_constructible_v<T> is true.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no match for call[^\\n]*std::move_only_function<"
+    ],
+    "clang": [
+      "error: no matching function for call to object[^\\n]*std::move_only_function<"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,4 +4,3 @@\n #include <functional>\n #include <utility>\n \n-int f(const std::move_only_function<int() &>& m) { return m(); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/move_only_function_call_lref_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no template named 'move_only_function' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/move_only_function_call_lref_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_call_lref_const.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no match for call to '(const std::move_only_function<int() &>) ()'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

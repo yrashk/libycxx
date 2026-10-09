@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/tuple/make_from_tuple_dangling.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "tuple.apply"
+  ],
+  "normative_text": {
+    "tuple.apply": "22.4.6 Calling a function with a tuple of arguments [tuple.apply]\n\ud83d\udd17\ntemplate<class F, tuple-like Tuple>\n  constexpr apply_result_t<F, Tuple> apply(F&& f, Tuple&& t)\n    noexcept(is_nothrow_applicable_v<F, Tuple>);\n1\n#\nEffects: Given the exposition-only function template:\nnamespace std {\n  template<class F, tuple-like Tuple, size_t... I>\n  constexpr decltype(auto) apply-impl(F&& f, Tuple&& t, index_sequence<I...>) {\n                                                                        // exposition only\n    return INVOKE(std::forward<F>(f), get<I>(std::forward<Tuple>(t))...);     // see [func.require]\n  }\n}\nEquivalent to:\nreturn apply-impl(std::forward<F>(f), std::forward<Tuple>(t),\n                  make_index_sequence<tuple_size_v<remove_reference_t<Tuple>>>{});\n\ud83d\udd17\ntemplate<class T, tuple-like Tuple>\n  constexpr T make_from_tuple(Tuple&& t);\n2\n#\nMandates: If tuple_size_v<remove_reference_t<Tuple>> is 1,\nthen\nreference_constructs_from_temporary_v<T, decltype(get<0>(declval<Tuple>()))>\nis false.\n3\n#\nEffects: Given the exposition-only function template:\nnamespace std {\n  template<class T, tuple-like Tuple, size_t... I>\n    requires is_constructible_v<T, decltype(get<I>(declval<Tuple>()))...>\n  constexpr T make-from-tuple-impl(Tuple&& t, index_sequence<I...>) {   // exposition only\n    return T(get<I>(std::forward<Tuple>(t))...);\n  }\n}\nEquivalent to:\nreturn make-from-tuple-impl<T>(\n           std::forward<Tuple>(t),\n           make_index_sequence<tuple_size_v<remove_reference_t<Tuple>>>{});\n[Note\u00a01:\u2002The type of T must be supplied\nas an explicit template parameter,\nas it cannot be deduced from the argument list.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::make_from_tuple: would bind a reference to a temporary"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,6 +4,4 @@\n #include <tuple>\n \n void f() {\n-  const int& r = std::make_from_tuple<const int&>(std::tuple<long>(1L));\n-  (void)r;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/tuple/make_from_tuple_dangling.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!std::reference_constructs_from_temporary_v<const int &, long &&>': Attempted construction of reference element binds to a temporary whose lifetime has ended"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/tuple/make_from_tuple_dangling.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/tuple__make_from_tuple_dangling.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

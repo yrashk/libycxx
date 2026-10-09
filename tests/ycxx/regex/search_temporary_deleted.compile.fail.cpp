@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: use of deleted function [^\n]*std::regex_search\(
+// EXPECT-ERROR-CLANG: error: call to deleted function 'regex_search'
 // [re.alg.search]: template<class ST, class SA, class Allocator, class charT, class traits>
 //   bool regex_search(const basic_string<charT, ST, SA>&&, match_results<...>&,
 //                     const basic_regex<charT, traits>&, match_flag_type = match_default) = delete;

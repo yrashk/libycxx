@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function for call to 'get<2>\(std::pair
+// EXPECT-ERROR-CLANG: error: no matching function for call to 'get'
 // [pair.astuple]/3: template<size_t I, class T1, class T2> get(pair<T1, T2>& p) noexcept;
 // "Mandates: I<2."
 #include <utility>

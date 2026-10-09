@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*philox_engine: 0 < r is required
 // [rand.eng.philox]/6.3: "Mandates: ... 0 < r is true".
 #include <random>
 #include <cstdint>

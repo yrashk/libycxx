@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: 'operator new' is provided by [^\n]*std::coroutine_traits<std::generator[^\n]*not usable with the function signature
+// EXPECT-ERROR-CLANG: error: 'operator new' provided by [^\n]*std::coroutine_traits<std::generator[^\n]*not usable with the function signature
 // [coro.generator.promise]: "void* operator new(size_t size) requires same_as<Allocator,
 // void> || default_initializable<Allocator>;" -- with a non-default-constructible Allocator
 // and no allocator_arg_t, alloc parameters, no promise operator new is viable for the

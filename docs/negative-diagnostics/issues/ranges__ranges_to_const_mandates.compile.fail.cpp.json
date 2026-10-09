@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/ranges/ranges_to_const_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "range.utility.conv.to"
+  ],
+  "normative_text": {
+    "range.utility.conv.to": "25.5.7.2 ranges\u200b::\u200bto [range.utility.conv.to]\n\ud83d\udd17\ntemplate<class C, input_range R, class... Args> requires (!view<C>)\n  constexpr C to(R&& r, Args&&... args);\n1\n#\nMandates: C is a cv-unqualified class type.\n2\n#\nReturns: An object of type C\nconstructed from the elements of r in the following manner:\n(2.1)\nIf C does not satisfy input_range or\nconvertible_to<range_reference_t<R>, range_value_t<C>>\nis true:\n(2.1.1)\nIf constructible_from<C, R, Args...> is true:\nC(std::forward<R>(r), std::forward<Args>(args)...)\n(2.1.2)\nOtherwise, if\nconstructible_from<C, from_range_t, R, Args...>\nis true:\nC(from_range, std::forward<R>(r), std::forward<Args>(args)...)\n(2.1.3)\nOtherwise, if\n(2.1.3.1)\ncommon_range<R> is true,\n(2.1.3.2)\nthe qualified-id\niterator_traits<iterator_t<R>>\u200b::\u200biterator_category\nis valid and denotes a type that models\nderived_from<input_iterator_tag>, and\n(2.1.3.3)\nconstructible_from<C, iterator_t<R>, sentinel_t<R>, Args...>\nis true:\nC(ranges::begin(r), ranges::end(r), std::forward<Args>(args)...)\n(2.1.4)\nOtherwise, if\n(2.1.4.1)\nconstructible_from<C, Args...> is true, and\n(2.1.4.2)\ncontainer-appendable<C, range_reference_t<R>> is true:\nC c(std::forward<Args>(args)...);\nif constexpr (approximately_sized_range<R> && reservable-container<C>)\n  c.reserve(static_cast<range_size_t<C>>(ranges::reserve_hint(r)));\nranges::for_each(r, container-append(c));\n(2.1.5)\nOtherwise, the program is ill-formed.\n(2.2)\nOtherwise,\nif input_range<range_reference_t<R>> is true:\nto<C>(ref_view(r) | views::transform([](auto&& elem) {\n  return to<range_value_t<C>>(std::forward<decltype(elem)>(elem));\n}), std::forward<Args>(args)...);\n(2.3)\nOtherwise, the program is ill-formed.\n\ud83d\udd17\ntemplate<template<class...> class C, input_range R, class... Args>\n  constexpr auto to(R&& r, Args&&... args);\n3\n#\nLet input-iterator be an exposition-only type:\nstruct input-iterator {                        // exposition only\n  using iterator_category = input_iterator_tag;\n  using value_type = range_value_t<R>;\n  using difference_type = ptrdiff_t;\n  using pointer = add_pointer_t<range_reference_t<R>>;\n  using reference = range_reference_t<R>;\n  reference operator*() const;\n  pointer operator->() const;\n  input-iterator& operator++();\n  input-iterator operator++(int);\n  bool operator==(const input-iterator&) const;\n};\n[Note\u00a01:\u2002input-iterator meets\nthe syntactic requirements of Cpp17InputIterator.\n \u2014\u00a0end note]\n4\n#\nLet DEDUCE_EXPR be defined as follows:\n(4.1)\nC(declval<R>(), declval<Args>()...) if that is a valid expression,\n(4.2)\notherwise, C(from_range, declval<R>(), declval<Args>()...)\nif that is a valid expression,\n(4.3)\notherwise,\nC(declval<input-iterator>(), declval<input-iterator>(), declval<Args>()...)\nif that is a valid expression,\n(4.4)\notherwise, the program is ill-formed.\n5\n#\nReturns: to<decltype(DEDUCE_EXPR)>(std\u200b::\u200bforward<R>(r), std\u200b::\u200bforward<Args>(args)...).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*ranges::to: C must be a cv\\-unqualified class type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -9,6 +9,4 @@\n \n int main() {\n   int a[2] = {1, 2};\n-  auto c = std::ranges::to<const C>(a);\n-  (void)c;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ranges/ranges_to_const_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!is_const_v<const C>': The target container cannot be const-qualified, please remove the const"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ranges/ranges_to_const_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_const_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/memory/start_lifetime_user_dtor.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "obj.lifetime",
+    "class.prop"
+  ],
+  "normative_text": {
+    "obj.lifetime": "20.2.6 Explicit lifetime management [obj.lifetime]\n\ud83d\udd17\ntemplate<class T>\n  constexpr void start_lifetime(T& r) noexcept;\n1\n#\nMandates: T is a complete type and\nan implicit-lifetime ([basic.types]) aggregate ([dcl.init.aggr]) type.\n2\n#\nEffects: If the object referenced by r\nis already within its lifetime ([basic.life]),\nno effects.\n Otherwise, begins the lifetime of the object referenced by r.\n [Note\u00a01:\u2002No initialization is performed and no subobject has its lifetime started.\n If r denotes a member of a union U,\nit becomes the active member of U ([class.union]).\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  T* start_lifetime_as(void* p) noexcept;\ntemplate<class T>\n  const T* start_lifetime_as(const void* p) noexcept;\ntemplate<class T>\n  volatile T* start_lifetime_as(volatile void* p) noexcept;\ntemplate<class T>\n  const volatile T* start_lifetime_as(const volatile void* p) noexcept;\n3\n#\nMandates: T is an implicit-lifetime type ([basic.types.general])\nand not an incomplete type ([basic.types.general]).\n4\n#\nPreconditions: [p, (char*)p + sizeof(T)) denotes a region of allocated storage\nthat is\na subset of the region of storage\nreachable through ([basic.compound]) p and\nsuitably aligned for the type T.\n5\n#\nEffects: Implicitly creates objects ([intro.object]) within the denoted region\nconsisting of an object a of type T\nwhose address is p, and\nobjects nested within a,\nas follows:\nThe object representation of a\nis the contents of the storage prior to the call to start_lifetime_as.\n The value of each created object o\nof trivially copyable type ([basic.types.general]) U\nis determined in the same manner as for a call\nto bit_cast<U>(E) ([bit.cast]),\nwhere E is an lvalue of type U denoting o,\nexcept that the storage is not accessed.\n The value of any other created object is unspecified.\n [Note\u00a02:\u2002The unspecified value can be indeterminate.\n \u2014\u00a0end note]\n6\n#\nReturns: A pointer to the a defined in the Effects paragraph.\n\ud83d\udd17\ntemplate<class T>\n  T* start_lifetime_as_array(void* p, size_t n) noexcept;\ntemplate<class T>\n  const T* start_lifetime_as_array(const void* p, size_t n) noexcept;\ntemplate<class T>\n  volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;\ntemplate<class T>\n  const volatile T* start_lifetime_as_array(const volatile void* p, size_t n) noexcept;\n7\n#\nMandates: T is a complete type.\n8\n#\nPreconditions: p is suitably aligned for an array of T or is null.\n n <= size_t(-1) / sizeof(T) is true.\n If n > 0 is true,\n[(char*)p, (char*)p + (n * sizeof(T))) denotes\na region of allocated storage that is\na subset of the region of storage\nreachable through ([basic.compound]) p.\n9\n#\nEffects: If n > 0 is true,\nequivalent to\nstart_lifetime_as<U>(p)\nwhere U is the type \u201carray of n T\u201d.\n Otherwise, there are no effects.\n10\n#\nReturns: A pointer to the first element of the created array,\nif any;\notherwise,\na pointer that compares equal to p ([expr.eq]).\n",
+    "class.prop": "11.2 Properties of classes [class.prop]\n1\n#\nA trivially copyable class is a class:\n(1.1)\nthat has at least one eligible\ncopy constructor, move constructor,\ncopy assignment operator, or\nmove assignment operator ([special], [class.copy.ctor], [class.copy.assign]),\n(1.2)\nwhere each eligible copy constructor, move constructor, copy assignment operator,\nand move assignment operator is trivial, and\n(1.3)\nthat has a trivial, non-deleted destructor ([class.dtor]).\n2\n#\nA class S is a standard-layout class if it:\n(2.1)\nhas no non-static data members of type non-standard-layout class\n(or array of such types) or reference,\n(2.2)\nhas no virtual functions and no\nvirtual base classes,\n(2.3)\nhas the same access control\nfor all non-static data members,\n(2.4)\nhas no non-standard-layout base classes,\n(2.5)\nhas at most one base class subobject of any given type,\n(2.6)\nhas all non-static data members and bit-fields in the class and\nits base classes first declared in the same class, and\n(2.7)\nhas no element of the set M(S) of types\nas a base class,\nwhere for any type X, M(X) is defined as follows.\u2078\u00b9 [Note\u00a01:\u2002M(X) is the set of the types of all non-base-class subobjects\nthat can be at a zero offset in X.\n \u2014\u00a0end note]\n(2.7.1)\nIf X is a non-union class type with no non-static data members,\nthe set M(X) is empty.\n(2.7.2)\nIf X is a non-union class type with a non-static data\nmember of type X0\nthat is either of zero size or\nis the first non-static data member of X\n(where said member may be an anonymous union),\nthe set M(X) consists of X0 and the elements of\nM(X0).\n(2.7.3)\nIf X is a union type, the set M(X) is\nthe union of all M(Ui) and the set containing all Ui,\nwhere each Ui is the type of the ith non-static data member\nof X.\n(2.7.4)\nIf X is an array type with element type Xe,\nthe set M(X) consists of Xe\nand the elements of M(Xe).\n(2.7.5)\nIf X is a non-class, non-array type, the set M(X) is empty.\n3\n#\n[Example\u00a01:\u2002struct B { int i; };            // standard-layout class\nstruct C : B { };               // standard-layout class\nstruct D : C { };               // standard-layout class\nstruct E : D { char : 4; };     // not a standard-layout class\nstruct Q {};\nstruct S : Q { };\nstruct T : Q { };\nstruct U : S, T { };            // not a standard-layout class\n \u2014\u00a0end example]\n4\n#\nA standard-layout struct is a standard-layout class\ndefined with the class-key struct or the\nclass-key class.\n A standard-layout union is a standard-layout class\ndefined with the\nclass-key union.\n5\n#\n[Note\u00a02:\u2002Standard-layout classes are useful for communicating with\ncode written in other programming languages.\n Their layout is specified\nin [class.mem.general] and [expr.rel].\n \u2014\u00a0end note]\n6\n#\n[Example\u00a02:\u2002struct N {          // neither trivially copyable nor standard-layout\n  int i;\n  int j;\n  virtual ~N();\n};\nstruct T {          // trivially copyable but not standard-layout\n  int i;\nprivate:\n  int j;\n};\nstruct SL {         // standard-layout but not trivially copyable\n  int i;\n  int j;\n  ~SL();\n};\nstruct POD {        // both trivially copyable and standard-layout\n  int i;\n  int j;\n};\n \u2014\u00a0end example]\n7\n#\n[Note\u00a03:\u2002Aggregates of class type are described in [dcl.init.aggr].\n \u2014\u00a0end note]\n8\n#\nA class S is an implicit-lifetime class if\n(8.1)\nit is an aggregate whose destructor is not user-provided or\n(8.2)\nit has at least one trivial eligible constructor and\na trivial, non-deleted destructor.\n81)81) This ensures that two subobjects that have the same class type and that\nbelong to the same most derived object are not allocated at the same\naddress ([expr.eq]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::start_lifetime: T must be an implicit\\-lifetime aggregate type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -8,5 +8,4 @@\n \n void f() {\n   U u{.c = 0};\n-  std::start_lifetime(u.a);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/start_lifetime_user_dtor.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'start_lifetime' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/start_lifetime_user_dtor.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_user_dtor.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'start_lifetime' is not a member of 'std'; did you mean 'start_lifetime_as'?"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

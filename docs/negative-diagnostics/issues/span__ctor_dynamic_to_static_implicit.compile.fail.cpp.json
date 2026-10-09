@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/span/ctor_dynamic_to_static_implicit.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "span.cons"
+  ],
+  "normative_text": {
+    "span.cons": "23.7.2.2.2 Constructors, copy, and assignment [span.cons]\n\ud83d\udd17\nconstexpr span() noexcept;\n1\n#\nConstraints: Extent == dynamic_extent || Extent == 0 is true.\n2\n#\nPostconditions: size() == 0 && data() == nullptr.\n\ud83d\udd17\ntemplate<class It>\n  constexpr explicit(extent != dynamic_extent) span(It first, size_type count);\n3\n#\nConstraints: Let U be remove_reference_t<iter_reference_t<It>>.\n (3.1)\nIt satisfies contiguous_iterator.\n(3.2)\nis_convertible_v<U(*)[], element_type(*)[]> is true.\n [Note\u00a01:\u2002The intent is to allow only qualification conversions\nof the iterator reference type to element_type.\n \u2014\u00a0end note]\n4\n#\nPreconditions: (4.1)\n[first, first + count) is a valid range.\n(4.2)\nIt models contiguous_iterator.\n5\n#\nHardened preconditions: If extent is not equal to dynamic_extent,\nthen count == extent is true.\n6\n#\nEffects: Initializes data_ with to_address(first) and\nsize_ with count.\n7\n#\nThrows: Nothing.\n\ud83d\udd17\ntemplate<class It, class End>\n  constexpr explicit(extent != dynamic_extent) span(It first, End last);\n8\n#\nConstraints: Let U be remove_reference_t<iter_reference_t<It>>.\n (8.1)\nis_convertible_v<U(*)[], element_type(*)[]> is true.\n [Note\u00a02:\u2002The intent is to allow only qualification conversions\nof the iterator reference type to element_type.\n \u2014\u00a0end note]\n(8.2)\nIt satisfies contiguous_iterator.\n(8.3)\nEnd satisfies sized_sentinel_for<It>.\n(8.4)\nis_convertible_v<End, size_t> is false.\n9\n#\nPreconditions: (9.1)\n[first, last) is a valid range.\n(9.2)\nIt models contiguous_iterator.\n(9.3)\nEnd models sized_sentinel_for<It>.\n10\n#\nHardened preconditions: If extent is not equal to dynamic_extent,\nthen (last - first) == extent is true.\n11\n#\nEffects: Initializes data_ with to_address(first) and\nsize_ with last - first.\n12\n#\nThrows: When and what last - first throws.\n\ud83d\udd17\ntemplate<size_t N> constexpr span(type_identity_t<element_type> (&arr)[N]) noexcept;\ntemplate<class T, size_t N> constexpr span(array<T, N>& arr) noexcept;\ntemplate<class T, size_t N> constexpr span(const array<T, N>& arr) noexcept;\n13\n#\nConstraints: Let U be remove_pointer_t<decltype(std\u200b::\u200bdata(arr))>.\n (13.1)\nextent == dynamic_extent || N == extent is true, and\n(13.2)\nis_convertible_v<U(*)[], element_type(*)[]> is true. [Note\u00a03:\u2002The intent is to allow only qualification conversions\nof the array element type to element_type.\n \u2014\u00a0end note]\n14\n#\nEffects: Constructs a span that is a view over the supplied array.\n [Note\u00a04:\u2002type_identity_t affects class template argument deduction.\n \u2014\u00a0end note]\n15\n#\nPostconditions: size() == N && data() == std\u200b::\u200bdata(arr) is true.\n\ud83d\udd17\ntemplate<class R> constexpr explicit(extent != dynamic_extent) span(R&& r);\n16\n#\nConstraints: Let U be remove_reference_t<ranges\u200b::\u200brange_reference_t<R>>.\n (16.1)\nR satisfies ranges\u200b::\u200bcontiguous_range and\n  ranges\u200b::\u200bsized_range.\n(16.2)\nEither R satisfies ranges\u200b::\u200bborrowed_range or\nis_const_v<element_type> is true.\n(16.3)\nremove_cvref_t<R> is not a specialization of span.\n(16.4)\nremove_cvref_t<R> is not a specialization of array.\n(16.5)\nis_array_v<remove_cvref_t<R>> is false.\n(16.6)\nis_convertible_v<U(*)[], element_type(*)[]> is true.\n [Note\u00a05:\u2002The intent is to allow only qualification conversions\nof the range reference type to element_type.\n \u2014\u00a0end note]\n17\n#\nPreconditions: (17.1)\nR models ranges\u200b::\u200bcontiguous_range and\nranges\u200b::\u200bsized_range.\n(17.2)\nIf is_const_v<element_type> is false,\nR models ranges\u200b::\u200bborrowed_range.\n18\n#\nHardened preconditions: If extent is not equal to dynamic_extent,\nthen ranges\u200b::\u200bsize(r) == extent is true.\n19\n#\nEffects: Initializes data_ with ranges\u200b::\u200bdata(r) and\nsize_ with ranges\u200b::\u200bsize(r).\n20\n#\nThrows: What and when ranges\u200b::\u200bdata(r) and ranges\u200b::\u200bsize(r) throw.\n\ud83d\udd17\nconstexpr span(const span& other) noexcept = default;\n21\n#\nPostconditions: other.size() == size() && other.data() == data().\n\ud83d\udd17\ntemplate<class OtherElementType, size_t OtherExtent>\n  constexpr explicit(see below) span(const span<OtherElementType, OtherExtent>& s) noexcept;\n22\n#\nConstraints: (22.1)\nextent == dynamic_extent || OtherExtent == dynamic_extent || extent == OtherExtent is true, and\n(22.2)\nis_convertible_v<OtherElementType(*)[], element_type(*)[]> is true. [Note\u00a06:\u2002The intent is to allow only qualification conversions\nof the OtherElementType to element_type.\n \u2014\u00a0end note]\n23\n#\nHardened preconditions: If extent is not equal to dynamic_extent,\nthen s.size() == extent is true.\n24\n#\nEffects: Constructs a span that is a view over the range\n[s.data(), s.data() + s.size()).\n25\n#\nPostconditions: size() == s.size() && data() == s.data().\n26\n#\nRemarks: The expression inside explicit is equivalent to:\nextent != dynamic_extent && OtherExtent == dynamic_extent\n\ud83d\udd17\nconstexpr span& operator=(const span& other) noexcept = default;\n27\n#\nPostconditions: size() == other.size() && data() == other.data().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: conversion from 'span[^\\n]*to non-scalar type 'span[^\\n]*,2>'"
+    ],
+    "clang": [
+      "error: no viable conversion from 'span[^\\n]*dynamic_extent[^\\n]*to 'span[^\\n]*, 2>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // \"extent != dynamic_extent && OtherExtent == dynamic_extent\".\n #include <span>\n \n-void f(std::span<int> d) { std::span<int, 2> s = d; (void)s; }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/ctor_dynamic_to_static_implicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable conversion from 'span<[...], (default) dynamic_extent aka 18446744073709551615>' to 'span<[...], 2>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/span/ctor_dynamic_to_static_implicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/span__ctor_dynamic_to_static_implicit.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "conversion from 'span<[...],18446744073709551615>' to non-scalar type 'span<[...],2>' requested"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/atomic/stdatomic_h_names_only_there.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "stdatomic.h.syn"
+  ],
+  "normative_text": {
+    "stdatomic.h.syn": "32.5.12 C compatibility [stdatomic.h.syn]\nThe header '><stdatomic.h> provides the following definitions:\ntemplate<class T>\n  using std-atomic = std::atomic<T>;        // exposition only\n#define _Atomic(T) std-atomic<T>\n#define ATOMIC_BOOL_LOCK_FREE see below\n#define ATOMIC_CHAR_LOCK_FREE see below\n#define ATOMIC_CHAR8_T_LOCK_FREE see below\n#define ATOMIC_CHAR16_T_LOCK_FREE see below\n#define ATOMIC_CHAR32_T_LOCK_FREE see below\n#define ATOMIC_WCHAR_T_LOCK_FREE see below\n#define ATOMIC_SHORT_LOCK_FREE see below\n#define ATOMIC_INT_LOCK_FREE see below\n#define ATOMIC_LONG_LOCK_FREE see below\n#define ATOMIC_LLONG_LOCK_FREE see below\n#define ATOMIC_POINTER_LOCK_FREE see below\nusing std::memory_order;             // see below\nusing std::memory_order_relaxed;     // see below\nusing std::memory_order_consume;     // see below\nusing std::memory_order_acquire;     // see below\nusing std::memory_order_release;     // see below\nusing std::memory_order_acq_rel;     // see below\nusing std::memory_order_seq_cst;     // see below\nusing std::atomic_flag;              // see below\nusing std::atomic_bool;              // see below\nusing std::atomic_char;              // see below\nusing std::atomic_schar;             // see below\nusing std::atomic_uchar;             // see below\nusing std::atomic_short;             // see below\nusing std::atomic_ushort;            // see below\nusing std::atomic_int;               // see below\nusing std::atomic_uint;              // see below\nusing std::atomic_long;              // see below\nusing std::atomic_ulong;             // see below\nusing std::atomic_llong;             // see below\nusing std::atomic_ullong;            // see below\nusing std::atomic_char8_t;           // see below\nusing std::atomic_char16_t;          // see below\nusing std::atomic_char32_t;          // see below\nusing std::atomic_wchar_t;           // see below\nusing std::atomic_int8_t;            // see below\nusing std::atomic_uint8_t;           // see below\nusing std::atomic_int16_t;           // see below\nusing std::atomic_uint16_t;          // see below\nusing std::atomic_int32_t;           // see below\nusing std::atomic_uint32_t;          // see below\nusing std::atomic_int64_t;           // see below\nusing std::atomic_uint64_t;          // see below\nusing std::atomic_int_least8_t;      // see below\nusing std::atomic_uint_least8_t;     // see below\nusing std::atomic_int_least16_t;     // see below\nusing std::atomic_uint_least16_t;    // see below\nusing std::atomic_int_least32_t;     // see below\nusing std::atomic_uint_least32_t;    // see below\nusing std::atomic_int_least64_t;     // see below\nusing std::atomic_uint_least64_t;    // see below\nusing std::atomic_int_fast8_t;       // see below\nusing std::atomic_uint_fast8_t;      // see below\nusing std::atomic_int_fast16_t;      // see below\nusing std::atomic_uint_fast16_t;     // see below\nusing std::atomic_int_fast32_t;      // see below\nusing std::atomic_uint_fast32_t;     // see below\nusing std::atomic_int_fast64_t;      // see below\nusing std::atomic_uint_fast64_t;     // see below\nusing std::atomic_intptr_t;          // see below\nusing std::atomic_uintptr_t;         // see below\nusing std::atomic_size_t;            // see below\nusing std::atomic_ptrdiff_t;         // see below\nusing std::atomic_intmax_t;          // see below\nusing std::atomic_uintmax_t;         // see below\nusing std::atomic_is_lock_free;                          // see below\nusing std::atomic_load;                                  // see below\nusing std::atomic_load_explicit;                         // see below\nusing std::atomic_store;                                 // see below\nusing std::atomic_store_explicit;                        // see below\nusing std::atomic_exchange;                              // see below\nusing std::atomic_exchange_explicit;                     // see below\nusing std::atomic_compare_exchange_strong;               // see below\nusing std::atomic_compare_exchange_strong_explicit;      // see below\nusing std::atomic_compare_exchange_weak;                 // see below\nusing std::atomic_compare_exchange_weak_explicit;        // see below\nusing std::atomic_fetch_add;                             // see below\nusing std::atomic_fetch_add_explicit;                    // see below\nusing std::atomic_fetch_sub;                             // see below\nusing std::atomic_fetch_sub_explicit;                    // see below\nusing std::atomic_fetch_and;                             // see below\nusing std::atomic_fetch_and_explicit;                    // see below\nusing std::atomic_fetch_or;                              // see below\nusing std::atomic_fetch_or_explicit;                     // see below\nusing std::atomic_fetch_xor;                             // see below\nusing std::atomic_fetch_xor_explicit;                    // see below\nusing std::atomic_flag_test_and_set;                     // see below\nusing std::atomic_flag_test_and_set_explicit;            // see below\nusing std::atomic_flag_clear;                            // see below\nusing std::atomic_flag_clear_explicit;                   // see below\n#define ATOMIC_FLAG_INIT see below\nusing std::atomic_thread_fence;                          // see below\nusing std::atomic_signal_fence;                          // see below\n1\n#\nEach using-declaration for some name A in the synopsis above\nmakes available the same entity as std\u200b::\u200bA\ndeclared in ___________'><atomic>.\n Each macro listed above other than _Atomic(T)\nis defined as in ____________'><atomic>.\n It is unspecified whether ___'><stdatomic.h> makes available\nany declarations in namespace std.\n2\n#\nEach of the using-declarations for\nintN_t, uintN_t, intptr_t, and uintptr_t\nlisted above is declared if and only if the implementation declares\nthe corresponding typedef-name in [atomics.syn].\n3\n#\nNeither the _Atomic macro,\nnor any of the non-macro global namespace declarations,\nare provided by any C++ standard library header\nother than ____'><stdatomic.h>.\n4\n#\nRecommended practice: Implementations should ensure\nthat C and C++ representations of atomic objects are compatible,\nso that the same object can be accessed as both an _Atomic(T)\nfrom C code and an atomic<T> from C++ code.\n The representations should be the same, and\nthe mechanisms used to ensure atomicity and memory ordering\nshould be compatible.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: 'atomic_int' in namespace '::' does not name a type"
+    ],
+    "clang": [
+      "error: no type named 'atomic_int' in the global namespace"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -8,4 +8,3 @@\n std::atomic_int fine(0);  // control\n std::memory_order also_fine = std::memory_order_relaxed;\n \n-::atomic_int not_declared(0);  // the error\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/stdatomic_h_names_only_there.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no type named 'atomic_int' in the global namespace; did you mean 'std::atomic_int'?"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/stdatomic_h_names_only_there.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__stdatomic_h_names_only_there.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'atomic_int' in namespace '::' does not name a type"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

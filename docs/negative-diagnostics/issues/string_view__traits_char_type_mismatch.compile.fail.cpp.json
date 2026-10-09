@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/string_view/traits_char_type_mismatch.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "char.traits.general",
+    "string.view.template.general"
+  ],
+  "normative_text": {
+    "char.traits.general": "27.2.1 General [char.traits.general]\n1\n#\nSubclause [char.traits] defines requirements on classes representing\ncharacter traits,\nand defines a class template\nchar_traits<charT>,\nalong with five specializations,\nchar_traits<char>,\nchar_traits<char8_t>,\nchar_traits<char16_t>,\nchar_traits<char32_t>,\nand\nchar_traits<wchar_t>,\nthat meet those requirements.\n2\n#\nMost classes specified in [string.classes], [string.view],\nand Clause [input.output] need a set of related types and functions to complete\nthe definition of their semantics.\n These types and functions are provided as a\nset of member typedef-names and functions in the template\nparameter traits used by each such template.\n Subclause [char.traits] defines the semantics of these members.\n3\n#\nTo specialize those templates to generate a string, string view, or\niostream class to handle a particular character container type ([defns.character.container])\nC,\nthat and its related character traits class\nX\nare passed as a pair of parameters to the string, string view, or iostream template as\nparameters\ncharT\nand\ntraits.\n If\nX\u200b::\u200bchar_type\nis not the same type as\nC, the program is ill-formed.\n",
+    "string.view.template.general": "27.3.3.1 General [string.view.template.general]\n\ud83d\udd17\nnamespace std {\n  template<class charT, class traits = char_traits<charT>>\n  class basic_string_view {\n  public:\n    // types\n    using traits_type            = traits;\n    using value_type             = charT;\n    using pointer                = value_type*;\n    using const_pointer          = const value_type*;\n    using reference              = value_type&;\n    using const_reference        = const value_type&;\n    using const_iterator         = implementation-defined; // see [string.view.iterators]\n    using iterator               = const_iterator;\u00b9\u2079\u2070\n    using const_reverse_iterator = reverse_iterator<const_iterator>;\n    using reverse_iterator       = const_reverse_iterator;\n    using size_type              = size_t;\n    using difference_type        = ptrdiff_t;\n    static constexpr size_type npos = size_type(-1);\n    // [string.view.cons], construction and assignment\n    constexpr basic_string_view() noexcept;\n    constexpr basic_string_view(const basic_string_view&) noexcept = default;\n    constexpr basic_string_view& operator=(const basic_string_view&) noexcept = default;\n    constexpr basic_string_view(const charT* str);\n    basic_string_view(nullptr_t) = delete;\n    constexpr basic_string_view(const charT* str, size_type len);\n    template<class It, class End>\n      constexpr basic_string_view(It begin, End end);\n    template<class R>\n      constexpr explicit basic_string_view(R&& r);\n    // [string.view.iterators], iterator support\n    constexpr const_iterator begin() const noexcept;\n    constexpr const_iterator end() const noexcept;\n    constexpr const_iterator cbegin() const noexcept;\n    constexpr const_iterator cend() const noexcept;\n    constexpr const_reverse_iterator rbegin() const noexcept;\n    constexpr const_reverse_iterator rend() const noexcept;\n    constexpr const_reverse_iterator crbegin() const noexcept;\n    constexpr const_reverse_iterator crend() const noexcept;\n    // [string.view.capacity], capacity\n    constexpr size_type size() const noexcept;\n    constexpr size_type length() const noexcept;\n    constexpr size_type max_size() const noexcept;\n    constexpr bool empty() const noexcept;\n    // [string.view.access], element access\n    constexpr const_reference operator[](size_type pos) const;\n    constexpr const_reference at(size_type pos) const;                  // freestanding-deleted\n    constexpr const_reference front() const;\n    constexpr const_reference back() const;\n    constexpr const charT* data() const noexcept;\n    // [string.view.modifiers], modifiers\n    constexpr void remove_prefix(size_type n);\n    constexpr void remove_suffix(size_type n);\n    constexpr void swap(basic_string_view& s) noexcept;\n    // [string.view.ops], string operations\n    constexpr size_type copy(charT* s, size_type n,\n                             size_type pos = 0) const;                  // freestanding-deleted\n    constexpr basic_string_view substr(size_type pos = 0,\n                                       size_type n = npos) const;       // freestanding-deleted\n    constexpr basic_string_view subview(size_type pos = 0,\n                                        size_type n = npos) const;      // freestanding-deleted\n    constexpr int compare(basic_string_view s) const noexcept;\n    constexpr int compare(size_type pos1, size_type n1,\n                          basic_string_view s) const;                   // freestanding-deleted\n    constexpr int compare(size_type pos1, size_type n1, basic_string_view s,\n                          size_type pos2, size_type n2) const;          // freestanding-deleted\n    constexpr int compare(const charT* s) const;\n    constexpr int compare(size_type pos1, size_type n1,\n                          const charT* s) const;                        // freestanding-deleted\n    constexpr int compare(size_type pos1, size_type n1, const charT* s,\n                          size_type n2) const;                          // freestanding-deleted\n    constexpr bool starts_with(basic_string_view x) const noexcept;\n    constexpr bool starts_with(charT x) const noexcept;\n    constexpr bool starts_with(const charT* x) const;\n    constexpr bool ends_with(basic_string_view x) const noexcept;\n    constexpr bool ends_with(charT x) const noexcept;\n    constexpr bool ends_with(const charT* x) const;\n    constexpr bool contains(basic_string_view x) const noexcept;\n    constexpr bool contains(charT x) const noexcept;\n    constexpr bool contains(const charT* x) const;\n    // [string.view.find], searching\n    constexpr size_type find(basic_string_view s, size_type pos = 0) const noexcept;\n    constexpr size_type find(charT c, size_type pos = 0) const noexcept;\n    constexpr size_type find(const charT* s, size_type pos, size_type n) const;\n    constexpr size_type find(const charT* s, size_type pos = 0) const;\n    constexpr size_type rfind(basic_string_view s, size_type pos = npos) const noexcept;\n    constexpr size_type rfind(charT c, size_type pos = npos) const noexcept;\n    constexpr size_type rfind(const charT* s, size_type pos, size_type n) const;\n    constexpr size_type rfind(const charT* s, size_type pos = npos) const;\n    constexpr size_type find_first_of(basic_string_view s, size_type pos = 0) const noexcept;\n    constexpr size_type find_first_of(charT c, size_type pos = 0) const noexcept;\n    constexpr size_type find_first_of(const charT* s, size_type pos, size_type n) const;\n    constexpr size_type find_first_of(const charT* s, size_type pos = 0) const;\n    constexpr size_type find_last_of(basic_string_view s, size_type pos = npos) const noexcept;\n    constexpr size_type find_last_of(charT c, size_type pos = npos) const noexcept;\n    constexpr size_type find_last_of(const charT* s, size_type pos, size_type n) const;\n    constexpr size_type find_last_of(const charT* s, size_type pos = npos) const;\n    constexpr size_type find_first_not_of(basic_string_view s, size_type pos = 0) const noexcept;\n    constexpr size_type find_first_not_of(charT c, size_type pos = 0) const noexcept;\n    constexpr size_type find_first_not_of(const charT* s, size_type pos,\n                                          size_type n) const;\n    constexpr size_type find_first_not_of(const charT* s, size_type pos = 0) const;\n    constexpr size_type find_last_not_of(basic_string_view s,\n                                         size_type pos = npos) const noexcept;\n    constexpr size_type find_last_not_of(charT c, size_type pos = npos) const noexcept;\n    constexpr size_type find_last_not_of(const charT* s, size_type pos,\n                                         size_type n) const;\n    constexpr size_type find_last_not_of(const charT* s, size_type pos = npos) const;\n  private:\n    const charT* data_;         // exposition only\n    size_type size_;            // exposition only\n  };\n  // [string.view.deduct], deduction guides\n  template<class It, class End>\n    basic_string_view(It, End) -> basic_string_view<iter_value_t<It>>;\n  template<class R>\n    basic_string_view(R&&) -> basic_string_view<ranges::range_value_t<R>>;\n}\n1\n#\nIn every specialization basic_string_view<charT, traits>, the type traits shall meet the character traits requirements ([char.traits]).\n [Note\u00a01:\u2002The program is ill-formed if traits\u200b::\u200bchar_type is not the same type as charT.\n \u2014\u00a0end note]\n2\n#\nFor a basic_string_view str,\nany operation that invalidates a pointer\nin the range\n[str.data(), str.data() + str.size())\ninvalidates pointers, iterators, and references\nto elements of str.\n3\n#\nThe complexity of basic_string_view member functions is O(1)\nunless otherwise specified.\n4\n#\nbasic_string_view<charT, traits> is\na trivially copyable type ([basic.types.general]).\n190)190) Because basic_string_view refers to a constant sequence, iterator and const_iterator are the same type.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::basic_string_view: traits::char_type must be charT"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n // traits::char_type is not the same type as charT.\"\n #include <string_view>\n \n-std::basic_string_view<char, std::char_traits<wchar_t>> v;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string_view/traits_char_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::is_same<char, wchar_t>::value': traits_type::char_type must be the same type as CharT"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string_view/traits_char_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string_view__traits_char_type_mismatch.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

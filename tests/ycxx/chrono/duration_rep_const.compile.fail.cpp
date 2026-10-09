@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*duration: Rep must not be cv\-qualified
 // [time.duration.general]/2: a cv-qualified Rep makes the program ill-formed.
 #include <chrono>
 

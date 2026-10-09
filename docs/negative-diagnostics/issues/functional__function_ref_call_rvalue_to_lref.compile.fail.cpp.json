@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/functional/function_ref_call_rvalue_to_lref.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.ref.class"
+  ],
+  "normative_text": {
+    "func.wrap.ref.class": "22.10.17.6.2 Class template function_ref [func.wrap.ref.class]\n\ud83d\udd17\nnamespace std {\n  template<class R, class... ArgTypes>\n  class function_ref<R(ArgTypes...) cv noexcept(noex)> {\n  public:\n    // [func.wrap.ref.ctor], constructors and assignment operators\n    template<class F> function_ref(F*) noexcept;\n    template<class F> constexpr function_ref(F&&) noexcept;\n    template<auto c, class F> constexpr function_ref(constant_wrapper<c, F>) noexcept;\n    template<auto c, class F, class U>\n      constexpr function_ref(constant_wrapper<c, F>, U&&) noexcept;\n    template<auto c, class F, class T>\n      constexpr function_ref(constant_wrapper<c, F>, cv T*) noexcept;\n    constexpr function_ref(const function_ref&) noexcept = default;\n    constexpr function_ref& operator=(const function_ref&) noexcept = default;\n    template<class T> function_ref& operator=(T) = delete;\n    // [func.wrap.ref.inv], invocation\n    R operator()(ArgTypes...) const noexcept(noex);\n  private:\n    template<class... T>\n      static constexpr bool is-invocable-using = see below;             // exposition only\n    R (*thunk-ptr)(BoundEntityType, ArgTypes&&...) noexcept(noex);      // exposition only\n    BoundEntityType bound-entity;                                       // exposition only\n  };\n  // [func.wrap.ref.deduct], deduction guides\n  template<class F>\n    function_ref(F*) -> function_ref<F>;\n  template<auto c, class F0>\n    function_ref(constant_wrapper<c, F0>) -> function_ref<see below>;\n  template<auto c, class F, class T>\n    function_ref(constant_wrapper<c, F>, T&&) -> function_ref<see below>;\n}\n1\n#\nAn object of class\nfunction_ref<R(Args...) cv noexcept(noex)>\nstores a pointer to function thunk-ptr and\nan object bound-entity.\n The object bound-entity has\nan unspecified trivially copyable type BoundEntityType, that\nmodels copyable and\nis capable of storing a pointer to object value or a pointer to function value.\n The type of thunk-ptr is\nR(*)(BoundEntityType, Args&&...) noexcept(noex).\n2\n#\nEach specialization of function_ref is\na trivially copyable type ([basic.types.general])\nthat models copyable.\n3\n#\nWithin subclause [func.wrap.ref],\ncall-args is an argument pack with elements such that\ndecltype((call-args))...\ndenote ArgTypes&&... respectively.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no match for call[^\\n]*std::function_ref<"
+    ],
+    "clang": [
+      "error: no matching function for call to object[^\\n]*std::function_ref<"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,4 +4,3 @@\n #include <utility>\n \n void g(int&);\n-void f(std::function_ref<void(int&)> r) { r(42); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_ref_call_rvalue_to_lref.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no template named 'function_ref' in namespace 'std'; did you mean 'function'?"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_ref_call_rvalue_to_lref.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_call_rvalue_to_lref.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no match for call to '(std::function_ref<void(int&)>) (int)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

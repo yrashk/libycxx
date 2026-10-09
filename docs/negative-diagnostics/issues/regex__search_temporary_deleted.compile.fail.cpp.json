@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/regex/search_temporary_deleted.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "re.alg.search"
+  ],
+  "normative_text": {
+    "re.alg.search": "28.6.10.3 regex_search [re.alg.search]\n\ud83d\udd17\ntemplate<class BidirectionalIterator, class Allocator, class charT, class traits>\n  bool regex_search(BidirectionalIterator first, BidirectionalIterator last,\n                    match_results<BidirectionalIterator, Allocator>& m,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n1\n#\nPreconditions: BidirectionalIterator models\nbidirectional_iterator ([iterator.concept.bidir]).\n2\n#\nEffects: Determines whether there is some sub-sequence within [first, last) that matches\nthe regular expression e.\n The parameter flags is used to control how the\nexpression is matched against the character sequence.\n Returns true if such a sequence\nexists, false otherwise.\n3\n#\nPostconditions: m.ready() == true in all cases.\n If the function returns false, then the effect\non parameter m is unspecified except that m.size()\nreturns 0 and m.empty() returns true.\n Otherwise\nthe effects on parameter m are given in Table 124.\nTable 124 \u2014 Effects of regex_search algorithm\u2003[tab:re.alg.search]\n\ud83d\udd17\nElement\nValue\n\ud83d\udd17\nm.size()\n1 + e.mark_count()\n\ud83d\udd17\nm.empty()\nfalse\n\ud83d\udd17\nm.prefix().first\nfirst\n\ud83d\udd17\nm.prefix().second\nm[0].first\n\ud83d\udd17\nm.prefix().matched\nm.prefix().first != m.prefix().second\n\ud83d\udd17\nm.suffix().first\nm[0].second\n\ud83d\udd17\nm.suffix().second\nlast\n\ud83d\udd17\nm.suffix().matched\nm.suffix().first != m.suffix().second\n\ud83d\udd17\nm[0].first\nThe start of the sequence of characters that matched the regular expression\n\ud83d\udd17\nm[0].second\nThe end of the sequence of characters that matched the regular expression\n\ud83d\udd17\nm[0].matched\ntrue\n\ud83d\udd17\nm[n].first\nFor all integers 0 < n < m.size(), the start of the sequence that\nmatched sub-expression n.\n Alternatively, if sub-expression n\ndid not participate in the match, then last.\n\ud83d\udd17\nm[n].second\nFor all integers 0 < n < m.size(), the end of the sequence that matched\nsub-expression n.\n Alternatively, if sub-expression n did not\nparticipate in the match, then last.\n\ud83d\udd17\nm[n].matched\nFor all integers 0 < n < m.size(), true if sub-expression n\nparticipated in the match, false otherwise.\n\ud83d\udd17\ntemplate<class charT, class Allocator, class traits>\n  bool regex_search(const charT* str, match_results<const charT*, Allocator>& m,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n4\n#\nReturns: regex_search(str, str + char_traits<charT>\u200b::\u200blength(str), m, e, flags).\n\ud83d\udd17\ntemplate<class ST, class SA, class Allocator, class charT, class traits>\n  bool regex_search(const basic_string<charT, ST, SA>& s,\n                    match_results<typename basic_string<charT, ST, SA>::const_iterator,\n                                  Allocator>& m,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n5\n#\nReturns: regex_search(s.begin(), s.end(), m, e, flags).\n\ud83d\udd17\ntemplate<class BidirectionalIterator, class charT, class traits>\n  bool regex_search(BidirectionalIterator first, BidirectionalIterator last,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n6\n#\nEffects: Behaves \u201cas if\u201d by constructing an object what\nof type match_results<BidirectionalIterator> and returning\nregex_search(first, last, what, e, flags).\n\ud83d\udd17\ntemplate<class charT, class traits>\n  bool regex_search(const charT* str,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n7\n#\nReturns: regex_search(str, str + char_traits<charT>\u200b::\u200blength(str), e, flags).\n\ud83d\udd17\ntemplate<class ST, class SA, class charT, class traits>\n  bool regex_search(const basic_string<charT, ST, SA>& s,\n                    const basic_regex<charT, traits>& e,\n                    regex_constants::match_flag_type flags = regex_constants::match_default);\n8\n#\nReturns: regex_search(s.begin(), s.end(), e, flags).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::regex_search\\("
+    ],
+    "clang": [
+      "error: call to deleted function 'regex_search'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [re.alg.search]: template<class ST, class SA, class Allocator, class charT, class traits>\n //   bool regex_search(const basic_string<charT, ST, SA>&&, match_results<...>&,\n //                     const basic_regex<charT, traits>&, match_flag_type = match_default) = delete;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/regex/search_temporary_deleted.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted function 'regex_search'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/regex/search_temporary_deleted.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/regex__search_temporary_deleted.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'bool std::regex_search(const __cxx11::basic_string<_Ch_type, _Ch_traits, _Ch_alloc>&&, __cxx11::match_results<typename __cxx11::basic_string<_Ch_type, _Ch_traits, _Ch_alloc>::const_iterator, _Alloc>&, const __cxx11::basic_regex<_Ch_type, _Rx_traits>&, regex_constants::match_flag_type) [with _Ch_traits = char_traits<char>; _Ch_alloc = allocator<char>; _Alloc = allocator<__cxx11::sub_match<__gnu_cxx::__normal_iterator<const char*, __cxx11::basic_string<char> > > >; _Ch_type = char; _Rx_traits = __cxx11::regex_traits<char>; typename __cxx11::basic_string<_Ch_type, _Ch_traits, _Ch_alloc>::const_iterator = __cxx11::basic_string<char>::const_iterator]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

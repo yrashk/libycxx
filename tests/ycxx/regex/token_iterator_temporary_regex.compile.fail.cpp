@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: use of deleted function [^\n]*std::regex_token_iterator[^\n]*::regex_token_iterator\(
+// EXPECT-ERROR-CLANG: error: call to deleted constructor of 'std::sregex_token_iterator'
 // [re.tokiter]: regex_token_iterator(BidirectionalIterator, BidirectionalIterator,
 //   const regex_type&&, const vector<int>& submatches, ...) = delete; (likewise for every
 // constructor taking a regex rvalue).

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::multimap: Allocator::value_type must be pair<const Key, T> \(\[container\.alloc\.reqmts\]\)
 // [container.alloc.reqmts]/5: typename X::allocator_type: "Mandates:
 // allocator_type::value_type is the same as X::value_type." A multimap whose allocator's
 // value_type differs from the multimap's value_type is ill-formed.

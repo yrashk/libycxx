@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: errc::no_message_available \(ENODATA\) is deprecated \(\[depr\.cerrno\]\)[^\n]*W(?:error|deprecated)
 // [depr.cerrno] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/random/philox_word_size.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "rand.eng.philox"
+  ],
+  "normative_text": {
+    "rand.eng.philox": "29.5.4.5 Class template philox_engine [rand.eng.philox]\n1\n#\nA philox_engine random number engine produces\nunsigned integer random numbers in the interval [0, m),\nwhere m=2w and\nthe template parameter w defines the range of the produced numbers.\n The state of a philox_engine object consists of\na sequence X of n unsigned integer values of width w,\na sequence K of n/2 values of result_type,\na sequence Y of n values of result_type, and\na scalar i, where\n(1.1)\nX is the interpretation of the unsigned integer counter value\nZ:=\u2211n\u22121j=0Xj\u22c52wj of n\u22c5w bits,\n(1.2)\nK are keys, which are generated once from the seed (see constructors below)\nand remain constant unless the seed function ([rand.req.eng]) is invoked,\n(1.3)\nY stores a batch of output values, and\n(1.4)\ni is an index for an element of the sequence Y.\n2\n#\nThe generation algorithm returns Yi,\nthe value stored in the ith element of Y after applying\nthe transition algorithm.\n3\n#\nThe state transition is performed as if by the following algorithm:\ni = i + 1\nif (i == n) {\n  Y = Philox(K, X) // see below\n  Z = Z + 1\n  i = 0\n}\n4\n#\nThe Philox function maps the length-n/2 sequence K and\nthe length-n sequence X into a length-n output sequence Y.\n Philox applies an r-round substitution-permutation network to the values in X.\n A single round of the generation algorithm performs the following steps:\n(4.1)\nThe output sequence X\u2032 of the previous round\n(X in case of the first round)\nis permuted to obtain the intermediate state V:\nVj=X\u2032fn(j)\nwhere j=0,\u2026,n\u22121 and\nfn(j) is defined in f\ufffd'>Table 129. Table 129 \u2014 Values for the word permutation fn(j)\u2003[tab:rand.eng.philox.f]\n\ud83d\udd17\nfn(j)\nj\n\ud83d\udd17\n0\n1\n2\n3\n\ud83d\udd17\nn\n2\n0\n1\n\ud83d\udd17\n4\n2\n1\n0\n3\n\ud83d\udd17\n[Note\u00a01:\u2002For n=2 the sequence is not permuted.\n \u2014\u00a0end note]\n(4.2)\nThe following computations are applied to the elements of the V sequence:\nX2k+0=mulhi(V2k,Mk,w)xorkeyqkxorV2k+1\nX2k+1=mullo(V2k,Mk,w)\nwhere:\n  (4.2.1)\nmullo(a, b, w) is\n  the low half of the modular multiplication of a and b:\n  (a\u22c5b)mod2w,\n(4.2.2)\nmulhi(a, b, w) is\n  the high half of the modular multiplication of a and b:\n  (\u230a(a\u22c5b)/2w\u230b),\n(4.2.3)\nk=0,\u2026,n/2\u22121 is the index in the sequences,\n(4.2.4)\nq=0,\u2026,r\u22121 is the index of the round,\n(4.2.5)\nkeyqk is the kth round key for round q,\n  keyqk:=(Kk+q\u22c5Ck)mod2w,\n(4.2.6)\nKk are the elements of the key sequence K,\n(4.2.7)\nMk is multipliers[k], and\n(4.2.8)\nCk is round_consts[k].\n5\n#\nAfter r applications of the single-round function,\nPhilox returns the sequence Y=X\u2032.\n\ud83d\udd17\nnamespace std {\n  template<class UIntType, size_t w, size_t n, size_t r, UIntType... consts>\n  class philox_engine {\n    static constexpr size_t array-size = n / 2;   // exposition only\n  public:\n    // types\n    using result_type = UIntType;\n    // engine characteristics\n    static constexpr size_t word_size = w;\n    static constexpr size_t word_count = n;\n    static constexpr size_t round_count = r;\n    static constexpr array<result_type, array-size> multipliers;\n    static constexpr array<result_type, array-size> round_consts;\n    static constexpr result_type min() { return 0; }\n    static constexpr result_type max() { return m - 1; }\n    static constexpr result_type default_seed = 20111115u;\n    // constructors and seeding functions\n    philox_engine() : philox_engine(default_seed) {}\n    explicit philox_engine(result_type value);\n    template<class Sseq> explicit philox_engine(Sseq& q);\n    void seed(result_type value = default_seed);\n    template<class Sseq> void seed(Sseq& q);\n    void set_counter(const array<result_type, n>& counter);\n    // equality operators\n    friend bool operator==(const philox_engine& x, const philox_engine& y);\n    // generating functions\n    result_type operator()();\n    void discard(unsigned long long z);\n    // inserters and extractors\n    template<class charT, class traits>\n      friend basic_ostream<charT, traits>&\n        operator<<(basic_ostream<charT, traits>& os, const philox_engine& x);   // hosted\n    template<class charT, class traits>\n      friend basic_istream<charT, traits>&\n        operator>>(basic_istream<charT, traits>& is, philox_engine& x);         // hosted\n  };\n}\n6\n#\nMandates: (6.1)\nsizeof...(consts) == n is true, and\n(6.2)\nn == 2 || n == 4 is true, and\n(6.3)\n0 < r is true, and\n(6.4)\n0 < w && w <= numeric_limits<UIntType>\u200b::\u200bdigits is true.\n7\n#\nThe template parameter pack consts represents\nthe Mk and Ck constants which are grouped as follows:\n[M0,C0,M1,C1,M2,C2,\u2026,Mn/2\u22121,Cn/2\u22121].\n8\n#\nThe textual representation consists of the values of\nK0,\u2026,Kn/2\u22121,X0,\u2026,Xn\u22121,i, in that order.\n [Note\u00a02:\u2002The stream extraction operator can reconstruct Y from K and X, as needed.\n \u2014\u00a0end note]\n\ud83d\udd17\nexplicit philox_engine(result_type value);\n9\n#\nEffects: Sets the K0 element of sequence K to valuemod2w.\n All elements of sequences X and K (except K0) are set to 0.\n The value of i is set to n\u22121.\n\ud83d\udd17\ntemplate<class Sseq> explicit philox_engine(Sseq& q);\n10\n#\nEffects: With p=\u2308w/32\u2309 and\nan array (or equivalent) a of length (n/2)\u22c5p,\ninvokes q.generate(a + 0, a + n / 2 * p) and\nthen iteratively for k=0,\u2026,n/2\u22121,\nsets Kk to\n(\u2211p\u22121j=0akp+j\u22c5232j)mod2w.\n All elements of sequence X are set to 0.\n The value of i is set to n\u22121.\n\ud83d\udd17\nvoid set_counter(const array<result_type, n>& c);\n11\n#\nEffects: For j=0,\u2026,n\u22121 sets Xj to Cn\u22121\u2212jmod2w.\n The value of i is set to n\u22121.\n [Note\u00a03:\u2002The counter is the value Z introduced at the beginning of this subclause.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*philox_engine: 0 < w <= numeric_limits<UIntType>::digits is required"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,6 +3,4 @@\n #include <cstdint>\n \n int main() {\n-  std::philox_engine<std::uint32_t, 33, 2, 10, 0xD256D193, 0x9E3779B9> e;\n-  return int(e());\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/philox_word_size.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'philox_engine' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/philox_word_size.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__philox_word_size.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: specified bitlength must match input type"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

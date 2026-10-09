@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: use of deleted function [^\n]*std::pair[^\n]*::pair\(_Pp&&\)
+// EXPECT-ERROR-CLANG: error: functional-style cast [^\n]*to [^\n]*std::pair[^\n]*uses deleted function
 // [pairs.pair]/13, /17: the pair(P&&) constructor for pair-like P "is defined as deleted if ...
 // reference_constructs_from_temporary_v<second_type, decltype(get<1>(FWD(p)))> is true."
 // Checked in an unevaluated operand, so only the overload set matters (the mem-initializer

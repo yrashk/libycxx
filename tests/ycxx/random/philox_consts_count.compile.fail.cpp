@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*philox_engine: sizeof\.\.\.\(consts\) == n is required
 // [rand.eng.philox]/6.1: "Mandates: sizeof...(consts) == n is true".
 #include <random>
 #include <cstdint>

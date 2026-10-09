@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/numeric/midpoint_pointer_incomplete.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "numeric.ops.midpoint"
+  ],
+  "normative_text": {
+    "numeric.ops.midpoint": "26.10.16 Midpoint [numeric.ops.midpoint]\n\ud83d\udd17\ntemplate<class T>\n  constexpr T midpoint(T a, T b) noexcept;\n1\n#\nConstraints: T is an arithmetic type other than cv bool.\n2\n#\nReturns: Half the sum of a and b.\n If T is an integer type and the sum is odd,\nthe result is rounded towards a.\n3\n#\nRemarks: No overflow occurs.\n If T is a floating-point type, at most one inexact operation occurs.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T* midpoint(T* a, T* b);\n4\n#\nConstraints: T is an object type.\n5\n#\nMandates: T is a complete type.\n6\n#\nPreconditions: a and b point to, respectively,\nelements i and j of the same array object x.\n [Note\u00a01:\u2002As specified in [basic.compound],\nan object that is not an array element\nis considered to belong to a single-element array for this purpose and\na pointer past the last element of an array of n elements\nis considered to be equivalent to a pointer\nto a hypothetical array element n for this purpose.\n \u2014\u00a0end note]\n7\n#\nReturns: A pointer to array element i+j\u2212i2 of x,\nwhere the result of the division is truncated towards zero.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: invalid application of 'sizeof' to incomplete type [^\\n]*Incomplete"
+    ],
+    "clang": [
+      "error: invalid application of 'sizeof' to an incomplete type [^\\n]*Incomplete"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -7,6 +7,5 @@\n \n int main() {\n   Incomplete* p = nullptr;\n-  (void)std::midpoint(p, p);\n   return 0;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/midpoint_pointer_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'midpoint'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/midpoint_pointer_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__midpoint_pointer_incomplete.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "invalid application of 'sizeof' to incomplete type 'Incomplete'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/charconv/to_chars_bool.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "charconv.syn"
+  ],
+  "normative_text": {
+    "charconv.syn": "28.2.1 Header <charconv> synopsis [charconv.syn]\n1\n#\nWhen a function is specified\nwith a type placeholder of integer-type,\nthe implementation provides overloads\nfor char and all signed and unsigned integer types\nin lieu of integer-type.\n When a function is specified\nwith a type placeholder of floating-point-type,\nthe implementation provides overloads\nfor all cv-unqualified floating-point types ([basic.fundamental])\nin lieu of floating-point-type.\n'>\ud83d\udd17\nnamespace std {\n  // floating-point format for primitive numerical conversion\n  enum class chars_format {\n    scientific = unspecified,\n    fixed = unspecified,\n    hex = unspecified,\n    general = fixed | scientific\n  };\n  // [charconv.to.chars], primitive numerical output conversion\n  struct to_chars_result {                                              // freestanding\n    char* ptr;\n    errc ec;\n    friend bool operator==(const to_chars_result&, const to_chars_result&) = default;\n    constexpr explicit operator bool() const noexcept { return ec == errc{}; }\n  };\n  constexpr to_chars_result to_chars(char* first, char* last,           // freestanding\n                                     integer-type value, int base = 10);\n  to_chars_result to_chars(char* first, char* last,                     // freestanding\n                           bool value, int base = 10) = delete;\n  to_chars_result to_chars(char* first, char* last,                     // freestanding-deleted\n                           floating-point-type value);\n  to_chars_result to_chars(char* first, char* last,                     // freestanding-deleted\n                           floating-point-type value, chars_format fmt);\n  to_chars_result to_chars(char* first, char* last,                     // freestanding-deleted\n                           floating-point-type value, chars_format fmt, int precision);\n  // [charconv.from.chars], primitive numerical input conversion\n  struct from_chars_result {                                            // freestanding\n    const char* ptr;\n    errc ec;\n    friend bool operator==(const from_chars_result&, const from_chars_result&) = default;\n    constexpr explicit operator bool() const noexcept { return ec == errc{}; }\n  };\n  constexpr from_chars_result from_chars(const char* first, const char* last,   // freestanding\n                                         integer-type& value, int base = 10);\n  from_chars_result from_chars(const char* first, const char* last,     // freestanding-deleted\n                               floating-point-type& value,\n                               chars_format fmt = chars_format::general);\n}\n2\n#\nThe type chars_format is a bitmask type ([bitmask.types])\nwith elements scientific, fixed, and hex.\n3\n#\nThe types to_chars_result and from_chars_result\nhave the data members and special members specified above.\n They have no base classes or members other than those specified.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::to_chars\\(char\\*, char\\*, bool"
+    ],
+    "clang": [
+      "error: call to deleted function 'to_chars'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,6 +4,4 @@\n \n int main() {\n   char buf[8];\n-  auto r = std::to_chars(buf, buf + 8, true);\n-  return r.ptr == buf;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/charconv/to_chars_bool.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'std::to_chars_result std::to_chars(char*, char*, bool, int)'"
+    },
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/charconv/to_chars_bool.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/charconv__to_chars_bool.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted function 'to_chars'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/deque/deque_allocator_value_type_mismatch.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "container.alloc.reqmts"
+  ],
+  "normative_text": {
+    "container.alloc.reqmts": "23.2.2.5 Allocator-aware containers [container.alloc.reqmts]\n1\n#\nExcept for array and inplace_vector,\nall of the containers defined in Clause [containers],\n[stacktrace.basic], [basic.string], and [re.results]\nmeet the additional requirements of an allocator-aware container,\nas described below.\n2\n#\nGiven an allocator type A\nand given a container type X having a value_type identical to T\nand an allocator_type identical to allocator_traits<A>\u200b::\u200brebind_alloc<T>\nand given an lvalue m of type A,\na pointer p of type T*,\nan expression v that denotes\nan lvalue of type T or const T or\nan rvalue of type const T,\nand an rvalue rv of type T,\nthe following terms are defined.\n If X\nis not allocator-aware or is a specialization of basic_string,\nthe terms below are defined as if A were\nallocator<T> \u2014 no allocator object needs to be created\nand user specializations of allocator<T> are not instantiated:\n(2.1)\nT is Cpp17DefaultInsertable into X\nmeans that the following expression is well-formed:\nallocator_traits<A>::construct(m, p)\n(2.2)\nAn element of X is default-inserted if it is initialized\nby evaluation of the expression\nallocator_traits<A>::construct(m, p)\nwhere p is the address of the uninitialized storage for the element\nallocated within X.\n(2.3)\nT is Cpp17MoveInsertable into X\nmeans that the expression\nallocator_traits<A>::construct(m, p, rv)\nis well-formed\nand its evaluation causes the following postcondition to hold: The value\nof *p is equivalent to the value of rv before the evaluation. [Note\u00a01:\u2002rv remains a valid object.\n Its state is unspecified.\n \u2014\u00a0end note]\n(2.4)\nT is Cpp17CopyInsertable into X\nmeans that, in addition to T being Cpp17MoveInsertable into\nX, the expression\nallocator_traits<A>::construct(m, p, v)\nis well-formed\nand its evaluation causes the following postcondition to hold:\nThe value of v is unchanged and is equivalent to *p.\n(2.5)\nT is\nCpp17EmplaceConstructible into X from args,\nfor zero\nor more arguments args, means that the following expression is well-formed:\nallocator_traits<A>::construct(m, p, args)\n(2.6)\nT is\nCpp17Erasable from X\nmeans that the following expression is well-formed:\nallocator_traits<A>::destroy(m, p)\n[Note\u00a02:\u2002A container calls allocator_traits<A>\u200b::\u200bconstruct(m, p, args)\nto construct an element at p using args,\nwith m == get_allocator().\n The default construct in allocator will\ncall \u200b::\u200bnew((void*)p) T(args),\nbut specialized allocators can choose a different definition.\n \u2014\u00a0end note]\n3\n#\nIn this subclause,\n(3.1)\nX denotes an allocator-aware container class\nwith a value_type of T using an allocator of type A,\n(3.2)\nu denotes a variable,\n(3.3)\na and b denote non-const lvalues of type X,\n(3.4)\nc denotes an lvalue of type const X,\n(3.5)\nt denotes an lvalue or a const rvalue of type X,\n(3.6)\nrv denotes a non-const rvalue of type X, and\n(3.7)\nm is a value of type A.\nA type X meets the allocator-aware container requirements\nif X meets the container requirements and\nthe following types, statements, and expressions are well-formed and have\nthe specified semantics.\n\ud83d\udd17\ntypename X::allocator_type\n4\n#\nResult: A.\n5\n#\nMandates: allocator_type\u200b::\u200bvalue_type is the same as X\u200b::\u200bvalue_type.\n\ud83d\udd17\nc.get_allocator()\n6\n#\nResult: A.\n7\n#\nComplexity: Constant.\n\ud83d\udd17\nX u;\nX u = X();\n8\n#\nPreconditions: A meets the Cpp17DefaultConstructible requirements.\n9\n#\nPostconditions: u.empty() returns true, u.get_allocator() == A().\n10\n#\nComplexity: Constant.\n\ud83d\udd17\nX u(m);\n11\n#\nPostconditions: u.empty() returns true, u.get_allocator() == m.\n12\n#\nComplexity: Constant.\n\ud83d\udd17\nX u(t, m);\n13\n#\nPreconditions: T is Cpp17CopyInsertable into X.\n14\n#\nPostconditions: u == t, u.get_allocator() == m.\n15\n#\nComplexity: Linear.\n\ud83d\udd17\nX u(rv);\n16\n#\nPostconditions: u has the same elements as rv had before this construction;\nthe value of u.get_allocator() is the same as\nthe value of rv.get_allocator() before this construction.\n17\n#\nComplexity: Constant.\n\ud83d\udd17\nX u(rv, m);\n18\n#\nPreconditions: T is Cpp17MoveInsertable into X.\n19\n#\nPostconditions: u has the same elements, or copies of the elements,\nthat rv had before this construction,\nu.get_allocator() == m.\n20\n#\nComplexity: Constant if m == rv.get_allocator(), otherwise linear.\n\ud83d\udd17\na = t\n21\n#\nResult: X&.\n22\n#\nPreconditions: T is Cpp17CopyInsertable into X and\nCpp17CopyAssignable.\n23\n#\nPostconditions: a == t is true.\n24\n#\nComplexity: Linear.\n\ud83d\udd17\na = rv\n25\n#\nResult: X&.\n26\n#\nPreconditions: If\nallocator_traits<allocator_type>\u200b::\u200bpropagate_on_container_move_assignment\u200b::\u200bvalue\nis false,\nT is Cpp17MoveInsertable into X and\nCpp17MoveAssignable.\n27\n#\nEffects: All existing elements of a are either move assigned to or destroyed.\n28\n#\nPostconditions: If a and rv do not refer to the same object,\na is equal to the value that rv had before this assignment.\n29\n#\nComplexity: Linear.\n\ud83d\udd17\na.swap(b)\n30\n#\nResult: void.\n31\n#\nEffects: Exchanges the contents of a and b.\n32\n#\nComplexity: Constant.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::deque: Allocator::value_type must be T \\(\\[container\\.alloc\\.reqmts\\]\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,6 +5,5 @@\n #include <memory>\n // COUNTERPART: libstdcxx:23_containers/deque/requirements/explicit_instantiation/3.cc\n \n-std::deque<int, std::allocator<long>> c;\n \n int main() {}\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/deque/deque_allocator_value_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::is_same<long, int>::value': Allocator::value_type must be same type as value_type"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/deque/deque_allocator_value_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/deque__deque_allocator_value_type_mismatch.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::deque must have the same value_type as its allocator"
+    }
+  },
+  "counterpart_directives": [
+    " libstdcxx:23_containers/deque/requirements/explicit_instantiation/3.cc"
+  ],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

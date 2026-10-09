@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/memory/unique_ptr_rvalue_ref_deleter.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "unique.ptr.single.ctor"
+  ],
+  "normative_text": {
+    "unique.ptr.single.ctor": "20.4.1.3.2 Constructors [unique.ptr.single.ctor]\n\ud83d\udd17\nconstexpr unique_ptr() noexcept;\nconstexpr unique_ptr(nullptr_t) noexcept;\n1\n#\nConstraints: is_pointer_v<deleter_type> is false and\nis_default_constructible_v<deleter_type> is true.\n2\n#\nPreconditions: D meets the Cpp17DefaultConstructible requirements (Table 30),\nand that construction does not throw an exception.\n3\n#\nEffects: Constructs a unique_ptr object that owns\nnothing, value-initializing the stored pointer and the stored deleter.\n4\n#\nPostconditions: get() == nullptr.\n get_deleter()\nreturns a reference to the stored deleter.\n\ud83d\udd17\nconstexpr explicit unique_ptr(type_identity_t<pointer> p) noexcept;\n5\n#\nConstraints: is_pointer_v<deleter_type> is false and\nis_default_constructible_v<deleter_type> is true.\n6\n#\nPreconditions: D meets the Cpp17DefaultConstructible requirements (Table 30),\nand that construction does not throw an exception.\n7\n#\nEffects: Constructs a unique_ptr which owns\np, initializing the stored pointer with p and\nvalue-initializing the stored deleter.\n8\n#\nPostconditions: get() == p.\n get_deleter()\nreturns a reference to the stored deleter.\n\ud83d\udd17\nconstexpr unique_ptr(type_identity_t<pointer> p, const D& d) noexcept;\nconstexpr unique_ptr(type_identity_t<pointer> p, remove_reference_t<D>&& d) noexcept;\n9\n#\nConstraints: is_constructible_v<D, decltype(d)> is true.\n10\n#\nPreconditions: For the first constructor, if D is not a reference type,\nD meets the Cpp17CopyConstructible requirements and\nsuch construction does not exit via an exception.\n For the second constructor, if D is not a reference type,\nD meets the Cpp17MoveConstructible requirements and\nsuch construction does not exit via an exception.\n11\n#\nEffects: Constructs a unique_ptr object which owns p, initializing\nthe stored pointer with p and initializing the deleter\nfrom std\u200b::\u200bforward<decltype(d)>(d).\n12\n#\nPostconditions: get() == p.\n get_deleter() returns a reference to the stored\ndeleter.\n If D is a reference type then get_deleter()\nreturns a reference to the lvalue d.\n13\n#\nRemarks: If D is a reference type,\nthe second constructor is defined as deleted.\n14\n#\n[Example\u00a01:\u2002D d;\nunique_ptr<int, D> p1(new int, D());        // D must be Cpp17MoveConstructible\nunique_ptr<int, D> p2(new int, d);          // D must be Cpp17CopyConstructible\nunique_ptr<int, D&> p3(new int, d);         // p3 holds a reference to d\nunique_ptr<int, const D&> p4(new int, D()); // error: rvalue deleter object combined\n                                            // with reference deleter type\n \u2014\u00a0end example]\n\ud83d\udd17\nconstexpr unique_ptr(unique_ptr&& u) noexcept;\n15\n#\nConstraints: is_move_constructible_v<D> is true.\n16\n#\nPreconditions: If D is not a reference type,\nD meets the Cpp17MoveConstructible\nrequirements (Table 31).\n Construction\nof the deleter from an rvalue of type D does not\nthrow an exception.\n17\n#\nEffects: Constructs a unique_ptr from\nu.\n If D is a reference type, this\ndeleter is copy constructed from u's deleter; otherwise, this\ndeleter is move constructed from u's deleter.\n [Note\u00a01:\u2002The\nconstruction of the deleter can be implemented with std\u200b::\u200bforward<D>.\n \u2014\u00a0end note]\n18\n#\nPostconditions: get() yields the value u.get()\nyielded before the construction.\n u.get() == nullptr.\n get_deleter() returns a reference\nto the stored deleter that was constructed from\nu.get_deleter().\n If D is a reference type then\nget_deleter() and u.get_deleter() both reference\nthe same lvalue deleter.\n\ud83d\udd17\ntemplate<class U, class E> constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;\n19\n#\nConstraints: (19.1)\nunique_ptr<U, E>\u200b::\u200bpointer is implicitly convertible to pointer,\n(19.2)\nU is not an array type, and\n(19.3)\neither D is a reference type and E is the same type as D, or\nD is not a reference type and E is implicitly convertible to D.\n20\n#\nPreconditions: If E is not a reference type,\nconstruction of the deleter from an rvalue of type E\nis well-formed and does not throw an exception.\n Otherwise, E is a reference type and\nconstruction of the deleter from an lvalue of type E\nis well-formed and does not throw an exception.\n21\n#\nEffects: Constructs a unique_ptr from u.\n If E is a reference type, this deleter is copy constructed from\nu's deleter; otherwise, this deleter is move constructed from u's\ndeleter.\n [Note\u00a02:\u2002The deleter constructor can be implemented with\nstd\u200b::\u200bforward<E>.\n \u2014\u00a0end note]\n22\n#\nPostconditions: get() yields the value u.get()\nyielded before the construction.\n u.get() == nullptr.\n get_deleter() returns a reference\nto the stored deleter that was constructed from\nu.get_deleter().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::unique_ptr[^\\n]*unique_ptr[^\\n]*const D&"
+    ],
+    "clang": [
+      "error: call to deleted constructor of 'std::unique_ptr<int, const D &>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -8,5 +8,4 @@\n };\n \n int main() {\n-  std::unique_ptr<int, const D&> p4(new int, D());\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_rvalue_ref_deleter.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted constructor of 'std::unique_ptr<int, const D &>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_rvalue_ref_deleter.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_rvalue_ref_deleter.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'constexpr std::unique_ptr<_Tp, _Dp>::unique_ptr(pointer, std::__enable_if_t<((bool)std::is_lvalue_reference<_Del>::value), _DelUnref&&>) [with _Del = const D&; _DelUnref = const D; _Tp = int; _Dp = const D&; pointer = int*; std::__enable_if_t<((bool)std::is_lvalue_reference<_Del>::value), _DelUnref&&> = const D&&]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/string/traits_char_type_mismatch.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "string.require"
+  ],
+  "normative_text": {
+    "string.require": "27.4.3.2 General requirements [string.require]\n1\n#\nIf any operation would cause size() to\nexceed max_size(), that operation throws an\nexception object of type length_error.\n2\n#\nIf any member function or operator of basic_string throws an exception, that\nfunction or operator has no other effect on the basic_string object.\n3\n#\nEvery object of type\nbasic_string<charT, traits, Allocator> uses an object of type\nAllocator to allocate and free storage for the contained charT\nobjects as needed.\n The Allocator object used is\nobtained as described in [container.reqmts].\n In every specialization basic_string<charT, traits, Allocator>,\nthe type traits shall meet\nthe character traits requirements ([char.traits]).\n [Note\u00a01:\u2002Every specialization basic_string<charT, traits, Allocator> is\nan allocator-aware container ([container.alloc.reqmts]),\nbut does not use the allocator's construct and destroy\nmember functions ([container.requirements.pre]).\n The program is ill-formed if\nAllocator\u200b::\u200bvalue_type is not the same type as charT.\n \u2014\u00a0end note]\n [Note\u00a02:\u2002The program is ill-formed if traits\u200b::\u200bchar_type\nis not the same type as charT.\n \u2014\u00a0end note]\n4\n#\nReferences, pointers, and iterators referring to the elements of a\nbasic_string sequence may be\ninvalidated by the following uses of that basic_string object:\n(4.1)\nPassing as an argument to any standard library function taking a reference to non-const\nbasic_string as an argument.\u00b9\u2079\u00b9\n(4.2)\nCalling non-const member functions, except\noperator[],\nat,\ndata,\nfront,\nback,\nbegin,\nrbegin,\nend,\nand\nrend.\n191)191) For example, as an argument to non-member\nfunctions swap() ([string.special]),\noperator>>() ([string.io]), and getline() ([string.io]), or as\nan argument to basic_string\u200b::\u200bswap().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::basic_string: traits::char_type must be charT \\(\\[string\\.require\\]\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // type as charT.\"\n #include <string>\n \n-std::basic_string<char, std::char_traits<wchar_t>> s;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string/traits_char_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::is_same<char, wchar_t>::value': traits_type::char_type must be the same type as CharT"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string/traits_char_type_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string__traits_char_type_mismatch.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

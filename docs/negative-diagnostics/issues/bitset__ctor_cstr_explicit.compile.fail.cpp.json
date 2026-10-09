@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/bitset/ctor_cstr_explicit.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bitset.cons"
+  ],
+  "normative_text": {
+    "bitset.cons": "22.9.2.2 Constructors [bitset.cons]\n\ud83d\udd17\nconstexpr bitset() noexcept;\n1\n#\nEffects: Initializes all bits in *this to zero.\n\ud83d\udd17\nconstexpr bitset(unsigned long long val) noexcept;\n2\n#\nEffects: Initializes the first M bit positions to the corresponding bit\nvalues in val.\n M is the smaller of N and the number of bits in the value\nrepresentation ([basic.types.general]) of unsigned long long.\n If M < N, the remaining bit positions are initialized to zero.\n\ud83d\udd17\ntemplate<class charT, class traits, class Allocator>\n  constexpr explicit bitset(\n    const basic_string<charT, traits, Allocator>& str,\n    typename basic_string<charT, traits, Allocator>::size_type pos = 0,\n    typename basic_string<charT, traits, Allocator>::size_type n\n      = basic_string<charT, traits, Allocator>::npos,\n    charT zero = charT('0'),\n    charT one = charT('1'));\ntemplate<class charT, class traits>\n  constexpr explicit bitset(\n    basic_string_view<charT, traits> str,\n    typename basic_string_view<charT, traits>::size_type pos = 0,\n    typename basic_string_view<charT, traits>::size_type n\n      = basic_string_view<charT, traits>::npos,\n    charT zero = charT('0'),\n    charT one = charT('1'));\n3\n#\nEffects: Determines the effective length\nrlen of the initializing string as the smaller of\nn and\nstr.size() - pos.\n Initializes the first M bit\npositions to values determined from the corresponding characters in the string\nstr.\n M is the smaller of N and rlen.\n4\n#\nAn element of the constructed object has value zero if the\ncorresponding character in str, beginning at position\npos, is\nzero.\n Otherwise, the element has the value one.\n Character position pos + M - 1 corresponds to bit position zero.\n Subsequent decreasing character positions correspond to increasing bit positions.\n5\n#\nIf M < N, remaining bit positions are initialized to zero.\n6\n#\nThe function uses traits\u200b::\u200beq\nto compare the character values.\n7\n#\nThrows: out_of_range if pos > str.size() or\ninvalid_argument if any of\nthe rlen characters in str\nbeginning at position pos\nis other than zero or one.\n\ud83d\udd17\ntemplate<class charT>\n  constexpr explicit bitset(\n    const charT* str,\n    typename basic_string_view<charT>::size_type n = basic_string_view<charT>::npos,\n    charT zero = charT('0'),\n    charT one = charT('1'));\n8\n#\nConstraints: (8.1)\nis_array_v<charT> is false,\n(8.2)\nis_trivially_copyable_v<charT> is true,\n(8.3)\nis_standard_layout_v<charT> is true, and\n(8.4)\nis_trivially_default_constructible_v<charT> is true.\n9\n#\nEffects: As if by:\nbitset(n == basic_string_view<charT>::npos\n          ? basic_string_view<charT>(str)\n          : basic_string_view<charT>(str, n),\n       0, n, zero, one)\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: conversion from 'const char \\[5\\]' to non-scalar type 'std::bitset<4>'"
+    ],
+    "clang": [
+      "error: no viable conversion from 'const char\\[5\\]' to 'std::bitset<4>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // copy-initialisation from a string literal is ill-formed.\n #include <bitset>\n \n-std::bitset<4> b = \"1010\";\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bitset/ctor_cstr_explicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable conversion from 'const char[5]' to 'std::bitset<4>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bitset/ctor_cstr_explicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bitset__ctor_cstr_explicit.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "conversion from 'const char [5]' to non-scalar type 'std::bitset<4>' requested"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

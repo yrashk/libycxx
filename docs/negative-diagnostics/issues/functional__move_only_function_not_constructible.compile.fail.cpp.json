@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/functional/move_only_function_not_constructible.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.move.ctor"
+  ],
+  "normative_text": {
+    "func.wrap.move.ctor": "22.10.17.4.3 Constructors, assignments, and destructor [func.wrap.move.ctor]\n\ud83d\udd17\ntemplate<class VT>\n  static constexpr bool is-callable-from = see below;\n1\n#\nIf noex is true,\nis-callable-from<VT> is equal to:\nis_nothrow_invocable_r_v<R, VT cv ref, ArgTypes...> &&\nis_nothrow_invocable_r_v<R, VT inv-quals, ArgTypes...>\nOtherwise, is-callable-from<VT> is equal to:\nis_invocable_r_v<R, VT cv ref, ArgTypes...> &&\nis_invocable_r_v<R, VT inv-quals, ArgTypes...>\n\ud83d\udd17\nmove_only_function() noexcept;\nmove_only_function(nullptr_t) noexcept;\n2\n#\nPostconditions: *this has no target object.\n\ud83d\udd17\nmove_only_function(move_only_function&& f) noexcept;\n3\n#\nPostconditions: The target object of *this is\nthe target object f had before construction, and\nf is in a valid state with an unspecified value.\n\ud83d\udd17\ntemplate<class F> move_only_function(F&& f);\n4\n#\nLet VT be decay_t<F>.\n5\n#\nConstraints: (5.1)\nremove_cvref_t<F> is not the same type as move_only_function, and\n(5.2)\nremove_cvref_t<F> is not a specialization of in_place_type_t, and\n(5.3)\nis-callable-from<VT> is true.\n6\n#\nMandates: is_constructible_v<VT, F> is true.\n7\n#\nPreconditions: VT meets the Cpp17Destructible requirements, and\nif is_move_constructible_v<VT> is true,\nVT meets the Cpp17MoveConstructible requirements.\n8\n#\nPostconditions: *this has no target object if any of the following hold:\n(8.1)\nf is a null function pointer value,\n(8.2)\nf is a null member pointer value, or\n(8.3)\nremove_cvref_t<F> is a specialization of\nthe move_only_function or copyable_function class template,\nand f has no target object.\nOtherwise, *this has a target object of type VT\ndirect-non-list-initialized with std\u200b::\u200bforward<F>(f).\n9\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na function pointer or a specialization of reference_wrapper.\n\ud83d\udd17\ntemplate<class T, class... Args>\n  explicit move_only_function(in_place_type_t<T>, Args&&... args);\n10\n#\nLet VT be decay_t<T>.\n11\n#\nConstraints: (11.1)\nis_constructible_v<VT, Args...> is true, and\n(11.2)\nis-callable-from<VT> is true.\n12\n#\nMandates: VT is the same type as T.\n13\n#\nPreconditions: VT meets the Cpp17Destructible requirements, and\nif is_move_constructible_v<VT> is true,\nVT meets the Cpp17MoveConstructible requirements.\n14\n#\nPostconditions: *this has a target object of type VT\ndirect-non-list-initialized with std\u200b::\u200bforward<Args>\u200b(args)....\n15\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na function pointer or a specialization of reference_wrapper.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  explicit move_only_function(in_place_type_t<T>, initializer_list<U> ilist, Args&&... args);\n16\n#\nLet VT be decay_t<T>.\n17\n#\nConstraints: (17.1)\nis_constructible_v<VT, initializer_list<U>&, Args...> is\ntrue, and\n(17.2)\nis-callable-from<VT> is true.\n18\n#\nMandates: VT is the same type as T.\n19\n#\nPreconditions: VT meets the Cpp17Destructible requirements, and\nif is_move_constructible_v<VT> is true,\nVT meets the Cpp17MoveConstructible requirements.\n20\n#\nPostconditions: *this has a target object of type VT\ndirect-non-list-initialized with\nilist, std\u200b::\u200bforward<Args>(args)....\n21\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na function pointer or a specialization of reference_wrapper.\n\ud83d\udd17\nmove_only_function& operator=(move_only_function&& f);\n22\n#\nEffects: Equivalent to: move_only_function(std\u200b::\u200bmove(f)).swap(*this);\n23\n#\nReturns: *this.\n\ud83d\udd17\nmove_only_function& operator=(nullptr_t) noexcept;\n24\n#\nEffects: Destroys the target object of *this, if any.\n25\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class F> move_only_function& operator=(F&& f);\n26\n#\nEffects: Equivalent to: move_only_function(std\u200b::\u200bforward<F>(f)).swap(*this);\n27\n#\nReturns: *this.\n\ud83d\udd17\n~move_only_function();\n28\n#\nEffects: Destroys the target object of *this, if any.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::function/move_only_function/copyable_function: Mandates: is_constructible_v<VT, F>"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,8 +5,6 @@\n \n struct MoveOnly {\n   MoveOnly() = default;\n-  MoveOnly(MoveOnly&&) = default;\n-  MoveOnly(const MoveOnly&) = delete;\n   int operator()() const { return 0; }\n };\n \n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/move_only_function_not_constructible.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'move_only_function' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/move_only_function_not_constructible.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__move_only_function_not_constructible.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'MoveOnly::MoveOnly(const MoveOnly&)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

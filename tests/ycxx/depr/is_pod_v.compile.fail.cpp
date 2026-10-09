@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: is_pod_v is deprecated \(\[depr\.meta\.types\]\)[^\n]*W(?:error|deprecated)
 // [depr.meta.types] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

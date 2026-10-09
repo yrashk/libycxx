@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/ranges/ranges_to_nonclass_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "range.utility.conv.adaptors"
+  ],
+  "normative_text": {
+    "range.utility.conv.adaptors": "25.5.7.3 ranges\u200b::\u200bto adaptors [range.utility.conv.adaptors]\n\ud83d\udd17\ntemplate<class C, class... Args> requires (!view<C>)\n  constexpr auto to(Args&&... args);\ntemplate<template<class...> class C, class... Args>\n  constexpr auto to(Args&&... args);\n1\n#\nMandates: For the first overload,\nC is a cv-unqualified class type.\n2\n#\nReturns: A range adaptor closure object ([range.adaptor.object]) f\nthat is a perfect forwarding call wrapper ([func.require])\nwith the following properties:\n(2.1)\nIt has no target object.\n(2.2)\nIts bound argument entities bound_args consist of\nobjects of types decay_t<Args>...\ndirect-non-list-initialized with std\u200b::\u200bforward<Args>(args)...,\nrespectively.\n(2.3)\nIts call pattern is to<C>(r, bound_args...),\nwhere r is the argument used in a function call expression of f.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*ranges::to: C must be a cv\\-unqualified class type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,6 +3,4 @@\n #include <ranges>\n \n int main() {\n-  auto f = std::ranges::to<int>();\n-  (void)f;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ranges/ranges_to_nonclass_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'is_class_v<int> || is_union_v<int>': The target must be a class type or union type"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ranges/ranges_to_nonclass_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ranges__ranges_to_nonclass_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: invalid application of 'sizeof' to incomplete type [^\n]*Incomplete
+// EXPECT-ERROR-CLANG: error: invalid application of 'sizeof' to an incomplete type [^\n]*Incomplete
 // [propagation]/13: exception_ptr_cast: "Mandates: E is a cv-unqualified complete object
 // type."
 #include <exception>

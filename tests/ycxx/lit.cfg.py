@@ -12,7 +12,7 @@
 #   libdir=<dir>       the libycxx build to link (tools/ycxx-cxx --libdir): for a sanitizer run,
 #                      tools/run-conformance passes the build instrumented with the same
 #                      sanitizers, build/<compiler>-<sanitizers> (DECISIONS §6.8)
-import os, platform, shlex, sys
+import os, platform, shlex, subprocess, sys
 
 repo = lit_config.params['repo']
 compiler = lit_config.params.get('compiler', 'clang')
@@ -61,6 +61,17 @@ if enabled('-fexceptions', '-fno-exceptions'):
     features.add('exceptions')
 if enabled('-frtti', '-fno-rtti'):
     features.add('rtti')
+
+# A negative test of extended floating-point arguments needs the actual type. A compiler's
+# absence of that type is not evidence that the library rejected an extended-type operation.
+wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
+macro_probe = subprocess.run([os.path.join(repo, 'tools', wrapper), compiler, '-dM', '-E',
+                              '-x', 'c++', '-'] + flags,
+                             input='#include <stdfloat>\n', capture_output=True, text=True, timeout=30)
+if macro_probe.returncode:
+    lit_config.fatal('cannot detect extended floating-point types:\n' + macro_probe.stderr)
+if '__STDCPP_FLOAT32_T__' in macro_probe.stdout:
+    features.add('extended-float32')
 config.available_features = features
 
 # The sanitizers' options, set on each test program's command line (its transcript): for
@@ -68,7 +79,6 @@ config.available_features = features
 # allocator_may_return_null=1 (tests/ycxxlit/sanitizers.py).
 run_env = sanitizers.run_env(sanitizers.parse(sanitizer), os.path.join(repo, 'tests', 'ycxx'))
 
-wrapper = 'ref-cxx' if reference else 'ycxx-cxx'
 # Journaled: every finished test's result is kept even if the run is stopped (Ctrl-C).
 from ycxxlit.journal import Journaled
 config.test_format = Journaled(YcxxFormat(os.path.join(repo, 'tools', wrapper), compiler, flags,

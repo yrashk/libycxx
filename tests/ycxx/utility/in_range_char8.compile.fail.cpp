@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function for call to 'in_range<char8_t>\(
+// EXPECT-ERROR-CLANG: error: no matching function for call to 'in_range'
 // [utility.intcmp]/9: in_range "Mandates: Each of T and R is a signed or unsigned integer
 // type"; Note 1: "These function templates cannot be used to compare ... char8_t".
 #include <utility>

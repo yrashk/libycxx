@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/memory/inout_ptr_shared.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "inout.ptr.t"
+  ],
+  "normative_text": {
+    "inout.ptr.t": "20.4.4.3 Class template inout_ptr_t [inout.ptr.t]\n1\n#\ninout_ptr_t is a class template used to adapt types\nsuch as smart pointers ([smartptr])\nfor functions that use output pointer parameters\nwhose dereferenced values may first be deleted\nbefore being set to another allocated value.\n2\n#\n[Example\u00a01:\u2002#include <memory>\nstruct star_fish* star_fish_alloc();\nint star_fish_populate(struct star_fish** ps, const char* description);\nstruct star_fish_deleter {\n  void operator() (struct star_fish* c) const noexcept;\n};\nusing star_fish_ptr = std::unique_ptr<star_fish, star_fish_deleter>;\nint main(int, char*[]) {\n  star_fish_ptr peach(star_fish_alloc());\n  // ...\n  // used, need to re-make\n  int err = star_fish_populate(std::inout_ptr(peach), \"caring clown-fish liker\");\n  return err;\n}\nA unique_ptr can be used with inout_ptr\nto be passed into an output pointer-style function.\n The original value will be properly deleted\naccording to the function it is used with and\na new value reset in its place.\n \u2014\u00a0end example]\n\ud83d\udd17\nnamespace std {\n  template<class Smart, class Pointer, class... Args>\n  class inout_ptr_t {\n  public:\n    constexpr explicit inout_ptr_t(Smart&, Args...);\n    inout_ptr_t(const inout_ptr_t&) = delete;\n    constexpr ~inout_ptr_t();\n    constexpr operator Pointer*() const noexcept;\n    operator void**() const noexcept;\n  private:\n    Smart& s;                   // exposition only\n    tuple<Args...> a;           // exposition only\n    Pointer p;                  // exposition only\n  };\n}\n3\n#\nPointer shall meet the Cpp17NullablePointer requirements.\n If Smart is a specialization of shared_ptr,\nthe program is ill-formed.\n [Note\u00a01:\u2002It is impossible to properly acquire unique ownership of the managed resource\nfrom a shared_ptr given its shared ownership model.\n \u2014\u00a0end note]\n4\n#\nProgram-defined specializations of inout_ptr_t\nthat depend on at least one program-defined type\nneed not meet the requirements for the primary template.\n5\n#\nEvaluations of the conversion functions on the same object\nmay conflict ([intro.races]).\n\ud83d\udd17\nconstexpr explicit inout_ptr_t(Smart& smart, Args... args);\n6\n#\nEffects: Initializes s with smart,\na with std\u200b::\u200bforward<Args>(args)..., and\np to either\n(6.1)\nsmart if is_pointer_v<Smart> is true,\n(6.2)\notherwise, smart.get().\n7\n#\nRemarks: An implementation can call s.release().\n8\n#\n[Note\u00a02:\u2002The constructor is not noexcept\nto allow for a variety of non-terminating and safe implementation strategies.\n For example, an intrusive pointer implementation with a control block\ncan allocate in the constructor and safely fail with an exception.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr ~inout_ptr_t();\n9\n#\nLet SP be\nPOINTER_OF_OR(Smart, Pointer) ([memory.general]).\n10\n#\nLet release-statement be s.release();\nif an implementation does not call s.release() in the constructor.\n Otherwise, it is empty.\n11\n#\nEffects: Equivalent to:\n(11.1)\napply([&](auto&&... args) {\n  s = Smart(static_cast<SP>(p), std::forward<Args>(args)...); }, std::move(a));\nif is_pointer_v<Smart> is true;\n(11.2)\notherwise,\nrelease-statement;\nif (p) {\n  apply([&](auto&&... args) {\n    s.reset(static_cast<SP>(p), std::forward<Args>(args)...); }, std::move(a));\n}\nif the expression\ns.reset(static_cast<SP>(p), std\u200b::\u200bforward<Args>(args)...)\nis well-\nformed;\n(11.3)\notherwise,\nrelease-statement;\nif (p) {\n  apply([&](auto&&... args) {\n    s = Smart(static_cast<SP>(p), std::forward<Args>(args)...); }, std::move(a));\n}\nif is_constructible_v<Smart, SP, Args...> is true;\n(11.4)\notherwise, the program is ill-formed.\n\ud83d\udd17\nconstexpr operator Pointer*() const noexcept;\n12\n#\nPreconditions: operator void**() has not been called on *this.\n13\n#\nReturns: addressof(const_cast<Pointer&>(p)).\n\ud83d\udd17\noperator void**() const noexcept;\n14\n#\nConstraints: is_same_v<Pointer, void*> is false.\n15\n#\nMandates: is_pointer_v<Pointer> is true.\n16\n#\nPreconditions: operator Pointer*() has not been called on *this.\n17\n#\nReturns: A pointer value v such that:\n(17.1)\nthe initial value *v is equivalent to static_cast<void*>(p) and\n(17.2)\nany modification of *v\nthat is not followed by subsequent modification of *this\naffects the value of p during the destruction of *this,\nsuch that static_cast<void*>(p) == *v.\n18\n#\nRemarks: Accessing *v outside the lifetime of *this\nhas undefined behavior.\n19\n#\n[Note\u00a03:\u2002reinterpret_cast<void**>(static_cast<Pointer*>(*this))\ncan be a viable implementation strategy for some implementations.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::inout_ptr: shared_ptr cannot release ownership"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,5 +5,4 @@\n \n int main() {\n   std::shared_ptr<int> s;\n-  c_replace(std::inout_ptr(s));\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/inout_ptr_shared.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!__is_specialization_v<std::shared_ptr<int>, std::shared_ptr>': std::shared_ptr<> is not supported with std::inout_ptr."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/inout_ptr_shared.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__inout_ptr_shared.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::inout_ptr can not be used to wrap std::shared_ptr"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

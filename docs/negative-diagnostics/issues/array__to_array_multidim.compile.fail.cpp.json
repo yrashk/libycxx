@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/array/to_array_multidim.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "array.creation"
+  ],
+  "normative_text": {
+    "array.creation": "23.3.3.6 Array creation functions [array.creation]\n\ud83d\udd17\ntemplate<class T, size_t N>\n  constexpr array<remove_cv_t<T>, N> to_array(T (&a)[N]);\n1\n#\nMandates: is_array_v<T> is false and\nis_constructible_v<remove_cv_t<T>, T&> is true.\n2\n#\nPreconditions: T meets the Cpp17CopyConstructible requirements.\n3\n#\nReturns: {{ a[0], \u2026, a[N - 1] }}.\n\ud83d\udd17\ntemplate<class T, size_t N>\n  constexpr array<remove_cv_t<T>, N> to_array(T (&&a)[N]);\n4\n#\nMandates: is_array_v<T> is false and\nis_constructible_v<remove_cv_t<T>, T> is true.\n5\n#\nPreconditions: T meets the Cpp17MoveConstructible requirements.\n6\n#\nReturns: {{ std\u200b::\u200bmove(a[0]), \u2026, std\u200b::\u200bmove(a[N - 1]) }}.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::to_array: multidimensional arrays are not supported"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n \n void f() {\n   int a[2][3] = {};\n-  (void)std::to_array(a);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/to_array_multidim.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!is_array_v<int[3]>': [array.creation]/1: to_array does not accept multidimensional arrays."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/to_array_multidim.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__to_array_multidim.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

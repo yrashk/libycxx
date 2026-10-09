@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function.*std::map[^\n]*::merge\(
+// EXPECT-ERROR-CLANG: error: no matching member function for call to 'merge'
 // [map.overview] synopsis: merge takes only map<Key, T, C2, Allocator> and
 // multimap<Key, T, C2, Allocator> -- any comparison object C2 but the same allocator type
 // ([associative.reqmts.general]/112-117, [container.node.overview] Table 75: compatible

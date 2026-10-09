@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/bit/byteswap_float.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bit.byteswap"
+  ],
+  "normative_text": {
+    "bit.byteswap": "22.11.4 byteswap [bit.byteswap]\n\ud83d\udd17\ntemplate<class T>\n  constexpr T byteswap(T value) noexcept;\n1\n#\nConstraints: T models integral.\n2\n#\nMandates: T does not have padding bits ([basic.types.general]).\n3\n#\nLet the sequence R comprise\nthe bytes of the object representation of value in reverse order.\n4\n#\nReturns: An object v of type T\nsuch that each byte in the object representation of v is equal to\nthe byte in the corresponding position in R.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'byteswap\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'byteswap'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // The call below has no viable candidate, so the program is ill-formed.\n #include <bit>\n \n-void f() { (void)std::byteswap(1.0f); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/byteswap_float.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'byteswap'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/byteswap_float.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__byteswap_float.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'byteswap(float)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

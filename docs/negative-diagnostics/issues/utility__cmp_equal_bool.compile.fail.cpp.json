@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/utility/cmp_equal_bool.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "utility.intcmp"
+  ],
+  "normative_text": {
+    "utility.intcmp": "22.2.7 Integer comparison functions [utility.intcmp]\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_equal(T t, U u) noexcept;\n1\n#\nMandates: Each of T and U is\na signed or unsigned integer type ([basic.fundamental]).\n2\n#\nEffects: Equivalent to:\nusing UT = make_unsigned_t<T>;\nusing UU = make_unsigned_t<U>;\nif constexpr (is_signed_v<T> == is_signed_v<U>)\n  return t == u;\nelse if constexpr (is_signed_v<T>)\n  return t < 0 ? false : UT(t) == u;\nelse\n  return u < 0 ? false : t == UU(u);\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_not_equal(T t, U u) noexcept;\n3\n#\nEffects: Equivalent to: return !cmp_equal(t, u);\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_less(T t, U u) noexcept;\n4\n#\nMandates: Each of T and U is\na signed or unsigned integer type ([basic.fundamental]).\n5\n#\nEffects: Equivalent to:\nusing UT = make_unsigned_t<T>;\nusing UU = make_unsigned_t<U>;\nif constexpr (is_signed_v<T> == is_signed_v<U>)\n  return t < u;\nelse if constexpr (is_signed_v<T>)\n  return t < 0 ? true : UT(t) < u;\nelse\n  return u < 0 ? false : t < UU(u);\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_greater(T t, U u) noexcept;\n6\n#\nEffects: Equivalent to: return cmp_less(u, t);\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_less_equal(T t, U u) noexcept;\n7\n#\nEffects: Equivalent to: return !cmp_greater(t, u);\n\ud83d\udd17\ntemplate<class T, class U>\n  constexpr bool cmp_greater_equal(T t, U u) noexcept;\n8\n#\nEffects: Equivalent to: return !cmp_less(t, u);\n\ud83d\udd17\ntemplate<class R, class T>\n  constexpr bool in_range(T t) noexcept;\n9\n#\nMandates: Each of T and R is\na signed or unsigned integer type ([basic.fundamental]).\n10\n#\nEffects: Equivalent to:\nreturn cmp_greater_equal(t, numeric_limits<R>::min()) &&\n       cmp_less_equal(t, numeric_limits<R>::max());\n11\n#\n[Note\u00a01:\u2002These function templates cannot be used to compare\nbyte,\nchar,\nchar8_t,\nchar16_t,\nchar32_t,\nwchar_t, and\nbool.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'cmp_equal\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'cmp_equal'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // type\"; Note 1: \"These function templates cannot be used to compare ... bool.\"\n #include <utility>\n \n-bool b = std::cmp_equal(true, 1);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/cmp_equal_bool.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'cmp_equal'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/cmp_equal_bool.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__cmp_equal_bool.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

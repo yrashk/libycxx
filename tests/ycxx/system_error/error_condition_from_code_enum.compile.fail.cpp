@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: conversion from 'lib::E' to non-scalar type 'std::error_condition'
+// EXPECT-ERROR-CLANG: error: no viable conversion from 'lib::E' to 'std::error_condition'
 // [syserr.errcondition.constructors]/3: error_condition's converting constructor template is
 // constrained on is_error_condition_enum_v<ErrorConditionEnum>; a type registered only with
 // is_error_code_enum ([system.error.syn]/2) does not convert to error_condition, even with a

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: [^\n]*is deprecated: vector<bool>::swap\(reference, reference\) is deprecated \(\[depr\.vector\.bool\.swap\]\); use swap\(x, y\)[^\n]*W(?:error|deprecated)
 // [depr.vector.bool.swap] (Annex D).
 // [depr.general]/2: "An implementation may declare library names and entities described in this
 // Clause with the deprecated attribute"; libycxx does (DECISIONS.md §6): this use is diagnosed.

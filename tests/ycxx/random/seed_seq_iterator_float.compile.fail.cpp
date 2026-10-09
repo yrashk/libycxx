@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*seed_seq: the iterator's value_type must be an integer type
 // [rand.util.seedseq]/4: seed_seq(InputIterator begin, InputIterator end): "Mandates:
 // iterator_traits<InputIterator>::value_type is an integer type."
 #include <random>

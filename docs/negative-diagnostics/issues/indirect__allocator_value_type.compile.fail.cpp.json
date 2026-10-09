@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/indirect/allocator_value_type.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "indirect.general"
+  ],
+  "normative_text": {
+    "indirect.general": "20.5.1.1 General [indirect.general]\n1\n#\nAn indirect object manages the lifetime of an owned object.\n An indirect object is\nvalueless if it has no owned object.\n An indirect object may become valueless only after it has been moved from.\n2\n#\nIn every specialization indirect<T, Allocator>,\nif the type allocator_traits<Allocator>\u200b::\u200bvalue_type\nis not the same type as T,\nthe program is ill-formed.\n Every object of type indirect<T, Allocator>\nuses an object of type Allocator to allocate and free storage\nfor the owned object as needed.\n3\n#\nConstructing an owned object with args...\nusing the allocator a means calling\nallocator_traits<Allocator>\u200b::\u200bconstruct(a, p, args...) where\nargs is an expression pack,\na is an allocator, and\np is a pointer obtained by\ncalling allocator_traits<Allocator>\u200b::\u200ballocate.\n4\n#\nThe member alloc is used for\nany memory allocation and element construction\nperformed by member functions\nduring the lifetime of each indirect object.\n The allocator alloc may be replaced\nonly via assignment or swap().\n Allocator replacement is performed by\ncopy assignment,\nmove assignment, or\nswapping of the allocator\nonly if ([container.reqmts]):\n(4.1)\nallocator_traits<Allocator>\u200b::\u200bpropagate_on_container_copy_assignment\u200b::\u200bvalue, or\n(4.2)\nallocator_traits<Allocator>\u200b::\u200bpropagate_on_container_move_assignment\u200b::\u200bvalue, or\n(4.3)\nallocator_traits<Allocator>\u200b::\u200bpropagate_on_container_swap\u200b::\u200bvalue\nis true within the implementation of\nthe corresponding indirect operation.\n5\n#\nA program that instantiates the definition of\nthe template indirect<T, Allocator> with\na type for the T parameter that is\na non-object type,\nan array type,\nin_place_t,\na specialization of in_place_type_t, or\na cv-qualified type\nis ill-formed.\n6\n#\nThe template parameter T of indirect\nmay be an incomplete type.\n7\n#\nThe template parameter Allocator of indirect\nshall meet the Cpp17Allocator requirements.\n8\n#\nIf a program declares an explicit or partial specialization of indirect,\nthe behavior is undefined.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::indirect: allocator_traits<Allocator>::value_type must be T"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // type as T, the program is ill-formed.\"\n #include <memory>\n \n-std::indirect<int, std::allocator<long>> x;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/indirect/allocator_value_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no template named 'indirect' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/indirect/allocator_value_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/indirect__allocator_value_type.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

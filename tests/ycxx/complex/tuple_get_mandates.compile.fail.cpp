@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*\[complex\.tuple\]/2: std::get index out of range for std::complex
 // [complex.tuple]/2: get<I>(complex<T>&): "Mandates: I < 2 is true."
 #include <complex>
 

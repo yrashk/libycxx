@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/memory/start_lifetime_non_aggregate.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "obj.lifetime"
+  ],
+  "normative_text": {
+    "obj.lifetime": "20.2.6 Explicit lifetime management [obj.lifetime]\n\ud83d\udd17\ntemplate<class T>\n  constexpr void start_lifetime(T& r) noexcept;\n1\n#\nMandates: T is a complete type and\nan implicit-lifetime ([basic.types]) aggregate ([dcl.init.aggr]) type.\n2\n#\nEffects: If the object referenced by r\nis already within its lifetime ([basic.life]),\nno effects.\n Otherwise, begins the lifetime of the object referenced by r.\n [Note\u00a01:\u2002No initialization is performed and no subobject has its lifetime started.\n If r denotes a member of a union U,\nit becomes the active member of U ([class.union]).\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  T* start_lifetime_as(void* p) noexcept;\ntemplate<class T>\n  const T* start_lifetime_as(const void* p) noexcept;\ntemplate<class T>\n  volatile T* start_lifetime_as(volatile void* p) noexcept;\ntemplate<class T>\n  const volatile T* start_lifetime_as(const volatile void* p) noexcept;\n3\n#\nMandates: T is an implicit-lifetime type ([basic.types.general])\nand not an incomplete type ([basic.types.general]).\n4\n#\nPreconditions: [p, (char*)p + sizeof(T)) denotes a region of allocated storage\nthat is\na subset of the region of storage\nreachable through ([basic.compound]) p and\nsuitably aligned for the type T.\n5\n#\nEffects: Implicitly creates objects ([intro.object]) within the denoted region\nconsisting of an object a of type T\nwhose address is p, and\nobjects nested within a,\nas follows:\nThe object representation of a\nis the contents of the storage prior to the call to start_lifetime_as.\n The value of each created object o\nof trivially copyable type ([basic.types.general]) U\nis determined in the same manner as for a call\nto bit_cast<U>(E) ([bit.cast]),\nwhere E is an lvalue of type U denoting o,\nexcept that the storage is not accessed.\n The value of any other created object is unspecified.\n [Note\u00a02:\u2002The unspecified value can be indeterminate.\n \u2014\u00a0end note]\n6\n#\nReturns: A pointer to the a defined in the Effects paragraph.\n\ud83d\udd17\ntemplate<class T>\n  T* start_lifetime_as_array(void* p, size_t n) noexcept;\ntemplate<class T>\n  const T* start_lifetime_as_array(const void* p, size_t n) noexcept;\ntemplate<class T>\n  volatile T* start_lifetime_as_array(volatile void* p, size_t n) noexcept;\ntemplate<class T>\n  const volatile T* start_lifetime_as_array(const volatile void* p, size_t n) noexcept;\n7\n#\nMandates: T is a complete type.\n8\n#\nPreconditions: p is suitably aligned for an array of T or is null.\n n <= size_t(-1) / sizeof(T) is true.\n If n > 0 is true,\n[(char*)p, (char*)p + (n * sizeof(T))) denotes\na region of allocated storage that is\na subset of the region of storage\nreachable through ([basic.compound]) p.\n9\n#\nEffects: If n > 0 is true,\nequivalent to\nstart_lifetime_as<U>(p)\nwhere U is the type \u201carray of n T\u201d.\n Otherwise, there are no effects.\n10\n#\nReturns: A pointer to the first element of the created array,\nif any;\notherwise,\na pointer that compares equal to p ([expr.eq]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::start_lifetime: T must be an implicit\\-lifetime aggregate type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n \n void f() {\n   int i = 0;\n-  std::start_lifetime(i);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/start_lifetime_non_aggregate.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no type named 'start_lifetime' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/start_lifetime_non_aggregate.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__start_lifetime_non_aggregate.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'start_lifetime' is not a member of 'std'; did you mean 'start_lifetime_as'?"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

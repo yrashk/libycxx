@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/bit/rotl_signed.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bit.rotate"
+  ],
+  "normative_text": {
+    "bit.rotate": "22.11.7 Rotating [bit.rotate]\n1\n#\nIn the following descriptions,\nlet N denote numeric_limits<T>\u200b::\u200bdigits.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T rotl(T x, int s) noexcept;\n2\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n3\n#\nLet r be s % N.\n4\n#\nReturns: If r is 0, x;\nif r is positive, (x << r) | (x >> (N - r));\nif r is negative, rotr(x, -r).\n\ud83d\udd17\ntemplate<class T>\n  constexpr T rotr(T x, int s) noexcept;\n5\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n6\n#\nLet r be s % N.\n7\n#\nReturns: If r is 0, x;\nif r is positive, (x >> r) | (x << (N - r));\nif r is negative, rotl(x, -r).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'rotl\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'rotl'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // The call below has no viable candidate, so the program is ill-formed.\n #include <bit>\n \n-void f() { (void)std::rotl(1, 1); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/rotl_signed.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'rotl'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/rotl_signed.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__rotl_signed.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'rotl(int, int)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

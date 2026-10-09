@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/bit/countl_zero_char.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bit.count"
+  ],
+  "normative_text": {
+    "bit.count": "22.11.8 Counting [bit.count]\n1\n#\nIn the following descriptions,\nlet N denote numeric_limits<T>\u200b::\u200bdigits.\n\ud83d\udd17\ntemplate<class T>\n  constexpr int countl_zero(T x) noexcept;\n2\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n3\n#\nReturns: The number of consecutive 0 bits in the value of x,\nstarting from the most significant bit.\n [Note\u00a01:\u2002Returns N if x == 0.\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  constexpr int countl_one(T x) noexcept;\n4\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n5\n#\nReturns: The number of consecutive 1 bits in the value of x,\nstarting from the most significant bit.\n [Note\u00a02:\u2002Returns N if x == numeric_limits<T>\u200b::\u200bmax().\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  constexpr int countr_zero(T x) noexcept;\n6\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n7\n#\nReturns: The number of consecutive 0 bits in the value of x,\nstarting from the least significant bit.\n [Note\u00a03:\u2002Returns N if x == 0.\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  constexpr int countr_one(T x) noexcept;\n8\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n9\n#\nReturns: The number of consecutive 1 bits in the value of x,\nstarting from the least significant bit.\n [Note\u00a04:\u2002Returns N if x == numeric_limits<T>\u200b::\u200bmax().\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  constexpr int popcount(T x) noexcept;\n10\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n11\n#\nReturns: The number of 1 bits in the value of x.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'countl_zero\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'countl_zero'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // The call below has no viable candidate, so the program is ill-formed.\n #include <bit>\n \n-void f() { (void)std::countl_zero('a'); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/countl_zero_char.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'countl_zero'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/countl_zero_char.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__countl_zero_char.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'countl_zero(char)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

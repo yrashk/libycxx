@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/flat_set/key_container_mismatch.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "flat.set.overview",
+    "flat.multiset.overview"
+  ],
+  "normative_text": {
+    "flat.set.overview": "23.6.11.1 Overview [flat.set.overview]\n1\n#\nA flat_set is a container adaptor\nthat provides an associative container interface\nthat supports unique keys\n(i.e., contains at most one of each key value) and\nprovides for fast retrieval of the keys themselves.\n flat_set supports iterators that model\nthe random_access_iterator concept ([iterator.concept.random.access]).\n2\n#\nA flat_set meets all of the requirements\nfor a container ([container.reqmts]) and\nfor a reversible container ([container.rev.reqmts]),\nplus the optional container requirements ([container.opt.reqmts]).\n flat_set meets the requirements of\nan associative container ([associative.reqmts]), except that:\n(2.1)\nit does not meet the requirements\nrelated to node handles ([container.node.overview]),\n(2.2)\nit does not meet the requirements related to iterator invalidation, and\n(2.3)\nthe time complexity of the operations\nthat insert or erase a single element from the set\nis linear,\nincluding the ones that take an insertion position iterator.\n [Note\u00a01:\u2002A flat_set does not meet\nthe additional requirements of an allocator-aware container,\nas described in [container.alloc.reqmts].\n \u2014\u00a0end note]\n3\n#\nA flat_set also provides most operations\ndescribed in [associative.reqmts] for unique keys.\n This means that a flat_set supports\nthe a_uniq operations in [associative.reqmts]\nbut not the a_eq operations.\n For a flat_set<Key>,\nboth the key_type and value_type are Key.\n4\n#\nDescriptions are provided here only for operations on flat_set\nthat are not described in one of those sets of requirements or\nfor operations where there is additional semantic information.\n5\n#\nA flat_set maintains the invariant that the keys are sorted with\nrespect to the comparison object.\n6\n#\nIf any member function in [flat.set.defn] exits via an exception,\nthe invariant of the object argument is restored.\n For the move constructor and move assignment operator,\nthe invariants of both arguments are restored.\n [Note\u00a02:\u2002This can result in the flat_set's being emptied.\n \u2014\u00a0end note]\n7\n#\nAny sequence container ([sequence.reqmts])\nsupporting Cpp17RandomAccessIterator\ncan be used to instantiate flat_set.\n In particular, vector ([vector]) and deque ([deque])\ncan be used.\n [Note\u00a03:\u2002vector<bool> is not a sequence container.\n \u2014\u00a0end note]\n8\n#\nThe program is ill-formed if Key is not the same type\nas KeyContainer\u200b::\u200bvalue_type.\n9\n#\nThe effect of calling a member function\nthat takes a sorted_unique_t argument\nwith a range that is not sorted with respect to key_comp(), or\nthat contains equal elements, is undefined.\n10\n#\nThe types iterator and const_iterator meet\nthe constexpr iterator requirements ([iterator.requirements.general]).\n",
+    "flat.multiset.overview": "23.6.12.1 Overview [flat.multiset.overview]\n1\n#\nA flat_multiset is a container adaptor\nthat provides an associative container interface\nthat supports equivalent keys\n(i.e., possibly containing multiple copies of the same key value) and\nprovides for fast retrieval of the keys themselves.\n flat_multiset supports iterators that model the\nrandom_access_iterator concept ([iterator.concept.random.access]).\n2\n#\nA flat_multiset meets all of the requirements\nfor a container ([container.reqmts]) and\nfor a reversible container ([container.rev.reqmts]),\nplus the optional container requirements ([container.opt.reqmts]).\n flat_multiset meets the requirements of\nan associative container ([associative.reqmts]), except that:\n(2.1)\nit does not meet the requirements\nrelated to node handles ([container.node.overview]),\n(2.2)\nit does not meet the requirements related to iterator invalidation, and\n(2.3)\nthe time complexity of the operations\nthat insert or erase a single element from the\nset is linear,\nincluding the ones that take an insertion position iterator.\n [Note\u00a01:\u2002A flat_multiset does not meet\nthe additional requirements of an allocator-aware container,\nas described in [container.alloc.reqmts].\n \u2014\u00a0end note]\n3\n#\nA flat_multiset also provides most operations\ndescribed in [associative.reqmts] for equal keys.\n This means that a flat_multiset supports\nthe a_eq operations in [associative.reqmts]\nbut not the a_uniq operations.\n For a flat_multiset<Key>,\nboth the key_type and value_type are Key.\n4\n#\nDescriptions are provided here only for operations on flat_multiset\nthat are not described in one of the general sections or\nfor operations where there is additional semantic information.\n5\n#\nA flat_multiset maintains the invariant\nthat the keys are sorted with respect to the comparison object.\n6\n#\nIf any member function in [flat.multiset.defn] exits via an exception,\nthe invariant of the object argument is restored.\n For the move constructor and move assignment operator,\nthe invariants of both arguments are restored.\n [Note\u00a02:\u2002This can result in the flat_multiset's being emptied.\n \u2014\u00a0end note]\n7\n#\nAny sequence container ([sequence.reqmts])\nsupporting Cpp17RandomAccessIterator\ncan be used to instantiate flat_multiset.\n In particular,\nvector ([vector]) and deque ([deque]) can be used.\n [Note\u00a03:\u2002vector<bool> is not a sequence container.\n \u2014\u00a0end note]\n8\n#\nThe program is ill-formed if Key is not the same type\nas KeyContainer\u200b::\u200bvalue_type.\n9\n#\nThe effect of calling a member function\nthat takes a sorted_equivalent_t argument with a range\nthat is not sorted with respect to key_comp() is undefined.\n10\n#\nThe types iterator and const_iterator meet\nthe constexpr iterator requirements ([iterator.requirements.general]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*flat_set: Key must be KeyContainer::value_type \\(\\[flat\\.set\\.overview\\]/8\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,6 +6,4 @@\n #include <vector>\n \n int main() {\n-  std::flat_set<int, std::less<int>, std::vector<long>> s;\n-  return static_cast<int>(s.size());\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/flat_set/key_container_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'is_same_v<int, long>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/flat_set/key_container_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/flat_set__key_container_mismatch.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

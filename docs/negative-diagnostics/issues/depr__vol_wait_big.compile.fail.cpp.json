@@ -1,0 +1,90 @@
+{
+  "test": "tests/ycxx/depr/vol_wait_big.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired existing deprecation diagnostic policy test",
+  "normative_review": "The cited Annex D declaration is deprecated. [depr.general]/2 allows the deprecated attribute, and [dcl.attr.deprecated]/4 recommends a diagnostic. This is an existing libycxx attribute policy test using -Werror=deprecated-declarations, not universal required ill-formedness. The control disables that warning while retaining the source; no normative test was converted into a policy test.",
+  "clauses": [
+    "depr.atomics.volatile",
+    "depr.general",
+    "dcl.attr.deprecated"
+  ],
+  "normative_text": {
+    "depr.atomics.volatile": "D.24.2 Volatile access [depr.atomics.volatile]\n1\n#\nIf an atomic ([atomics.types.generic]) specialization has one of the following overloads,\nthen that overload participates in overload resolution\neven if atomic<T>\u200b::\u200bis_always_lock_free is false:\nvoid store(T desired, memory_order order = memory_order::seq_cst) volatile noexcept;\nT operator=(T desired) volatile noexcept;\nT load(memory_order order = memory_order::seq_cst) const volatile noexcept;\noperator T() const volatile noexcept;\nT exchange(T desired, memory_order order = memory_order::seq_cst) volatile noexcept;\nbool compare_exchange_weak(T& expected, T desired,\n                           memory_order success, memory_order failure) volatile noexcept;\nbool compare_exchange_strong(T& expected, T desired,\n                             memory_order success, memory_order failure) volatile noexcept;\nbool compare_exchange_weak(T& expected, T desired,\n                           memory_order order = memory_order::seq_cst) volatile noexcept;\nbool compare_exchange_strong(T& expected, T desired,\n                             memory_order order = memory_order::seq_cst) volatile noexcept;\nT fetch_key(T operand, memory_order order = memory_order::seq_cst) volatile noexcept;\nT operator op=(T operand) volatile noexcept;\nT* fetch_key(ptrdiff_t operand, memory_order order = memory_order::seq_cst) volatile noexcept;\nvalue_type operator++(int) volatile noexcept;\nvalue_type operator--(int) volatile noexcept;\nvalue_type operator++() volatile noexcept;\nvalue_type operator--() volatile noexcept;\nvoid wait(T old, memory_order order = memory_order::seq_cst) const volatile noexcept;\nvoid notify_one() volatile noexcept;\nvoid notify_all() volatile noexcept;\n",
+    "depr.general": "D.1 General [depr.general]\n1\n#\nThis Annex describes features of this document\nthat are specified for compatibility with existing implementations.\n2\n#\nThese are deprecated features, where\ndeprecated\nis defined as:\nNormative for the current revision of C++,\nbut having been identified as a candidate for removal from future revisions.\n An implementation may declare library names and entities described in this Clause with the\ndeprecated attribute.\n",
+    "dcl.attr.deprecated": "9.13.4 Deprecated attribute [dcl.attr.deprecated]\n1\n#\nThe attribute-token deprecated can be used to mark names and entities\nwhose use is still allowed, but is discouraged for some reason.\n [Note\u00a01:\u2002In particular,\ndeprecated is appropriate for names and entities that are deemed obsolescent or\nunsafe.\n \u2014\u00a0end note]\nAn\nattribute-argument-clause may be present and, if present, it shall have the form:\n( unevaluated-string )\n[Note\u00a02:\u2002The unevaluated-string in the attribute-argument-clause\ncan be used to explain the rationale for deprecation and/or to suggest a replacing entity.\n \u2014\u00a0end note]\n2\n#\nThe attribute may be applied to the declaration of\na class,\na type alias,\na variable,\na non-static data member,\na function,\na namespace,\nan enumeration,\nan enumerator,\na concept, or\na template specialization.\n3\n#\nAn entity declared without the deprecated attribute can later be redeclared\nwith the attribute and vice-versa.\n [Note\u00a03:\u2002Thus, an entity initially declared without the\nattribute can be marked as deprecated by a subsequent redeclaration.\n However, after an entity\nis marked as deprecated, later redeclarations do not un-deprecate the entity.\n \u2014\u00a0end note]\nRedeclarations using different forms of the attribute (with or without the\nattribute-argument-clause or with different\nattribute-argument-clauses) are allowed.\n4\n#\nRecommended practice: Implementations should use the deprecated attribute to produce a diagnostic\nmessage in case the program refers to a name or entity other than to declare it, after a\ndeclaration that specifies the attribute.\n The diagnostic message should include the text provided\nwithin the attribute-argument-clause of any deprecated attribute applied\nto the name or entity.\n The value of\na has-attribute-expression for the deprecated attribute\nshould be 0\nunless the implementation can issue such diagnostic messages.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: [^\\n]*is deprecated: a volatile atomic operation on a type that is not always lock\\-free is deprecated \\(\\[depr\\.atomics\\.volatile\\]\\)[^\\n]*W(?:error|deprecated)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#pragma GCC diagnostic ignored \"-Wdeprecated-declarations\"\n // [depr.atomics.volatile] (Annex D).\n // [depr.general]/2: \"An implementation may declare library names and entities described in this\n // Clause with the deprecated attribute\"; libycxx does (DECISIONS.md \u00a76): this use is diagnosed.\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/depr/vol_wait_big.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never",
+        "-Werror=deprecated-declarations"
+      ],
+      "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.libcxx.clang.log",
+      "first_error": null
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/depr/vol_wait_big.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never",
+        "-Werror=deprecated-declarations"
+      ],
+      "log": "build/test-logs/negative-diagnostics/depr__vol_wait_big.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "passing 'volatile std::atomic<main()::B>' as 'this' argument discards qualifiers [-fpermissive]"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

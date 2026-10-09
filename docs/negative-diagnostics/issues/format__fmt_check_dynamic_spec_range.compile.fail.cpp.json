@@ -1,0 +1,90 @@
+{
+  "test": "tests/ycxx/format/fmt_check_dynamic_spec_range.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.parse.ctx",
+    "format.fmt.string"
+  ],
+  "normative_text": {
+    "format.parse.ctx": "28.5.6.6 Class template basic_format_parse_context [format.parse.ctx]\n\ud83d\udd17\nnamespace std {\n  template<class charT>\n  class basic_format_parse_context {\n  public:\n    using char_type = charT;\n    using const_iterator = basic_string_view<charT>::const_iterator;\n    using iterator = const_iterator;\n  private:\n    iterator begin_;                                    // exposition only\n    iterator end_;                                      // exposition only\n    enum indexing { unknown, manual, automatic };       // exposition only\n    indexing indexing_;                                 // exposition only\n    size_t next_arg_id_;                                // exposition only\n    size_t num_args_;                                   // exposition only\n  public:\n    constexpr explicit basic_format_parse_context(basic_string_view<charT> fmt) noexcept;\n    basic_format_parse_context(const basic_format_parse_context&) = delete;\n    basic_format_parse_context& operator=(const basic_format_parse_context&) = delete;\n    constexpr const_iterator begin() const noexcept;\n    constexpr const_iterator end() const noexcept;\n    constexpr void advance_to(const_iterator it);\n    constexpr size_t next_arg_id();\n    constexpr void check_arg_id(size_t id);\n    template<class... Ts>\n      constexpr void check_dynamic_spec(size_t id) noexcept;\n    constexpr void check_dynamic_spec_integral(size_t id) noexcept;\n    constexpr void check_dynamic_spec_string(size_t id) noexcept;\n  };\n}\n1\n#\nAn instance of basic_format_parse_context holds\nthe format string parsing state, consisting of\nthe format string range being parsed and\nthe argument counter for automatic indexing.\n2\n#\nIf a program declares an explicit or partial specialization of\nbasic_format_parse_context,\nthe program is ill-formed, no diagnostic required.\n\ud83d\udd17\nconstexpr explicit basic_format_parse_context(basic_string_view<charT> fmt) noexcept;\n3\n#\nEffects: Initializes\nbegin_ with fmt.begin(),\nend_ with fmt.end(),\nindexing_ with unknown,\nnext_arg_id_ with 0, and\nnum_args_ with 0.\n [Note\u00a01:\u2002Any call to\nnext_arg_id, check_arg_id, or check_dynamic_spec\non an instance of basic_format_parse_context\ninitialized using this constructor is not a core constant expression.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr const_iterator begin() const noexcept;\n4\n#\nReturns: begin_.\n\ud83d\udd17\nconstexpr const_iterator end() const noexcept;\n5\n#\nReturns: end_.\n\ud83d\udd17\nconstexpr void advance_to(const_iterator it);\n6\n#\nPreconditions: end() is reachable from it.\n7\n#\nEffects: Equivalent to: begin_ = it;\n\ud83d\udd17\nconstexpr size_t next_arg_id();\n8\n#\nEffects: If indexing_ != manual is true, equivalent to:\nif (indexing_ == unknown)\n  indexing_ = automatic;\nreturn next_arg_id_++;\n9\n#\nThrows: format_error if indexing_ == manual is true.\n [Note\u00a02:\u2002This indicates mixing of automatic and manual argument indexing.\n \u2014\u00a0end note]\n10\n#\nRemarks: Let cur-arg-id be the value of next_arg_id_ prior to this call.\n Call expressions where cur-arg-id >= num_args_ is true\nare not core constant expressions ([expr.const.core]).\n\ud83d\udd17\nconstexpr void check_arg_id(size_t id);\n11\n#\nEffects: If indexing_ != automatic is true, equivalent to:\nif (indexing_ == unknown)\n  indexing_ = manual;\n12\n#\nThrows: format_error if\nindexing_ == automatic is true.\n [Note\u00a03:\u2002This indicates mixing of automatic and manual argument indexing.\n \u2014\u00a0end note]\n13\n#\nRemarks: A call to this function is a core constant expression ([expr.const.core]) only if\nid < num_args_ is true.\n\ud83d\udd17\ntemplate<class... Ts>\n  constexpr void check_dynamic_spec(size_t id) noexcept;\n14\n#\nMandates: sizeof...(Ts) \u2002\u2265\u20021.\n The types in Ts... are unique.\n Each type in Ts... is one of\nbool,\nchar_type,\nint,\nunsigned int,\nlong long int,\nunsigned long long int,\nfloat,\ndouble,\nlong double,\nconst char_type*,\nbasic_string_view<char_type>, or\nconst void*.\n15\n#\nRemarks: A call to this function is a core constant expression only if\n(15.1)\nid < num_args_ is true and\n(15.2)\nthe type of the corresponding format argument\n(after conversion to basic_format_arg<Context>) is one of the types in Ts....\n\ud83d\udd17\nconstexpr void check_dynamic_spec_integral(size_t id) noexcept;\n16\n#\nEffects: Equivalent to:\ncheck_dynamic_spec<int, unsigned int, long long int, unsigned long long int>(id);\n\ud83d\udd17\nconstexpr void check_dynamic_spec_string(size_t id) noexcept;\n17\n#\nEffects: Equivalent to:\ncheck_dynamic_spec<const char_type*, basic_string_view<char_type>>(id);\n",
+    "format.fmt.string": "28.5.4 Class template basic_format_string [format.fmt.string]\nnamespace std {\n  template<class charT, class... Args>\n  struct basic_format_string {\n  private:\n    basic_string_view<charT> str;         // exposition only\n  public:\n    template<class T> consteval basic_format_string(const T& s);\n    constexpr basic_format_string(dynamic-format-string<charT> s) noexcept : str(s.str) {}\n    constexpr basic_string_view<charT> get() const noexcept { return str; }\n  };\n}\n\ud83d\udd17\ntemplate<class T> consteval basic_format_string(const T& s);\n1\n#\nConstraints: const T& models convertible_to<basic_string_view<charT>>.\n2\n#\nEffects: Direct-non-list-initializes str with s.\n3\n#\nRemarks: A call to this function is not a core constant expression ([expr.const.core])\nunless there exist args of types Args\nsuch that str is a format string for args.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: call to non-'constexpr' function [^\\n]*__format_string_argument_index_out_of_range\\(\\)"
+    ],
+    "clang": [
+      "error: call to consteval function [^\\n]*std::basic_format_string[^\\n]*is not a constant expression",
+      "note: non-constexpr function '__format_string_argument_index_out_of_range' cannot be used in a constant expression"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [format.parse.ctx]/10: next_arg_id: \"Call expressions where cur-arg-id >= num_args_ is true\n // are not core constant expressions\"; /15.1: check_dynamic_spec is a core constant expression\n // only if id < num_args_. A formatter consuming an extra argument id when no such argument\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_check_dynamic_spec_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'check_dynamic_spec' in 'std::basic_format_parse_context<char>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_check_dynamic_spec_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_check_dynamic_spec_range.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, W>(\"{}\")' is not a constant expression"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

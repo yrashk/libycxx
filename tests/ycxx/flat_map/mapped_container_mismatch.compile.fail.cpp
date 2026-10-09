@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*flat_map: T must be MappedContainer::value_type \(\[flat\.map\.overview\]/8\)
 // [flat.map.overview]/8, [flat.multimap.overview]: "The program is ill-formed if ... T is not
 // the same type as MappedContainer::value_type." Here MappedContainer::value_type is short
 // for T int (the same program with vector<int> compiles: flat_map/containers.pass.cpp).

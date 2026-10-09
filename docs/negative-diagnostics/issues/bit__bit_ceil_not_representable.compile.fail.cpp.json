@@ -1,0 +1,89 @@
+{
+  "test": "tests/ycxx/bit/bit_ceil_not_representable.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bit.pow.two"
+  ],
+  "normative_text": {
+    "bit.pow.two": "22.11.5 Integral powers of 2 [bit.pow.two]\n\ud83d\udd17\ntemplate<class T>\n  constexpr bool has_single_bit(T x) noexcept;\n1\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n2\n#\nReturns: true if x is an integral power of two;\nfalse otherwise.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_ceil(T x);\n3\n#\nLet N be the smallest power of 2 greater than or equal to x.\n4\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n5\n#\nPreconditions: N is representable as a value of type T.\n6\n#\nReturns: N.\n7\n#\nThrows: Nothing.\n8\n#\nRemarks: A function call expression\nthat violates the precondition in the Preconditions: element\nis not a core constant expression ([expr.const.core]).\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_floor(T x) noexcept;\n9\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n10\n#\nReturns: If x == 0, 0;\notherwise the maximal value y\nsuch that has_single_bit(y) is true and y <= x.\n\ud83d\udd17\ntemplate<class T>\n  constexpr int bit_width(T x) noexcept;\n11\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n12\n#\nReturns: If x == 0, 0;\notherwise one plus the base-2 logarithm of x,\nwith any fractional part discarded.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: call to non-'constexpr' function [^\\n]*__assertion_failed",
+      "in 'constexpr' expansion of [^\\n]*std::bit_ceil: result not representable"
+    ],
+    "clang": [
+      "error: constexpr variable 'v' must be initialized by a constant expression",
+      "note: in call to [^\\n]*std::bit_ceil: result not representable"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,4 +4,3 @@\n #include <bit>\n #include <cstdint>\n \n-constexpr std::uint8_t v = std::bit_ceil(std::uint8_t(200));\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/bit_ceil_not_representable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "constexpr variable 'v' must be initialized by a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/bit_ceil_not_representable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__bit_ceil_not_representable.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "right operand of shift expression '(1 << 40)' is greater than or equal to the precision 32 of the left operand [-fpermissive]"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

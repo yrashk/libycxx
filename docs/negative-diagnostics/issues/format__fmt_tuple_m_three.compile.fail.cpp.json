@@ -1,0 +1,88 @@
+{
+  "test": "tests/ycxx/format/fmt_tuple_m_three.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.tuple"
+  ],
+  "normative_text": {
+    "format.tuple": "28.5.9 Tuple formatter [format.tuple]\n1\n#\nFor each of pair and tuple,\nthe library provides the following formatter specialization\nwhere pair-or-tuple is the name of the template:\n\ud83d\udd17\nnamespace std {\n  template<class charT, formattable<charT>... Ts>\n  struct formatter<pair-or-tuple<Ts...>, charT> {\n  private:\n    tuple<formatter<remove_cvref_t<Ts>, charT>...> underlying_;               // exposition only\n    basic_string_view<charT> separator_ = STATICALLY-WIDEN<charT>(\", \");      // exposition only\n    basic_string_view<charT> opening-bracket_ = STATICALLY-WIDEN<charT>(\"(\"); // exposition only\n    basic_string_view<charT> closing-bracket_ = STATICALLY-WIDEN<charT>(\")\"); // exposition only\n  public:\n    constexpr void set_separator(basic_string_view<charT> sep) noexcept;\n    constexpr void set_brackets(basic_string_view<charT> opening,\n                                basic_string_view<charT> closing) noexcept;\n    template<class ParseContext>\n      constexpr typename ParseContext::iterator\n        parse(ParseContext& ctx);\n    template<class FormatContext>\n      constexpr typename FormatContext::iterator\n        format(see below& elems, FormatContext& ctx) const;\n  };\n  template<class... Ts>\n    constexpr bool enable_nonlocking_formatter_optimization<pair-or-tuple<Ts...>> =\n      (enable_nonlocking_formatter_optimization<remove_cvref_t<Ts>> && ...);\n}\n2\n#\nThe parse member functions of these formatters\ninterpret the format specification as\na tuple-format-spec according to the following syntax:\ntuple-format-spec\u2009:\ntuple-fill-and-alignopt widthopt tuple-typeopt\ntuple-fill-and-align\u2009:\ntuple-fillopt align\ntuple-fill\u2009:\nany character other than { or } or :\ntuple-type\u2009:\nm\nn\n3\n#\nThe tuple-fill-and-align is interpreted the same way as\na fill-and-align ([format.string.std]).\n The productions align and width\nare described in [format.string].\n4\n#\nThe tuple-type specifier\nchanges the way a pair or tuple is formatted,\nwith certain options only valid with certain argument types.\n The meaning of the various type options\nis as specified in Table 116.\nTable 116 \u2014 Meaning of tuple-type options\u2003[tab:formatter.tuple.type]\n\ud83d\udd17\nOption\nRequirements\nMeaning\n\ud83d\udd17\nm\nsizeof...(Ts) == 2\nEquivalent to:\nset_separator(STATICALLY-WIDEN<charT>(\": \"));\nset_brackets({}, {});\n\ud83d\udd17\nn\nnone\nEquivalent to: set_brackets({}, {});\n\ud83d\udd17\nnone\nnone\nNo effects\n\ud83d\udd17\nconstexpr void set_separator(basic_string_view<charT> sep) noexcept;\n5\n#\nEffects: Equivalent to: separator_ = sep;\n\ud83d\udd17\nconstexpr void set_brackets(basic_string_view<charT> opening,\n                            basic_string_view<charT> closing) noexcept;\n6\n#\nEffects: Equivalent to:\nopening-bracket_ = opening;\nclosing-bracket_ = closing;\n\ud83d\udd17\ntemplate<class ParseContext>\n  constexpr typename ParseContext::iterator\n    parse(ParseContext& ctx);\n7\n#\nEffects: Parses the format specifiers as a tuple-format-spec and\nstores the parsed specifiers in *this.\n The values of\nopening-bracket_,\nclosing-bracket_, and\nseparator_\nare modified if and only if\nrequired by the tuple-type, if present.\n For each element e in underlying_,\ncalls e.parse(ctx) to parse\nan empty format-spec and,\nif e.set_debug_format() is a valid expression,\ncalls e.set_debug_format().\n8\n#\nReturns: An iterator past the end of the tuple-format-spec.\n\ud83d\udd17\ntemplate<class FormatContext>\n  constexpr typename FormatContext::iterator\n    format(see below& elems, FormatContext& ctx) const;\n9\n#\nThe type of elems is:\n(9.1)\nIf (formattable<const Ts, charT> && ...) is true,\nconst pair-or-tuple<Ts...>&.\n(9.2)\nOtherwise pair-or-tuple<Ts...>&.\n10\n#\nEffects: Writes the following into ctx.out(),\nadjusted according to the tuple-format-spec:\n(10.1)\nopening-bracket_,\n(10.2)\nfor each index I in the [0, sizeof...(Ts)):\n(10.2.1)\nif I != 0, separator_,\n(10.2.2)\nthe result of writing get<I>(elems)\nvia get<I>(underlying_), and\n(10.3)\nclosing-bracket_.\n11\n#\nReturns: An iterator past the end of the output range.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: uncaught exception of type 'std::format_error';[^\\n]*std::formatter: the m tuple\\-type needs exactly two elements"
+    ],
+    "clang": [
+      "error: call to consteval function [^\\n]*std::basic_format_string[^\\n]*is not a constant expression",
+      "note: in call to [^\\n]*std::formatter: the m tuple\\-type needs exactly two elements"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n #include <string>\n #include <tuple>\n \n-int main() { (void)std::format(\"{:m}\", std::tuple<int, int, int>(1, 2, 3)); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_tuple_m_three.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, std::tuple<int, int, int>>::basic_format_string<char[5]>' is not a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_tuple_m_three.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_m_three.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, std::tuple<int, int, int> >(\"{:m}\")' is not a constant expression"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

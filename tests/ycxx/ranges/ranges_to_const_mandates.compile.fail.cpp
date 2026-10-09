@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*ranges::to: C must be a cv\-unqualified class type
 // [range.utility.conv.to]/1: "Mandates: C is a cv-unqualified class type."
 #include <ranges>
 

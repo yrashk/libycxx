@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/tuple/dangling_reference_pair.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "tuple.cnstr"
+  ],
+  "normative_text": {
+    "tuple.cnstr": "22.4.4.2 Construction [tuple.cnstr]\n1\n#\nIn the descriptions that follow, let i be in the range\n[0, sizeof...(Types)) in order, Ti\nbe the ith type in Types, and\nUi be the ith type in a template parameter pack named UTypes, where indexing\nis zero-based.\n2\n#\nFor each tuple constructor, an exception is thrown only if the construction of\none of the types in Types throws an exception.\n3\n#\nThe defaulted move and copy constructor, respectively, of\ntuple is a constexpr function if and only if all\nrequired element-wise initializations for move and copy, respectively,\nwould be constexpr-suitable ([dcl.constexpr]).\n The defaulted move and copy constructor of tuple<> are\nconstexpr functions.\n4\n#\nIf is_trivially_destructible_v<Ti> is true for all Ti,\nthen the destructor of tuple is trivial.\n5\n#\nThe default constructor of tuple<> is trivial.\n\ud83d\udd17\nconstexpr explicit(see below) tuple();\n6\n#\nConstraints: is_default_constructible_v<Ti> is true for all i.\n7\n#\nEffects: Value-initializes each element.\n8\n#\nRemarks: The expression inside explicit evaluates to true\nif and only if Ti is not\ncopy-list-initializable from an empty list\nfor at least one i.\n [Note\u00a01:\u2002This behavior can be implemented with a trait that checks whether\na const Ti& can be initialized with {}.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr explicit(see below) tuple(const Types&...)\n  noexcept((is_nothrow_copy_constructible_v<Types> && ...));\n9\n#\nConstraints: sizeof...(Types) \u2002\u2265\u20021 and\nis_copy_constructible_v<Ti> is true for all i.\n10\n#\nEffects: Initializes each element with the value of the\ncorresponding parameter.\n11\n#\nRemarks: The expression inside explicit is equivalent to:\n!conjunction_v<is_convertible<const Types&, Types>...>\n\ud83d\udd17\ntemplate<class... UTypes> constexpr explicit(see below) tuple(UTypes&&... u)\n  noexcept((is_nothrow_constructible_v<Types, UTypes> && ...));\n12\n#\nLet disambiguating-constraint be:\n(12.1)\nnegation<is_same<remove_cvref_t<U0>, tuple>>\nif sizeof...(Types) is 1;\n(12.2)\notherwise,\nbool_constant<!is_same_v<remove_cvref_t<U0>, allocator_arg_t> ||\nis_-\nsame_v<remove_cvref_t<T0>, allocator_arg_t>>\nif sizeof...(Types) is 2 or 3;\n(12.3)\notherwise, true_type.\n13\n#\nConstraints: (13.1)\nsizeof...(Types) equals sizeof...(UTypes),\n(13.2)\nsizeof...(Types) \u2002\u2265\u20021, and\n(13.3)\nconjunction_v<disambiguating-constraint,\nis_constructible<Types, UTypes>...> is\ntrue.\n14\n#\nEffects: Initializes the elements in the tuple with the\ncorresponding value in std\u200b::\u200bforward<UTypes>(u).\n15\n#\nRemarks: The expression inside explicit is equivalent to:\n!conjunction_v<is_convertible<UTypes, Types>...>\nThis constructor is defined as deleted if\n(reference_constructs_from_temporary_v<Types, UTypes&&> || ...)\nis true.\n\ud83d\udd17\ntuple(const tuple& u) = default;\n16\n#\nMandates: is_copy_constructible_v<Ti> is true for all i.\n17\n#\nEffects: Initializes each element of *this with the\ncorresponding element of u.\n\ud83d\udd17\ntuple(tuple&& u) = default;\n18\n#\nConstraints: is_move_constructible_v<Ti> is true for all i.\n19\n#\nEffects: For all i, initializes the ith element of *this with\nstd\u200b::\u200bforward<Ti>(get<i>(u)).\n\ud83d\udd17\ntemplate<class... UTypes> constexpr explicit(see below) tuple(tuple<UTypes...>& u);\ntemplate<class... UTypes> constexpr explicit(see below) tuple(const tuple<UTypes...>& u);\ntemplate<class... UTypes> constexpr explicit(see below) tuple(tuple<UTypes...>&& u);\ntemplate<class... UTypes> constexpr explicit(see below) tuple(const tuple<UTypes...>&& u);\n20\n#\nLet I be the pack 0, 1, \u2026, (sizeof...(Types) - 1).\nLet FWD(u) be static_cast<decltype(u)>(u).\n21\n#\nConstraints: (21.1)\nsizeof...(Types) equals sizeof...(UTypes), and\n(21.2)\n(is_constructible_v<Types, decltype(get<I>(FWD(u)))> && ...)\nis true, and\n(21.3)\neither sizeof...(Types) is not 1, or\n(when Types... expands to T and\nUTypes... expands to U)\nis_convertible_v<decltype(u), T>,\nis_constructible_v<T, decltype(u)>, and\nis_same_v<T, U> are all false.\n22\n#\nEffects: For all i, initializes the ith element of *this\nwith get<i>(FWD(u)).\n23\n#\nRemarks: The expression inside explicit is equivalent to:\n!(is_convertible_v<decltype(get<I>(FWD(u))), Types> && ...)\nThe constructor is defined as deleted if\n(reference_constructs_from_temporary_v<Types, decltype(get<I>(FWD(u)))> || ...)\nis true.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr explicit(see below) tuple(pair<U1, U2>& u);\ntemplate<class U1, class U2> constexpr explicit(see below) tuple(const pair<U1, U2>& u);\ntemplate<class U1, class U2> constexpr explicit(see below) tuple(pair<U1, U2>&& u);\ntemplate<class U1, class U2> constexpr explicit(see below) tuple(const pair<U1, U2>&& u);\n24\n#\nLet FWD(u) be static_cast<decltype(u)>(u).\n25\n#\nConstraints: (25.1)\nsizeof...(Types) is 2,\n(25.2)\nis_constructible_v<T0, decltype(get<0>(FWD(u)))> is true, and\n(25.3)\nis_constructible_v<T1, decltype(get<1>(FWD(u)))> is true.\n26\n#\nEffects: Initializes the first element with get<0>(FWD(u)) and\nthe second element with get<1>(FWD(\u200bu)).\n27\n#\nRemarks: The expression inside explicit is equivalent to:\n!is_convertible_v<decltype(get<0>(FWD(u))), T0> ||\n!is_convertible_v<decltype(get<1>(FWD(u))), T1>\nThe constructor is defined as deleted if\nreference_constructs_from_temporary_v<T0, decltype(get<0>(FWD(u)))> ||\nreference_constructs_from_temporary_v<T1, decltype(get<1>(FWD(u)))>\nis true.\n\ud83d\udd17\ntemplate<tuple-like UTuple>\n  constexpr explicit(see below) tuple(UTuple&& u);\n28\n#\nLet I be the pack 0, 1, \u2026, (sizeof...(Types) - 1).\n29\n#\nConstraints: (29.1)\ndifferent-from<UTuple, tuple> ([range.utility.helpers])\nis true,\n(29.2)\nremove_cvref_t<UTuple>\nis not a specialization of ranges\u200b::\u200bsubrange,\n(29.3)\nsizeof...(Types)\nequals tuple_size_v<remove_cvref_t<UTuple>>,\n(29.4)\n(is_constructible_v<Types, decltype(get<I>(std\u200b::\u200bforward<UTuple>(u)))> && ...)\nis\ntrue, and\n(29.5)\neither sizeof...(Types) is not 1, or\n(when Types... expands to T)\nis_convertible_v<UTuple, T> and\nis_constructible_v<T, UTuple> are both false.\n30\n#\nEffects: For all i, initializes the ith element of *this with\nget<i>(std\u200b::\u200bforward<UTuple>(u)).\n31\n#\nRemarks: The expression inside explicit is equivalent to:\n!(is_convertible_v<decltype(get<I>(std::forward<UTuple>(u))), Types> && ...)\nThe constructor is defined as deleted if\n(reference_constructs_from_temporary_v<Types, decltype(get<I>(std::forward<UTuple>(u)))>\n || ...)\nis true.\n\ud83d\udd17\ntemplate<class Alloc>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a);\ntemplate<class Alloc>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, const Types&...);\ntemplate<class Alloc, class... UTypes>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, UTypes&&...);\ntemplate<class Alloc>\n  constexpr tuple(allocator_arg_t, const Alloc& a, const tuple&);\ntemplate<class Alloc>\n  constexpr tuple(allocator_arg_t, const Alloc& a, tuple&&);\ntemplate<class Alloc, class... UTypes>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&);\ntemplate<class Alloc, class... UTypes>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&);\ntemplate<class Alloc, class... UTypes>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, tuple<UTypes...>&&);\ntemplate<class Alloc, class... UTypes>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, const tuple<UTypes...>&&);\ntemplate<class Alloc, class U1, class U2>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&);\ntemplate<class Alloc, class U1, class U2>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&);\ntemplate<class Alloc, class U1, class U2>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, pair<U1, U2>&&);\ntemplate<class Alloc, class U1, class U2>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, const pair<U1, U2>&&);\ntemplate<class Alloc, tuple-like UTuple>\n  constexpr explicit(see below)\n    tuple(allocator_arg_t, const Alloc& a, UTuple&&);\n32\n#\nPreconditions: Alloc meets\nthe Cpp17Allocator requirements ([allocator.requirements.general]).\n33\n#\nEffects: Equivalent to the preceding constructors\nexcept that each element of non-reference type is constructed with\nuses-allocator construction.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::tuple[^\\n]*::tuple\\("
+    ],
+    "clang": [
+      "error: call to deleted constructor of [^\\n]*std::tuple"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,6 +5,4 @@\n \n void f() {\n   std::pair<long, int> p(1, 2);\n-  std::tuple<const int&, int> t(p);\n-  (void)t;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/tuple/dangling_reference_pair.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "reference member '__value_' binds to a temporary object whose lifetime would be shorter than the lifetime of the constructed object"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/tuple/dangling_reference_pair.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/tuple__dangling_reference_pair.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'std::tuple< <template-parameter-1-1> >::tuple(std::pair<_U1, _U2>&) [with _U1 = long int; _U2 = int; _Elements = {const int&, int}]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

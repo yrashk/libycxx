@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/inplace_vector/from_range_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "inplace.vector.cons"
+  ],
+  "normative_text": {
+    "inplace.vector.cons": "23.3.16.2 Constructors [inplace.vector.cons]\n\ud83d\udd17\nconstexpr explicit inplace_vector(size_type n);\n1\n#\nPreconditions: T is Cpp17DefaultInsertable into inplace_vector.\n2\n#\nEffects: Constructs an inplace_vector with n default-inserted elements.\n3\n#\nComplexity: Linear in n.\n\ud83d\udd17\nconstexpr inplace_vector(size_type n, const T& value);\n4\n#\nPreconditions: T is Cpp17CopyInsertable into inplace_vector.\n5\n#\nEffects: Constructs an inplace_vector with n copies of value.\n6\n#\nComplexity: Linear in n.\n\ud83d\udd17\ntemplate<class InputIterator>\n  constexpr inplace_vector(InputIterator first, InputIterator last);\n7\n#\nEffects: Constructs an inplace_vector equal to the range [first, last).\n8\n#\nComplexity: Linear in distance(first, last).\n\ud83d\udd17\ntemplate<container-compatible-range<T> R>\n  constexpr inplace_vector(from_range_t, R&& rg);\n9\n#\nMandates: If ranges\u200b::\u200bsize(rg) is a constant expression,\nthen ranges\u200b::\u200bsize(rg) \u2002\u2264\u2002N.\n10\n#\nEffects: Constructs an inplace_vector with\nthe elements of the range rg.\n11\n#\nComplexity: Linear in ranges\u200b::\u200bdistance(rg).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::inplace_vector\\(from_range_t, R\\&\\&\\): the range has more than N elements"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,6 +6,4 @@\n \n int main() {\n   int arr[3] = {1, 2, 3};\n-  std::inplace_vector<int, 2> v(std::from_range, arr);\n-  return static_cast<int>(v.size());\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/inplace_vector/from_range_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "'inplace_vector' file not found"
+    },
+    "libstdcxx.gcc": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/inplace_vector/from_range_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/inplace_vector__from_range_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": null
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::generator: the value type must be a cv\-unqualified object type
 // [coro.generator.class]/1.2: Mandates: value is a cv-unqualified object type.
 // generator<int, const int>: value = Val = const int.
 #include <generator>

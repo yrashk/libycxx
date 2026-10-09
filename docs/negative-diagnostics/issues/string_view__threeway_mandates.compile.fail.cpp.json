@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/string_view/threeway_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "string.view.comparison"
+  ],
+  "normative_text": {
+    "string.view.comparison": "27.3.4 Non-member comparison functions [string.view.comparison]\n\ud83d\udd17\ntemplate<class charT, class traits>\n  constexpr bool operator==(basic_string_view<charT, traits> lhs,\n                            type_identity_t<basic_string_view<charT, traits>> rhs) noexcept;\n1\n#\nReturns: lhs.compare(rhs) == 0.\n'>,basic_string_view'>\ud83d\udd17\ntemplate<class charT, class traits>\n  constexpr see below operator<=>(basic_string_view<charT, traits> lhs,\n                                  type_identity_t<basic_string_view<charT, traits>> rhs) noexcept;\n2\n#\nLet R denote the type traits\u200b::\u200bcomparison_category if\nthat qualified-id is valid and denotes a type ([temp.deduct]),\notherwise R is weak_ordering.\n3\n#\nMandates: R denotes a comparison category type ([cmp.categories]).\n4\n#\nReturns: static_cast<R>(lhs.compare(rhs) <=> 0).\n5\n#\n[Note\u00a01:\u2002The usage of type_identity_t as parameter\nensures that an object of type basic_string_view<charT, traits>\ncan always be compared with an object of a type T with\nan implicit conversion to basic_string_view<charT, traits>, and\nvice versa, as per [over.match.oper].\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::basic_string_view: traits::comparison_category must be a comparison category type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -15,4 +15,3 @@\n };\n \n using V = std::basic_string_view<char, BadTraits>;\n-auto r = V() <=> V();\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string_view/threeway_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed: return type is not a comparison category type"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string_view/threeway_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string_view__threeway_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

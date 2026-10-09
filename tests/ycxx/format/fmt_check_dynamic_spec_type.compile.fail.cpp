@@ -1,3 +1,6 @@
+// EXPECT-ERROR-GCC: error: call to non-'constexpr' function [^\n]*__format_string_dynamic_argument_has_wrong_type\(\)
+// EXPECT-ERROR-CLANG: error: call to consteval function [^\n]*std::basic_format_string[^\n]*is not a constant expression
+// EXPECT-ERROR-CLANG: note: non-constexpr function '__format_string_dynamic_argument_has_wrong_type' cannot be used in a constant expression
 // [format.parse.ctx]/15-16: "A call to this function is a core constant expression only if
 // (15.1) id < num_args_ is true and (15.2) the type of the corresponding format argument
 // (after conversion to basic_format_arg<Context>) is one of the types in Ts..."; check_dynamic_

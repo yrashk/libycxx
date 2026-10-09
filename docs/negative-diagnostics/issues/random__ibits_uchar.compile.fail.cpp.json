@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "diagnostic repaired; semantic supported-type policy owned by separate investigation",
+  "normative_review": "[rand.req.genl]/1.6 or /1.7 permits implementation-defined subsets. This expectation records the current libycxx supported-type rejection only. It does not establish a universal rejection across conforming implementations. The original policy assertion is deliberately left for the overlapping semantic investigation. Positive and unrelated-error controls establish diagnostic causality.",
+  "clauses": [
+    "rand.req.genl"
+  ],
+  "normative_text": {
+    "rand.req.genl": "29.5.3.1 General requirements [rand.req.genl]\n1\n#\nThroughout [rand],\nwhere the template parameters are not constrained,\nthe names of template parameters are used to express type requirements\non an instantiated template T:\n(1.1)\nIf T has a template type parameter named\n    Sseq, URBG, Engine,\n    RealType, IntType, or UIntType,\n    the program is ill-formed if the corresponding template argument is cv-qualified.\n(1.2)\nA template argument corresponding to a template parameter\n    named Sseq\n    shall meet the requirements\n    of seed sequence.\n(1.3)\nA template argument corresponding to a template parameter\n    named URBG\n    shall meet the requirements\n    of uniform random bit generator.\n(1.4)\nA template argument corresponding to a template parameter\n    named Engine\n    shall meet the requirements\n    of random number engine.\n(1.5)\nIf a template argument corresponding to a template parameter\n    named RealType\n    is neither\n    a standard floating-point type ([basic.fundamental]) nor\n    a member of an\n    implementation-defined subset of extended floating-point types,\n    the program is ill-formed.\n(1.6)\nIf a template argument corresponding to a template parameter\n    named IntType\n    is neither\n    a standard signed nor a standard unsigned integer type ([basic.fundamental]), nor\n    an extended integer type whose width is\n    greater or equal to that of char and\n    less than or equal to that of long long, nor\n    a member of an\n    implementation-defined\n    subset of integer types, the program is ill-formed.\n(1.7)\nIf a template argument corresponding to a template parameter\n    named UIntType\n    is neither\n    a standard or extended unsigned integer type whose width is\n    greater or equal to that of short and\n    less than or equal to that of long long, nor\n    a member of an\n    implementation-defined\n    subset of unsigned integer types, the program is ill-formed.\n2\n#\nThroughout [rand],\nphrases of the form \u201cx is an iterator of a specific kind\u201d\nshall be interpreted as equivalent to the more formal requirement that\n\u201cx is a value\nof a type meeting the requirements\nof the specified iterator type\u201d.\n3\n#\nThroughout [rand],\nany constructor that can be called with a single argument\nand that meets a requirement specified in this subclause\nshall be declared explicit.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*independent_bits_engine: UIntType must be an unsigned integer type at least as wide as short \\(\\[rand\\.req\\.genl\\]/1\\.7\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,6 +3,4 @@\n #include <random>\n \n int main() {\n-  std::independent_bits_engine<std::mt19937, 8, unsigned char> e;\n-  return int(e());\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.libcxx.clang.log",
+      "first_error": null
+    },
+    "libstdcxx.gcc": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/random__ibits_uchar.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": null
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/mdspan/aligned_accessor_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "mdspan.accessor.aligned.overview"
+  ],
+  "normative_text": {
+    "mdspan.accessor.aligned.overview": "23.7.3.5.4.1 Overview [mdspan.accessor.aligned.overview]\nnamespace std {\n  template<class ElementType, size_t ByteAlignment>\n  struct aligned_accessor {\n    using offset_policy = default_accessor<ElementType>;\n    using element_type = ElementType;\n    using reference = ElementType&;\n    using data_handle_type = ElementType*;\n    static constexpr size_t byte_alignment = ByteAlignment;\n    constexpr aligned_accessor() noexcept = default;\n    template<class OtherElementType, size_t OtherByteAlignment>\n      constexpr aligned_accessor(\n        aligned_accessor<OtherElementType, OtherByteAlignment>) noexcept;\n    template<class OtherElementType>\n      constexpr explicit aligned_accessor(default_accessor<OtherElementType>) noexcept;\n    template<class OtherElementType>\n      constexpr operator default_accessor<OtherElementType>() const noexcept;\n    constexpr reference access(data_handle_type p, size_t i) const noexcept;\n    constexpr typename offset_policy::data_handle_type offset(\n      data_handle_type p, size_t i) const noexcept;\n  };\n}\n1\n#\nMandates: (1.1)\nbyte_alignment is a power of two, and\n(1.2)\nbyte_alignment >= alignof(ElementType) is true.\n2\n#\naligned_accessor meets the accessor policy requirements.\n3\n#\nElementType is required to be a complete object type\nthat is neither an abstract class type nor an array type.\n4\n#\nEach specialization of aligned_accessor is\na trivially copyable type that models semiregular.\n5\n#\n[0, n) is an accessible range\nfor an object p of type data_handle_type and\nan object of type aligned_accessor if and only if\n(5.1)\n[p, p + n) is a valid range, and,\n(5.2)\nif n is greater than zero,\nthen is_sufficiently_aligned<byte_alignment>(p) is true.\n6\n#\n[Example\u00a01:\u2002The following function compute\nuses is_sufficiently_aligned to check\nwhether a given mdspan with default_accessor has\na data handle with sufficient alignment\nto be used with aligned_accessor<float, 4 * sizeof(float)>.\n If so, the function dispatches to\na function compute_using_fourfold_overalignment\nthat requires fourfold over-alignment of arrays,\nbut can therefore use hardware-specific instructions,\nsuch as four-wide SIMD (Single Instruction Multiple Data) instructions.\n Otherwise, compute dispatches to a\npossibly less optimized function compute_without_requiring_overalignment\nthat has no over-alignment requirement.\n void compute_using_fourfold_overalignment(\n  mdspan<float, dims<1>, layout_right, aligned_accessor<float, 4 * alignof(float)>> x);\nvoid compute_without_requiring_overalignment(\n  mdspan<float, dims<1>, layout_right> x);\nvoid compute(mdspan<float, dims<1>> x) {\n  constexpr auto byte_alignment = 4 * sizeof(float);\n  auto accessor = aligned_accessor<float, byte_alignment>{};\n  auto x_handle = x.data_handle();\n  if (is_sufficiently_aligned<byte_alignment>(x_handle)) {\n    compute_using_fourfold_overalignment(mdspan{x_handle, x.mapping(), accessor});\n  } else {\n    compute_without_requiring_overalignment(x);\n  }\n}\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*aligned_accessor: byte_alignment must be at least alignof\\(ElementType\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // byte_alignment >= alignof(ElementType) is true.\" 2 < alignof(double).\n #include <mdspan>\n \n-std::aligned_accessor<double, 2> a;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/mdspan/aligned_accessor_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '2UL >= alignof(double)': aligned_accessor: insufficient byte alignment"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/mdspan/aligned_accessor_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/mdspan__aligned_accessor_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

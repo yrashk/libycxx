@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/bit/bit_compress_signed.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "bit.permute"
+  ],
+  "normative_text": {
+    "bit.permute": "22.11.9 Permutation [bit.permute]\n1\n#\nIn the following descriptions,\n(1.1)\nlet N denote the value of numeric_limits<T>\u200b::\u200bdigits,\n(1.2)\nlet \u03b1n denote the value of the nth least significant bit\nin the base-2 representation of an integer \u03b1,\nso that \u03b1 equals \u2211N\u22121n=0\u03b1n2n, and\n(1.3)\nlet \u03c3(\u03b1,n)=\u2211n\u22121k=0\u03b1k\nbe the count of one-bits among the lowest n bits of \u03b1.\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_reverse(T x) noexcept;\n2\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n3\n#\nReturns: reverse(x), where\nreverse is given by Formula  22.1, and\nx is x.\n reverse(x)=N\u22121\u2211n=0xn2N\u2212n\u22121(22.1)\n4\n#\n[Note\u00a01:\u2002bit_reverse(bit_reverse(x)) equals x.\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_repeat(T x, int l);\n5\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n6\n#\nPreconditions: l is greater than zero.\n7\n#\nReturns: repeat(x,l), where\nrepeat is given by Formula  22.2,\nx is x, and\nl is l.\n repeat(x,l)=N\u22121\u2211n=0x(nmodl)2n(22.2)\n8\n#\nThrows: Nothing.\n9\n#\nRemarks: A function call expression that violates the precondition in the Preconditions: element is not a core constant expression ([expr.const.core]).\n10\n#\n[Example\u00a01:\u2002bit_repeat(uint32_t{0xc}, 4) equals 0xcccccccc.\n \u2014\u00a0end example]\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_compress(T x, T m) noexcept;\n11\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n12\n#\nReturns: compress(x,m), where\ncompress is given by Formula  22.3,\nx is x, and\nm is m.\n compress(x,m)=N\u22121\u2211n=0mnxn2\u03c3(m,n)(22.3)\n13\n#\n[Example\u00a02:\u2002bit_compress(0bABCD, 0b0101) equals\n0b00BD\nfor any bits\nA,\nB,\nC, and\nD.\n \u2014\u00a0end example]\n\ud83d\udd17\ntemplate<class T>\n  constexpr T bit_expand(T x, T m) noexcept;\n14\n#\nConstraints: T is an unsigned integer type ([basic.fundamental]).\n15\n#\nReturns: expand(x,m), where\nexpand is given by Formula  22.4,\nx is x, and\nm is m.\n expand(x,m)=N\u22121\u2211n=0mnx\u03c3(m,n)2n(22.4)\n16\n#\n[Example\u00a03:\u2002bit_expand(0bABCD, 0b0101) equals\n0b0C0D\nfor any bits\nA,\nB,\nC, and\nD.\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'bit_compress\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'bit_compress'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // The call below has no viable candidate, so the program is ill-formed.\n #include <bit>\n \n-void f() { (void)std::bit_compress(5, 3); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/bit_compress_signed.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'bit_compress' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/bit/bit_compress_signed.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/bit__bit_compress_signed.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'bit_compress' is not a member of 'std'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

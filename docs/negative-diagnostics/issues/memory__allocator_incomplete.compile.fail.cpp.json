@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/memory/allocator_incomplete.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "allocator.members"
+  ],
+  "normative_text": {
+    "allocator.members": "20.2.10.2 Members [allocator.members]\n1\n#\nExcept for the destructor, member functions of the default allocator shall not introduce\ndata races ([intro.multithread]) as a result of concurrent calls to those member\nfunctions from different threads.\n Calls to these functions that allocate or deallocate a\nparticular unit of storage shall occur in a single total order, and each such\ndeallocation call shall happen before the next allocation (if any) in this order.\n\ud83d\udd17\nconstexpr T* allocate(size_t n);\n2\n#\nMandates: T is not an incomplete type ([basic.types.general]).\n3\n#\nReturns: A pointer to the initial element of an array of n T.\n4\n#\nThrows: bad_array_new_length if\nnumeric_limits<size_t>\u200b::\u200bmax() / sizeof(T) < n, or\nbad_alloc if the storage cannot be obtained.\n5\n#\nRemarks: The storage for the array\nis obtained by calling \u200b::\u200boperator new ([new.delete]),\nbut it is unspecified when or how often this\nfunction is called.\n This function starts the lifetime of the array object,\nbut not that of any of the array elements.\n\ud83d\udd17\nconstexpr allocation_result<T*> allocate_at_least(size_t n);\n6\n#\nMandates: T is not an incomplete type ([basic.types.general]).\n7\n#\nReturns: allocation_result<T*>{ptr, count},\nwhere ptr is a pointer to\nthe initial element of an array of count T and\ncount \u2002\u2265\u2002n.\n8\n#\nThrows: bad_array_new_length\nif numeric_limits<size_t>\u200b::\u200bmax() / sizeof(T) < n,\nor bad_alloc if the storage cannot be obtained.\n9\n#\nRemarks: The storage for the array is obtained by calling \u200b::\u200boperator new,\nbut it is unspecified when or how often this function is called.\n This function starts the lifetime of the array object,\nbut not that of any of the array elements.\n\ud83d\udd17\nconstexpr void deallocate(T* p, size_t n);\n10\n#\nPreconditions: (10.1)\nIf p is memory that was obtained by a call to allocate_at_least,\nlet ret be the value returned and\nreq be the value passed as the first argument to that call.\n p is equal to ret.ptr and\nn is a value such that req \u2002\u2264\u2002n \u2002\u2264\u2002ret.count.\n(10.2)\nOtherwise, p is a pointer value obtained from allocate.\n n equals the value passed as the first argument\nto the invocation of allocate which returned p.\n11\n#\nEffects: Deallocates the storage referenced by p.\n12\n#\nRemarks: Uses\n\u200b::\u200boperator delete ([new.delete]),\nbut it is unspecified\nwhen this function is called.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: invalid application of 'sizeof' to incomplete type 'Incomplete'"
+    ],
+    "clang": [
+      "error: invalid application of 'sizeof' to an incomplete type 'Incomplete'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n \n struct Incomplete;\n \n-void test(std::allocator<Incomplete>& a) { (void)a.allocate(1); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/allocator_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "invalid application of 'sizeof' to an incomplete type 'Incomplete'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/allocator_incomplete.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__allocator_incomplete.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: cannot allocate incomplete types"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

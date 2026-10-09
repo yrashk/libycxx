@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*flat_set: Key must be KeyContainer::value_type \(\[flat\.set\.overview\]/8\)
 // [flat.set.overview]/8, [flat.multiset.overview]/8: "The program is ill-formed if Key is not
 // the same type as KeyContainer::value_type." Here the container holds long for Key int (with
 // vector<int> the program compiles: flat_set/containers.pass.cpp).

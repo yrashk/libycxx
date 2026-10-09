@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/variant/get_type_duplicate.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.get"
+  ],
+  "normative_text": {
+    "variant.get": "22.6.5 Value access [variant.get]\n\ud83d\udd17\ntemplate<class T, class... Types>\n  constexpr bool holds_alternative(const variant<Types...>& v) noexcept;\n1\n#\nMandates: The type T occurs exactly once in Types.\n2\n#\nReturns: true if index() is equal to the zero-based index of T in Types.\n\ud83d\udd17\ntemplate<size_t I, class... Types>\n  constexpr variant_alternative_t<I, variant<Types...>>&\n    GET(variant<Types...>& v);                                  // exposition only\ntemplate<size_t I, class... Types>\n  constexpr variant_alternative_t<I, variant<Types...>>&&\n    GET(variant<Types...>&& v);                                 // exposition only\ntemplate<size_t I, class... Types>\n  constexpr const variant_alternative_t<I, variant<Types...>>&\n    GET(const variant<Types...>& v);                            // exposition only\ntemplate<size_t I, class... Types>\n  constexpr const variant_alternative_t<I, variant<Types...>>&&\n    GET(const variant<Types...>&& v);                           // exposition only\n3\n#\nMandates: I < sizeof...(Types).\n4\n#\nPreconditions: v.index() is I.\n5\n#\nReturns: A reference to the object stored in the variant.\n\ud83d\udd17\ntemplate<size_t I, class... Types>\n  constexpr variant_alternative_t<I, variant<Types...>>& get(variant<Types...>& v);\ntemplate<size_t I, class... Types>\n  constexpr variant_alternative_t<I, variant<Types...>>&& get(variant<Types...>&& v);\ntemplate<size_t I, class... Types>\n  constexpr const variant_alternative_t<I, variant<Types...>>& get(const variant<Types...>& v);\ntemplate<size_t I, class... Types>\n  constexpr const variant_alternative_t<I, variant<Types...>>&& get(const variant<Types...>&& v);\n6\n#\nMandates: I < sizeof...(Types).\n7\n#\nEffects: If v.index() is I, returns a reference to the object stored in\nthe variant.\n Otherwise, throws an exception of type bad_variant_access.\n\ud83d\udd17\ntemplate<class T, class... Types> constexpr T& get(variant<Types...>& v);\ntemplate<class T, class... Types> constexpr T&& get(variant<Types...>&& v);\ntemplate<class T, class... Types> constexpr const T& get(const variant<Types...>& v);\ntemplate<class T, class... Types> constexpr const T&& get(const variant<Types...>&& v);\n8\n#\nMandates: The type T occurs exactly once in Types.\n9\n#\nEffects: If v holds a value of type T, returns a reference to that value.\n Otherwise, throws an exception of type bad_variant_access.\n\ud83d\udd17\ntemplate<size_t I, class... Types>\n  constexpr add_pointer_t<variant_alternative_t<I, variant<Types...>>>\n    get_if(variant<Types...>* v) noexcept;\ntemplate<size_t I, class... Types>\n  constexpr add_pointer_t<const variant_alternative_t<I, variant<Types...>>>\n    get_if(const variant<Types...>* v) noexcept;\n10\n#\nMandates: I < sizeof...(Types).\n11\n#\nReturns: A pointer to the value stored in the variant, if v != nullptr\nand v->index() == I.\n Otherwise, returns nullptr.\n\ud83d\udd17\ntemplate<class T, class... Types>\n  constexpr add_pointer_t<T>\n    get_if(variant<Types...>* v) noexcept;\ntemplate<class T, class... Types>\n  constexpr add_pointer_t<const T>\n    get_if(const variant<Types...>* v) noexcept;\n12\n#\nMandates: The type T occurs exactly once in Types.\n13\n#\nEffects: Equivalent to: return get_if<i>(v); with i being the zero-based\nindex of T in Types.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::get<T>: T must occur exactly once"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n \n void f() {\n   std::variant<int, int> v;\n-  (void)std::get<int>(v);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/get_type_duplicate.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'value != __ambiguous': type occurs more than once in type list"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/get_type_duplicate.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__get_type_duplicate.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: T must occur exactly once in alternatives"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

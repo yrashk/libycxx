@@ -1,0 +1,88 @@
+{
+  "test": "tests/ycxx/format/fmt_unmatched_brace.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.string.general"
+  ],
+  "normative_text": {
+    "format.string.general": "28.5.2.1 General [format.string.general]\n1\n#\nA format string for arguments args is\na (possibly empty) sequence of\nreplacement fields,\nescape sequences,\nand characters other than { and }.\n Let charT be the character type of the format string.\n Each character that is not part of\na replacement field or an escape sequence\nis copied unchanged to the output.\n An escape sequence is one of {{ or }}.\n It is replaced with { or }, respectively, in the output.\n The syntax of replacement fields is as follows:\nreplacement-field\u2009:\n{ arg-idopt format-specifieropt }\narg-id\u2009:\n0\npositive-integer\npositive-integer\u2009:\nnonzero-digit\npositive-integer digit\nnonnegative-integer\u2009:\ndigit\nnonnegative-integer digit\nnonzero-digit\u2009: one of\n1 2 3 4 5 6 7 8 9\ndigit\u2009: one of\n0 1 2 3 4 5 6 7 8 9\nformat-specifier\u2009:\n: format-spec\nformat-spec\u2009:\nas specified by the formatter specialization for the argument type; cannot start with } \n2\n#\nThe arg-id field specifies the index of\nthe argument in args\nwhose value is to be formatted and inserted into the output\ninstead of the replacement field.\n If there is no argument with\nthe index arg-id in args,\nthe string is not a format string for args.\n The optional format-specifier field\nexplicitly specifies a format for the replacement value.\n3\n#\n[Example\u00a01:\u2002string s = format(\"{0}-{{\", 8);         // value of s is \"8-{\"\n \u2014\u00a0end example]\n4\n#\nIf all arg-ids in a format string are omitted\n(including those in the format-spec,\nas interpreted by the corresponding formatter specialization),\nargument indices 0, 1, 2, \u2026 will automatically be used in that order.\n If some arg-ids are omitted and some are present,\nthe string is not a format string.\n [Note\u00a01:\u2002A format string cannot contain a\nmixture of automatic and manual indexing.\n \u2014\u00a0end note]\n [Example\u00a02:\u2002string s0 = format(\"{} to {}\",   \"a\", \"b\"); // OK, automatic indexing\nstring s1 = format(\"{1} to {0}\", \"a\", \"b\"); // OK, manual indexing\nstring s2 = format(\"{0} to {}\",  \"a\", \"b\"); // not a format string (mixing automatic and manual indexing),\n                                            // ill-formed\nstring s3 = format(\"{} to {1}\",  \"a\", \"b\"); // not a format string (mixing automatic and manual indexing),\n                                            // ill-formed\n \u2014\u00a0end example]\n5\n#\nThe format-spec field contains\nformat specifications\nthat define how the value should be presented.\n Each type can define its own\ninterpretation of the format-spec field.\n If format-spec does not conform\nto the format specifications for\nthe argument type referred to by arg-id,\nthe string is not a format string for args.\n [Example\u00a03:\u2002(5.1)\nFor arithmetic, pointer, and string types\nthe format-spec\nis interpreted as a std-format-spec\nas described in [format.string.std].\n(5.2)\nFor chrono types\nthe format-spec\nis interpreted as a chrono-format-spec\nas described in [time.format].\n(5.3)\nFor user-defined formatter specializations,\nthe behavior of the parse member function\ndetermines how the format-spec\nis interpreted.\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: uncaught exception of type 'std::format_error';[^\\n]*std::format: unmatched '\\}' in the format string"
+    ],
+    "clang": [
+      "error: call to consteval function [^\\n]*std::basic_format_string[^\\n]*is not a constant expression",
+      "note: in call to [^\\n]*std::format: unmatched '\\}' in the format string"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n #include <format>\n #include <string>\n \n-int main() { (void)std::format(\"a } b\", 1); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_unmatched_brace.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, int>::basic_format_string<char[6]>' is not a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_unmatched_brace.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_unmatched_brace.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, int>(\"a } b\")' is not a constant expression"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::bind: the target and bound arguments must be constructible from the arguments
 // [func.bind.bind]/2: "Mandates: is_constructible_v<FD, F> is true. For each Ti in
 // BoundArgs, is_constructible_v<TDi, Ti> is true." (Here a bound argument is a const lvalue
 // of a type whose copy constructor is deleted.)

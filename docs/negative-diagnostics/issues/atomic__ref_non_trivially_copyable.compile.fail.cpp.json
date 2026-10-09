@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/atomic/ref_non_trivially_copyable.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "atomics.ref.generic.general"
+  ],
+  "normative_text": {
+    "atomics.ref.generic.general": "32.5.7.1 General [atomics.ref.generic.general]\n\ud83d\udd17\nnamespace std {\n  template<class T> struct atomic_ref {\n  private:\n    T* ptr;             // exposition only\n  public:\n    using value_type = remove_cv_t<T>;\n    using address-return-type = COPYCV(T, void)*;       // exposition only\n    static constexpr size_t required_alignment = implementation-defined;\n    static constexpr bool is_always_lock_free = implementation-defined;\n    bool is_lock_free() const noexcept;\n    constexpr explicit atomic_ref(T&);\n    explicit atomic_ref(T&&) = delete;\n    constexpr atomic_ref(const atomic_ref&) noexcept;\n    template<class U>\n      constexpr atomic_ref(const atomic_ref<U>&) noexcept;\n    atomic_ref& operator=(const atomic_ref&) = delete;\n    constexpr void store(value_type, memory_order = memory_order::seq_cst) const noexcept;\n    constexpr value_type operator=(value_type) const noexcept;\n    constexpr value_type load(memory_order = memory_order::seq_cst) const noexcept;\n    constexpr operator value_type() const noexcept;\n    constexpr value_type exchange(value_type,\n                                  memory_order = memory_order::seq_cst) const noexcept;\n    constexpr bool compare_exchange_weak(value_type&, value_type,\n                                         memory_order, memory_order) const noexcept;\n    constexpr bool compare_exchange_strong(value_type&, value_type,\n                                           memory_order, memory_order) const noexcept;\n    constexpr bool compare_exchange_weak(value_type&, value_type,\n                                         memory_order = memory_order::seq_cst) const noexcept;\n    constexpr bool compare_exchange_strong(value_type&, value_type,\n                                           memory_order = memory_order::seq_cst) const noexcept;\n    constexpr void wait(value_type, memory_order = memory_order::seq_cst) const noexcept;\n    constexpr void notify_one() const noexcept;\n    constexpr void notify_all() const noexcept;\n    constexpr address-return-type address() const noexcept;\n  };\n}\n1\n#\nAn atomic_ref object applies atomic operations ([atomics.general]) to\nthe object referenced by *ptr such that,\nfor the lifetime ([basic.life]) of the atomic_ref object,\nthe object referenced by *ptr is an atomic object ([intro.races]).\n2\n#\nThe program is ill-formed if is_trivially_copyable_v<T> is false.\n3\n#\nThe lifetime ([basic.life]) of an object referenced by *ptr\nshall exceed the lifetime of all atomic_refs that reference the object.\n While any atomic_ref instances exist\nthat reference the *ptr object,\nall accesses to that object shall exclusively occur\nthrough those atomic_ref instances.\n No subobject of the object referenced by atomic_ref\nshall be concurrently referenced by any other atomic_ref object.\n4\n#\nAtomic operations applied to an object\nthrough a referencing atomic_ref are atomic with respect to\natomic operations applied through any other atomic_ref\nreferencing the same object.\n [Note\u00a01:\u2002Atomic operations or the atomic_ref constructor can acquire\na shared resource, such as a lock associated with the referenced object,\nto enable atomic operations to be applied to the referenced object.\n \u2014\u00a0end note]\n5\n#\nThe program is ill-formed\nif is_always_lock_free is false and\nis_volatile_v<T> is true.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*atomic_ref<T> needs a trivially copyable T"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -9,6 +9,4 @@\n };\n \n void f(NTC& n) {\n-  std::atomic_ref<NTC> r(n);\n-  (void)r;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/ref_non_trivially_copyable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'is_trivially_copyable_v<NTC>': std::atomic_ref<T> requires that 'T' be a trivially copyable type"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/atomic/ref_non_trivially_copyable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/atomic__ref_non_trivially_copyable.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

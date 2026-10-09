@@ -1,0 +1,110 @@
+{
+  "baseline": "2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "branch": "codex/negative-diagnostic-oracles",
+  "completed": 422,
+  "pending_diagnostic_repairs": [],
+  "single_test_commit_check": "422 distinct baseline paths; each corresponding commit changes exactly that one own-suite test and its own ledger",
+  "pattern_applicability_check": "All 472 current own-suite compile.fail tests have nonempty valid expectations applicable to GCC and Clang",
+  "per_test_validation": "Every baseline test passed the GCC harness; 421 passed the Clang harness and nexttoward_extended was UNSUPPORTED. Every test has positive controls compiling on both and injected unrelated failures rejected by the oracle.",
+  "library_fixes": [
+    "pair-like dangling reference overload selection"
+  ],
+  "shared_harness_fixes": [
+    "extended-float32 prerequisite detection",
+    "fail negative tests without an applicable nonempty expectation"
+  ],
+  "additional_test": "transitive_includes/strict/string_eof: Linux-only policy prerequisite; Darwin C headers expose EOF",
+  "commands": {
+    "gcc": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/gcc\" YCXX_CONFIG_NAME=negative-audit YCXX_QUIET=1 tools/run-conformance ycxx gcc '.*\\.compile\\.fail\\.cpp$' -- -j 8",
+    "clang": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/clang\" YCXX_CONFIG_NAME=negative-audit YCXX_QUIET=1 tools/run-conformance ycxx clang '.*\\.compile\\.fail\\.cpp$' -- -j 8"
+  },
+  "aggregate": {
+    "gcc": {
+      "whole_negative_suite": {
+        "UNSUPPORTED": 2,
+        "PASS": 470
+      },
+      "assigned_queue": {
+        "PASS": 422
+      },
+      "unsupported": [
+        {
+          "test": "tests/ycxx/transitive_includes/strict/string_eof.compile.fail.cpp",
+          "reason": "REQUIRES: linux (features of this run: darwin, exceptions, extended-float32, gcc, rtti)"
+        },
+        {
+          "test": "tests/ycxx/depr/vol_store_add_big.compile.fail.cpp",
+          "reason": "REQUIRES: linux (features of this run: darwin, exceptions, extended-float32, gcc, rtti)"
+        }
+      ],
+      "transcript": "build/test-logs/ycxx-gcc-negative-audit.log",
+      "report": "build/test-logs/ycxx-gcc-negative-audit.html"
+    },
+    "clang": {
+      "whole_negative_suite": {
+        "UNSUPPORTED": 3,
+        "PASS": 469
+      },
+      "assigned_queue": {
+        "PASS": 421,
+        "UNSUPPORTED": 1
+      },
+      "unsupported": [
+        {
+          "test": "tests/ycxx/transitive_includes/strict/string_eof.compile.fail.cpp",
+          "reason": "REQUIRES: linux (features of this run: clang, darwin, exceptions, rtti)"
+        },
+        {
+          "test": "tests/ycxx/depr/vol_store_add_big.compile.fail.cpp",
+          "reason": "REQUIRES: linux (features of this run: clang, darwin, exceptions, rtti)"
+        },
+        {
+          "test": "tests/ycxx/cmath/nexttoward_extended.compile.fail.cpp",
+          "reason": "REQUIRES: extended-float32 (features of this run: clang, darwin, exceptions, rtti)"
+        }
+      ],
+      "transcript": "build/test-logs/ycxx-clang-negative-audit.log",
+      "report": "build/test-logs/ycxx-clang-negative-audit.html"
+    }
+  },
+  "affected_facility": {
+    "gcc": "utility + tuple: 100 passed",
+    "clang": "utility + tuple: 100 passed"
+  },
+  "harness_regressions": 8,
+  "upstream": {
+    "libstdcxx-gcc": {
+      "PASS": 2,
+      "UNSUPPORTED": 14
+    },
+    "libcxx-clang": {
+      "PASS": 18,
+      "UNSUPPORTED": 20
+    }
+  },
+  "limits": [
+    "Only arm64 Darwin GCC 16.2.0 and Clang 23.1.2 were available; Linux configuration tests could not be executed.",
+    "Installed reference libraries have missing C++26 features, permitted deprecation-policy differences and observed acceptance differences. Full per-test classifications are in reference-comparison.json.",
+    "Four random type-policy decisions remain with the separate semantic investigation; diagnostic expectations here describe current libycxx rejection, not universal ill-formedness.",
+    "This audit strengthens negative test diagnostics; it is not an exhaustive semantic certification of the whole own suite."
+  ],
+  "overlapping_semantic_policy_tests": [
+    "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+    "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+    "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+    "tests/ycxx/random/ibits_uchar.compile.fail.cpp"
+  ],
+  "builds": {
+    "gcc": {
+      "command": "cmake --build build/gcc -j 6",
+      "result": "PASS",
+      "transcript": "build/test-logs/build-final-gcc.log"
+    },
+    "clang": {
+      "command": "cmake --build build/clang -j 6",
+      "result": "PASS",
+      "transcript": "build/test-logs/build-final-clang.log"
+    }
+  }
+}

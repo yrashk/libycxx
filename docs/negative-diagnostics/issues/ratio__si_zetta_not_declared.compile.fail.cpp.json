@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/ratio/si_zetta_not_declared.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The negative name-lookup result is conditional on the supported 64-bit intmax_t configuration. The existing size assertion establishes that prerequisite; the pattern matches the missing SI alias, never that size assertion.",
+  "clauses": [
+    "ratio.si"
+  ],
+  "normative_text": {
+    "ratio.si": "21.5.6 SI types for ratio [ratio.si]\n1\n#\nFor each of the typedef-names\nquecto, ronto,\nyocto, zepto,\nzetta, yotta,\nronna, and quetta,\nif both of the constants used in its\nspecification are representable by intmax_t, the typedef is\ndeclared; if either of the constants is not representable by intmax_t,\nthe typedef is not declared.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: 'zetta' in namespace 'std' does not name a type"
+    ],
+    "clang": [
+      "error: no type named 'zetta' in namespace 'std'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,4 +5,3 @@\n #include <cstdint>\n \n static_assert(sizeof(std::intmax_t) == 8, \"this test assumes a 64-bit intmax_t\");\n-using Z = std::zetta;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ratio/si_zetta_not_declared.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no type named 'zetta' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ratio/si_zetta_not_declared.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ratio__si_zetta_not_declared.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'zetta' in namespace 'std' does not name a type"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

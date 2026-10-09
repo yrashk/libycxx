@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/functional/copyable_function_in_place_list_move_only.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.copy.ctor"
+  ],
+  "normative_text": {
+    "func.wrap.copy.ctor": "22.10.17.5.3 Constructors, assignments, and destructor [func.wrap.copy.ctor]\n\ud83d\udd17\ntemplate<class VT>\n  static constexpr bool is-callable-from = see below;\n1\n#\nIf noex is true,\nis-callable-from<VT> is equal to:\nis_nothrow_invocable_r_v<R, VT cv ref, ArgTypes...> &&\nis_nothrow_invocable_r_v<R, VT inv-quals, ArgTypes...>\nOtherwise, is-callable-from<VT> is equal to:\nis_invocable_r_v<R, VT cv ref, ArgTypes...> &&\nis_invocable_r_v<R, VT inv-quals, ArgTypes...>\n\ud83d\udd17\ncopyable_function() noexcept;\ncopyable_function(nullptr_t) noexcept;\n2\n#\nPostconditions: *this has no target object.\n\ud83d\udd17\ncopyable_function(const copyable_function& f);\n3\n#\nPostconditions: *this has no target object if f had no target object.\n Otherwise, the target object of *this\nis a copy of the target object of f.\n4\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc.\n\ud83d\udd17\ncopyable_function(copyable_function&& f) noexcept;\n5\n#\nPostconditions: The target object of *this is\nthe target object f had before construction, and\nf is in a valid state with an unspecified value.\n\ud83d\udd17\ntemplate<class F> copyable_function(F&& f);\n6\n#\nLet VT be decay_t<F>.\n7\n#\nConstraints: (7.1)\nremove_cvref_t<F> is not the same type as copyable_function, and\n(7.2)\nremove_cvref_t<F> is not a specialization of in_place_type_t, and\n(7.3)\nis-callable-from<VT> is true.\n8\n#\nMandates: (8.1)\nis_constructible_v<VT, F> is true, and\n(8.2)\nis_copy_constructible_v<VT> is true.\n9\n#\nPreconditions: VT meets the Cpp17Destructible and\nCpp17CopyConstructible requirements.\n10\n#\nPostconditions: *this has no target object if any of the following hold:\n(10.1)\nf is a null function pointer value, or\n(10.2)\nf is a null member pointer value, or\n(10.3)\nremove_cvref_t<F> is a specialization of\nthe copyable_function class template,\nand f has no target object.\nOtherwise, *this has a target object of type VT\ndirect-non-list-initialized with std\u200b::\u200bforward<F>(f).\n11\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na function pointer or a specialization of reference_wrapper.\n\ud83d\udd17\ntemplate<class T, class... Args>\n  explicit copyable_function(in_place_type_t<T>, Args&&... args);\n12\n#\nLet VT be decay_t<T>.\n13\n#\nConstraints: (13.1)\nis_constructible_v<VT, Args...> is true, and\n(13.2)\nis-callable-from<VT> is true.\n14\n#\nMandates: (14.1)\nVT is the same type as T, and\n(14.2)\nis_copy_constructible_v<VT> is true.\n15\n#\nPreconditions: VT meets the Cpp17Destructible and\nCpp17CopyConstructible requirements.\n16\n#\nPostconditions: *this has a target object of type VT\ndirect-non-list-initialized with std\u200b::\u200bforward<Args>\u200b(args)....\n17\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na pointer or a specialization of reference_wrapper.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  explicit copyable_function(in_place_type_t<T>, initializer_list<U> ilist, Args&&... args);\n18\n#\nLet VT be decay_t<T>.\n19\n#\nConstraints: (19.1)\nis_constructible_v<VT, initializer_list<U>&, Args...> is\ntrue, and\n(19.2)\nis-callable-from<VT> is true.\n20\n#\nMandates: (20.1)\nVT is the same type as T, and\n(20.2)\nis_copy_constructible_v<VT> is true.\n21\n#\nPreconditions: VT meets the Cpp17Destructible and\nCpp17CopyConstructible requirements.\n22\n#\nPostconditions: *this has a target object of type VT\ndirect-non-list-initialized with\nilist, std\u200b::\u200bforward<Args>(args)....\n23\n#\nThrows: Any exception thrown by the initialization of the target object.\n May throw bad_alloc unless VT is\na pointer or a specialization of reference_wrapper.\n\ud83d\udd17\ncopyable_function& operator=(const copyable_function& f);\n24\n#\nEffects: Equivalent to: copyable_function(f).swap(*this);\n25\n#\nReturns: *this.\n\ud83d\udd17\ncopyable_function& operator=(copyable_function&& f);\n26\n#\nEffects: Equivalent to: copyable_function(std\u200b::\u200bmove(f)).swap(*this);\n27\n#\nReturns: *this.\n\ud83d\udd17\ncopyable_function& operator=(nullptr_t) noexcept;\n28\n#\nEffects: Destroys the target object of *this, if any.\n29\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class F> copyable_function& operator=(F&& f);\n30\n#\nEffects: Equivalent to: copyable_function(std\u200b::\u200bforward<F>(f)).swap(*this);\n31\n#\nReturns: *this.\n\ud83d\udd17\n~copyable_function();\n32\n#\nEffects: Destroys the target object of *this, if any.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::function/move_only_function/copyable_function: Mandates: VT is copy constructible"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -7,8 +7,6 @@\n \n struct MoveOnly {\n   MoveOnly(std::initializer_list<int>) {}\n-  MoveOnly(MoveOnly&&) = default;\n-  MoveOnly(const MoveOnly&) = delete;\n   int operator()() const { return 0; }\n };\n \n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/copyable_function_in_place_list_move_only.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'copyable_function' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/copyable_function_in_place_list_move_only.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__copyable_function_in_place_list_move_only.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

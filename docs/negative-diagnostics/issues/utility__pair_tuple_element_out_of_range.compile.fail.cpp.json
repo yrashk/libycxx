@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/utility/pair_tuple_element_out_of_range.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "pair.astuple"
+  ],
+  "normative_text": {
+    "pair.astuple": "22.3.4 Tuple-like access to pair [pair.astuple]\n\ud83d\udd17\ntemplate<class T1, class T2>\n  struct tuple_size<pair<T1, T2>> : integral_constant<size_t, 2> { };\n\ud83d\udd17\ntemplate<size_t I, class T1, class T2>\n  struct tuple_element<I, pair<T1, T2>> {\n    using type = see below ;\n  };\n1\n#\nMandates: I<2.\n2\n#\nResult: The type T1 if I is 0, otherwise the type T2.\n\ud83d\udd17\ntemplate<size_t I, class T1, class T2>\n  constexpr tuple_element_t<I, pair<T1, T2>>& get(pair<T1, T2>& p) noexcept;\ntemplate<size_t I, class T1, class T2>\n  constexpr const tuple_element_t<I, pair<T1, T2>>& get(const pair<T1, T2>& p) noexcept;\ntemplate<size_t I, class T1, class T2>\n  constexpr tuple_element_t<I, pair<T1, T2>>&& get(pair<T1, T2>&& p) noexcept;\ntemplate<size_t I, class T1, class T2>\n  constexpr const tuple_element_t<I, pair<T1, T2>>&& get(const pair<T1, T2>&& p) noexcept;\n3\n#\nMandates: I<2.\n4\n#\nReturns: (4.1)\nIf I is 0, returns a reference to p.first.\n(4.2)\nIf I is 1, returns a reference to p.second.\n\ud83d\udd17\ntemplate<class T1, class T2>\n  constexpr T1& get(pair<T1, T2>& p) noexcept;\ntemplate<class T1, class T2>\n  constexpr const T1& get(const pair<T1, T2>& p) noexcept;\ntemplate<class T1, class T2>\n  constexpr T1&& get(pair<T1, T2>&& p) noexcept;\ntemplate<class T1, class T2>\n  constexpr const T1&& get(const pair<T1, T2>&& p) noexcept;\n5\n#\nMandates: T1 and T2 are distinct types.\n6\n#\nReturns: A reference to p.first.\n\ud83d\udd17\ntemplate<class T2, class T1>\n  constexpr T2& get(pair<T1, T2>& p) noexcept;\ntemplate<class T2, class T1>\n  constexpr const T2& get(const pair<T1, T2>& p) noexcept;\ntemplate<class T2, class T1>\n  constexpr T2&& get(pair<T1, T2>&& p) noexcept;\ntemplate<class T2, class T1>\n  constexpr const T2&& get(const pair<T1, T2>&& p) noexcept;\n7\n#\nMandates: T1 and T2 are distinct types.\n8\n#\nReturns: A reference to p.second.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*pair index out of range"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,5 +1,3 @@\n // [pair.astuple]/1: tuple_element<I, pair<T1, T2>>: \"Mandates: I<2.\"\n #include <utility>\n \n-using T = std::tuple_element<2, std::pair<int, long>>::type;\n-T t{};\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/pair_tuple_element_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '2UL < 2': Index out of bounds in std::tuple_element<std::pair<T1, T2>>"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/pair_tuple_element_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__pair_tuple_element_out_of_range.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "invalid use of incomplete type 'struct std::tuple_element<2, std::pair<int, long int> >'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

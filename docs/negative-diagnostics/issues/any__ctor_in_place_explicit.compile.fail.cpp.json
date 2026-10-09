@@ -1,0 +1,90 @@
+{
+  "test": "tests/ycxx/any/ctor_in_place_explicit.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "any.class.general",
+    "any.cons"
+  ],
+  "normative_text": {
+    "any.class.general": "22.7.4.1 General [any.class.general]\nnamespace std {\n  class any {\n  public:\n    // [any.cons], construction and destruction\n    constexpr any() noexcept;\n    any(const any& other);\n    any(any&& other) noexcept;\n    template<class T>\n      any(T&& value);\n    template<class T, class... Args>\n      explicit any(in_place_type_t<T>, Args&&...);\n    template<class T, class U, class... Args>\n      explicit any(in_place_type_t<T>, initializer_list<U>, Args&&...);\n    ~any();\n    // [any.assign], assignments\n    any& operator=(const any& rhs);\n    any& operator=(any&& rhs) noexcept;\n    template<class T>\n      any& operator=(T&& rhs);\n    // [any.modifiers], modifiers\n    template<class T, class... Args>\n      decay_t<T>& emplace(Args&&...);\n    template<class T, class U, class... Args>\n      decay_t<T>& emplace(initializer_list<U>, Args&&...);\n    void reset() noexcept;\n    void swap(any& rhs) noexcept;\n    // [any.observers], observers\n    bool has_value() const noexcept;\n    const type_info& type() const noexcept;\n  };\n}\n1\n#\nAn object of class any stores an instance of any type that meets the constructor requirements or it has no value,\nand this is referred to as the state of the class any object.\n The stored instance is called the contained value.\n Two states are equivalent if either they both have no value, or they both have a value and the contained values are equivalent.\n2\n#\nThe non-member any_cast functions provide type-safe access to the contained value.\n3\n#\nImplementations should avoid the use of dynamically allocated memory for a small contained value.\n However, any such small-object optimization shall only be applied to types T for which\nis_nothrow_move_constructible_v<T> is true.\n [Example\u00a01:\u2002A contained value of type int could be stored in an internal buffer,\nnot in separately-allocated memory.\n \u2014\u00a0end example]\n",
+    "any.cons": "22.7.4.2 Construction and destruction [any.cons]\n\ud83d\udd17\nconstexpr any() noexcept;\n1\n#\nPostconditions: has_value() is false.\n\ud83d\udd17\nany(const any& other);\n2\n#\nEffects: If other.has_value() is false, constructs an object that has no value.\n Otherwise, equivalent to any(in_place_type<T>, any_cast<const T&>(other))\nwhere T is the type of the contained value.\n3\n#\nThrows: Any exceptions arising from calling the selected constructor for the contained value.\n\ud83d\udd17\nany(any&& other) noexcept;\n4\n#\nEffects: If other.has_value() is false, constructs an object that has no value.\n Otherwise, constructs an object of type any that\ncontains either the contained value of other, or\ncontains an object of the same type constructed from\nthe contained value of other considering that contained value as an rvalue.\n\ud83d\udd17\ntemplate<class T>\n  any(T&& value);\n5\n#\nLet VT be decay_t<T>.\n6\n#\nConstraints: VT is not the same type as any,\nVT is not a specialization of in_place_type_t,\nand is_copy_constructible_v<VT> is true.\n7\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n8\n#\nEffects: Constructs an object of type any that contains an object of type VT direct-initialized with std\u200b::\u200bforward<T>(value).\n9\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\ntemplate<class T, class... Args>\n  explicit any(in_place_type_t<T>, Args&&... args);\n10\n#\nLet VT be decay_t<T>.\n11\n#\nConstraints: is_copy_constructible_v<VT> is true and\nis_constructible_v<VT, Args...> is true.\n12\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n13\n#\nEffects: Direct-non-list-initializes the contained value of type VT\nwith std\u200b::\u200bforward<Args>(args)....\n14\n#\nPostconditions: *this contains a value of type VT.\n15\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  explicit any(in_place_type_t<T>, initializer_list<U> il, Args&&... args);\n16\n#\nLet VT be decay_t<T>.\n17\n#\nConstraints: is_copy_constructible_v<VT> is true and\nis_constructible_v<VT, initializer_list<U>&, Args...> is true.\n18\n#\nPreconditions: VT meets the Cpp17CopyConstructible requirements.\n19\n#\nEffects: Direct-non-list-initializes the contained value of type VT\nwith il, std\u200b::\u200bforward<Args>(\u200bargs)....\n20\n#\nPostconditions: *this contains a value.\n21\n#\nThrows: Any exception thrown by the selected constructor of VT.\n\ud83d\udd17\n~any();\n22\n#\nEffects: As if by reset().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: converting to 'std::any'.*use explicit constructor"
+    ],
+    "clang": [
+      "error: chosen constructor is explicit in copy-initialization",
+      "\\bany\\(in_place_type_t"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n #include <any>\n #include <utility>\n \n-std::any a = {std::in_place_type<int>, 1};\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/any/ctor_in_place_explicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "chosen constructor is explicit in copy-initialization"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/any/ctor_in_place_explicit.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/any__ctor_in_place_explicit.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "converting to 'std::any' from initializer list would use explicit constructor 'std::any::any(std::in_place_type_t<_Tp>, _Args&& ...) [with _Tp = int; _Args = {int}; _VTp = int; _Mgr = _Manager_internal<int>; typename __any_constructible<bool, _VTp, _Args&& ...>::type <anonymous> = false]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

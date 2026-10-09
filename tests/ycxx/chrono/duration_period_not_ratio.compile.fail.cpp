@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*duration: Period must be a specialization of ratio
 // [time.duration.general]/3: "If Period is not a specialization of ratio, the program is ill-formed."
 #include <chrono>
 

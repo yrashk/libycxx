@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/chrono/zoned_time_not_duration.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "time.zone.zonedtime.overview"
+  ],
+  "normative_text": {
+    "time.zone.zonedtime.overview": "30.11.7.1 Overview [time.zone.zonedtime.overview]\nnamespace std::chrono {\n  template<class Duration, class TimeZonePtr = const time_zone*>\n  class zoned_time {\n  public:\n    using duration = common_type_t<Duration, seconds>;\n  private:\n    TimeZonePtr        zone_;                   // exposition only\n    sys_time<duration> tp_;                     // exposition only\n    using traits_ = zoned_traits<TimeZonePtr>;  // exposition only\n  public:\n    zoned_time();\n    zoned_time(const zoned_time&) = default;\n    zoned_time& operator=(const zoned_time&) = default;\n    zoned_time(const sys_time<Duration>& st);\n    explicit zoned_time(TimeZonePtr z);\n    explicit zoned_time(string_view name);\n    template<class Duration2>\n      zoned_time(const zoned_time<Duration2, TimeZonePtr>& y);\n    zoned_time(TimeZonePtr z,    const sys_time<Duration>& st);\n    zoned_time(string_view name, const sys_time<Duration>& st);\n    zoned_time(TimeZonePtr z,    const local_time<Duration>& tp);\n    zoned_time(string_view name, const local_time<Duration>& tp);\n    zoned_time(TimeZonePtr z,    const local_time<Duration>& tp, choose c);\n    zoned_time(string_view name, const local_time<Duration>& tp, choose c);\n    template<class Duration2, class TimeZonePtr2>\n      zoned_time(TimeZonePtr z, const zoned_time<Duration2, TimeZonePtr2>& y);\n    template<class Duration2, class TimeZonePtr2>\n      zoned_time(TimeZonePtr z, const zoned_time<Duration2, TimeZonePtr2>& y, choose);\n    template<class Duration2, class TimeZonePtr2>\n      zoned_time(string_view name, const zoned_time<Duration2, TimeZonePtr2>& y);\n    template<class Duration2, class TimeZonePtr2>\n      zoned_time(string_view name, const zoned_time<Duration2, TimeZonePtr2>& y, choose c);\n    zoned_time& operator=(const sys_time<Duration>& st);\n    zoned_time& operator=(const local_time<Duration>& lt);\n    operator sys_time<duration>() const;\n    explicit operator local_time<duration>() const;\n    TimeZonePtr          get_time_zone()  const;\n    local_time<duration> get_local_time() const;\n    sys_time<duration>   get_sys_time()   const;\n    sys_info             get_info()       const;\n  };\n  zoned_time() -> zoned_time<seconds>;\n  template<class Duration>\n    zoned_time(sys_time<Duration>)\n      -> zoned_time<common_type_t<Duration, seconds>>;\n  template<class TimeZonePtrOrName>\n    using time-zone-representation =        // exposition only\n      conditional_t<is_convertible_v<TimeZonePtrOrName, string_view>,\n                    const time_zone*,\n                    remove_cvref_t<TimeZonePtrOrName>>;\n  template<class TimeZonePtrOrName>\n    zoned_time(TimeZonePtrOrName&&)\n      -> zoned_time<seconds, time-zone-representation<TimeZonePtrOrName>>;\n  template<class TimeZonePtrOrName, class Duration>\n    zoned_time(TimeZonePtrOrName&&, sys_time<Duration>)\n      -> zoned_time<common_type_t<Duration, seconds>,\n                    time-zone-representation<TimeZonePtrOrName>>;\n  template<class TimeZonePtrOrName, class Duration>\n    zoned_time(TimeZonePtrOrName&&, local_time<Duration>,\n               choose = choose::earliest)\n      -> zoned_time<common_type_t<Duration, seconds>,\n                    time-zone-representation<TimeZonePtrOrName>>;\n  template<class Duration, class TimeZonePtrOrName, class TimeZonePtr2>\n    zoned_time(TimeZonePtrOrName&&, zoned_time<Duration, TimeZonePtr2>,\n               choose = choose::earliest)\n      -> zoned_time<common_type_t<Duration, seconds>,\n                    time-zone-representation<TimeZonePtrOrName>>;\n}\n1\n#\nzoned_time represents a logical pairing of\na time_zone and a time_point with precision Duration.\n zoned_time<Duration> maintains the invariant that\nit always refers to a valid time zone and\nrepresents a point in time that exists and is not ambiguous\nin that time zone.\n2\n#\nIf Duration is not a specialization of chrono\u200b::\u200bduration,\nthe program is ill-formed.\n3\n#\nEvery constructor of zoned_time that\naccepts a string_view as its first parameter\ndoes not participate in\nclass template argument deduction ([over.match.class.deduct]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*zoned_time: Duration must be a specialization of duration"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [time.zone.zonedtime.overview]/2: \"If Duration is not a specialization of chrono::duration,\n // the program is ill-formed.\" The control uses seconds.\n #include <chrono>\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/zoned_time_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'zoned_time' in namespace 'std::chrono'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/chrono/zoned_time_not_duration.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/chrono__zoned_time_not_duration.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

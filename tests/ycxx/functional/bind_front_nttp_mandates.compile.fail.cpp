@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::bind_front<f>: the bound arguments must be constructible and move constructible
 // [func.bind.partial]/7.1: template<auto f, class... Args> bind_front(args...): "Mandates:
 // (is_constructible_v<BoundArgs, Args> && ...) is true". The bound argument is a const lvalue
 // of a type whose copy constructor is deleted.

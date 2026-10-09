@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/expected/transform_invalid_value.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "expected.object.monadic",
+    "expected.object.general"
+  ],
+  "normative_text": {
+    "expected.object.monadic": "22.8.6.7 Monadic operations [expected.object.monadic]\n\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &;\ntemplate<class F> constexpr auto and_then(F&& f) const &;\n1\n#\nLet U be remove_cvref_t<invoke_result_t<F, decltype((val))>>.\n2\n#\nConstraints: is_constructible_v<E, decltype(error())> is true.\n3\n#\nMandates: U is a specialization of expected and\nis_same_v<typename U\u200b::\u200berror_type, E> is true.\n4\n#\nEffects: Equivalent to:\nif (has_value())\n  return invoke(std::forward<F>(f), val);\nelse\n  return U(unexpect, error());\n\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &&;\ntemplate<class F> constexpr auto and_then(F&& f) const &&;\n5\n#\nLet U be\nremove_cvref_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(val))>>.\n6\n#\nConstraints: is_constructible_v<E, decltype(std\u200b::\u200bmove(error()))> is true.\n7\n#\nMandates: U is a specialization of expected and\nis_same_v<typename U\u200b::\u200berror_type, E> is true.\n8\n#\nEffects: Equivalent to:\nif (has_value())\n  return invoke(std::forward<F>(f), std::move(val));\nelse\n  return U(unexpect, std::move(error()));\n\ud83d\udd17\ntemplate<class F> constexpr auto or_else(F&& f) &;\ntemplate<class F> constexpr auto or_else(F&& f) const &;\n9\n#\nLet G be remove_cvref_t<invoke_result_t<F, decltype(error())>>.\n10\n#\nConstraints: is_constructible_v<T, decltype((val))> is true.\n11\n#\nMandates: G is a specialization of expected and\nis_same_v<typename G\u200b::\u200bvalue_type, T> is true.\n12\n#\nEffects: Equivalent to:\nif (has_value())\n  return G(in_place, val);\nelse\n  return invoke(std::forward<F>(f), error());\n\ud83d\udd17\ntemplate<class F> constexpr auto or_else(F&& f) &&;\ntemplate<class F> constexpr auto or_else(F&& f) const &&;\n13\n#\nLet G be\nremove_cvref_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(error()))>>.\n14\n#\nConstraints: is_constructible_v<T, decltype(std\u200b::\u200bmove(val))> is true.\n15\n#\nMandates: G is a specialization of expected and\nis_same_v<typename G\u200b::\u200bvalue_type, T> is true.\n16\n#\nEffects: Equivalent to:\nif (has_value())\n  return G(in_place, std::move(val));\nelse\n  return invoke(std::forward<F>(f), std::move(error()));\n\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &;\ntemplate<class F> constexpr auto transform(F&& f) const &;\n17\n#\nLet U be\nremove_cv_t<invoke_result_t<F, decltype((val))>>.\n18\n#\nConstraints: is_constructible_v<E, decltype(error())> is true.\n19\n#\nMandates: U is a valid value type for expected.\n If is_void_v<U> is false,\nthe declaration\nU u(invoke(std::forward<F>(f), val));\nis well-formed.\n20\n#\nEffects: (20.1)\nIf has_value() is false, returns\nexpected<U, E>(unexpect, error()).\n(20.2)\nOtherwise, if is_void_v<U> is false, returns an\nexpected<U, E> object whose has_val member is true\nand val member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), val).\n(20.3)\nOtherwise, evaluates invoke(std\u200b::\u200bforward<F>(f), val) and then\nreturns expected<U, E>().\n\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &&;\ntemplate<class F> constexpr auto transform(F&& f) const &&;\n21\n#\nLet U be\nremove_cv_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(val))>>.\n22\n#\nConstraints: is_constructible_v<E, decltype(std\u200b::\u200bmove(error()))> is true.\n23\n#\nMandates: U is a valid value type for expected.\n If is_void_v<U> is\nfalse, the declaration\nU u(invoke(std::forward<F>(f), std::move(val)));\nis well-formed.\n24\n#\nEffects: (24.1)\nIf has_value() is false, returns\nexpected<U, E>(unexpect, std\u200b::\u200bmove(error())).\n(24.2)\nOtherwise, if is_void_v<U> is false, returns an\nexpected<U, E> object whose has_val member is true\nand val member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), std\u200b::\u200bmove(val)).\n(24.3)\nOtherwise, evaluates invoke(std\u200b::\u200bforward<F>(f), std\u200b::\u200bmove(val)) and\nthen returns expected<U, E>().\n\ud83d\udd17\ntemplate<class F> constexpr auto transform_error(F&& f) &;\ntemplate<class F> constexpr auto transform_error(F&& f) const &;\n25\n#\nLet G be remove_cv_t<invoke_result_t<F, decltype(error())>>.\n26\n#\nConstraints: is_constructible_v<T, decltype((val))> is true.\n27\n#\nMandates: G is a valid template argument\nfor unexpected ([expected.un.general]) and the declaration\nG g(invoke(std::forward<F>(f), error()));\nis well-formed.\n28\n#\nReturns: If has_value() is true,\nexpected<T, G>(in_place, val); otherwise, an expected<T, G>\nobject whose has_val member is false and unex member\nis direct-non-list-initialized with invoke(std\u200b::\u200bforward<F>(f), error()).\n\ud83d\udd17\ntemplate<class F> constexpr auto transform_error(F&& f) &&;\ntemplate<class F> constexpr auto transform_error(F&& f) const &&;\n29\n#\nLet G be\nremove_cv_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(error()))>>.\n30\n#\nConstraints: is_constructible_v<T, decltype(std\u200b::\u200bmove(val))> is true.\n31\n#\nMandates: G is a valid template argument\nfor unexpected ([expected.un.general]) and the declaration\nG g(invoke(std::forward<F>(f), std::move(error())));\nis well-formed.\n32\n#\nReturns: If has_value() is true,\nexpected<T, G>(in_place, std\u200b::\u200bmove(val)); otherwise, an\nexpected<T, G> object whose has_val member is false\nand unex member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), std\u200b::\u200bmove(error())).\n",
+    "expected.object.general": "22.8.6.1 General [expected.object.general]\nnamespace std {\n  template<class T, class E>\n  class expected {\n  public:\n    using value_type = T;\n    using error_type = E;\n    using unexpected_type = unexpected<E>;\n    template<class U>\n    using rebind = expected<U, error_type>;\n    // [expected.object.cons], constructors\n    constexpr expected();\n    constexpr expected(const expected&);\n    constexpr expected(expected&&) noexcept(see below);\n    template<class U, class G>\n      constexpr explicit(see below) expected(const expected<U, G>&);\n    template<class U, class G>\n      constexpr explicit(see below) expected(expected<U, G>&&);\n    template<class U = remove_cv_t<T>>\n      constexpr explicit(see below) expected(U&& v);\n    template<class G>\n      constexpr explicit(see below) expected(const unexpected<G>&);\n    template<class G>\n      constexpr explicit(see below) expected(unexpected<G>&&);\n    template<class... Args>\n      constexpr explicit expected(in_place_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit expected(in_place_t, initializer_list<U>, Args&&...);\n    template<class... Args>\n      constexpr explicit expected(unexpect_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit expected(unexpect_t, initializer_list<U>, Args&&...);\n    // [expected.object.dtor], destructor\n    constexpr ~expected();\n    // [expected.object.assign], assignment\n    constexpr expected& operator=(const expected&);\n    constexpr expected& operator=(expected&&) noexcept(see below);\n    template<class U = remove_cv_t<T>> constexpr expected& operator=(U&&);\n    template<class G>\n      constexpr expected& operator=(const unexpected<G>&);\n    template<class G>\n      constexpr expected& operator=(unexpected<G>&&);\n    template<class... Args>\n      constexpr T& emplace(Args&&...) noexcept;\n    template<class U, class... Args>\n      constexpr T& emplace(initializer_list<U>, Args&&...) noexcept;\n    // [expected.object.swap], swap\n    constexpr void swap(expected&) noexcept(see below);\n    friend constexpr void swap(expected& x, expected& y) noexcept(noexcept(x.swap(y)));\n    // [expected.object.obs], observers\n    constexpr const T* operator->() const noexcept;\n    constexpr T* operator->() noexcept;\n    constexpr const T& operator*() const & noexcept;\n    constexpr T& operator*() & noexcept;\n    constexpr const T&& operator*() const && noexcept;\n    constexpr T&& operator*() && noexcept;\n    constexpr explicit operator bool() const noexcept;\n    constexpr bool has_value() const noexcept;\n    constexpr bool has_error() const noexcept;\n    constexpr const T& value() const &;                                     // freestanding-deleted\n    constexpr T& value() &;                                                 // freestanding-deleted\n    constexpr const T&& value() const &&;                                   // freestanding-deleted\n    constexpr T&& value() &&;                                               // freestanding-deleted\n    constexpr const E& error() const & noexcept;\n    constexpr E& error() & noexcept;\n    constexpr const E&& error() const && noexcept;\n    constexpr E&& error() && noexcept;\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) const &;\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) &&;\n    template<class G = E> constexpr E error_or(G&&) const &;\n    template<class G = E> constexpr E error_or(G&&) &&;\n    // [expected.object.monadic], monadic operations\n    template<class F> constexpr auto and_then(F&& f) &;\n    template<class F> constexpr auto and_then(F&& f) &&;\n    template<class F> constexpr auto and_then(F&& f) const &;\n    template<class F> constexpr auto and_then(F&& f) const &&;\n    template<class F> constexpr auto or_else(F&& f) &;\n    template<class F> constexpr auto or_else(F&& f) &&;\n    template<class F> constexpr auto or_else(F&& f) const &;\n    template<class F> constexpr auto or_else(F&& f) const &&;\n    template<class F> constexpr auto transform(F&& f) &;\n    template<class F> constexpr auto transform(F&& f) &&;\n    template<class F> constexpr auto transform(F&& f) const &;\n    template<class F> constexpr auto transform(F&& f) const &&;\n    template<class F> constexpr auto transform_error(F&& f) &;\n    template<class F> constexpr auto transform_error(F&& f) &&;\n    template<class F> constexpr auto transform_error(F&& f) const &;\n    template<class F> constexpr auto transform_error(F&& f) const &&;\n    // [expected.object.eq], equality operators\n    template<class T2, class E2> requires (!is_void_v<T2>)\n      friend constexpr bool operator==(const expected& x, const expected<T2, E2>& y);\n    template<class T2>\n      friend constexpr bool operator==(const expected&, const T2&);\n    template<class E2>\n      friend constexpr bool operator==(const expected&, const unexpected<E2>&);\n  private:\n    bool has_val;           // exposition only\n    union {\n      remove_cv_t<T> val;   // exposition only\n      E unex;               // exposition only\n    };\n  };\n}\n1\n#\nAny object of type expected<T, E> either\ncontains a value of type T or\na value of type E\nnested within ([intro.object]) it.\n Member has_val indicates whether the expected<T, E> object\ncontains an object of type T.\n2\n#\nA type T is a valid value type for expected,\nif remove_cv_t<T> is void\nor a complete non-array object type that is not in_place_t,\nunexpect_t,\nor a specialization of unexpected.\n A program which instantiates class template expected<T, E>\nwith an argument T that is not a valid value\ntype for expected is ill-formed.\n A program that instantiates\nthe definition of the template expected<T, E>\nwith a type for the E parameter\nthat is not a valid template argument for unexpected is ill-formed.\n3\n#\nWhen T is not cv void, it shall meet\nthe Cpp17Destructible requirements (Table 35).\n E shall meet\nthe Cpp17Destructible requirements.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::expected::transform: invalid result type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,5 +5,4 @@\n \n void f() {\n   std::expected<int, long> e(1);\n-  (void)e.transform([](int) { return std::in_place; });\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/transform_invalid_value.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!is_same_v<std::in_place_t, std::in_place_t>': [expected.object.general] A program that instantiates the definition of template expected<T, E> for a reference type, a function type, or for possibly cv-qualified types in_place_t, unexpect_t, or a specialization of unexpected for the T parameter is ill-formed. A program that instantiates the definition of the template expected<T, E> with a type for the E parameter that is not a valid template argument for unexpected is ill-formed."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/transform_invalid_value.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__transform_invalid_value.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

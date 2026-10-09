@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/semaphore/negative_least_max.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "thread.sema.cnt"
+  ],
+  "normative_text": {
+    "thread.sema.cnt": "32.8.3 Class template counting_semaphore [thread.sema.cnt]\nnamespace std {\n  template<ptrdiff_t least_max_value = implementation-defined>\n  class counting_semaphore {\n  public:\n    static constexpr ptrdiff_t max() noexcept;\n    constexpr explicit counting_semaphore(ptrdiff_t desired);\n    ~counting_semaphore();\n    counting_semaphore(const counting_semaphore&) = delete;\n    counting_semaphore& operator=(const counting_semaphore&) = delete;\n    void release(ptrdiff_t update = 1);\n    void acquire();\n    bool try_acquire() noexcept;\n    template<class Rep, class Period>\n      bool try_acquire_for(const chrono::duration<Rep, Period>& rel_time);\n    template<class Clock, class Duration>\n      bool try_acquire_until(const chrono::time_point<Clock, Duration>& abs_time);\n  private:\n    ptrdiff_t counter;          // exposition only\n  };\n}\n1\n#\nClass template counting_semaphore maintains an internal counter\nthat is initialized when the semaphore is created.\n The counter is decremented when a thread acquires the semaphore, and\nis incremented when a thread releases the semaphore.\n If a thread tries to acquire the semaphore when the counter is zero,\nthe thread will block\nuntil another thread increments the counter by releasing the semaphore.\n2\n#\nleast_max_value shall be non-negative; otherwise the program is ill-formed.\n3\n#\nConcurrent invocations of the member functions of counting_semaphore,\nother than its destructor, do not introduce data races.\n\ud83d\udd17\nstatic constexpr ptrdiff_t max() noexcept;\n4\n#\nReturns: The maximum value of counter.\n This value is greater than or equal to least_max_value.\n\ud83d\udd17\nconstexpr explicit counting_semaphore(ptrdiff_t desired);\n5\n#\nPreconditions: desired >= 0 is true, and\ndesired <= max() is true.\n6\n#\nEffects: Initializes counter with desired.\n7\n#\nThrows: Nothing.\n\ud83d\udd17\nvoid release(ptrdiff_t update = 1);\n8\n#\nPreconditions: update >= 0 is true, and\nupdate <= max() - counter is true.\n9\n#\nEffects: Atomically execute counter += update.\n Then, unblocks any threads\nthat are waiting for counter to be greater than zero.\n10\n#\nSynchronization: Strongly happens before invocations of try_acquire\nthat observe the result of the effects.\n11\n#\nThrows: system_error when an exception is required ([thread.req.exception]).\n12\n#\nError conditions: Any of the error conditions\nallowed for mutex types ([thread.mutex.requirements.mutex]).\n\ud83d\udd17\nbool try_acquire() noexcept;\n13\n#\nEffects: Attempts to atomically decrement counter if it is positive,\nwithout blocking.\n If counter is not decremented, there is no effect and\ntry_acquire immediately returns.\n An implementation may fail to decrement counter\neven if it is positive.\n [Note\u00a01:\u2002This spurious failure is normally uncommon, but\nallows interesting implementations\nbased on a simple compare and exchange ([atomics]).\n \u2014\u00a0end note]\nAn implementation should ensure that try_acquire\ndoes not consistently return false\nin the absence of contending semaphore operations.\n14\n#\nReturns: true if counter was decremented, otherwise false.\n\ud83d\udd17\nvoid acquire();\n15\n#\nEffects: Repeatedly performs the following steps, in order:\n(15.1)\nEvaluates try_acquire().\n If the result is true, returns.\n(15.2)\nBlocks on *this until counter is greater than zero.\n16\n#\nThrows: system_error when an exception is required ([thread.req.exception]).\n17\n#\nError conditions: Any of the error conditions\nallowed for mutex types ([thread.mutex.requirements.mutex]).\n\ud83d\udd17\ntemplate<class Rep, class Period>\n  bool try_acquire_for(const chrono::duration<Rep, Period>& rel_time);\ntemplate<class Clock, class Duration>\n  bool try_acquire_until(const chrono::time_point<Clock, Duration>& abs_time);\n18\n#\nEffects: Repeatedly performs the following steps, in order:\n(18.1)\nEvaluates try_acquire().\n If the result is true, returns true.\n(18.2)\n  Blocks on *this\n  until counter is greater than zero or until the timeout expires.\n If it is unblocked by the timeout expiring, returns false.\nThe timeout expires ([thread.req.timing])\nwhen the current time is after abs_time (for try_acquire_until)\nor when at least rel_time has passed\nfrom the start of the function (for try_acquire_for).\n19\n#\nThrows: Timeout-related exceptions ([thread.req.timing]), or system_error\nwhen a non-timeout-related exception is required ([thread.req.exception]).\n20\n#\nError conditions: Any of the error conditions\nallowed for mutex types ([thread.mutex.requirements.mutex]).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*counting_semaphore: LeastMaxValue must not be negative"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // ill-formed.\"\n #include <semaphore>\n \n-std::counting_semaphore<-1> s(0);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/semaphore/negative_least_max.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '-1L >= 0': The least maximum value must be a positive number"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/semaphore/negative_least_max.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/semaphore__negative_least_max.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

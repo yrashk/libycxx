@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: 'atomic_int' in namespace '::' does not name a type
+// EXPECT-ERROR-CLANG: error: no type named 'atomic_int' in the global namespace
 // [stdatomic.h.syn]/3: "Neither the _Atomic macro, nor any of the non-macro global namespace
 // declarations, are provided by any C++ standard library header other than <stdatomic.h>."
 // <atomic> must therefore not declare ::atomic_int (the control on the first lines compiles).

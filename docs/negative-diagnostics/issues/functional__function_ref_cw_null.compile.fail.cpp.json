@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/functional/function_ref_cw_null.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.wrap.ref.ctor"
+  ],
+  "normative_text": {
+    "func.wrap.ref.ctor": "22.10.17.6.3 Constructors and assignment operators [func.wrap.ref.ctor]\n\ud83d\udd17\ntemplate<class... T>\n  static constexpr bool is-invocable-using = see below;\n1\n#\nIf noex is true,\nis-invocable-using<T...> is equal to:\nis_nothrow_invocable_r_v<R, T..., ArgTypes...>\nOtherwise, is-invocable-using<T...> is equal to:\nis_invocable_r_v<R, T..., ArgTypes...>\n\ud83d\udd17\ntemplate<class F>\n  static constexpr bool is-convertible-from-specialization = see below;\n2\n#\nIf F denotes a specialization\nfunction_ref<R(Args...) cv2 noexcept(noex2)>\nfor some placeholders cv2 and noex2,\nis-convertible-from-specialization<F> is equal to:\nis_convertible_v<R(&)(Args...) noexcept(noex2), R(&)(Args...) noexcept(noex)> &&\nis_convertible_v<int cv&, int cv2&>.\nOtherwise, is-convertible-from-specialization<F> is false.\n\ud83d\udd17\ntemplate<class F> function_ref(F* f) noexcept;\n3\n#\nConstraints: (3.1)\nis_function_v<F> is true, and\n(3.2)\nis-invocable-using<F> is true.\n4\n#\nPreconditions: f is not a null pointer.\n5\n#\nEffects: Initializes\nbound-entity with f, and\nthunk-ptr with the address of a function thunk\nsuch that\nthunk(bound-entity, call-args...)\nis expression-equivalent ([defns.expression.equivalent]) to\ninvoke_r<R>(f, call-args...).\n\ud83d\udd17\ntemplate<class F> constexpr function_ref(F&& f) noexcept;\n6\n#\nLet T be remove_reference_t<F>.\n7\n#\nConstraints: (7.1)\nremove_cvref_t<F> is not the same type as function_ref,\n(7.2)\nis_member_pointer_v<T> is false, and\n(7.3)\nis-invocable-using<cv T&> is true.\n8\n#\nEffects: If is-convertible-from-specialization<remove_cv_t<T>>\nis false,\ninitializes\nbound-entity with addressof(f), and\nthunk-ptr with the address of a function thunk\nsuch that\nthunk(bound-\u200bentity, call-args...)\nis expression-equivalent ([defns.expression.equivalent]) to\ninvoke_r<R>(static_cast<cv T&>(f), call-args...).\n Otherwise, initializes bound-entity\nwith the value of f.bound-entity and\nthunk-\u200bptr with the value of f.thunk-ptr.\n9\n#\nRemarks: If remove_cvref_t<F> is a specialization of function_ref,\nan implementation may initialize bound-entity\nwith the value of f.bound-entity and thunk-ptr\nwith the value of f.thunk-ptr.\n [Example\u00a01:\u2002void f1(std::string);\nvoid f2(std::string);\nfunction_ref<void(std::string)> r1(&f1);\nfunction_ref<void(std::string&&)> r2(r1);\nr2(\"\");                 // f1 is invoked\nr1 = &f2;\nr2(\"\");                 // it is unspecified if f1 or f2 is invoked\n \u2014\u00a0end example]\n\ud83d\udd17\ntemplate<auto c, class F> constexpr function_ref(constant_wrapper<c, F> f) noexcept;\n10\n#\nConstraints: is-invocable-using<const F&> is true.\n11\n#\nMandates: (11.1)\nIf is_pointer_v<F> || is_member_pointer_v<F> is true,\nthen f.value != nullptr is true, and\n(11.2)\nif ArgTypes is not an empty pack and\nall types in remove_cvref_t<ArgTypes>...\nsatisfy constexpr-param then\nconstant_wrapper<INVOKE(f.value, remove_cvref_t<ArgTypes>\u200b::\u200b\nvalue...)>\nis not a valid type.\n12\n#\nEffects: Initializes\nbound-entity with a pointer to an unspecified object or\nnull pointer value, and\nthunk-ptr with the address of a function thunk\nsuch that\nthunk(bound-entity, call-args...)\nis expression-equivalent ([defns.expression.equivalent]) to\ninvoke_r<R>(f.value, call-args...).\n\ud83d\udd17\ntemplate<auto c, class F, class U>\n  constexpr function_ref(constant_wrapper<c, F> f, U&& obj) noexcept;\n13\n#\nLet T be remove_reference_t<U>.\n14\n#\nConstraints: (14.1)\nis_rvalue_reference_v<U&&> is false, and\n(14.2)\nis-invocable-using<const F&, cv T&> is true.\n15\n#\nMandates: If is_pointer_v<F> || is_member_pointer_v<F> is true,\nthen f.value != nullptr is true.\n16\n#\nEffects: Initializes\nbound-entity with addressof(obj), and\nthunk-ptr with the address of a function thunk\nsuch that\nthunk(bound-entity, call-args...)\nis expression-equivalent ([defns.expression.equivalent]) to\ninvoke_r<R>(f.value, static_cast<cv T&>(obj), call-args...).\n\ud83d\udd17\ntemplate<auto c, class F, class T>\n  constexpr function_ref(constant_wrapper<c, F> f, cv T* obj) noexcept;\n17\n#\nConstraints: is-invocable-using<const F&, cv T*> is true.\n18\n#\nMandates: If is_pointer_v<F> || is_member_pointer_v<F> is true,\nthen f.value != nullptr is true.\n19\n#\nPreconditions: If is_member_pointer_v<F> is true,\nobj is not a null pointer.\n20\n#\nEffects: Initializes\nbound-entity with obj, and\nthunk-ptr with the address of a function thunk\nsuch that\nthunk(bound-entity, call-args...)\nis expression-equivalent ([defns.expression.equivalent]) to\ninvoke_r<R>(f.value, obj, call-args...).\n\ud83d\udd17\ntemplate<class T> function_ref& operator=(T) = delete;\n21\n#\nConstraints: (21.1)\nis-convertible-from-specialization<T> is false,\n(21.2)\nis_pointer_v<T> is false, and\n(21.3)\nT is not a specialization of constant_wrapper.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::function_ref: Mandates: f\\.value != nullptr"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,4 +5,3 @@\n \n constexpr int (*null_fp)(int) = nullptr;\n \n-void test() { std::function_ref<int(int)> r(std::cw<null_fp>); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_ref_cw_null.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no template named 'function_ref' in namespace 'std'; did you mean 'function'?"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/function_ref_cw_null.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__function_ref_cw_null.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

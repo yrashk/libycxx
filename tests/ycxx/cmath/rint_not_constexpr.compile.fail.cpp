@@ -1,3 +1,6 @@
+// EXPECT-ERROR-GCC: error: call to non-'constexpr' function [^\n]*std::rint\(
+// EXPECT-ERROR-CLANG: error: constexpr variable 'bad' must be initialized by a constant expression
+// EXPECT-ERROR-CLANG: note: non-constexpr function 'rint<double>'
 // [cmath.syn] declares nearbyint, rint, lrint and llrint without constexpr (their results
 // depend on the dynamic rounding mode), while trunc/round/floor/ceil are constexpr.
 // [constexpr.functions]/1: "An implementation shall not declare any standard library function

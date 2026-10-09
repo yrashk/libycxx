@@ -71,8 +71,9 @@ void run() {
     throwing_clock::armed = false;
     CHECK(thrown);
   });
-  // free: the user clock works for a successful call too
-  CHECK(m.try_lock_until(offset_clock::now() + 1s));
+  // A free timed try may fail spuriously; release only if it succeeds.
+  if (m.try_lock_until(offset_clock::now() + 1s)) m.unlock();
+  m.lock();
   m.unlock();
 }
 
@@ -102,7 +103,8 @@ int main() {
     throwing_clock::armed = false;
     CHECK(thrown);
   });
-  CHECK(sm.try_lock_shared_until(offset_clock::now() + 1s));
+  if (sm.try_lock_shared_until(offset_clock::now() + 1s)) sm.unlock_shared();
+  sm.lock_shared();
   sm.unlock_shared();
   return 0;
 }

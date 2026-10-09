@@ -1119,7 +1119,8 @@
       "changes": "Conditionally release free timed tries, establish ownership and released waiter acquisition with lock; retain duration and held failure checks.",
       "boundary_investigation": "Reviewed timed mutex native fallback and timeout conversion; negative durations, steady/system clocks, and three mutex types pass. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "da4ce7a30b1991f949d6c26c04f2b41d7ca9d064"
     },
     {
       "id": "C19",
@@ -1137,7 +1138,7 @@
       ],
       "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1169,7 +1170,12 @@
           "exit": 0,
           "log": "build/test-logs/own-audit/C19-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "thread.timedmutex.requirements.general/11 and sharedtimedmutex.general/11 allow free timed tries to fail; thread.req.timing/8 propagates throwing-clock exceptions.",
+      "changes": "Conditionally unlock successful free tries and verify availability with blocking lock/shared lock; retain custom clock deadlines and exception cases.",
+      "boundary_investigation": "Reviewed offset_clock/throwing_clock validity and while_held handshake. Required timed failures and user-clock exceptions pass in all three library comparisons. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C20",

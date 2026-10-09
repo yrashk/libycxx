@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/memory/construct_at_array_with_args.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "specialized.construct"
+  ],
+  "normative_text": {
+    "specialized.construct": "26.11.8 construct_at [specialized.construct]\n\ud83d\udd17\ntemplate<class T, class... Args>\n  constexpr T* construct_at(T* location, Args&&... args);\nnamespace ranges {\n  template<class T, class... Args>\n    constexpr T* construct_at(T* location, Args&&... args);\n}\n1\n#\nConstraints: is_unbounded_array_v<T> is false.\n The expression \u200b::\u200bnew (declval<void*>()) T(declval<Args>()...)\nis well-formed when treated as an unevaluated operand ([expr.context]).\n2\n#\nMandates: If is_array_v<T> is true, sizeof...(Args) is zero.\n3\n#\nEffects: Equivalent to:\nif constexpr (is_array_v<T>)\n  return ::new (voidify(*location)) T[1]();\nelse\n  return ::new (voidify(*location)) T(std::forward<Args>(args)...);\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::construct_at: arrays take no arguments"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // sizeof...(Args) is zero.\"\n #include <memory>\n \n-void f(int (*p)[3]) { std::construct_at(p, 1); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/construct_at_array_with_args.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "cannot initialize return object of type 'int *[3]' with an rvalue of type 'int *'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/construct_at_array_with_args.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__construct_at_array_with_args.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::construct_at for array types must not use any arguments to initialize the array"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -2642,13 +2642,23 @@
         "remedy": "Validate signed exponent syntax and require r.ptr == s.data()+s.size().",
         "priority": 2
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: confirmed oracle defect",
+      "normative_review": [
+        "c7015b [charconv.to.chars]/1, /3, /12-14; C23 7.23.6.2 printf a requires a signed decimal exponent; leading hex digit for normal values is implementation-defined. [charconv.from.chars]/1, /6 permits partial consumption and a missing exponent sign, so parsing success alone is insufficient.",
+        "All fixed/scientific/general assertions reviewed; exact dyadic tie-to-even cases and buffer limits retained. Replaced tautology and fixed-length hex assumption with precision/signed-exponent grammar and full consumption."
+      ],
+      "changes": [
+        "Hex syntax checker plus valid alternative-leading-digit and malformed-output regressions; exact-value negative-exponent round trips and exact/short buffer checks."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P10 tests/ycxx/charconv/to_chars_float_precision.pass.cpp: all 4 pass, exact transcripts and commands in P10/<library>/*.log.",
+        "YCXX_LIT=\"python3 build/test-logs/possibly-wrong/run_lit.py\" YCXX_CONFIG_NAME=P10 tools/run-conformance ycxx gcc charconv -- -j4: 28/28 pass.",
+        "Upstream suite commands/logs P10/upstream-lib{cxx,stdcxx}.log: mapped libc++ charconv.msvc test skipped for pre-P3505/other divergence; libstdc++ double/float likewise, long_double unsupported for target support. Inspected pinned fp_to_chars implementation and upstream hex precision tables; no upstream skip changes."
+      ],
+      "negative_search": "Old source with tc(1.0,hex,3) output injected as 1.000p0x compiled and ran exit 0. The same injection into repaired source aborts at hex_precision_syntax(s,3). Files P10/{old,new}-malformed.pass.cpp; P10/malformed.log. Inspected fp_to_chars hex layout; additional signs/exponents and one-byte-short buffer searches passed, no actual library defect found.",
+      "reference_comparison": "GCC 16.2 libstdc++ and Clang 23 Apple libc++ pass corrected test including buffer boundaries. Baseline also passed both despite malformed oracle gap.",
+      "commit": "pending commit; SHA recorded after commit",
+      "review": "Precommit diff review: no library changes or shared helpers; syntax only for finite precision nonnegative test inputs; buffer sentinels checked outside allowed write range."
     },
     {
       "id": "P06",

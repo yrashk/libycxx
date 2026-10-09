@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: use of deleted function [^\n]*std::function_ref[^\n]*operator=
+// EXPECT-ERROR-CLANG: error: overload resolution selected deleted operator '='
 // [func.wrap.ref.class]: "template<class T> function_ref& operator=(T) = delete;"
 // [func.wrap.ref.ctor]/21: constrained on T not being a function_ref convertible from a
 // specialization, not a pointer and not a constant_wrapper -- so assigning a callable object

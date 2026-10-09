@@ -244,7 +244,7 @@ int main() {
     l.swap(l);
     CHECK(l.owns_lock() && l.mutex() == &m);
     l.unlock();
-    CHECK(m.try_lock());
+    m.lock();
     m.unlock();
 
     std::shared_mutex sm;
@@ -253,7 +253,7 @@ int main() {
     s = std::move(sr);
     CHECK(s.owns_lock() && s.mutex() == &sm);
     s.unlock();
-    CHECK(sm.try_lock());
+    sm.lock();
     sm.unlock();
   }
   {

@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.uni.real]: produces x with a <= x < b, p(x | a, b) = 1 / (b - a); min() == a,
 // max() == b; a() and b() return the constructor arguments; d(g, p) uses p.
 // COUNTERPART: libstdcxx:26_numerics/random/uniform_real_distribution/operators/(64351|gencanon).cc
@@ -39,7 +45,13 @@ int main() {
   std::uniform_real_distribution<> d(2.0, 7.0);
   int bins[10] = {};
   const int N = 200000;
-  for (int i = 0; i < N; ++i) ++bins[int((d(g) - 2.0) * 2.0)];
+  for (int i = 0; i < N; ++i) {
+    double value = d(g);
+    CHECK(2.0 <= value && value < 7.0);
+    int bin = int((value - 2.0) * 2.0);
+    CHECK(0 <= bin && bin < 10);
+    ++bins[bin];
+  }
   for (int c : bins) CHECK(rs::near(c, N / 10.0, 0.03 * N / 10.0));
 
   std::uniform_real_distribution<>::param_type p(-1.0, -0.5);

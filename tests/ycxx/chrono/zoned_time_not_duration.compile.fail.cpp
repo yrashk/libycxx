@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*zoned_time: Duration must be a specialization of duration
 // [time.zone.zonedtime.overview]/2: "If Duration is not a specialization of chrono::duration,
 // the program is ill-formed." The control uses seconds.
 #include <chrono>

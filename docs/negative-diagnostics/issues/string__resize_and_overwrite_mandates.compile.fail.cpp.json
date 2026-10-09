@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/string/resize_and_overwrite_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "string.capacity",
+    "iterator.concept.winc"
+  ],
+  "normative_text": {
+    "string.capacity": "27.4.3.5 Capacity [string.capacity]\n\ud83d\udd17\nconstexpr size_type size() const noexcept;\nconstexpr size_type length() const noexcept;\n1\n#\nReturns: A count of the number of char-like objects currently in the string.\n2\n#\nComplexity: Constant time.\n\ud83d\udd17\nconstexpr size_type max_size() const noexcept;\n3\n#\nReturns: The largest possible number of char-like objects that can be stored in a\nbasic_string.\n4\n#\nComplexity: Constant time.\n\ud83d\udd17\nconstexpr void resize(size_type n, charT c);\n5\n#\nEffects: Alters the value of\n*this\nas follows:\n(5.1)\nIf\nn <= size(),\nerases the last size() - n elements.\n(5.2)\nIf\nn > size(),\nappends n - size() copies of c.\n\ud83d\udd17\nconstexpr void resize(size_type n);\n6\n#\nEffects: Equivalent to resize(n, charT()).\n\ud83d\udd17\ntemplate<class Operation> constexpr void resize_and_overwrite(size_type n, Operation op);\n7\n#\nLet\n(7.1)\no = size() before the call to resize_and_overwrite.\n(7.2)\nk be min(o, n).\n(7.3)\np be a value of type charT* or charT* const,\nsuch that the range [p, p + n] is valid and\nthis->compare(0, k, p, k) == 0 is true before the call.\n The values in the range [p + k, p + n] may be indeterminate ([basic.indet]).\n(7.4)\nm be a value of type size_type or const size_type\nequal to n.\n(7.5)\nOP be the expression std\u200b::\u200bmove(op)(p, m).\n(7.6)\nr = OP.\n8\n#\nMandates: OP has an integer-like type ([iterator.concept.winc]).\n9\n#\nPreconditions: (9.1)\nOP does not throw an exception or modify p or m.\n(9.2)\nr \u2002\u2265\u20020.\n(9.3)\nr \u2002\u2264\u2002m.\n(9.4)\nAfter evaluating OP\nthere are no indeterminate values in the range [p, p + r).\n10\n#\nEffects: Evaluates OP,\nreplaces the contents of *this with [p, p + r), and\ninvalidates all pointers and references to the range [p, p + n].\n11\n#\nRecommended practice: Implementations should avoid unnecessary copies and allocations\nby, for example, making p a pointer into internal storage and\nby restoring *(p + r) to charT() after evaluating OP.\n\ud83d\udd17\nconstexpr size_type capacity() const noexcept;\n12\n#\nReturns: The size of the allocated storage in the string.\n13\n#\nComplexity: Constant time.\n\ud83d\udd17\nconstexpr void reserve(size_type res_arg);\n14\n#\nEffects: A directive that informs a basic_string of a planned change in size,\nso that the storage allocation can be managed accordingly.\n Following a call to\nreserve,\ncapacity()\nis greater or equal to the argument of\nreserve\nif reallocation happens; and\nequal to the previous value of\ncapacity()\notherwise.\n Reallocation happens at this point if and only if\nthe current capacity is less than the argument of reserve.\n15\n#\nThrows: length_error\nif\nres_arg > max_size() or any exceptions thrown by\nallocator_traits <Allocator>\u200b::\u200ballocate.\n\ud83d\udd17\nconstexpr void shrink_to_fit();\n16\n#\nEffects: shrink_to_fit is a non-binding request to reduce\ncapacity() to size().\n [Note\u00a01:\u2002The request is non-binding to\nallow latitude for implementation-specific optimizations.\n \u2014\u00a0end note]\nIt does not increase capacity(), but may reduce capacity()\nby causing reallocation.\n17\n#\nComplexity: If the size is not equal to the old capacity,\nlinear in the size of the sequence;\notherwise constant.\n18\n#\nRemarks: Reallocation invalidates all the references, pointers, and iterators\nreferring to the elements in the sequence, as well as the past-the-end iterator.\n [Note\u00a02:\u2002If no reallocation happens, they remain valid.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr void clear() noexcept;\n19\n#\nEffects: Equivalent to: erase(begin(), end());\n\ud83d\udd17\nconstexpr bool empty() const noexcept;\n20\n#\nEffects: Equivalent to:\nreturn size() == 0;\n",
+    "iterator.concept.winc": "24.3.4.4 Concept weakly_incrementable [iterator.concept.winc]\n1\n#\nThe weakly_incrementable concept specifies the requirements on\ntypes that can be incremented with the pre- and post-increment operators.\n The increment operations are not required to be equality-preserving,\nnor is the type required to be equality_comparable.\ntemplate<class T>\n  constexpr bool is-integer-like = see below;           // exposition only\ntemplate<class T>\n  constexpr bool is-signed-integer-like = see below;    // exposition only\ntemplate<class I>\n  concept weakly_incrementable =\n    movable<I> &&\n    requires(I i) {\n      typename iter_difference_t<I>;\n      requires is-signed-integer-like<iter_difference_t<I>>;\n      { ++i } -> same_as<I&>;                           // not required to be equality-preserving\n      i++;                                              // not required to be equality-preserving\n    };\n2\n#\nA type I is an integer-class type\nif it is in a set of implementation-defined types\nthat behave as integer types do, as defined below.\n [Note\u00a01:\u2002An integer-class type is not necessarily a class type.\n \u2014\u00a0end note]\n3\n#\nThe range of representable values of an integer-class type\nis the continuous set of values over which it is defined.\n For any integer-class type,\nits range of representable values is\neither \u22122N\u22121 to 2N\u22121\u22121 (inclusive) for some integer N,\nin which case it is a signed-integer-class type, or\n0 to 2N\u22121 (inclusive) for some integer N,\nin which case it is an unsigned-integer-class type.\n In both cases, N is called\nthe width of the integer-class type.\n The width of an integer-class type is greater than\nthat of every integral type of the same signedness.\n4\n#\nA type I other than cv bool is integer-like\nif it models integral<I> or\nif it is an integer-class type.\n An integer-like type I is signed-integer-like\nif it models signed_integral<I> or\nif it is a signed-integer-class type.\n An integer-like type I is unsigned-integer-like\nif it models unsigned_integral<I> or\nif it is an unsigned-integer-class type.\n5\n#\nFor every integer-class type I,\nlet B(I) be a unique hypothetical extended integer type\nof the same signedness with the same width ([basic.fundamental]) as I.\n [Note\u00a02:\u2002The corresponding hypothetical specialization numeric_limits<B(I)>\nmeets the requirements on numeric_limits specializations\nfor integral types ([numeric.limits]).\n \u2014\u00a0end note]\nFor every integral type J, let B(J) be the same type as J.\n6\n#\nExpressions of integer-class type are\nexplicitly convertible to any integer-like type, and\nimplicitly convertible to any integer-class type\nof equal or greater width and the same signedness.\n Expressions of integral type are\nboth implicitly and explicitly convertible to any integer-class type.\n Conversions between integral and integer-class types\nand between two integer-class types do not exit via an exception.\n The result of such a conversion is the unique value of the destination type\nthat is congruent to the source modulo 2N,\nwhere N is the width of the destination type.\n7\n#\nLet a be an object of integer-class type I,\nlet b be an object of integer-like type I2\nsuch that the expression b is implicitly convertible to I,\nlet x and y be, respectively,\nobjects of type B(I) and B(I2) as described above\nthat represent the same values as a and b, and\nlet c be an lvalue of any integral type.\n (7.1)\nThe expressions a++ and a-- shall be prvalues of type I\nwhose values are equal to\nthat of a prior to the evaluation of the expressions.\n The expression a++ shall modify the value of a\nby adding 1 to it.\n The expression a-- shall modify the value of a\nby subtracting 1 from it.\n(7.2)\nThe expressions ++a, --a, and &a shall be\nexpression-equivalent to\na += 1, a -= 1, and addressof(a), respectively.\n(7.3)\nFor every unary-operator @ other than & for which the expression @x\n  is well-formed, @a shall also be well-formed\n  and have the same value, effects, and value category as @x.\n If @x has type bool, so too does @a;\n  if @x has type B(I), then @a has type I.\n(7.4)\nFor every assignment operator @=\n  for which c @= x is well-formed,\n  c @= a shall also be well-formed and\n  shall have the same value and effects as c @= x.\n The expression c @= a shall be an lvalue referring to c.\n(7.5)\nFor every assignment operator @=\nfor which x @= y is well-formed,\na @= b shall also be well-formed and\nshall have the same effects as x @= y,\nexcept that the value that would be stored into x\nis stored into a.\n The expression a @= b shall be an lvalue referring to a.\n(7.6)\nFor every non-assignment binary operator @\n  for which x @ y and y @ x are well-formed,\n  a @ b and b @ a shall also be well-formed and\n  shall have the same value, effects, and value category as\n  x @ y and y @ x, respectively.\n If x @ y or y @ x has type B(I),\n  then a @ b or b @ a, respectively, has type I;\n  if x @ y or y @ x has type B(I2),\n  then a @ b or b @ a, respectively, has type I2;\n  if x @ y or y @ x has any other type,\n  then a @ b or b @ a, respectively, has that type.\n8\n#\nAn expression E of integer-class type I is\ncontextually convertible to bool\nas if by bool(E != I(0)).\n9\n#\nAll integer-class types model\nregular ([concepts.object]) and\nthree_way_comparable<strong_ordering> ([cmp.concept]).\n10\n#\nA value-initialized object of integer-class type has value 0.\n11\n#\nFor every (possibly cv-qualified) integer-class type I,\nnumeric_limits<I> is specialized such that\neach static data member m\nhas the same value as numeric_limits<B(I)>\u200b::\u200bm, and\neach static member function f\nreturns I(numeric_limits<B(I)>\u200b::\u200bf()).\n12\n#\nFor any two integer-like types I1 and I2,\nat least one of which is an integer-class type,\ncommon_type_t<I1, I2> denotes an integer-class type\nwhose width is not less than that of I1 or I2.\n If both I1 and I2 are signed-integer-like types,\nthen common_type_t<I1, I2> is also a signed-integer-like type.\n13\n#\nis-integer-like<I> is true\nif and only if I is an integer-like type.\n is-signed-integer-like<I> is true\nif and only if I is a signed-integer-like type.\n14\n#\nLet i be an object of type I.\n When i is in the domain of\nboth pre- and post-increment, i is said to be incrementable.\n I models weakly_incrementable<I> only if:\n(14.1)\nThe expressions ++i and i++ have the same domain.\n(14.2)\nIf i is incrementable, then both ++i\n  and i++ advance i to the next element.\n(14.3)\nIf i is incrementable, then\n  addressof(++i) is equal to\n  addressof(i).\n15\n#\nRecommended practice: The implementation of an algorithm on a weakly incrementable type\nshould never attempt to pass through the same incrementable value twice;\nsuch an algorithm should be a single-pass algorithm.\n [Note\u00a03:\u2002For weakly_incrementable types, a equals b does not imply that ++a\nequals ++b.\n (Equality does not guarantee the substitution property or referential\ntransparency.)\n Such algorithms\ncan be used with istreams as the source of the input data through the istream_iterator class\ntemplate.\n \u2014\u00a0end note]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::basic_string::resize_and_overwrite: the operation must return an integer\\-like type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n #include <cstddef>\n \n void f(std::string& s) {\n-  s.resize_and_overwrite(4, [](char* p, std::size_t) { return p; });\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string/resize_and_overwrite_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed: Operation return type must be integer-like"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/string/resize_and_overwrite_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/string__resize_and_overwrite_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

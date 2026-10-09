@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::function/move_only_function/copyable_function: Mandates: is_constructible_v<VT, F>
 // [func.wrap.move.ctor]/6: template<class F> move_only_function(F&& f): "Mandates:
 // is_constructible_v<VT, F> is true." (VT = decay_t<F>; here F = const MoveOnly&, whose
 // copy constructor is deleted, while is-callable-from<VT> holds.)

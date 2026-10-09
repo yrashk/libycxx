@@ -1,8 +1,11 @@
+// Libycxx performance policy: floor(log2 N) + 2 comparisons/projections for the fixed searches.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [lower.bound]: "Returns: The furthermost iterator i in the range [first, last] such that
 // for every iterator j in the range [first, i), bool(invoke(comp, invoke(proj, *j), value))
 // is true." [upper.bound]: the same with !bool(invoke(comp, value, invoke(proj, *j))). Both:
 // "At most log2(last - first) + O(1) comparisons and projections" (checked as
-// floor(log2 N) + 2), also for forward iterators ([alg.binary.search.general]/1: the number
+// a libycxx policy budget of floor(log2 N) + 2), also for forward iterators ([alg.binary.search.general]/1: the number
 // of comparisons "will be logarithmic for all types of iterators"). The precondition is only
 // that the range is partitioned, not sorted. For the std overloads lower_bound only calls
 // comp(element, value) and upper_bound only comp(value, element), so a comparator callable in

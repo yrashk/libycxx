@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/mdspan/extents_index_type_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "mdspan.extents.overview"
+  ],
+  "normative_text": {
+    "mdspan.extents.overview": "23.7.3.3.1 Overview [mdspan.extents.overview]\nThe class template extents represents\na multidimensional index space of rank equal to sizeof...(Extents).\n In [views],\nextents is used synonymously with multidimensional index space.\nnamespace std {\n  template<class IndexType, size_t... Extents>\n  class extents {\n  public:\n    using index_type = IndexType;\n    using size_type = make_unsigned_t<index_type>;\n    using rank_type = size_t;\n    // [mdspan.extents.obs], observers of the multidimensional index space\n    static constexpr rank_type rank() noexcept { return sizeof...(Extents); }\n    static constexpr rank_type rank_dynamic() noexcept { return dynamic-index(rank()); }\n    static constexpr size_t static_extent(rank_type) noexcept;\n    constexpr index_type extent(rank_type) const noexcept;\n    // [mdspan.extents.cons], constructors\n    constexpr extents() noexcept = default;\n    template<class OtherIndexType, size_t... OtherExtents>\n      constexpr explicit(see below)\n        extents(const extents<OtherIndexType, OtherExtents...>&) noexcept;\n    template<class... OtherIndexTypes>\n      constexpr explicit extents(OtherIndexTypes...) noexcept;\n    template<class OtherIndexType, size_t N>\n      constexpr explicit(N != rank_dynamic())\n        extents(span<OtherIndexType, N>) noexcept;\n    template<class OtherIndexType, size_t N>\n      constexpr explicit(N != rank_dynamic())\n        extents(const array<OtherIndexType, N>&) noexcept;\n    // [mdspan.extents.cmp], comparison operators\n    template<class OtherIndexType, size_t... OtherExtents>\n      friend constexpr bool operator==(const extents&,\n                                       const extents<OtherIndexType, OtherExtents...>&) noexcept;\n    // [mdspan.extents.expo], exposition-only helpers\n    constexpr size_t fwd-prod-of-extents(rank_type) const noexcept;     // exposition only\n    constexpr size_t rev-prod-of-extents(rank_type) const noexcept;     // exposition only\n    template<class OtherIndexType>\n      static constexpr auto index-cast(OtherIndexType&&) noexcept;      // exposition only\n  private:\n    static constexpr rank_type dynamic-index(rank_type) noexcept;       // exposition only\n    static constexpr rank_type dynamic-index-inv(rank_type) noexcept;   // exposition only\n    array<index_type, rank_dynamic()> dynamic-extents{};                // exposition only\n  };\n  template<class... Integrals>\n    explicit extents(Integrals...)\n      -> see below;\n}\n1\n#\nMandates: (1.1)\nIndexType is a signed or unsigned integer type, and\n(1.2)\neach element of Extents is either equal to dynamic_extent, or\nis representable as a value of type IndexType.\n2\n#\nEach specialization of extents models regular and\nis trivially copyable.\n3\n#\nLet Er be the rth element of Extents.\n Er is a dynamic extent if it is equal to dynamic_extent,\notherwise Er is a static extent.\n Let Dr be the value of dynamic-extents[dynamic-index(r)]\nif Er is a dynamic extent,\notherwise Er.\n4\n#\nThe rth interval of the multidimensional index space\nrepresented by an extents object is [0,Dr).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::extents: IndexType must be a signed or unsigned integer type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // bool is not.\n #include <mdspan>\n \n-std::extents<bool, 1> e;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/mdspan/extents_index_type_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "'make_unsigned' is only compatible with non-bool integers and enum types, but was given 'index_type' (aka 'bool')"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/mdspan/extents_index_type_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/mdspan__extents_index_type_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: IndexType must be a signed or unsigned integer type"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

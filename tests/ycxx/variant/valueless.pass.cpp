@@ -1,6 +1,6 @@
 // [variant.status]: valueless_by_exception() and index() (variant_npos when valueless),
-// both noexcept. A variant becomes valueless when initialization of the new alternative
-// throws during emplace ([variant.mod]/11, cf. the note in [variant.status]/2).
+// both noexcept. Type-changing move assignment makes a variant valueless when the new
+// alternative's move construction throws ([variant.assign]/10.1).
 // Then: [variant.get]/7 get throws bad_variant_access; get_if returns nullptr;
 // [variant.visit]/7 visit throws bad_variant_access; [variant.relops] valueless ordering;
 // [variant.assign]/2.2 assigning a valueless variant makes *this valueless;
@@ -11,9 +11,7 @@
 #include <type_traits>
 #include "check.hpp"
 
-// The emplaced alternative's construction throws and its copy and move constructors throw
-// too, so an implementation cannot build a temporary and move it in: the variant ends up
-// valueless (the "permitted" outcome of [variant.mod]/11; no realistic alternative exists).
+// Move construction throws. Type-changing variant move assignment requires a valueless result.
 struct MakeEmpty {
   MakeEmpty() = default;
   MakeEmpty(int) { throw 42; }
@@ -29,8 +27,9 @@ using V = std::variant<float, int, MakeEmpty>;
 
 static V make_valueless() {
   V v{12.f};
+  V source(std::in_place_index<2>);
   try {
-    v.emplace<2>(1);
+    v = std::move(source);
   } catch (int) {
   }
   return v;

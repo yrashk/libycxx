@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/future/async_not_invocable.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "futures.async"
+  ],
+  "normative_text": {
+    "futures.async": "32.10.9 Function template async [futures.async]\n1\n#\nThe function template async provides a mechanism to launch a function potentially\nin a new thread and provides the result of the function in a future object with which\nit shares a shared state.\n\ud83d\udd17\ntemplate<class F, class... Args>\n  future<invoke_result_t<decay_t<F>, decay_t<Args>...>>\n    async(F&& f, Args&&... args);\ntemplate<class F, class... Args>\n  future<invoke_result_t<decay_t<F>, decay_t<Args>...>>\n    async(launch policy, F&& f, Args&&... args);\n2\n#\nMandates: The following are all true:\n(2.1)\nis_constructible_v<decay_t<F>, F>,\n(2.2)\n(is_constructible_v<decay_t<Args>, Args> && ...), and\n(2.3)\nis_invocable_v<decay_t<F>, decay_t<Args>...>.\n3\n#\nEffects: The first function\nbehaves the same as a call to the second function with a policy argument of\nlaunch\u200b::\u200basync | launch\u200b::\u200bdeferred\nand the same arguments for F and Args.\n The second function creates a shared state that is associated with\nthe returned future object.\n The further behavior\nof the second function depends on the policy argument as follows (if\nmore than one of these conditions applies, the implementation may choose any of\nthe corresponding policies):\n(3.1)\nIf launch\u200b::\u200basync is set in policy, calls\ninvoke(auto(std\u200b::\u200bforward<F>(f)), auto(std\u200b::\u200bforward<Args>(args))...) ([func.invoke], [thread.thread.constr])\nas if in a new thread of execution represented by a thread object\nwith the values produced by auto\nbeing materialized ([conv.rval]) in the thread that called async.\n Any return value\nis stored as the result in the\nshared state.\n Any exception propagated from\nthe execution of\ninvoke(auto(std\u200b::\u200bforward<F>(f)), auto(std\u200b::\u200bforward<Args>(args))...)\nis stored as the exceptional result in the shared state.\n The thread object is\nstored in the shared state\nand affects the behavior of any asynchronous return objects that\nreference that state.\n(3.2)\nIf launch\u200b::\u200bdeferred is set in policy,\nstores auto(std\u200b::\u200bforward<F>(f)) and\nauto(std\u200b::\u200bforward<Args>(args))...\nin the shared state.\n These copies of f and args constitute\na deferred function.\n Invocation of the deferred function evaluates\ninvoke(std\u200b::\u200bmove(g), std\u200b::\u200bmove(xyz)) where g is the stored value of\nauto(std\u200b::\u200bforward<F>(f)) and xyz is the stored copy of\nauto(std\u200b::\u200bforward<Args>(args))....\n Any return value is stored\nas the result in the shared state.\n Any exception propagated\nfrom the execution\nof the deferred function\nis stored as the exceptional result\nin the shared state.\n The shared state is not\nmade ready until the function has completed.\n The first call to a\nnon-timed waiting function ([futures.state])\non an asynchronous return object referring to\nthis shared state invokes the\ndeferred function in the thread that called the waiting function.\n Once evaluation of invoke(std\u200b::\u200bmove(g), std\u200b::\u200bmove(xyz)) begins, the function is no longer\nconsidered deferred.\nRecommended practice: If this policy is specified together with other policies, such as when using a\npolicy value of launch\u200b::\u200basync | launch\u200b::\u200bdeferred, implementations should defer\ninvocation or the selection of the policy when no more concurrency can be effectively\nexploited.\n(3.3)\nIf no value is set in the launch policy, or a value is set that is neither specified\nin this document nor by the implementation, the behavior is undefined.\n4\n#\nSynchronization: The invocation of async synchronizes with the invocation of f.\n The completion of the function f is sequenced before\nthe shared state is made ready.\n [Note\u00a01:\u2002These apply regardless of the provided policy argument, and\neven if the corresponding future object is moved to another thread.\n However, it is possible for f not to be called at all,\nin which case its completion never happens.\n \u2014\u00a0end note]\nIf the implementation chooses the launch\u200b::\u200basync policy,\n(4.1)\na call to a waiting function on an asynchronous return\nobject that shares the shared state created by this async call shall\nblock until the associated thread has completed, as if joined, or else time\nout ([thread.thread.member]);\n(4.2)\nthe associated thread completion\nsynchronizes with\nthe return from\nthe first function\nthat successfully detects the ready status of the shared state or\nwith the return from the last\nfunction that releases the shared state, whichever\nhappens first.\n5\n#\nReturns: An object of type\nfuture<invoke_result_t<decay_t<F>, decay_t<Args>...>> that refers\nto the shared state created by this call to async.\n [Note\u00a02:\u2002If a future obtained from async is moved outside the local scope,\nthe future's destructor can block for the shared state to become ready.\n \u2014\u00a0end note]\n6\n#\nThrows: system_error if policy == launch\u200b::\u200basync and the\nimplementation is unable to start a new thread, or\nstd\u200b::\u200bbad_alloc if memory for the internal data structures\ncannot be allocated.\n7\n#\nError conditions: (7.1)\nresource_unavailable_try_again \u2014 if\npolicy == launch\u200b::\u200basync and the system is unable to start a new thread.\n8\n#\n[Example\u00a01:\u2002int work1(int value);\nint work2(int value);\nint work(int value) {\n  auto handle = std::async([=]{ return work2(value); });\n  int tmp = work1(value);\n  return tmp + handle.get();    // #1\n}\n[Note\u00a03:\u2002Line #1 might not result in concurrency because\nthe async call uses the default policy, which might use\nlaunch\u200b::\u200bdeferred, in which case the lambda might not be invoked until the\nget() call; in that case, work1 and work2 are called on the\nsame thread and there is no concurrency.\n \u2014\u00a0end note]\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'async\\("
+    ],
+    "clang": [
+      "error: no matching function for call to 'async'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,5 +3,4 @@\n \n void f(int*);\n void g() {\n-  auto r = std::async(std::launch::deferred, f, 1.0);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/future/async_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching function for call to 'async'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/future/async_not_invocable.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/future__async_not_invocable.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'async(std::launch, void (&)(int*), double)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

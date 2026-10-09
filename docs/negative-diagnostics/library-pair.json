@@ -1,0 +1,29 @@
+{
+  "issue": "pair-like constructor chooses deleted overload",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "clauses": [
+    "pairs.pair/15-17",
+    "temp.constr.order"
+  ],
+  "cause": "The repeated !is_subrange constraint is a separate atomic constraint in each twin, so the deleted twin does not subsume the live twin. Dangling tuple/array construction was ambiguous. Excluding dangling constructions from the live twin makes the selected constructor deleted as specified.",
+  "files": [
+    "include/ycxx/core/pair.hpp"
+  ],
+  "regressions": [
+    "tests/ycxx/utility/pair_dangling_array.compile.fail.cpp",
+    "tests/ycxx/utility/pair_dangling_tuple.compile.fail.cpp"
+  ],
+  "validation": {
+    "gcc": {
+      "command": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/gcc\" YCXX_QUIET=1 tools/run-conformance ycxx gcc utility tuple -- -j 6",
+      "result": "100 passed, 0 failed",
+      "transcript": "build/test-logs/pair-facility-gcc.log"
+    },
+    "clang": {
+      "command": "YCXX_LIT=\"python3 $PWD/build/test-logs/lit-driver.py\" PYTHONPATH=/Users/yrashk/.cache/uv/archive-v0/ZPh3rAXoRqqjVu_L YCXX_LIBDIR=\"$PWD/build/clang\" YCXX_QUIET=1 tools/run-conformance ycxx clang utility tuple -- -j 6",
+      "result": "100 passed, 0 failed",
+      "transcript": "build/test-logs/pair-facility-clang.log"
+    }
+  },
+  "reference": "Both installed references reject the dangling construction; the standard requires deletion. Diagnostic strengthening for each of the two tests is committed separately."
+}

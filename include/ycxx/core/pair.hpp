@@ -113,7 +113,9 @@ struct pair {
   template <__ycxx::__detail::__pair_like_not_pair<pair> _Pp>
     requires(!__ycxx::__detail::__is_subrange<remove_cvref_t<_Pp>>) &&
             __ycxx::__detail::__pair_constructible<_T1, _T2, __ycxx::__detail::__pair_like_get_t<0, _Pp>,
-                                             __ycxx::__detail::__pair_like_get_t<1, _Pp>>
+                                             __ycxx::__detail::__pair_like_get_t<1, _Pp>> &&
+            (!__ycxx::__detail::__pair_dangles<_T1, _T2, __ycxx::__detail::__pair_like_get_t<0, _Pp>,
+                                              __ycxx::__detail::__pair_like_get_t<1, _Pp>>)
   constexpr explicit(!__ycxx::__detail::__pair_convertible<_T1, _T2, __ycxx::__detail::__pair_like_get_t<0, _Pp>,
                                                      __ycxx::__detail::__pair_like_get_t<1, _Pp>>) pair(_Pp&& p)
       : first(get<0>(static_cast<_Pp&&>(p))), second(get<1>(static_cast<_Pp&&>(p))) {}

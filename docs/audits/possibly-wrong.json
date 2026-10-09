@@ -29,13 +29,22 @@
         "remedy": "Track element-storage reallocation or label allocator-call counts as policy.",
         "priority": 1
       },
-      "status": "pending",
-      "normative_review": [],
-      "changes": [],
-      "validation": [],
-      "negative_search": null,
-      "reference_comparison": null,
-      "commit": null
+      "status": "completed: valid documented implementation policy with corrected normative claim",
+      "normative_review": [
+        "c7015b [vector.cons]/10, /12-13; [vector.modifiers]/3; [vector.capacity]/1, /4, /7 and [sequence.reqmts]/40-43. Allocator calls can include auxiliary storage; no-reallocation is not a count of all allocate calls. Audit confirmed. Also corrected approximately-sized guarantee prerequisite: distance <= hint or forward and not approximately-sized.",
+        "CountingAlloc meets allocator requirements; ForwardRange is noncommon, unsized forward and dereference instrumentation does not change its reference/value semantics. User explicitly chose to preserve allocator counts as libycxx performance policy."
+      ],
+      "changes": [
+        "Accurate policy/normative header; independent reserved-storage pointer/capacity checks; empty/middle forward insertion, full sequence and exactly-once dereference checks."
+      ],
+      "validation": [
+        "python3 build/test-logs/possibly-wrong/run.py {gcc,clang,stdgcc,libcxx} P02 tests/ycxx/vector/range_allocations.pass.cpp: all four pass; commands/transcripts in P02/<library>/*.log.",
+        "source tools/toolchain/activate.sh; tools/ycxx-cxx gcc -Ibuild/test-logs/possibly-wrong/P02/mutation/include -Itests/ycxx/support tests/ycxx/vector/range_allocations.pass.cpp -o build/test-logs/possibly-wrong/P02/mutation/test; .../mutation/test: exit 134, detects reserved-storage reallocation."
+      ],
+      "negative_search": "Inspected __allocate_block, __append_counted/input, insert_range and reserve behavior, plus existing range_kinds coverage of approximately-sized hints in both directions. Added empty and exactly-full-capacity boundaries; no actual library defect found. Temporary shadow vector.hpp forces emplace_back reallocation with reserved capacity, rejected by the normative storage oracle at line 63; no library source changes.",
+      "reference_comparison": "Corrected test passes GCC libstdc++ and Clang libc++; relevant upstream range constructors/insertion/reserve tests selected through suite tooling (P02/upstream-*.log).",
+      "commit": "pending commit",
+      "review": "Precommit review: policy bounds unchanged, all value assertions independent; no shared helpers or library source changes."
     },
     {
       "id": "P03",
@@ -2657,8 +2666,8 @@
       ],
       "negative_search": "Old source with tc(1.0,hex,3) output injected as 1.000p0x compiled and ran exit 0. The same injection into repaired source aborts at hex_precision_syntax(s,3). Files P10/{old,new}-malformed.pass.cpp; P10/malformed.log. Inspected fp_to_chars hex layout; additional signs/exponents and one-byte-short buffer searches passed, no actual library defect found.",
       "reference_comparison": "GCC 16.2 libstdc++ and Clang 23 Apple libc++ pass corrected test including buffer boundaries. Baseline also passed both despite malformed oracle gap.",
-      "commit": "pending commit; SHA recorded after commit",
-      "review": "Precommit diff review: no library changes or shared helpers; syntax only for finite precision nonnegative test inputs; buffer sentinels checked outside allowed write range."
+      "commit": "84bd57a4",
+      "review": "Postcommit git show review: no P0-P2 findings; targeted finite precision grammar admits all permitted leading hex digits; no source/helper/library overlap."
     },
     {
       "id": "P06",

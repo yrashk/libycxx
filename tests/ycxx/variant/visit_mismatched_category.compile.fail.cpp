@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::visit: the visitor must return the same type and value category for all alternatives
 // [variant.visit]/5: "All such expressions are of the same type and value category."
 // int& vs int (lvalue vs prvalue).
 #include <variant>

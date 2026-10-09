@@ -1,0 +1,88 @@
+{
+  "test": "tests/ycxx/system_error/error_category_copy.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "syserr.errcat.overview"
+  ],
+  "normative_text": {
+    "syserr.errcat.overview": "19.5.3.1 Overview [syserr.errcat.overview]\n1\n#\nThe class error_category serves as a base class for types used\nto identify the source and encoding of a particular category of error code.\n Classes may be derived from error_category to support\ncategories of errors in addition to those defined in this document.\n Such classes shall behave as specified in subclause [syserr.errcat].\n [Note\u00a01:\u2002error_category objects are\npassed by reference, and two such objects\nare equal if they have the same address.\n If there is more than a single object of a custom error_category type,\nsuch equality comparisons can evaluate to false\neven for objects holding the same value.\n \u2014\u00a0end note]\n\ud83d\udd17\nnamespace std {\n  class error_category {\n  public:\n    constexpr error_category() noexcept;\n    virtual ~error_category();\n    error_category(const error_category&) = delete;\n    error_category& operator=(const error_category&) = delete;\n    virtual const char* name() const noexcept = 0;\n    virtual error_condition default_error_condition(int ev) const noexcept;\n    virtual bool equivalent(int code, const error_condition& condition) const noexcept;\n    virtual bool equivalent(const error_code& code, int condition) const noexcept;\n    virtual string message(int ev) const = 0;\n    bool operator==(const error_category& rhs) const noexcept;\n    strong_ordering operator<=>(const error_category& rhs) const noexcept;\n  };\n  const error_category& generic_category() noexcept;\n  const error_category& system_category() noexcept;\n}\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::error_category::error_category\\(const std::error_category&\\)"
+    ],
+    "clang": [
+      "error: call to implicitly-deleted copy constructor of 'Cat'",
+      "note: copy constructor of 'Cat' is implicitly deleted because base class 'std::error_category' has a deleted copy constructor"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -10,6 +10,3 @@\n \n const Cat a;\n const Cat ok{};  // control: default construction\n-Cat b = a;\n-\n-int main() { return ok == b; }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/system_error/error_category_copy.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to implicitly-deleted copy constructor of 'Cat'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/system_error/error_category_copy.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/system_error__error_category_copy.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'Cat::Cat(const Cat&)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

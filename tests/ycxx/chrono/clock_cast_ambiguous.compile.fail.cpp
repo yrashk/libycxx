@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::chrono::clock_cast: the conversion through system_clock and the one through utc_clock are equally good \(\[time\.clock\.cast\.fn\]/2\)
 // [time.clock.cast.fn]/2: "Mandates: Among the well-formed clock time conversion expressions
 // from the above list, there is a unique best expression." A and B both provide to_sys /
 // from_sys and to_utc / from_utc, so clock_cast<B>(a) has two best expressions with two

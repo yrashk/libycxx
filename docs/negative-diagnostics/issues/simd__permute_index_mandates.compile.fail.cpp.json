@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/simd/permute_index_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "simd.permute.static"
+  ],
+  "normative_text": {
+    "simd.permute.static": "29.10.8.7 Static permute [simd.permute.static]\n\ud83d\udd17\ntemplate<simd-size-type N = see below, simd-vec-type V, class IdxMap>\n  constexpr resize_t<N, V> permute(const V& v, IdxMap&& idxmap);\ntemplate<simd-size-type N = see below, simd-mask-type V, class IdxMap>\n  constexpr resize_t<N, V> permute(const V& v, IdxMap&& idxmap);\n1\n#\nLet:\n(1.1)\ngen-fn(i) be idxmap(i, V\u200b::\u200bsize())\nif that expression is well-formed, and idxmap(i) otherwise.\n(1.2)\nperm-fn be the following exposition-only function template:\ntemplate<simd-size-type I>\ntypename V::value_type perm-fn() {\n  constexpr auto src_index = gen-fn(I);\n  if constexpr (src_index == zero_element) {\n    return typename V::value_type();\n  } else if constexpr (src_index == uninit_element) {\n    return unspecified-value;\n  } else {\n    return v[src_index];\n  }\n}\n2\n#\nConstraints: At least one of\ninvoke_result_t<IdxMap&, simd-size-type>\nand\ninvoke_result_t<IdxMap&, simd-size-type, simd-size-type>\nsatisfies integral.\n3\n#\nMandates: gen-fn(i) is a constant expression whose value is\nzero_element, uninit_element, or in the range\n[0, V\u200b::\u200bsize()), for all i in the range [0, N).\n4\n#\nReturns: A data-parallel object where the\nith element is initialized to the result of\nperm-fn<i>() for all i in the range [0, N).\n5\n#\nRemarks: The default argument for template parameter N is V\u200b::\u200bsize().\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::simd::permute: the index map gives an index out of range"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [simd.permute.static]/3: Mandates: gen-fn(i) is a constant expression whose value is\n // zero_element, uninit_element, or in [0, V::size()), for all i in [0, N). Index 8 is out of\n // range for vec<int, 8>; the control maps to 7.\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/permute_index_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "'simd' file not found"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/permute_index_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__permute_index_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'std::simd' has not been declared"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

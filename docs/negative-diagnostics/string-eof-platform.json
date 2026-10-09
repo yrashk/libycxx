@@ -1,0 +1,11 @@
+{
+  "test": "tests/ycxx/transitive_includes/strict/string_eof.compile.fail.cpp",
+  "disposition": "existing diagnostic policy test restricted to supported Linux profile; outside the 422-file baseline",
+  "normative_review": "[res.on.headers] leaves additional header inclusions unspecified. DECISIONS section 19 tests libycxx's opt-out policy, not a universal standard requirement. The hosted char_traits implementation needs the C library's wchar.h for mbstate_t; on Darwin that brings in _stdio.h, which declares EOF independently of optional transitive includes.",
+  "changes": "Add REQUIRES: linux and explain the Darwin prerequisite failure; preserve both existing expected diagnostic patterns",
+  "evidence_command": "source tools/toolchain/activate.sh; tools/ycxx-cxx gcc -E -dD tests/ycxx/transitive_includes/strict/string_eof.compile.fail.cpp",
+  "evidence": "#define EOF (-1) originates from GCC's fixed Darwin _stdio.h; the SDK _stdio.h also defines it at line 204",
+  "transcript": "build/test-logs/negative-diagnostics/string-eof-preprocessed.log",
+  "validation": "The initial full negative suite compiled this program successfully with both compilers. The corrected test must report UNSUPPORTED on Darwin; Linux execution is unavailable on this host. See final aggregate results.",
+  "commit": "See commits.json auxiliary entries"
+}

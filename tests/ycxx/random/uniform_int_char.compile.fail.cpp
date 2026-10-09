@@ -1,7 +1,7 @@
-// [rand.req.genl]/1.6: "If a template argument corresponding to a template parameter named IntType
-// is neither a standard signed nor a standard unsigned integer type, nor an extended integer type
-// [of suitable width], nor a member of an implementation-defined subset of integer types, the
-// program is ill-formed." char is neither a signed nor an unsigned integer type.
+// [rand.req.genl]/1.6 permits an implementation-defined additional subset of integer
+// types. Plain char is not a standard signed/unsigned integer type; libycxx chooses an
+// empty additional subset (DECISIONS.md section 10), so this specialization is rejected.
+// This is a libycxx supported-type policy test, not a universal draft rejection oracle.
 #include <random>
 
 int main() {

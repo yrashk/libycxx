@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/expected/void_monadic_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "expected.void.monadic"
+  ],
+  "normative_text": {
+    "expected.void.monadic": "22.8.7.7 Monadic operations [expected.void.monadic]\n,and_then'>'>\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &;\ntemplate<class F> constexpr auto and_then(F&& f) const &;\n1\n#\nLet U be remove_cvref_t<invoke_result_t<F>>.\n2\n#\nConstraints: is_constructible_v<E, decltype(error())>> is true.\n3\n#\nMandates: U is a specialization of expected and\nis_same_v<typename U\u200b::\u200berror_type, E> is true.\n4\n#\nEffects: Equivalent to:\nif (has_value())\n  return invoke(std::forward<F>(f));\nelse\n  return U(unexpect, error());\n,and_then_'>_'>\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &&;\ntemplate<class F> constexpr auto and_then(F&& f) const &&;\n5\n#\nLet U be remove_cvref_t<invoke_result_t<F>>.\n6\n#\nConstraints: is_constructible_v<E, decltype(std\u200b::\u200bmove(error()))> is true.\n7\n#\nMandates: U is a specialization of expected and\nis_same_v<typename U\u200b::\u200berror_type, E> is true.\n8\n#\nEffects: Equivalent to:\nif (has_value())\n  return invoke(std::forward<F>(f));\nelse\n  return U(unexpect, std::move(error()));\n,or_else'>'>\ud83d\udd17\ntemplate<class F> constexpr auto or_else(F&& f) &;\ntemplate<class F> constexpr auto or_else(F&& f) const &;\n9\n#\nLet G be remove_cvref_t<invoke_result_t<F, decltype(error())>>.\n10\n#\nMandates: G is a specialization of expected and\nis_same_v<typename G\u200b::\u200bvalue_type, T> is true.\n11\n#\nEffects: Equivalent to:\nif (has_value())\n  return G();\nelse\n  return invoke(std::forward<F>(f), error());\n,or_else_'>_'>\ud83d\udd17\ntemplate<class F> constexpr auto or_else(F&& f) &&;\ntemplate<class F> constexpr auto or_else(F&& f) const &&;\n12\n#\nLet G be\nremove_cvref_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(error()))>>.\n13\n#\nMandates: G is a specialization of expected and\nis_same_v<typename G\u200b::\u200bvalue_type, T> is true.\n14\n#\nEffects: Equivalent to:\nif (has_value())\n  return G();\nelse\n  return invoke(std::forward<F>(f), std::move(error()));\n,transform'>'>\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &;\ntemplate<class F> constexpr auto transform(F&& f) const &;\n15\n#\nLet U be remove_cv_t<invoke_result_t<F>>.\n16\n#\nConstraints: is_constructible_v<E, decltype(error())> is true.\n17\n#\nMandates: U is a valid value type for expected.\n If is_void_v<U> is\nfalse, the declaration\nU u(invoke(std::forward<F>(f)));\nis well-formed.\n18\n#\nEffects: (18.1)\nIf has_value() is false, returns\nexpected<U, E>(unexpect, error()).\n(18.2)\nOtherwise, if is_void_v<U> is false, returns an\nexpected<U, E> object whose has_val member is true and\nval member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f)).\n(18.3)\nOtherwise, evaluates invoke(std\u200b::\u200bforward<F>(f)) and then returns\nexpected<U, E>().\n,transform_'>_'>\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &&;\ntemplate<class F> constexpr auto transform(F&& f) const &&;\n19\n#\nLet U be remove_cv_t<invoke_result_t<F>>.\n20\n#\nConstraints: is_constructible_v<E, decltype(std\u200b::\u200bmove(error()))> is true.\n21\n#\nMandates: U is a valid value type for expected.\n If is_void_v<U> is\nfalse, the declaration\nU u(invoke(std::forward<F>(f)));\nis well-formed.\n22\n#\nEffects: (22.1)\nIf has_value() is false, returns\nexpected<U, E>(unexpect, std\u200b::\u200bmove(error())).\n(22.2)\nOtherwise, if is_void_v<U> is false, returns an\nexpected<U, E> object whose has_val member is true and\nval member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f)).\n(22.3)\nOtherwise, evaluates invoke(std\u200b::\u200bforward<F>(f)) and then returns\nexpected<U, E>().\n,transform_error'>'>\ud83d\udd17\ntemplate<class F> constexpr auto transform_error(F&& f) &;\ntemplate<class F> constexpr auto transform_error(F&& f) const &;\n23\n#\nLet G be remove_cv_t<invoke_result_t<F, decltype(error())>>.\n24\n#\nMandates: G is a valid template argument\nfor unexpected ([expected.un.general]) and the declaration\nG g(invoke(std::forward<F>(f), error()));\nis well-formed.\n25\n#\nReturns: If has_value() is true, expected<T, G>(); otherwise, an\nexpected<T, G> object whose has_val member is false\nand unex member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), error()).\n,transform_error_'>_'>\ud83d\udd17\ntemplate<class F> constexpr auto transform_error(F&& f) &&;\ntemplate<class F> constexpr auto transform_error(F&& f) const &&;\n26\n#\nLet G be\nremove_cv_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(error()))>>.\n27\n#\nMandates: G is a valid template argument\nfor unexpected ([expected.un.general]) and the declaration\nG g(invoke(std::forward<F>(f), std::move(error())));\nis well-formed.\n28\n#\nReturns: If has_value() is true, expected<T, G>(); otherwise, an\nexpected<T, G> object whose has_val member is false\nand unex member is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), std\u200b::\u200bmove(error())).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::expected::and_then: F must return a specialization of expected with the same error_type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n \n void f() {\n   std::expected<void, long> e;\n-  (void)e.and_then([] { return std::expected<int, int>(1); });\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/void_monadic_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'is_same_v<int, long>': The result of f() must have the same error_type as this expected"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/void_monadic_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__void_monadic_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

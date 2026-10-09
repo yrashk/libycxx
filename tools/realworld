@@ -203,6 +203,9 @@ ctest_run() {
   c_b=$1 c_j=$2 c_t=$3
   shift 3
   rm -f "$c_j"
+  # Death tests deliberately abort many children. Core dumps can take minutes per child on
+  # hosted runners and exhaust their storage; their exit status and stderr are the test oracle.
+  ulimit -c 0
   $ctest_cmd --test-dir "$c_b" -j"$jobs" --timeout "$c_t" --output-junit "$c_j" --no-tests=error "$@"
 }
 

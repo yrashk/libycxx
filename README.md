@@ -393,8 +393,9 @@ both compilers on both platforms, the own suite under ASan+UBSan (Clang), all th
 ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
 with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
 suite on both compilers hardened, with `-fno-exceptions`, with `-O2` and without transitive
-includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`), and the benchmarks of `bench/` against their stored
-baseline of ratios to libstdc++ (`bench/check`: a FAIL is a regression that repeated in two
+includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`), and the benchmarks of `bench/` against their pinned
+baseline revision, measured on the same runner (`bench/check --reference-baseline`: a FAIL is
+a regression of the ratio to libstdc++ that repeated in two
 confirmation runs; DECISIONS §15). Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`

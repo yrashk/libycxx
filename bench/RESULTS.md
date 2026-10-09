@@ -5,7 +5,9 @@
 `bench/run` now builds each program against libycxx, libstdc++ and (Clang) libc++ 23.1 (Debian's
 `libc++-23-dev`, the build of the same LLVM release as the compiler), runs them R times
 interleaved and reports medians; `bench/check` compares the ratios to libstdc++ with
-`bench/baseline.json` (nightly, `full.yml`). Ratios below are libycxx / reference (below 1:
+`bench/baseline.json`. The nightly (`full.yml`) measures its pinned baseline revision on the
+same runner (`--reference-baseline`), since ratios vary with CPU and scheduling too.
+Ratios below are libycxx / reference (below 1:
 libycxx is faster). The machine was shared with other jobs (load 10 to 17 on 4 CPUs for most of
 the day), so wall-clock rows move by ±30% or more between runs; every change was also judged with
 callgrind instruction counts and, for the hot loops, by reading libycxx's generated assembly.

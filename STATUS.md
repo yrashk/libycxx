@@ -643,7 +643,9 @@ a defect in a test.
   `memory/ranges_uninitialized_parallel` (the returned end iterator of
   `ranges::uninitialized_default_construct`), which now checks the distance. Not worked around in
   the library: any function returning such a pointer is affected. libstdc++'s
-  `uninitialized_fill/constrained.cc` fails this way with GCC on macOS only (XFAIL gcc-darwin).
+  `uninitialized_fill/constrained.cc` previously failed this way with GCC on macOS; it passed
+  the 2026-10-09 nightly, so its expected-failure entry is removed. The reduced compiler bug
+  still depends on which functions GCC inlines.
 - GCC 16.2 assumes by default (`-fassume-sane-operators-new-delete`) that the replaceable global
   allocation and deallocation functions neither read nor change global state their callers see;
   a program's replacements may ([replacement.functions]). At -O2 a counter a replacement

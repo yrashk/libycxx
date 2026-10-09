@@ -1492,8 +1492,13 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   shared machine are noisy: changes are judged with `valgrind --tool=callgrind` instruction
   counts as well (and `perf record -e cpu-clock` where perf works).
 - **Regression check in CI** (`bench/check`, nightly in `full.yml`, one job per compiler). What
-  is stored (`bench/baseline.json`) and compared is each benchmark's ratio libycxx / libstdc++ in
-  the same run, which does not depend on the machine's speed; absolute times are never compared.
+  is stored (`bench/baseline.json`) is each benchmark's ratio libycxx / libstdc++ in
+  the same run; absolute times are never compared. Ratios still depend on CPU architecture,
+  compiler and scheduling, so CI uses `--reference-baseline`: it measures the pinned
+  `reference_commit` in a temporary worktree on the same runner with the same toolchain and
+  options. The stored ratios remain useful on the machine that recorded them. The initial
+  reference is `230111a4`, the final pass-2 code behind the stored results (their `906c1f8`
+  identifier predates the history rewrite).
   A benchmark fails when its ratio exceeds the baseline by more than 30% and 0.10 (a benchmark
   may have its own tolerance in the baseline), in the run and again in 2 confirmation runs of the
   suspects; a suspect that does not repeat is reported as noise. An intended slowdown, a new

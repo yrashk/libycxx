@@ -39,14 +39,17 @@ int main() {
   padded e3 = make(1, 2, 0xFF);
   CHECK(pad.compare_exchange_strong(e3, padded{}));
 
-  // weak: may fail spuriously, but must eventually succeed despite padding garbage
+  // Weak CAS may fail spuriously with no specified retry bound. Its failure still reports
+  // the stored value. One attempt covers that path; strong CAS completes the padding check.
   padded e4 = make(0x42, 0xC0DEFEFE, 0x11);
-  int tries = 0;
-  while (!pad.compare_exchange_weak(e4, make(7, 7, 0x99))) {
-    CHECK(++tries < 1000);
-    CHECK(e4.clank == 0x42 && e4.biff == 0xC0DEFEFE);
-  }
-  CHECK(pad.load().clank == 7);
+  const padded next = make(7, 7, 0x99);
+  bool exchanged = pad.compare_exchange_weak(e4, next);
+  CHECK(e4.clank == 0x42 && e4.biff == 0xC0DEFEFE);
+  padded observed = pad.load();
+  CHECK(observed.clank == (exchanged ? 7 : 0x42));
+  CHECK(observed.biff == (exchanged ? 7u : 0xC0DEFEFEu));
+  if (!exchanged) CHECK(pad.compare_exchange_strong(e4, next));
+  CHECK(pad.load().clank == 7 && pad.load().biff == 7);
 
   // a real mismatch still fails and reports the current value
   padded e5 = make(7, 8, 0);

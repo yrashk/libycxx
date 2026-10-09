@@ -1,0 +1,88 @@
+{
+  "test": "tests/ycxx/expected/invalid_error_array.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "expected.object.general",
+    "expected.void.general",
+    "expected.un.general"
+  ],
+  "normative_text": {
+    "expected.object.general": "22.8.6.1 General [expected.object.general]\nnamespace std {\n  template<class T, class E>\n  class expected {\n  public:\n    using value_type = T;\n    using error_type = E;\n    using unexpected_type = unexpected<E>;\n    template<class U>\n    using rebind = expected<U, error_type>;\n    // [expected.object.cons], constructors\n    constexpr expected();\n    constexpr expected(const expected&);\n    constexpr expected(expected&&) noexcept(see below);\n    template<class U, class G>\n      constexpr explicit(see below) expected(const expected<U, G>&);\n    template<class U, class G>\n      constexpr explicit(see below) expected(expected<U, G>&&);\n    template<class U = remove_cv_t<T>>\n      constexpr explicit(see below) expected(U&& v);\n    template<class G>\n      constexpr explicit(see below) expected(const unexpected<G>&);\n    template<class G>\n      constexpr explicit(see below) expected(unexpected<G>&&);\n    template<class... Args>\n      constexpr explicit expected(in_place_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit expected(in_place_t, initializer_list<U>, Args&&...);\n    template<class... Args>\n      constexpr explicit expected(unexpect_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit expected(unexpect_t, initializer_list<U>, Args&&...);\n    // [expected.object.dtor], destructor\n    constexpr ~expected();\n    // [expected.object.assign], assignment\n    constexpr expected& operator=(const expected&);\n    constexpr expected& operator=(expected&&) noexcept(see below);\n    template<class U = remove_cv_t<T>> constexpr expected& operator=(U&&);\n    template<class G>\n      constexpr expected& operator=(const unexpected<G>&);\n    template<class G>\n      constexpr expected& operator=(unexpected<G>&&);\n    template<class... Args>\n      constexpr T& emplace(Args&&...) noexcept;\n    template<class U, class... Args>\n      constexpr T& emplace(initializer_list<U>, Args&&...) noexcept;\n    // [expected.object.swap], swap\n    constexpr void swap(expected&) noexcept(see below);\n    friend constexpr void swap(expected& x, expected& y) noexcept(noexcept(x.swap(y)));\n    // [expected.object.obs], observers\n    constexpr const T* operator->() const noexcept;\n    constexpr T* operator->() noexcept;\n    constexpr const T& operator*() const & noexcept;\n    constexpr T& operator*() & noexcept;\n    constexpr const T&& operator*() const && noexcept;\n    constexpr T&& operator*() && noexcept;\n    constexpr explicit operator bool() const noexcept;\n    constexpr bool has_value() const noexcept;\n    constexpr bool has_error() const noexcept;\n    constexpr const T& value() const &;                                     // freestanding-deleted\n    constexpr T& value() &;                                                 // freestanding-deleted\n    constexpr const T&& value() const &&;                                   // freestanding-deleted\n    constexpr T&& value() &&;                                               // freestanding-deleted\n    constexpr const E& error() const & noexcept;\n    constexpr E& error() & noexcept;\n    constexpr const E&& error() const && noexcept;\n    constexpr E&& error() && noexcept;\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) const &;\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) &&;\n    template<class G = E> constexpr E error_or(G&&) const &;\n    template<class G = E> constexpr E error_or(G&&) &&;\n    // [expected.object.monadic], monadic operations\n    template<class F> constexpr auto and_then(F&& f) &;\n    template<class F> constexpr auto and_then(F&& f) &&;\n    template<class F> constexpr auto and_then(F&& f) const &;\n    template<class F> constexpr auto and_then(F&& f) const &&;\n    template<class F> constexpr auto or_else(F&& f) &;\n    template<class F> constexpr auto or_else(F&& f) &&;\n    template<class F> constexpr auto or_else(F&& f) const &;\n    template<class F> constexpr auto or_else(F&& f) const &&;\n    template<class F> constexpr auto transform(F&& f) &;\n    template<class F> constexpr auto transform(F&& f) &&;\n    template<class F> constexpr auto transform(F&& f) const &;\n    template<class F> constexpr auto transform(F&& f) const &&;\n    template<class F> constexpr auto transform_error(F&& f) &;\n    template<class F> constexpr auto transform_error(F&& f) &&;\n    template<class F> constexpr auto transform_error(F&& f) const &;\n    template<class F> constexpr auto transform_error(F&& f) const &&;\n    // [expected.object.eq], equality operators\n    template<class T2, class E2> requires (!is_void_v<T2>)\n      friend constexpr bool operator==(const expected& x, const expected<T2, E2>& y);\n    template<class T2>\n      friend constexpr bool operator==(const expected&, const T2&);\n    template<class E2>\n      friend constexpr bool operator==(const expected&, const unexpected<E2>&);\n  private:\n    bool has_val;           // exposition only\n    union {\n      remove_cv_t<T> val;   // exposition only\n      E unex;               // exposition only\n    };\n  };\n}\n1\n#\nAny object of type expected<T, E> either\ncontains a value of type T or\na value of type E\nnested within ([intro.object]) it.\n Member has_val indicates whether the expected<T, E> object\ncontains an object of type T.\n2\n#\nA type T is a valid value type for expected,\nif remove_cv_t<T> is void\nor a complete non-array object type that is not in_place_t,\nunexpect_t,\nor a specialization of unexpected.\n A program which instantiates class template expected<T, E>\nwith an argument T that is not a valid value\ntype for expected is ill-formed.\n A program that instantiates\nthe definition of the template expected<T, E>\nwith a type for the E parameter\nthat is not a valid template argument for unexpected is ill-formed.\n3\n#\nWhen T is not cv void, it shall meet\nthe Cpp17Destructible requirements (Table 35).\n E shall meet\nthe Cpp17Destructible requirements.\n",
+    "expected.void.general": "22.8.7.1 General [expected.void.general]\nnamespace std {\n  template<class T, class E> requires is_void_v<T>\n  class expected<T, E> {\n  public:\n    using ,value_type'>'>value_type = T;\n    using ,error_type'>'>error_type = E;\n    using ,unexpected_type'>'>unexpected_type = unexpected<E>;\n    template<class U>\n    using ,rebind'>'>rebind = expected<U, error_type>;\n    // [expected.void.cons], constructors\n    constexpr expected() noexcept;\n    constexpr expected(const expected&);\n    constexpr expected(expected&&) noexcept(see below);\n    template<class U, class G>\n      constexpr explicit(see below) expected(const expected<U, G>&);\n    template<class U, class G>\n      constexpr explicit(see below) expected(expected<U, G>&&);\n    template<class G>\n      constexpr explicit(see below) expected(const unexpected<G>&);\n    template<class G>\n      constexpr explicit(see below) expected(unexpected<G>&&);\n    constexpr explicit expected(in_place_t) noexcept;\n    template<class... Args>\n      constexpr explicit expected(unexpect_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit expected(unexpect_t, initializer_list<U>, Args&&...);\n    // [expected.void.dtor], destructor\n    constexpr ~expected();\n    // [expected.void.assign], assignment\n    constexpr expected& operator=(const expected&);\n    constexpr expected& operator=(expected&&) noexcept(see below);\n    template<class G>\n      constexpr expected& operator=(const unexpected<G>&);\n    template<class G>\n      constexpr expected& operator=(unexpected<G>&&);\n    constexpr void emplace() noexcept;\n    // [expected.void.swap], swap\n    constexpr void swap(expected&) noexcept(see below);\n    friend constexpr void swap(expected& x, expected& y) noexcept(noexcept(x.swap(y)));\n    // [expected.void.obs], observers\n    constexpr explicit operator bool() const noexcept;\n    constexpr bool has_value() const noexcept;\n    constexpr bool has_error() const noexcept;\n    constexpr void operator*() const noexcept;\n    constexpr void value() const &;                                         // freestanding-deleted\n    constexpr void value() &&;                                              // freestanding-deleted\n    constexpr const E& error() const & noexcept;\n    constexpr E& error() & noexcept;\n    constexpr const E&& error() const && noexcept;\n    constexpr E&& error() && noexcept;\n    template<class G = E> constexpr E error_or(G&&) const &;\n    template<class G = E> constexpr E error_or(G&&) &&;\n    // [expected.void.monadic], monadic operations\n    template<class F> constexpr auto and_then(F&& f) &;\n    template<class F> constexpr auto and_then(F&& f) &&;\n    template<class F> constexpr auto and_then(F&& f) const &;\n    template<class F> constexpr auto and_then(F&& f) const &&;\n    template<class F> constexpr auto or_else(F&& f) &;\n    template<class F> constexpr auto or_else(F&& f) &&;\n    template<class F> constexpr auto or_else(F&& f) const &;\n    template<class F> constexpr auto or_else(F&& f) const &&;\n    template<class F> constexpr auto transform(F&& f) &;\n    template<class F> constexpr auto transform(F&& f) &&;\n    template<class F> constexpr auto transform(F&& f) const &;\n    template<class F> constexpr auto transform(F&& f) const &&;\n    template<class F> constexpr auto transform_error(F&& f) &;\n    template<class F> constexpr auto transform_error(F&& f) &&;\n    template<class F> constexpr auto transform_error(F&& f) const &;\n    template<class F> constexpr auto transform_error(F&& f) const &&;\n    // [expected.void.eq], equality operators\n    template<class T2, class E2> requires is_void_v<T2>\n      friend constexpr bool operator==(const expected& x, const expected<T2, E2>& y);\n    template<class E2>\n      friend constexpr bool operator==(const expected&, const unexpected<E2>&);\n  private:\n    bool has_val;       // exposition only\n    union {\n      E unex;           // exposition only\n    };\n  };\n}\n1\n#\nAny object of type expected<T, E> either\nrepresents a value of type T, or\ncontains a value of type E\nnested within ([intro.object]) it.\n Member has_val indicates whether the expected<T, E> object\nrepresents a value of type T.\n2\n#\nA program that instantiates\nthe definition of the template expected<T, E> with\na type for the E parameter that\nis not a valid template argument for unexpected is ill-formed.\n3\n#\nE shall meet the requirements of\nCpp17Destructible (Table 35).\n",
+    "expected.un.general": "22.8.3.1 General [expected.un.general]\n1\n#\nSubclause [expected.unexpected] describes the class template unexpected\nthat represents unexpected objects stored in expected objects.\n\ud83d\udd17\nnamespace std {\n  template<class E>\n  class unexpected {\n  public:\n    // [expected.un.cons], constructors\n    constexpr unexpected(const unexpected&) = default;\n    constexpr unexpected(unexpected&&) = default;\n    template<class Err = E>\n      constexpr explicit unexpected(Err&&);\n    template<class... Args>\n      constexpr explicit unexpected(in_place_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit unexpected(in_place_t, initializer_list<U>, Args&&...);\n    constexpr unexpected& operator=(const unexpected&) = default;\n    constexpr unexpected& operator=(unexpected&&) = default;\n    constexpr const E& error() const & noexcept;\n    constexpr E& error() & noexcept;\n    constexpr const E&& error() const && noexcept;\n    constexpr E&& error() && noexcept;\n    constexpr void swap(unexpected& other) noexcept(see below);\n    template<class E2>\n      friend constexpr bool operator==(const unexpected&, const unexpected<E2>&);\n    friend constexpr void swap(unexpected& x, unexpected& y) noexcept(noexcept(x.swap(y)));\n  private:\n    E unex;             // exposition only\n  };\n  template<class E> unexpected(E) -> unexpected<E>;\n}\n2\n#\nA program that instantiates the definition of unexpected for\na non-object type,\nan array type,\na specialization of unexpected, or\na cv-qualified type\nis ill-formed.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::expected: E must be a valid argument for unexpected"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,4 +4,3 @@\n // specialization of unexpected, or cv-qualified types are not.) Here E is an array type.\n #include <expected>\n \n-int n = sizeof(std::expected<int, int[2]>);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/invalid_error_array.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::integral_constant<bool, false>::value': [expected.object.general] A program that instantiates the definition of template expected<T, E> for a reference type, a function type, or for possibly cv-qualified types in_place_t, unexpect_t, or a specialization of unexpected for the T parameter is ill-formed. A program that instantiates the definition of the template expected<T, E> with a type for the E parameter that is not a valid template argument for unexpected is ill-formed."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/invalid_error_array.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__invalid_error_array.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

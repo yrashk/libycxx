@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/array/deduction_mismatch.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "array.cons"
+  ],
+  "normative_text": {
+    "array.cons": "23.3.3.2 Constructors, copy, and assignment [array.cons]\n1\n#\nAn array relies on the implicitly-declared special\nmember functions ([class.default.ctor], [class.dtor], [class.copy.ctor]) to\nconform to the container requirements table in [container.requirements].\n In addition to the requirements specified in the container requirements table,\nthe implicitly-declared move constructor and move assignment operator for array\nrequire that T be Cpp17MoveConstructible or Cpp17MoveAssignable,\nrespectively.\n\ud83d\udd17\ntemplate<class T, class... U>\n  array(T, U...) -> array<T, 1 + sizeof...(U)>;\n2\n#\nMandates: (is_same_v<T, U> && ...) is true.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function for call to 'array\\(int, long int\\)'"
+    ],
+    "clang": [
+      "error: no viable constructor or deduction guide.*'std::array'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [array.cons]/2: deduction guide array(T, U...): \"Mandates: (is_same_v<T, U> && ...) is true.\"\n #include <array>\n \n-std::array a{1, 2L};\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/deduction_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no viable constructor or deduction guide for deduction of template arguments of 'std::array'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/deduction_mismatch.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__deduction_mismatch.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "class template argument deduction failed:"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

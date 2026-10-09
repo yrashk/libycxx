@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::unique_ptr::operator\*: would bind a reference to a temporary
 // [unique.ptr.single.observers]/1-2: operator*: "Mandates:
 // reference_converts_from_temporary_v<add_lvalue_reference_t<T>, decltype(*declval<pointer>())>
 // is false." Here *pointer yields a prvalue int, which const int& would bind to a temporary.

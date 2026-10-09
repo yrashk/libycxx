@@ -563,7 +563,8 @@
       "changes": "Create a live MakeEmpty source via in_place_index, then force destination type-changing variant move assignment to throw.",
       "boundary_investigation": "Reviewed variant move assignment, valueless propagation, swap/visit/get and restoration paths. Required fixture passes libycxx. Both references fail later one-valueless swap (already described in REFERENCE.md); fixture itself is valid.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "ad758c3b5d3a3168e6485ee0a81f9911e6cbad8f"
     },
     {
       "id": "C06",
@@ -581,7 +582,44 @@
       ],
       "remedy": "Use the required move-assignment failure case to construct the fixture.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc variant/relops_valueless.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C06', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang variant/relops_valueless.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C06', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc variant/relops_valueless.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C06', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang variant/relops_valueless.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C06', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -L/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Wl,-rpath,/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Itests/ycxx/support tests/ycxx/variant/relops_valueless.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C06-libcxx.exe -lc++abi\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C06', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C06-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "variant.mod/11 allows restoration after emplace failure, including same-alternative emplace. variant.assign/10.1 requires valueless on type-changing move construction failure.",
+      "changes": "Use int destination and T source with throwing move constructor and valid move assignment; retain complete valueless relation matrix and no-comparison counter.",
+      "boundary_investigation": "Reviewed comparison dispatch and fixture requirements; both-valueless and value-vs-valueless comparisons cover first and second alternative. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C22",

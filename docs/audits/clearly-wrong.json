@@ -168,7 +168,8 @@
       "changes": "Verify pushed contents, null terminator and capacity >= size; refresh capacity before later reserve/shrink checks, test pointer stability only for no-reallocation reserve.",
       "boundary_investigation": "Reviewed string resize/reserve/shrink implementation and zero/oversize tests; existing length_error check retains original contents. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "004991bc6c5a8de83fa2f4c0b07e3e00a6b9fcf5"
     },
     {
       "id": "C07",
@@ -370,7 +371,44 @@
       ],
       "remedy": "Fill to actual capacity to force growth; keep any exact move-count policy separate from conformance.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc containers/emplace_in_place_sequences.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C02', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C02-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang containers/emplace_in_place_sequences.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C02', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C02-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc containers/emplace_in_place_sequences.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C02', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C02-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang containers/emplace_in_place_sequences.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C02', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C02-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -Itests/ycxx/support tests/ycxx/containers/emplace_in_place_sequences.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C02-libcxx.exe\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C02', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C02-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "vector.capacity/9 shrink_to_fit is non-binding; vector.modifiers/2 does not specify relocation counts. sequence.reqmts specifies construction from forwarded arguments and preserved contents.",
+      "changes": "Fill actual capacity; verify all fields after growth and account net constructed minus destroyed targets without specifying moves versus copies. Remove priority_queue copy-only assumptions in same fixture.",
+      "boundary_investigation": "Reviewed inplace_probe.hpp and core/vector.hpp; growth covers argument categories and complete field preservation, plus lifetime balance. No actual library defect found; libc++ lacks current inplace_vector optional-reference API.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C23",

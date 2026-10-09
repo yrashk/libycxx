@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::simd: the conversion from the element type to the range's value type is not value\-preserving \(pass flag_convert\)
 // [simd.loadstore]/17.2: partial_store (and so unchecked_store) Mandates: without convert-flag the
 // conversion from T to range_value_t<R> is value-preserving. int -> short is not.
 #include <simd>

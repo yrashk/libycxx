@@ -39,6 +39,10 @@ Optional directives:
   // EXPECT-ERROR-GCC: <regex>, // EXPECT-ERROR-CLANG: <regex>   the same, for one compiler only
                                           (where the wording differs: GCC's "use of deleted
                                           function" is Clang's "call to deleted ...")
+  // EXPECT-ERROR-GCC[exceptions]: <regex>   apply a diagnostic only when the bracketed lit
+                                          feature expression holds (as in REQUIRES). For example,
+                                          [!exceptions] checks the error handler path instead of
+                                          an uncaught exception in constant evaluation.
   // REQUIRES: <features>   (repeatable) run only when the boolean expression of lit features
                                           (&&, ||, !, parentheses; a comma is &&) holds, else
                                           UNSUPPORTED. Features: the compiler (gcc, clang), the
@@ -76,7 +80,7 @@ ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
 XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)(?:-(linux|darwin))?\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
-EXPECT_ERROR = re.compile(r'^//[ \t]*EXPECT-ERROR(?:-(GCC|CLANG))?:[ \t]*(.*?)[ \t\r]*$', re.M)
+EXPECT_ERROR = re.compile(r'^//[ \t]*EXPECT-ERROR(?:-(GCC|CLANG))?(?:\[([^\]\n]*)\])?:[ \t]*(.*?)[ \t\r]*$', re.M)
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
 MODULES = re.compile(r'^//\s*MODULES:(.*)$', re.M)
 EXPECT_TERMINATE = re.compile(r'^//\s*EXPECT-TERMINATE(?::\s*(.*?))?\s*$', re.M)
@@ -145,8 +149,20 @@ class YcxxFormat(lit.formats.FileBasedTest):
         """A failed compile passes when its diagnostics match every EXPECT-ERROR regex that applies
         to this compiler. Matched against what the compiler printed: the transcript's first two
         lines (the command and its exit status) are left out, since the command names the test."""
-        expected = [m.group(2) for m in EXPECT_ERROR.finditer(src)
-                    if m.group(1) in (None, self.compiler.upper())]
+        expected = []
+        for m in EXPECT_ERROR.finditer(src):
+            if m.group(1) not in (None, self.compiler.upper()):
+                continue
+            if m.group(2) is not None:
+                try:
+                    if not m.group(2).strip():
+                        raise ValueError('empty feature expression')
+                    expr = ' && '.join(f'({e.strip()})' for e in m.group(2).split(','))
+                    if not BooleanExpression.evaluate(expr, self.features):
+                        continue
+                except ValueError as e:
+                    return lit.Test.Result(lit.Test.FAIL, f'EXPECT-ERROR[{m.group(2)}]: {e}\n' + out)
+            expected.append(m.group(3))
         if not expected:
             return lit.Test.Result(lit.Test.FAIL, 'failed to compile, but no EXPECT-ERROR pattern '
                                    f'applies to {self.compiler}\n' + out)

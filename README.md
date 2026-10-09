@@ -321,6 +321,10 @@ transcript names each regex that did not match, so a test cannot pass on an unre
 
 Every negative test must have a nonempty expectation applicable to the compiler running it;
 a failed compilation without one is a test failure.
+An expectation can select a configuration with a lit feature expression, such as
+`EXPECT-ERROR-GCC[exceptions]:` or `EXPECT-ERROR-GCC[!exceptions]:`. Constant evaluation
+rejects a throw with exceptions enabled and a call to the non-constexpr error handler with
+exceptions disabled; both expectations must identify the specific reason for rejection.
 
 `// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
 it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,

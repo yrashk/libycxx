@@ -6,8 +6,8 @@ from ycxxlit.ycxx_format import YcxxFormat
 
 
 class ExpectedErrorsTests(unittest.TestCase):
-    def check(self, source, diagnostics, compiler='gcc', command='test.cpp'):
-        fmt = YcxxFormat('ycxx-cxx', compiler, [])
+    def check(self, source, diagnostics, compiler='gcc', command='test.cpp', features=()):
+        fmt = YcxxFormat('ycxx-cxx', compiler, [], features=features)
         return fmt.check_expected_errors(source, f'$ {command}\n[compile: exit 1]\n{diagnostics}')
 
     def test_no_directive_cannot_accept_an_unrelated_failure(self):
@@ -62,6 +62,45 @@ class ExpectedErrorsTests(unittest.TestCase):
         self.assertEqual(self.check(source, 'error: use of deleted function constructor').code, lit.Test.PASS)
         self.assertEqual(self.check(source, 'error: call to deleted constructor', compiler='clang').code,
                          lit.Test.PASS)
+
+    def test_exception_configuration_selects_its_diagnostic(self):
+        source = ('// EXPECT-ERROR-GCC[exceptions]: uncaught exception\n'
+                  '// EXPECT-ERROR-GCC[!exceptions]: non-constexpr error handler')
+        self.assertEqual(self.check(source, 'error: uncaught exception', features=['exceptions']).code,
+                         lit.Test.PASS)
+        self.assertEqual(self.check(source, 'error: non-constexpr error handler').code, lit.Test.PASS)
+        self.assertEqual(self.check(source, 'error: uncaught exception').code, lit.Test.FAIL)
+        self.assertEqual(self.check(source, 'error: non-constexpr error handler',
+                                    features=['exceptions']).code, lit.Test.FAIL)
+
+    def test_conditional_diagnostic_still_requires_the_specific_reason(self):
+        source = ('// EXPECT-ERROR[!exceptions]: non-constexpr error handler\n'
+                  '// EXPECT-ERROR[!exceptions]: invalid presentation type')
+        self.assertEqual(self.check(source, 'error: non-constexpr error handler\n'
+                                    'note: invalid presentation type').code, lit.Test.PASS)
+        self.assertEqual(self.check(source, 'error: non-constexpr error handler\n'
+                                    'note: unmatched brace').code, lit.Test.FAIL)
+
+    def test_feature_expression_and_compiler_both_apply(self):
+        source = ('// EXPECT-ERROR-GCC[exceptions && !asan]: gcc error\n'
+                  '// EXPECT-ERROR-CLANG[exceptions]: clang error')
+        self.assertEqual(self.check(source, 'gcc error', features=['exceptions']).code, lit.Test.PASS)
+        self.assertEqual(self.check(source, 'gcc error', features=['exceptions', 'asan']).code,
+                         lit.Test.FAIL)
+        self.assertEqual(self.check(source, 'gcc error', compiler='clang', features=['exceptions']).code,
+                         lit.Test.FAIL)
+
+    def test_invalid_or_empty_feature_expression_fails(self):
+        for expr in ('', 'exceptions &&'):
+            with self.subTest(expr=expr):
+                result = self.check(f'// EXPECT-ERROR[{expr}]: error', 'error')
+                self.assertEqual(result.code, lit.Test.FAIL)
+                self.assertIn('EXPECT-ERROR[', result.output)
+
+    def test_comma_is_conjunction_as_in_requires(self):
+        source = '// EXPECT-ERROR[exceptions, !asan]: error'
+        self.assertEqual(self.check(source, 'error', features=['exceptions']).code, lit.Test.PASS)
+        self.assertEqual(self.check(source, 'error', features=['exceptions', 'asan']).code, lit.Test.FAIL)
 
 
 if __name__ == '__main__':

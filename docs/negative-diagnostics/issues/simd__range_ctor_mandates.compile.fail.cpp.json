@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/simd/range_ctor_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "simd.ctor"
+  ],
+  "normative_text": {
+    "simd.ctor": "29.10.7.2 Constructors [simd.ctor]\n\ud83d\udd17\ntemplate<class U> constexpr basic_vec(U&& value) noexcept;\n1\n#\nLet From denote the type remove_cvref_t<U>.\n2\n#\nConstraints: (2.1)\nU satisfies convertible_to<value_type> and\nFrom is not an arithmetic type and\ndoes not satisfy constexpr-wrapper-like,\n(2.2)\nFrom is an arithmetic type and\nthe conversion from From to value_type\nis value-preserving ([simd.general]), or\n(2.3)\nFrom satisfies constexpr-wrapper-like,\nremove_cvref_t<decltype(From\u200b::\u200bvalue)> is an arithmetic type, and\nFrom\u200b::\u200bvalue is representable by value_type.\n3\n#\nEffects: Initializes each element to the value of the argument after conversion to\nvalue_type.\n\ud83d\udd17\ntemplate<class U, class UAbi>\n  constexpr explicit(see below) basic_vec(const basic_vec<U, UAbi>& x) noexcept;\n4\n#\nConstraints: (4.1)\nsimd-size-v<U, UAbi> == size() is true, and\n(4.2)\nU satisfies explicitly-convertible-to<T>.\n5\n#\nEffects: Initializes the ith element with static_cast<T>(x[i]) for\nall i in the range of [0, size()).\n6\n#\nRemarks: The expression inside explicit evaluates to true if either\n(6.1)\nthe conversion from U to value_type is not value-preserving,\n   or\n(6.2)\nboth U and value_type are integral types and the integer\n   conversion rank ([conv.rank]) of U is greater than the integer\n   conversion rank of value_type, or\n(6.3)\nboth U and value_type are floating-point types and the\n   floating-point conversion rank ([conv.rank]) of U is greater than\n   the floating-point conversion rank of value_type.\n\ud83d\udd17\ntemplate<class G> constexpr explicit basic_vec(G&& gen);\n7\n#\nLet Fromi denote the type\ndecltype(gen(integral_constant<simd-size-type, i>())).\n8\n#\nConstraints: Fromi satisfies convertible_to<value_type> for all i in\nthe range of [0, size()).\n In addition, for all i in the range of [0, size()), if Fromi\nis an arithmetic type, conversion from Fromi to value_type\nis value-preserving.\n9\n#\nEffects: Initializes the ith element with\nstatic_cast<value_type>(gen(integral_constant<simd-\u200bsize-\u200btype,\ni>())) for all i in the range of [0, size()).\n10\n#\nRemarks: gen is invoked exactly once for each i, in increasing order of i.\n\ud83d\udd17\ntemplate<class R, class... Flags>\n  constexpr basic_vec(R&& r, flags<Flags...> = {});\ntemplate<class R, class... Flags>\n  constexpr basic_vec(R&& r, const mask_type& mask, flags<Flags...> = {});\n11\n#\nLet mask be mask_type(true) for the overload with no\nmask parameter.\n12\n#\nConstraints: (12.1)\nR models ranges\u200b::\u200bcontiguous_range and\n  ranges\u200b::\u200bsized_range,\n(12.2)\nranges\u200b::\u200bsize(r) is a constant expression,\n(12.3)\nranges\u200b::\u200bsize(r) is equal to size(), and\n(12.4)\nranges\u200b::\u200brange_value_t<R> is a vectorizable type and\n  satisfies explicitly-convertible-to<T>.\n13\n#\nMandates: If the template parameter pack Flags does not contain\nconvert-flag, then the conversion from\nranges\u200b::\u200brange_value_t<R> to value_type is value-preserving.\n14\n#\nPreconditions: (14.1)\nIf the template parameter pack Flags contains\n   aligned-flag, ranges\u200b::\u200bdata(r) points to\n   storage aligned by alignment_v<basic_vec,\n   ranges\u200b::\u200brange_value_t<R>>.\n(14.2)\nIf the template parameter pack Flags contains\n   overaligned-flag<N>, ranges\u200b::\u200bdata(r) points to\n   storage aligned by N.\n15\n#\nEffects: Initializes the ith element with mask[i] ?\nstatic_cast<T>(\u200branges\u200b::\u200b\u200bdata(r)[i]) : T() for all i in the\nrange of [0, size()).\n\ud83d\udd17\ntemplate<class R, class... Ts>\n  basic_vec(R&& r, Ts...) -> see below;\n16\n#\nConstraints: (16.1)\nR models ranges\u200b::\u200bcontiguous_range and\n  ranges\u200b::\u200bsized_range, and\n(16.2)\nranges\u200b::\u200bsize(r) is a constant expression.\n17\n#\nRemarks: The deduced type is equivalent to\nvec<ranges::range_value_t<R>, static_cast<simd-size-type>(ranges::size(r))>\n\ud83d\udd17\ntemplate<size_t Bytes, class Abi>\n  basic_vec(basic_mask<Bytes, Abi> k) -> see below;\n18\n#\nConstraints: basic_mask<Bytes, Abi> is an enabled specialization of basic_mask and\ndecltype(+k) is a valid type.\n19\n#\nRemarks: The deduced type is equivalent to decltype(+k).\n\ud83d\udd17\nconstexpr basic_vec(const real-type& reals, const real-type& imags = {}) noexcept;\n20\n#\nConstraints: simd-complex<basic_vec> is modeled.\n21\n#\nEffects: Initializes the ith element with value_type(reals[i],\nimags[i]) for all i in the range [0, size()).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::simd::basic_vec: the conversion from the range's value type is not value\\-preserving \\(pass flag_convert\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [simd.ctor]/13: Mandates: if Flags does not contain convert-flag, the conversion from\n // range_value_t<R> to value_type is value-preserving. double -> float is not; the control passes\n // flag_convert.\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/range_ctor_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "'simd' file not found"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/simd/range_ctor_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/simd__range_ctor_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "'std::simd' has not been declared"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

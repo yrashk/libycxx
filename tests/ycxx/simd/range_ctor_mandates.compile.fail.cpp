@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::simd::basic_vec: the conversion from the range's value type is not value\-preserving \(pass flag_convert\)
 // [simd.ctor]/13: Mandates: if Flags does not contain convert-flag, the conversion from
 // range_value_t<R> to value_type is value-preserving. double -> float is not; the control passes
 // flag_convert.

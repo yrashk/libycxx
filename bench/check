@@ -12,8 +12,9 @@ and load differences, but still depend on CPU architecture, toolchains and sched
 --reference-baseline (used by CI), measure the baseline's reference_commit in a temporary git
 worktree on the same machine with the same compiler, options and run counts, then compare with
 those ratios. Confirmation runs remeasure both revisions, so noise in the initial baseline
-measurement cannot confirm a regression. Baseline measurements are saved beside --json-out as
-*.baseline*.json. Without
+measurement cannot confirm a regression. Confirmation ratios share the current run's libstdc++
+control measurement: the identical control must not create a difference between the two libycxx
+revisions. Baseline measurements are saved beside --json-out as *.baseline*.json. Without
 that option, compare with the stored ratios, intended for the machine that recorded them.
 
 A benchmark regresses when its ratio exceeds the baseline's by more than the tolerance: relative
@@ -54,10 +55,11 @@ def key_of(r):
     return f"{r['cc']}: {r['prog']}: {r['name']}"
 
 
-def ratios(doc):
+def ratios(doc, control=None):
+    controls = {key_of(r): r["ns"].get("libstdc++") for r in (control or doc)["results"]}
     out = {}
     for r in doc["results"]:
-        y, s = r["ns"].get("ycxx"), r["ns"].get("libstdc++")
+        y, s = r["ns"].get("ycxx"), controls.get(key_of(r))
         if y and s and s > 0:
             out[key_of(r)] = y / s
     return out
@@ -189,7 +191,7 @@ def compare(a, ccs, base, reference_runner=None):
                     reference_ratios = ratios(run_bench(
                         [cc], a.runs, a.samples, a.opt, sorted(names), progs,
                         Path(a.json_out).with_suffix(f".baseline.confirm{i + 1}-{cc}.json"),
-                        reference_runner))
+                        reference_runner), control=d)
                 for k in suspects:
                     if k.startswith(cc + ": "):
                         suspects[k].append(rr.get(k, float("nan")))

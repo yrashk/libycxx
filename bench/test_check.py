@@ -107,6 +107,22 @@ Path(a.json).write_text''')
         self.assertIn('bench/run failed (7)', result.stderr)
         self.assert_clean_worktrees()
 
+    def test_control_noise_cannot_create_difference_between_revisions(self):
+        noisy = FAKE_RUN.replace("'libstdc++': 1", "'libstdc++': (100 if (root / '.git').is_file() else 1)")
+        (self.root / 'bench/run').write_text(noisy)
+        self.git('add', 'bench/run')
+        self.git('-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+                 'commit', '-qm', 'noisy control')
+        base = self.root / 'bench/baseline.json'
+        doc = json.loads(base.read_text())
+        doc['reference_commit'] = self.git('rev-parse', 'HEAD').stdout.strip()
+        base.write_text(json.dumps(doc))
+        result = self.check('--reference-baseline')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('1 suspect(s), 0 confirmed', result.stdout)
+        self.assertIn('reference ratios 1.00 1.00', result.stdout)
+        self.assert_clean_worktrees()
+
     def test_update_pins_the_measured_revision(self):
         measurement = self.root / 'measured.json'
         measurement.write_text(json.dumps({'commit': self.ref, 'results': [

@@ -1500,7 +1500,9 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   reference is `230111a4`, the final pass-2 code behind the stored results (their `906c1f8`
   identifier predates the history rewrite).
   Confirmation runs remeasure both revisions for the suspects; an unusually low initial
-  baseline ratio must repeat too before it can fail the job.
+  baseline ratio must repeat too before it can fail the job. Both confirmation ratios use
+  the current run's libstdc++ control time, so fluctuation in the identical control cannot
+  create a difference between the two libycxx revisions.
   A benchmark fails when its ratio exceeds the baseline by more than 30% and 0.10 (a benchmark
   may have its own tolerance in the baseline), in the run and again in 2 confirmation runs of the
   suspects; a suspect that does not repeat is reported as noise. An intended slowdown, a new

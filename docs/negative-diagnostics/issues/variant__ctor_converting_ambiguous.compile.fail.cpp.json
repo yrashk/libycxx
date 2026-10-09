@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/variant/ctor_converting_ambiguous.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.ctor"
+  ],
+  "normative_text": {
+    "variant.ctor": "22.6.3.2 Constructors [variant.ctor]\n1\n#\nIn the descriptions that follow, let i be in the range [0, sizeof...(Types)),\nand Ti be the ith type in Types.\n\ud83d\udd17\nconstexpr variant() noexcept(see below);\n2\n#\nConstraints: is_default_constructible_v<T0> is true.\n3\n#\nEffects: Constructs a variant holding a value-initialized value of type T0.\n4\n#\nPostconditions: valueless_by_exception() is false and index() is 0.\n5\n#\nThrows: Any exception thrown by the value-initialization of T0.\n6\n#\nRemarks: This function is constexpr if and only if the\nvalue-initialization of the alternative type T0\nwould be constexpr-suitable ([dcl.constexpr]).\n The exception specification is equivalent to\nis_nothrow_default_constructible_v<T0>.\n [Note\u00a01:\u2002See also class monostate.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr variant(const variant& w) noexcept(see below);\n7\n#\nEffects: If w holds a value, initializes the variant to hold the same\nalternative as w and direct-initializes the contained value\nwith GET<j>(w), where j is w.index().\n Otherwise, initializes the variant to not hold a value.\n8\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n9\n#\nRemarks: This constructor is defined as deleted unless\nis_copy_constructible_v<Ti> is true for all i.\n If is_trivially_copy_constructible_v<Ti>\nis true for all i, this constructor is trivial.\n The exception specification is equivalent to the logical and of\nis_nothrow_copy_constructible_v<Ti> for all i.\n\ud83d\udd17\nconstexpr variant(variant&& w) noexcept(see below);\n10\n#\nConstraints: is_move_constructible_v<Ti> is true for all i.\n11\n#\nEffects: If w holds a value, initializes the variant to hold the same\nalternative as w and direct-initializes the contained value with\nGET<j>(std\u200b::\u200bmove(w)), where j is w.index().\n Otherwise, initializes the variant to not hold a value.\n12\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n13\n#\nRemarks: The exception specification is equivalent to the logical and of\nis_nothrow_move_constructible_v<Ti> for all i.\n If is_trivially_move_constructible_v<Ti>\nis true for all i, this constructor is trivial.\n\ud83d\udd17\ntemplate<class T> constexpr variant(T&& t) noexcept(see below);\n14\n#\nLet Tj be a type that is determined as follows:\nbuild an imaginary function FUN(Ti)\nfor each alternative type Ti\nfor which Ti x[] = {std\u200b::\u200bforward<T>(t)};\nis well-formed for some invented variable x.\n The overload FUN(Tj) selected by overload\nresolution for the expression FUN(std\u200b::\u200bforward<T>(\u200bt)) defines\nthe alternative Tj which is the type of the contained value after\nconstruction.\n15\n#\nConstraints: (15.1)\nsizeof...(Types) is nonzero,\n(15.2)\nis_same_v<remove_cvref_t<T>, variant> is false,\n(15.3)\nremove_cvref_t<T> is neither\na specialization of in_place_type_t nor\na specialization of in_place_index_t,\n(15.4)\nis_constructible_v<Tj, T> is true, and\n(15.5)\nthe expression FUN(\u200bstd\u200b::\u200bforward<T>(t))\n(with FUN being the above-mentioned set of\nimaginary functions) is well-formed. [Note\u00a02:\u2002variant<string, string> v(\"abc\");\nis ill-formed, as both alternative types have an equally viable constructor\nfor the argument.\n \u2014\u00a0end note]\n16\n#\nEffects: Initializes *this to hold the alternative type Tj and\ndirect-non-list-initializes the contained value with std\u200b::\u200bforward<T>(t).\n17\n#\nPostconditions: holds_alternative<Tj>(*this) is true.\n18\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n19\n#\nRemarks: The exception specification is equivalent to\nis_nothrow_constructible_v<Tj, T>.\n If Tj's selected constructor is a constexpr constructor,\nthis constructor is a constexpr constructor.\n\ud83d\udd17\ntemplate<class T, class... Args> constexpr explicit variant(in_place_type_t<T>, Args&&... args);\n20\n#\nConstraints: (20.1)\nThere is exactly one occurrence of T in Types... and\n(20.2)\nis_constructible_v<T, Args...> is true.\n21\n#\nEffects: Direct-non-list-initializes the contained value of type T\nwith std\u200b::\u200bforward<Args>(args)....\n22\n#\nPostconditions: holds_alternative<T>(*this) is true.\n23\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n24\n#\nRemarks: If T's selected constructor is a constexpr constructor, this\nconstructor is a constexpr constructor.\n\ud83d\udd17\ntemplate<class T, class U, class... Args>\n  constexpr explicit variant(in_place_type_t<T>, initializer_list<U> il, Args&&... args);\n25\n#\nConstraints: (25.1)\nThere is exactly one occurrence of T in Types... and\n(25.2)\nis_constructible_v<T, initializer_list<U>&, Args...> is true.\n26\n#\nEffects: Direct-non-list-initializes the contained value of type T\nwith il, std\u200b::\u200bforward<Args>(\u200bargs)....\n27\n#\nPostconditions: holds_alternative<T>(*this) is true.\n28\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n29\n#\nRemarks: If T's selected constructor is a constexpr constructor, this\nconstructor is a constexpr constructor.\n\ud83d\udd17\ntemplate<size_t I, class... Args> constexpr explicit variant(in_place_index_t<I>, Args&&... args);\n30\n#\nConstraints: (30.1)\nI is less than sizeof...(Types) and\n(30.2)\nis_constructible_v<TI, Args...> is true.\n31\n#\nEffects: Direct-non-list-initializes the contained value of type TI\nwith std\u200b::\u200bforward<Args>(args)....\n32\n#\nPostconditions: index() is I.\n33\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n34\n#\nRemarks: If TI's selected constructor is a constexpr constructor, this\nconstructor is a constexpr constructor.\n\ud83d\udd17\ntemplate<size_t I, class U, class... Args>\n  constexpr explicit variant(in_place_index_t<I>, initializer_list<U> il, Args&&... args);\n35\n#\nConstraints: (35.1)\nI is less than sizeof...(Types) and\n(35.2)\nis_constructible_v<TI, initializer_list<U>&, Args...> is true.\n36\n#\nEffects: Direct-non-list-initializes the contained value of type TI\nwith il, std\u200b::\u200bforward<Args>(\u200bargs)....\n37\n#\nPostconditions: index() is I.\n38\n#\nThrows: Any exception thrown by\nthe initialization of the contained value.\n39\n#\nRemarks: If TI's selected constructor is a constexpr constructor, this\nconstructor is a constexpr constructor.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function [^\\n]*std::variant<S, S>::variant\\("
+    ],
+    "clang": [
+      "error: no matching constructor for initialization of 'std::variant<S, S>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,6 +6,4 @@\n struct S { S(const char*) {} };\n \n void f() {\n-  std::variant<S, S> v(\"abc\");\n-  (void)v;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/ctor_converting_ambiguous.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching constructor for initialization of 'std::variant<S, S>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/ctor_converting_ambiguous.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__ctor_converting_ambiguous.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'std::variant<S, S>::variant(const char [4])'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

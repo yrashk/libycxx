@@ -304,7 +304,7 @@ void load_numpunct(const char* name, __charT& __point, __charT& __sep, std::stri
 // The pattern of POSIX's cs_precedes, sep_by_space and sign_posn ([locale.moneypunct.general]/3:
 // none never first, space neither first nor last). A separating space is a space field; where
 // the format has no space, the none field marks where internal padding goes.
-std::money_base::pattern money_pattern(char cs_precedes, char sep_by_space, char sign_posn,
+std::money_base::pattern money_pattern(int cs_precedes, int sep_by_space, int sign_posn,
                                        std::money_base::pattern __dflt) {
   using _Mp = std::money_base;
   if (cs_precedes == CHAR_MAX || sep_by_space == CHAR_MAX || sign_posn == CHAR_MAX || sep_by_space < 0 ||
@@ -350,7 +350,7 @@ void load_money(const char* name, bool intl, __ycxx::__detail::__money_data<__ch
   d.symbol = __convert(__loc, intl ? __l.int_curr_symbol.c_str() : __l.currency_symbol.c_str(), __charT());
   d.__positive = __convert(__loc, __l.positive_sign.c_str(), __charT());
   d.__negative = __convert(__loc, __l.negative_sign.c_str(), __charT());
-  const char __frac = intl ? __l.int_frac_digits : __l.frac_digits;
+  const int __frac = intl ? __l.int_frac_digits : __l.frac_digits;
   d.frac_digits = __frac == CHAR_MAX || __frac < 0 ? 0 : __frac;
   const char __pcs = intl ? __l.int_p_cs_precedes : __l.p_cs_precedes, psep = intl ? __l.int_p_sep_by_space : __l.p_sep_by_space,
              ppos = intl ? __l.int_p_sign_posn : __l.p_sign_posn, ncs = intl ? __l.int_n_cs_precedes : __l.n_cs_precedes,

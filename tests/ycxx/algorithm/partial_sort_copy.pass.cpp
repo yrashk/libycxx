@@ -1,3 +1,6 @@
+// Libycxx performance policy: 3 N ceil(log2 M) + 3 N comparisons for the fixed inputs.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [partial.sort.copy]: with N = min(last - first, result_last - result_first), "Places the
 // first N elements as sorted with respect to comp and proj2 into the range [result_first,
 // result_first + N)"; returns result_first + N (std), {last, result_first + N} (ranges,
@@ -79,7 +82,7 @@ constexpr bool test() {
 static_assert(test());
 
 constexpr int N = 2000;
-int big[N], out[N];
+int big[N], out[N], original[N];
 
 int main() {
   CHECK(test());
@@ -88,10 +91,12 @@ int main() {
   for (int m : {1, 10, 100, 2000}) {
     for (Pattern p : all_patterns) {
       fill_pattern(big, N, p);
+      for (int i = 0; i < N; ++i) original[i] = big[i];
       int comps = 0, projs = 0;
       auto r = std::ranges::partial_sort_copy(big, big + N, out, out + m, CountingLess{&comps}, CountingProj{&projs},
                                               CountingProj{&projs});
-      CHECK(r.out == out + m);
+      CHECK(r.in == big + N && r.out == out + m);
+      for (int i = 0; i < N; ++i) CHECK(big[i] == original[i]);
       CHECK(sorted_by(out, out + m));
       CHECK(comps <= 3LL * N * ceil_log2(m) + 3LL * N);
       CHECK(projs <= 2 * comps);

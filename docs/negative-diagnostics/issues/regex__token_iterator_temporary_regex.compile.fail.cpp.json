@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/regex/token_iterator_temporary_regex.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "re.tokiter"
+  ],
+  "normative_text": {
+    "re.tokiter": "28.6.11.2 Class template regex_token_iterator [re.tokiter]\n\n28.6.11.2.1 General [re.tokiter.general]\n1\n#\nThe class template regex_token_iterator is an iterator adaptor; that\nis to say it represents a new view of an existing iterator sequence,\nby enumerating all the occurrences of a regular expression within that\nsequence, and presenting one or more sub-expressions for each match\nfound.\n Each position enumerated by the iterator is a sub_match class\ntemplate instance that represents what matched a particular sub-expression\nwithin the regular expression.\n2\n#\nWhen class regex_token_iterator is used to enumerate a\nsingle sub-expression with index \u22121 the iterator performs field\nsplitting: that is to say it enumerates one sub-expression for each section of\nthe character container sequence that does not match the regular\nexpression specified.\n3\n#\nAfter it is constructed, the iterator finds and stores a value\nregex_iterator<BidirectionalIterator> position\nand sets the internal count N to zero.\n It also maintains a sequence\nsubs which contains a list of the sub-expressions which will be\nenumerated.\n Every time operator++ is used\nthe count N is incremented; if N exceeds or equals subs.size(),\nthen the iterator increments member position\nand sets count N to zero.\n4\n#\nIf the end of sequence is reached (position is equal to the end of\nsequence iterator), the iterator becomes equal to the end-of-sequence\niterator value, unless the sub-expression being enumerated has index \u22121,\nin which case the iterator enumerates one last sub-expression that contains\nall the characters from the end of the last regular expression match to the\nend of the input sequence being enumerated, provided that this would not be an\nempty sub-expression.\n5\n#\nThe default constructor constructs\nan end-of-sequence iterator object, which is the only legitimate\niterator to be used for the end condition.\n The result of operator* on\nan end-of-sequence iterator is not defined.\n For any other iterator value a\nconst sub_match<BidirectionalIterator>& is returned.\n The result of operator-> on an end-of-sequence iterator\nis not defined.\n For any other iterator value a const\nsub_match<BidirectionalIterator>* is returned.\n6\n#\nIt is impossible to store things\ninto regex_token_iterators.\n Two end-of-sequence iterators are always\nequal.\n An end-of-sequence iterator is not equal to a\nnon-end-of-sequence iterator.\n Two non-end-of-sequence iterators are\nequal when they are constructed from the same arguments.\nnamespace std {\n  template<class BidirectionalIterator,\n           class charT = typename iterator_traits<BidirectionalIterator>::value_type,\n           class traits = regex_traits<charT>>\n    class regex_token_iterator {\n    public:\n      using regex_type        = basic_regex<charT, traits>;\n      using iterator_category = forward_iterator_tag;\n      using iterator_concept  = input_iterator_tag;\n      using value_type        = sub_match<BidirectionalIterator>;\n      using difference_type   = ptrdiff_t;\n      using pointer           = const value_type*;\n      using reference         = const value_type&;\n      regex_token_iterator();\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type& re,\n                           int submatch = 0,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default);\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type& re,\n                           const vector<int>& submatches,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default);\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type& re,\n                           initializer_list<int> submatches,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default);\n      template<size_t N>\n        regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                             const regex_type& re,\n                             const int (&submatches)[N],\n                             regex_constants::match_flag_type m =\n                               regex_constants::match_default);\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type&& re,\n                           int submatch = 0,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default) = delete;\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type&& re,\n                           const vector<int>& submatches,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default) = delete;\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type&& re,\n                           initializer_list<int> submatches,\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default) = delete;\n      template<size_t N>\n      regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                           const regex_type&& re,\n                           const int (&submatches)[N],\n                           regex_constants::match_flag_type m =\n                             regex_constants::match_default) = delete;\n      regex_token_iterator(const regex_token_iterator&);\n      regex_token_iterator& operator=(const regex_token_iterator&);\n      bool operator==(const regex_token_iterator&) const;\n      bool operator==(default_sentinel_t) const { return *this == regex_token_iterator(); }\n      const value_type& operator*() const;\n      const value_type* operator->() const;\n      regex_token_iterator& operator++();\n      regex_token_iterator operator++(int) = default;\n    private:\n      using position_iterator =\n        regex_iterator<BidirectionalIterator, charT, traits>;   // exposition only\n      position_iterator position;                               // exposition only\n      const value_type* result;                                 // exposition only\n      value_type suffix;                                        // exposition only\n      size_t N;                                                 // exposition only\n      vector<int> subs;                                         // exposition only\n    };\n}\n7\n#\nA suffix iterator is a regex_token_iterator object\nthat points to a final sequence of characters at\nthe end of the target sequence.\n In a suffix iterator the\nmember result holds a pointer to the data\nmember suffix, the value of the member suffix.matched\nis true, suffix.first points to the beginning of the\nfinal sequence, and suffix.second points to the end of the\nfinal sequence.\n8\n#\n[Note\u00a01:\u2002For a suffix iterator, data\nmember suffix.first is the same as the end of the last match\nfound, and suffix\u200b.second is the same as the end of the target\nsequence.\n \u2014\u00a0end note]\n9\n#\nThe current match is (*position).prefix() if subs[N] == -1, or\n(*position)[subs[N]] for any other value of subs[N].\n\n28.6.11.2.2 Constructors [re.tokiter.cnstr]\n\ud83d\udd17\nregex_token_iterator();\n1\n#\nEffects: Constructs the end-of-sequence iterator.\n\ud83d\udd17\nregex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                     const regex_type& re,\n                     int submatch = 0,\n                     regex_constants::match_flag_type m = regex_constants::match_default);\nregex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                     const regex_type& re,\n                     const vector<int>& submatches,\n                     regex_constants::match_flag_type m = regex_constants::match_default);\nregex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                     const regex_type& re,\n                     initializer_list<int> submatches,\n                     regex_constants::match_flag_type m = regex_constants::match_default);\ntemplate<size_t N>\n  regex_token_iterator(BidirectionalIterator a, BidirectionalIterator b,\n                       const regex_type& re,\n                       const int (&submatches)[N],\n                       regex_constants::match_flag_type m = regex_constants::match_default);\n2\n#\nPreconditions: Each of the initialization values of submatches is >= -1.\n3\n#\nEffects: The first constructor initializes the member subs to hold the single\nvalue submatch.\n The second, third, and fourth constructors\ninitialize the member subs to hold a copy of the sequence of integer values\npointed to by the iterator range\n[begin(submatches), end(submatches)).\n4\n#\nEach constructor then sets N to 0, and position to\nposition_iterator(a, b, re, m).\n If position is not an\nend-of-sequence iterator the constructor sets result to the\naddress of the current match.\n Otherwise if any of the values stored\nin subs is equal to \u22121 the constructor sets *this to a suffix\niterator that points to the range [a, b), otherwise the constructor\nsets *this to an end-of-sequence iterator.\n\n28.6.11.2.3 Comparisons [re.tokiter.comp]\n\ud83d\udd17\nbool operator==(const regex_token_iterator& right) const;\n1\n#\nReturns: true if *this and right are both end-of-sequence iterators,\nor if *this and right are both suffix iterators and suffix == right.suffix;\notherwise returns false if *this or right is an end-of-sequence\niterator or a suffix iterator.\n Otherwise returns true if position == right.position,\nN == right.N, and subs == right.subs.\n Otherwise returns false.\n\n28.6.11.2.4 Indirection [re.tokiter.deref]\n\ud83d\udd17\nconst value_type& operator*() const;\n1\n#\nReturns: *result.\n'>,regex_token_iterator'>\ud83d\udd17\nconst value_type* operator->() const;\n2\n#\nReturns: result.\n\n28.6.11.2.5 Increment [re.tokiter.incr]\n\ud83d\udd17\nregex_token_iterator& operator++();\n1\n#\nEffects: Constructs a local variable prev of\ntype position_iterator, initialized with the value\nof position.\n2\n#\nIf *this is a suffix iterator, sets *this to an\nend-of-sequence iterator.\n3\n#\nOtherwise, if N + 1 < subs.size(), increments N and\nsets result to the address of the current match.\n4\n#\nOtherwise, sets N to 0 and\nincrements position.\n If position is not an\nend-of-sequence iterator the operator sets result to the\naddress of the current match.\n5\n#\nOtherwise, if any of the values stored in subs is equal to \u22121 and\nprev->suffix().length() is not 0 the operator sets *this to a\nsuffix iterator that points to the range [prev->suffix().first, prev->suffix().second).\n6\n#\nOtherwise, sets *this to an end-of-sequence iterator.\n7\n#\nReturns: *this.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::regex_token_iterator[^\\n]*::regex_token_iterator\\("
+    ],
+    "clang": [
+      "error: call to deleted constructor of 'std::sregex_token_iterator'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [re.tokiter]: regex_token_iterator(BidirectionalIterator, BidirectionalIterator,\n //   const regex_type&&, const vector<int>& submatches, ...) = delete; (likewise for every\n // constructor taking a regex rvalue).\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/regex/token_iterator_temporary_regex.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted constructor of 'std::sregex_token_iterator' (aka 'regex_token_iterator<__wrap_iter<const char *>>')"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/regex/token_iterator_temporary_regex.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/regex__token_iterator_temporary_regex.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'std::__cxx11::regex_token_iterator<_Bi_iter, _Ch_type, _Rx_traits>::regex_token_iterator(_Bi_iter, _Bi_iter, const regex_type&&, const std::vector<int>&, std::regex_constants::match_flag_type) [with _Bi_iter = __gnu_cxx::__normal_iterator<const char*, std::__cxx11::basic_string<char> >; _Ch_type = char; _Rx_traits = std::__cxx11::regex_traits<char>; regex_type = std::__cxx11::basic_regex<char>]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::lexicographical_compare_three_way: comp must return a comparison category type
 // [alg.three.way]/2: "Mandates: decltype(comp(*b1, *b2)) is a comparison category type."
 // A comparator returning int is ill-formed.
 #include <algorithm>

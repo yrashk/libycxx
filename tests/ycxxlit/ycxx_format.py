@@ -107,7 +107,10 @@ class YcxxFormat(lit.formats.FileBasedTest):
         self.features = set(features)
 
     def compile(self, args, cwd, expect=''):
-        return transcript.run('compile', [self.wrapper, self.compiler] + args, cwd, 300, expect)
+        # Diagnostic wording and quotation marks must not depend on the caller's locale.
+        # Apply this only to the compiler: test programs keep their original environment.
+        return transcript.run('compile', ['env', 'LC_ALL=C', self.wrapper, self.compiler] + args,
+                              cwd, 300, expect)
 
     def execute(self, test, lit_config):
         src = open(test.getSourcePath(), encoding='utf-8').read()

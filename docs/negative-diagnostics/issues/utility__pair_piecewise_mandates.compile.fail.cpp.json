@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/utility/pair_piecewise_mandates.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "pairs.pair"
+  ],
+  "normative_text": {
+    "pairs.pair": "22.3.2 Class template pair [pairs.pair]\n\ud83d\udd17\nnamespace std {\n  template<class T1, class T2>\n  struct pair {\n    using first_type  = T1;\n    using second_type = T2;\n    T1 first;\n    T2 second;\n    pair(const pair&) = default;\n    pair(pair&&) = default;\n    constexpr explicit(see below) pair();\n    constexpr explicit(see below) pair(const T1& x, const T2& y);\n    template<class U1 = T1, class U2 = T2>\n      constexpr explicit(see below) pair(U1&& x, U2&& y);\n    template<class U1, class U2>\n      constexpr explicit(see below) pair(pair<U1, U2>& p);\n    template<class U1, class U2>\n      constexpr explicit(see below) pair(const pair<U1, U2>& p);\n    template<class U1, class U2>\n      constexpr explicit(see below) pair(pair<U1, U2>&& p);\n    template<class U1, class U2>\n      constexpr explicit(see below) pair(const pair<U1, U2>&& p);\n    template<pair-like P>\n      constexpr explicit(see below) pair(P&& p);\n    template<class... Args1, class... Args2>\n      constexpr pair(piecewise_construct_t,\n                     tuple<Args1...> first_args, tuple<Args2...> second_args);\n    constexpr pair& operator=(const pair& p);\n    constexpr const pair& operator=(const pair& p) const;\n    template<class U1, class U2>\n      constexpr pair& operator=(const pair<U1, U2>& p);\n    template<class U1, class U2>\n      constexpr const pair& operator=(const pair<U1, U2>& p) const;\n    constexpr pair& operator=(pair&& p) noexcept(see below);\n    constexpr const pair& operator=(pair&& p) const;\n    template<class U1, class U2>\n      constexpr pair& operator=(pair<U1, U2>&& p);\n    template<class U1, class U2>\n      constexpr const pair& operator=(pair<U1, U2>&& p) const;\n    template<pair-like P>\n      constexpr pair& operator=(P&& p);\n    template<pair-like P>\n      constexpr const pair& operator=(P&& p) const;\n    constexpr void swap(pair& p) noexcept(see below);\n    constexpr void swap(const pair& p) const noexcept(see below);\n  };\n  template<class T1, class T2>\n    pair(T1, T2) -> pair<T1, T2>;\n}\n1\n#\nMember functions of pair do not throw exceptions unless one of\nthe element-wise operations specified to be called for that operation\nthrows an exception.\n2\n#\nThe defaulted move and copy constructor, respectively, of pair\nis a constexpr function if and only if all required element-wise\ninitializations for move and copy, respectively,\nwould be constexpr-suitable ([dcl.constexpr]).\n3\n#\nIf (is_trivially_destructible_v<T1> && is_trivially_destructible_v<T2>)\nis true, then the destructor of pair is trivial.\n4\n#\npair<T, U> is a structural type ([temp.param])\nif T and U are both structural types.\n Two values p1 and p2 of type pair<T, U>\nare template-argument-equivalent ([temp.type]) if and only if\np1.first and p2.first are template-argument-equivalent and\np1.second and p2.second are template-argument-equivalent.\n\ud83d\udd17\nconstexpr explicit(see below) pair();\n5\n#\nConstraints: (5.1)\nis_default_constructible_v<T1> is true and\n(5.2)\nis_default_constructible_v<T2> is true.\n6\n#\nEffects: Value-initializes first and second.\n7\n#\nRemarks: The expression inside explicit evaluates to true\nif and only if either T1 or\nT2 is not implicitly default-constructible.\n [Note\u00a01:\u2002This behavior can be implemented with a trait that checks\nwhether a const T1& or a const T2&\ncan be initialized with {}.\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr explicit(see below) pair(const T1& x, const T2& y);\n8\n#\nConstraints: (8.1)\nis_copy_constructible_v<T1> is true and\n(8.2)\nis_copy_constructible_v<T2> is true.\n9\n#\nEffects: Initializes first with x and second with y.\n10\n#\nRemarks: The expression inside explicit is equivalent to:\n!is_convertible_v<const T1&, T1> || !is_convertible_v<const T2&, T2>\n\ud83d\udd17\ntemplate<class U1 = T1, class U2 = T2> constexpr explicit(see below) pair(U1&& x, U2&& y);\n11\n#\nConstraints: (11.1)\nis_constructible_v<T1, U1> is true and\n(11.2)\nis_constructible_v<T2, U2> is true.\n12\n#\nEffects: Initializes first with\nstd\u200b::\u200bforward<U1>(x) and second\nwith std\u200b::\u200bforward<U2>(y).\n13\n#\nRemarks: The expression inside explicit is equivalent to:\n!is_convertible_v<U1, T1> || !is_convertible_v<U2, T2>\nThis constructor is defined as deleted if\nreference_constructs_from_temporary_v<first_type, U1&&>\nis true or\nreference_constructs_from_temporary_v<second_type, U2&&>\nis true.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr explicit(see below) pair(pair<U1, U2>& p);\ntemplate<class U1, class U2> constexpr explicit(see below) pair(const pair<U1, U2>& p);\ntemplate<class U1, class U2> constexpr explicit(see below) pair(pair<U1, U2>&& p);\ntemplate<class U1, class U2> constexpr explicit(see below) pair(const pair<U1, U2>&& p);\ntemplate<pair-like P> constexpr explicit(see below) pair(P&& p);\n14\n#\nLet FWD(u) be static_cast<decltype(u)>(u).\n15\n#\nConstraints: (15.1)\nFor the last overload,\nremove_cvref_t<P> is not a specialization of ranges\u200b::\u200bsubrange,\n(15.2)\nis_constructible_v<T1, decltype(get<0>(FWD(p)))>\nis true, and\n(15.3)\nis_constructible_v<T2, decltype(get<1>(FWD(p)))>\nis true.\n16\n#\nEffects: Initializes first with get<0>(FWD(p)) and\nsecond with get<1>(FWD(p)).\n17\n#\nRemarks: The expression inside explicit is equivalent to:\n!is_convertible_v<decltype(get<0>(FWD(p))), T1> ||\n!is_convertible_v<decltype(get<1>(FWD(p))), T2>\nThe constructor is defined as deleted if\nreference_constructs_from_temporary_v<first_type, decltype(get<0>(FWD(p)))> ||\nreference_constructs_from_temporary_v<second_type, decltype(get<1>(FWD(p)))>\nis true.\n\ud83d\udd17\ntemplate<class... Args1, class... Args2>\n  constexpr pair(piecewise_construct_t,\n                 tuple<Args1...> first_args, tuple<Args2...> second_args);\n18\n#\nMandates: (18.1)\nis_constructible_v<T1, Args1...> is true and\n(18.2)\nis_constructible_v<T2, Args2...> is true.\n19\n#\nEffects: Initializes first with arguments of types\nArgs1... obtained by forwarding the elements of first_args\nand initializes second with arguments of types Args2...\nobtained by forwarding the elements of second_args.\n (Here, forwarding\nan element x of type U within a tuple object means calling\nstd\u200b::\u200bforward<U>(x).)\n This form of construction, whereby constructor\narguments for first and second are each provided in a separate\ntuple object, is called piecewise construction.\n [Note\u00a02:\u2002If a data member of pair is of reference type and\nits initialization binds it to a temporary object,\nthe program is ill-formed ([class.base.init]).\n \u2014\u00a0end note]\n\ud83d\udd17\nconstexpr pair& operator=(const pair& p);\n20\n#\nEffects: Assigns p.first to first and p.second to second.\n21\n#\nReturns: *this.\n22\n#\nRemarks: This operator is defined as deleted unless\nis_copy_assignable_v<T1> is true and\nis_copy_assignable_v<T2> is true.\n\ud83d\udd17\nconstexpr const pair& operator=(const pair& p) const;\n23\n#\nConstraints: (23.1)\nis_copy_assignable_v<const T1> is true and\n(23.2)\nis_copy_assignable_v<const T2> is true.\n24\n#\nEffects: Assigns p.first to first and p.second to second.\n25\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr pair& operator=(const pair<U1, U2>& p);\n26\n#\nConstraints: (26.1)\nis_assignable_v<T1&, const U1&> is true and\n(26.2)\nis_assignable_v<T2&, const U2&> is true.\n27\n#\nEffects: Assigns p.first to first and p.second to second.\n28\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr const pair& operator=(const pair<U1, U2>& p) const;\n29\n#\nConstraints: (29.1)\nis_assignable_v<const T1&, const U1&> is true, and\n(29.2)\nis_assignable_v<const T2&, const U2&> is true.\n30\n#\nEffects: Assigns p.first to first and p.second to second.\n31\n#\nReturns: *this.\n\ud83d\udd17\nconstexpr pair& operator=(pair&& p) noexcept(see below);\n32\n#\nConstraints: (32.1)\nis_move_assignable_v<T1> is true and\n(32.2)\nis_move_assignable_v<T2> is true.\n33\n#\nEffects: Assigns std\u200b::\u200bforward<T1>(p.first) to first and\nstd\u200b::\u200bforward<T2>(p.second) to second.\n34\n#\nReturns: *this.\n35\n#\nRemarks: The exception specification is equivalent to:\nis_nothrow_move_assignable_v<T1> && is_nothrow_move_assignable_v<T2>\n\ud83d\udd17\nconstexpr const pair& operator=(pair&& p) const;\n36\n#\nConstraints: (36.1)\nis_assignable_v<const T1&, T1> is true and\n(36.2)\nis_assignable_v<const T2&, T2> is true.\n37\n#\nEffects: Assigns std\u200b::\u200bforward<T1>(p.first) to first and\nstd\u200b::\u200bforward<T2>(p.second) to second.\n38\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr pair& operator=(pair<U1, U2>&& p);\n39\n#\nConstraints: (39.1)\nis_assignable_v<T1&, U1> is true and\n(39.2)\nis_assignable_v<T2&, U2> is true.\n40\n#\nEffects: Assigns std\u200b::\u200bforward<U1>(p.first) first and\nstd\u200b::\u200bforward<U2>(p.second) to second.\n41\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<pair-like P> constexpr pair& operator=(P&& p);\n42\n#\nConstraints: (42.1)\ndifferent-from<P, pair> ([range.utility.helpers])\nis true,\n(42.2)\nremove_cvref_t<P> is not a specialization of ranges\u200b::\u200bsubrange,\n(42.3)\nis_assignable_v<T1&, decltype(get<0>(std\u200b::\u200bforward<P>(p)))>\nis true, and\n(42.4)\nis_assignable_v<T2&, decltype(get<1>(std\u200b::\u200bforward<P>(p)))>\nis true.\n43\n#\nEffects: Assigns get<0>(std\u200b::\u200bforward<P>(p)) to first and\nget<1>(std\u200b::\u200bforward<P>(p)) to second.\n44\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<pair-like P> constexpr const pair& operator=(P&& p) const;\n45\n#\nConstraints: (45.1)\ndifferent-from<P, pair> ([range.utility.helpers])\nis true,\n(45.2)\nremove_cvref_t<P> is not a specialization of ranges\u200b::\u200bsubrange,\n(45.3)\nis_assignable_v<const T1&, decltype(get<0>(std\u200b::\u200bforward<P>(p)))>\nis true, and\n(45.4)\nis_assignable_v<const T2&, decltype(get<1>(std\u200b::\u200bforward<P>(p)))>\nis true.\n46\n#\nEffects: Assigns get<0>(std\u200b::\u200bforward<P>(p)) to first and\nget<1>(std\u200b::\u200bforward<P>(p)) to second.\n47\n#\nReturns: *this.\n\ud83d\udd17\ntemplate<class U1, class U2> constexpr const pair& operator=(pair<U1, U2>&& p) const;\n48\n#\nConstraints: (48.1)\nis_assignable_v<const T1&, U1> is true, and\n(48.2)\nis_assignable_v<const T2&, U2> is true.\n49\n#\nEffects: Assigns std\u200b::\u200bforward<U1>(p.first) to first and\nstd\u200b::\u200bforward<U2>(u.second) to second.\n50\n#\nReturns: *this.\n\ud83d\udd17\nconstexpr void swap(pair& p) noexcept(see below);\nconstexpr void swap(const pair& p) const noexcept(see below);\n51\n#\nMandates: (51.1)\nFor the first overload,\nis_swappable_v<T1> is true and\nis_swappable_v<T2> is true.\n(51.2)\nFor the second overload,\nis_swappable_v<const T1> is true and\nis_swappable_v<const T2> is true.\n52\n#\nPreconditions: first is swappable with ([swappable.requirements]) p.first and\nsecond is swappable with p.second.\n53\n#\nEffects: Swaps\nfirst with p.first and\nsecond with p.second.\n54\n#\nRemarks: The exception specification is equivalent to:\n(54.1)\nis_nothrow_swappable_v<T1> && is_nothrow_swappable_v<T2>\nfor the first overload, and\n(54.2)\nis_nothrow_swappable_v<const T1> && is_nothrow_swappable_v<const T2>\nfor the second overload.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: no matching function [^\\n]*NeedsTwo::NeedsTwo\\("
+    ],
+    "clang": [
+      "error: no matching constructor for initialization of 'NeedsTwo'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -6,4 +6,3 @@\n struct NeedsTwo {\n   NeedsTwo(int, int) {}\n };\n-std::pair<NeedsTwo, int> p(std::piecewise_construct, std::make_tuple(1), std::make_tuple(2));\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/pair_piecewise_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching constructor for initialization of 'NeedsTwo'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/pair_piecewise_mandates.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__pair_piecewise_mandates.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "no matching function for call to 'NeedsTwo::NeedsTwo(int)'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

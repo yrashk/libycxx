@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: no matching function [^\n]*NeedsTwo::NeedsTwo\(
+// EXPECT-ERROR-CLANG: error: no matching constructor for initialization of 'NeedsTwo'
 // [pairs.pair]/18: pair(piecewise_construct_t, tuple<Args1...>, tuple<Args2...>): "Mandates:
 // is_constructible_v<T1, Args1...> is true and is_constructible_v<T2, Args2...> is true."
 #include <utility>

@@ -1,3 +1,6 @@
+// EXPECT-ERROR-GCC: error: uncaught exception of type 'std::format_error';[^\n]*std::format: a precision is valid only for durations with a floating\-point representation
+// EXPECT-ERROR-CLANG: error: call to consteval function [^\n]*std::basic_format_string[^\n]*is not a constant expression
+// EXPECT-ERROR-CLANG: note: in call to [^\n]*std::format: a precision is valid only for durations with a floating\-point representation
 // [time.format]/1: "Giving a precision specification in the chrono-format-spec is valid only
 // for types that are specializations of std::chrono::duration for which the nested
 // typedef-name rep denotes a floating-point type. For all other types, an exception of type

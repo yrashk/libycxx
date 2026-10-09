@@ -1,0 +1,3039 @@
+{
+  "baseline": "2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "source_report": "/Users/yrashk/.codex/worktrees/6b5f/libycxx/build/test-logs/own-test-spec-audit.json",
+  "initial_head": "2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec",
+  "initial_state": "Clean detached HEAD, identical to baseline; no AGENTS.md found in checkout or parent directories.",
+  "integration": [
+    "Diagnostic-pattern chat owns EXPECT-ERROR blocks in P09 files; this chat owns semantic/type policy changes.",
+    "No test-file overlap with clearly-wrong queue; any shared helper/library edits must be noted."
+  ],
+  "issues": [
+    {
+      "id": "P02",
+      "path": "tests/ycxx/vector/range_allocations.pass.cpp",
+      "audit": {
+        "id": "P02",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/vector/range_allocations.pass.cpp",
+            "line": 24
+          }
+        ],
+        "reason": "Treats no reallocations and at most one reallocation as exact limits on all allocator calls. Reallocation is not synonymous with every allocation: auxiliary buffers are not directly covered. A one-allocation expectation is a useful implementation regression check, but its claimed implication needs review.",
+        "clauses": [
+          "vector.cons",
+          "vector.modifiers"
+        ],
+        "remedy": "Track element-storage reallocation or label allocator-call counts as policy.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/map/complexity.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/set/complexity.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P03",
+      "path": "tests/ycxx/hive/move_only.pass.cpp",
+      "audit": {
+        "id": "P03",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/sort_complexity.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/algorithm/lower_upper_bound.pass.cpp",
+            "line": 85
+          },
+          {
+            "path": "tests/ycxx/algorithm/equal_range_binary_search.pass.cpp",
+            "line": 80
+          },
+          {
+            "path": "tests/ycxx/algorithm/inplace_merge.pass.cpp",
+            "line": 79
+          },
+          {
+            "path": "tests/ycxx/algorithm/nth_element.pass.cpp",
+            "line": 102
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort.pass.cpp",
+            "line": 78
+          },
+          {
+            "path": "tests/ycxx/algorithm/partial_sort_copy.pass.cpp",
+            "line": 96
+          },
+          {
+            "path": "tests/ycxx/map/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/set/complexity.pass.cpp",
+            "line": 18
+          },
+          {
+            "path": "tests/ycxx/flat_map/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/flat_set/complexity.pass.cpp",
+            "line": 17
+          },
+          {
+            "path": "tests/ycxx/hive/move_only.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Turns asymptotic, average-case or approximate complexity wording into fixed numerical constants on a finite workload (4NlogN, logN+2, 12N, and constants 6/8 in assoc_complexity.hpp). These can be useful performance regressions, but the specification does not fix those constants. A compliant implementation may exceed the threshold; a noncompliant asymptotic algorithm can pass a finite sample.",
+        "clauses": [
+          "sort",
+          "lower.bound",
+          "upper.bound",
+          "equal.range",
+          "binary.search",
+          "alg.merge",
+          "alg.nth.element",
+          "associative.reqmts.general",
+          "hive.operations"
+        ],
+        "remedy": "Report these as heuristic performance checks; preserve exact normative bounds where the draft actually gives them.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/bernoulli.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/binomial.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/poisson.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/uniform_int.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/uniform_real.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P04",
+      "path": "tests/ycxx/random/discrete.pass.cpp",
+      "audit": {
+        "id": "P04",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/algorithm/shuffle_sample_wide_generator.pass.cpp",
+            "line": 45
+          },
+          {
+            "path": "tests/ycxx/random/bernoulli.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/binomial.pass.cpp",
+            "line": 23
+          },
+          {
+            "path": "tests/ycxx/random/chisq_cauchy_f_t.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/distribution_param_set.pass.cpp",
+            "line": 20
+          },
+          {
+            "path": "tests/ycxx/random/exponential_gamma.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/generate_canonical.pass.cpp",
+            "line": 107
+          },
+          {
+            "path": "tests/ycxx/random/geometric_negbin.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/random/normal_lognormal.pass.cpp",
+            "line": 15
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_constant.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/piecewise_linear.pass.cpp",
+            "line": 35
+          },
+          {
+            "path": "tests/ycxx/random/poisson.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int.pass.cpp",
+            "line": 30
+          },
+          {
+            "path": "tests/ycxx/random/uniform_real.pass.cpp",
+            "line": 21
+          },
+          {
+            "path": "tests/ycxx/random/weibull_extreme.pass.cpp",
+            "line": 25
+          },
+          {
+            "path": "tests/ycxx/random/discrete.pass.cpp",
+            "line": 32
+          }
+        ],
+        "reason": "Requires finite sample means, variances, frequencies, bit coverage or observed permutations to meet chosen thresholds. A fixed seed makes one implementation reproducible but the distribution/shuffle algorithms are not fixed across implementations. Correct distributions can produce an outlier or an identity shuffle.",
+        "clauses": [
+          "rand.req.dist",
+          "alg.random.shuffle",
+          "alg.random.sample"
+        ],
+        "remedy": "Keep as statistical tests with stated false-positive assumptions, not deterministic specification oracles.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P01",
+      "path": "tests/ycxx/containers/relocation_uses_selected_move.pass.cpp",
+      "audit": {
+        "id": "P01",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/containers/relocation_uses_selected_move.pass.cpp",
+            "line": 64
+          }
+        ],
+        "reason": "Infers that satisfying MoveInsertable/MoveAssignable forces every shifted element to use an rvalue-selected overload. Those requirements establish that the operations are available; the cited erase wording says assignment operator, and does not on its own prescribe move versus copy. The artificial move-mark expectation needs a stronger operation-specific justification.",
+        "clauses": [
+          "sequence.reqmts",
+          "vector.modifiers",
+          "deque.modifiers"
+        ],
+        "remedy": "Review insertion and erasure separately; distinguish overload forwarding that is explicitly specified from an assumed relocation strategy.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P12",
+      "path": "tests/ycxx/list/sort.pass.cpp",
+      "audit": {
+        "id": "P12",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/list/sort.pass.cpp",
+            "line": 39
+          }
+        ],
+        "reason": "Infers that iterator/reference preservation means zero copies, including temporary copies. list.ops/33-35 preserves identities and specifies stability and comparison complexity, but unlike merge it does not explicitly prohibit copies. A copy-count policy needs a separate justification; the iterator and stability checks are sound.",
+        "clauses": [
+          "list.ops"
+        ],
+        "remedy": "Keep node identity/stability checks; document the zero-temporary-copy expectation as implementation policy unless a stronger requirement is identified.",
+        "priority": 1
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P10",
+      "path": "tests/ycxx/charconv/to_chars_float_precision.pass.cpp",
+      "audit": {
+        "id": "P10",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/charconv/to_chars_float_precision.pass.cpp",
+            "line": 54
+          }
+        ],
+        "reason": "The exponent comparison is a tautology and the following round-trip does not require from_chars to consume the entire output. A malformed suffix such as 1.000p0x can pass those checks despite not being printf-style output.",
+        "clauses": [
+          "charconv.to.chars",
+          "charconv.from.chars"
+        ],
+        "remedy": "Validate signed exponent syntax and require r.ptr == s.data()+s.size().",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P06",
+      "path": "tests/ycxx/atomic/cas_padding.pass.cpp",
+      "audit": {
+        "id": "P06",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/atomic/cas_padding.pass.cpp",
+            "line": 46
+          },
+          {
+            "path": "tests/ycxx/atomic/ref_cas_padding.pass.cpp",
+            "line": 46
+          }
+        ],
+        "reason": "Imposes a hard bound of fewer than 1000 spurious failures on compare_exchange_weak. The specification permits spurious failure and gives no such retry bound.",
+        "clauses": [
+          "atomics.types.operations",
+          "atomics.ref.ops"
+        ],
+        "remedy": "Use strong CAS for the deterministic padding check; separate bounded retries as a practical watchdog.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P06",
+      "path": "tests/ycxx/atomic/ref_cas_padding.pass.cpp",
+      "audit": {
+        "id": "P06",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/atomic/cas_padding.pass.cpp",
+            "line": 46
+          },
+          {
+            "path": "tests/ycxx/atomic/ref_cas_padding.pass.cpp",
+            "line": 46
+          }
+        ],
+        "reason": "Imposes a hard bound of fewer than 1000 spurious failures on compare_exchange_weak. The specification permits spurious failure and gives no such retry bound.",
+        "clauses": [
+          "atomics.types.operations",
+          "atomics.ref.ops"
+        ],
+        "remedy": "Use strong CAS for the deterministic padding check; separate bounded retries as a practical watchdog.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P05",
+      "path": "tests/ycxx/random/random_device.pass.cpp",
+      "audit": {
+        "id": "P05",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/random/random_device.pass.cpp",
+            "line": 31
+          }
+        ],
+        "reason": "Requires 1000 values to differ and cover every bit in both states. Uniform random values have no such finite guarantee; a permitted deterministic-engine fallback is another reason not to treat these conditions as normative.",
+        "clauses": [
+          "rand.device"
+        ],
+        "remedy": "Retain the return-type/range/entropy checks and identify bit coverage as a statistical smoke test.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P09",
+      "path": "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+      "audit": {
+        "id": "P09",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+            "line": 1
+          }
+        ],
+        "reason": "Requires rejecting char/bool or narrow unsigned engine types without acknowledging the permitted implementation-defined additional type subsets in rand.req.genl/1.6-1.7. These can be correct tests of libycxx's documented supported subset, but are not universal draft rejection requirements.",
+        "clauses": [
+          "rand.req.genl"
+        ],
+        "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P09",
+      "path": "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+      "audit": {
+        "id": "P09",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+            "line": 1
+          }
+        ],
+        "reason": "Requires rejecting char/bool or narrow unsigned engine types without acknowledging the permitted implementation-defined additional type subsets in rand.req.genl/1.6-1.7. These can be correct tests of libycxx's documented supported subset, but are not universal draft rejection requirements.",
+        "clauses": [
+          "rand.req.genl"
+        ],
+        "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P09",
+      "path": "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+      "audit": {
+        "id": "P09",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+            "line": 1
+          }
+        ],
+        "reason": "Requires rejecting char/bool or narrow unsigned engine types without acknowledging the permitted implementation-defined additional type subsets in rand.req.genl/1.6-1.7. These can be correct tests of libycxx's documented supported subset, but are not universal draft rejection requirements.",
+        "clauses": [
+          "rand.req.genl"
+        ],
+        "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P09",
+      "path": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+      "audit": {
+        "id": "P09",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/random/uniform_int_char.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/uniform_int_bool.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/lcong_uchar.compile.fail.cpp",
+            "line": 1
+          },
+          {
+            "path": "tests/ycxx/random/ibits_uchar.compile.fail.cpp",
+            "line": 1
+          }
+        ],
+        "reason": "Requires rejecting char/bool or narrow unsigned engine types without acknowledging the permitted implementation-defined additional type subsets in rand.req.genl/1.6-1.7. These can be correct tests of libycxx's documented supported subset, but are not universal draft rejection requirements.",
+        "clauses": [
+          "rand.req.genl"
+        ],
+        "remedy": "Tie the negative test explicitly to libycxx's chosen supported type subset.",
+        "priority": 2
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P07",
+      "path": "tests/ycxx/stacktrace/current.pass.cpp",
+      "audit": {
+        "id": "P07",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/stacktrace/current.pass.cpp",
+            "line": 71
+          }
+        ],
+        "reason": "Compares three separate current() evaluations as though capture success and depth were identical. Each capture may independently fail and return empty. The current evaluation is approximate and may be affected by inlining/tail calls, so success of full does not require success of limited or skipped.",
+        "clauses": [
+          "stacktrace.basic.cons"
+        ],
+        "remedy": "Check the depth cap per call; do not infer successful later capture from an earlier one.",
+        "priority": 3
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P08",
+      "path": "tests/ycxx/indirect/allocator.pass.cpp",
+      "audit": {
+        "id": "P08",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/indirect/allocator.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/stacktrace/compare_swap_allocators.pass.cpp",
+            "line": 26
+          }
+        ],
+        "reason": "Requires a non-propagating, not-always-equal allocator swap to be potentially throwing. res.on.exception.handling/5 allows strengthening a non-virtual library exception specification; a conforming swap may be noexcept even when the synopsis formula evaluates false, provided required behavior is preserved.",
+        "clauses": [
+          "res.on.exception.handling",
+          "indirect.swap",
+          "stacktrace.basic.mod"
+        ],
+        "remedy": "Require noexcept in the mandated true cases; do not infer a prohibition on permitted strengthening.",
+        "priority": 3
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P08",
+      "path": "tests/ycxx/stacktrace/compare_swap_allocators.pass.cpp",
+      "audit": {
+        "id": "P08",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/indirect/allocator.pass.cpp",
+            "line": 22
+          },
+          {
+            "path": "tests/ycxx/stacktrace/compare_swap_allocators.pass.cpp",
+            "line": 26
+          }
+        ],
+        "reason": "Requires a non-propagating, not-always-equal allocator swap to be potentially throwing. res.on.exception.handling/5 allows strengthening a non-virtual library exception specification; a conforming swap may be noexcept even when the synopsis formula evaluates false, provided required behavior is preserved.",
+        "clauses": [
+          "res.on.exception.handling",
+          "indirect.swap",
+          "stacktrace.basic.mod"
+        ],
+        "remedy": "Require noexcept in the mandated true cases; do not infer a prohibition on permitted strengthening.",
+        "priority": 3
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    },
+    {
+      "id": "P11",
+      "path": "tests/ycxx/locale/facets_reenter_library.pass.cpp",
+      "audit": {
+        "id": "P11",
+        "classification": "possibly wrong",
+        "locations": [
+          {
+            "path": "tests/ycxx/locale/facets_reenter_library.pass.cpp",
+            "line": 113
+          }
+        ],
+        "reason": "Claims that switching character types prevents any recursive library reentry, but the DtorUser case calls locale::global from a facet destructor invoked during release of another locale/global-locale replacement. Inner locale objects are themselves destroyed before that destructor returns. Reentry into locale destruction/global management is implementation-defined, regardless of character type.",
+        "clauses": [
+          "reentrancy",
+          "locale.facet",
+          "locale.statics"
+        ],
+        "remedy": "Keep as an explicitly supported libycxx reentrancy test; do not infer portable permission solely from different stream character types.",
+        "priority": 3
+      },
+      "status": "pending",
+      "normative_review": [],
+      "changes": [],
+      "validation": [],
+      "negative_search": null,
+      "reference_comparison": null,
+      "commit": null
+    }
+  ],
+  "branch": "codex/possibly-wrong-test-audit",
+  "workflow": {
+    "guidance": [
+      "README.md",
+      "DECISIONS.md section 6",
+      "STATUS.md",
+      "tests/ycxx/REFERENCE.md",
+      "tests/ycxxlit/ycxx_format.py",
+      "tools/run-conformance",
+      "tools/ycxx-cxx",
+      "tools/ref-cxx"
+    ],
+    "draft_evidence": "build/test-logs/possibly-wrong/draft-{full.html,sections.json}: original rendered snapshot has source links pinned to c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1; independently compared vector.cons to pinned raw containers.tex.",
+    "toolchains": "macOS arm64; Homebrew GCC 16.2; LLVM Clang 23.1.2; both pinned upstream suites available.",
+    "authorization": "Inspect original tests/helpers and implementations; fix tests/library defects; separate coherent commits; do not push/merge/PR."
+  }
+}

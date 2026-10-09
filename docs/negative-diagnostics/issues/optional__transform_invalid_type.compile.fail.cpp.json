@@ -1,0 +1,86 @@
+{
+  "test": "tests/ycxx/optional/transform_invalid_type.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "optional.monadic",
+    "optional.optional.general"
+  ],
+  "normative_text": {
+    "optional.monadic": "22.5.3.8 Monadic operations [optional.monadic]\n\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &;\ntemplate<class F> constexpr auto and_then(F&& f) const &;\n1\n#\nLet U be invoke_result_t<F, decltype((val))>.\n2\n#\nMandates: remove_cvref_t<U> is a specialization of optional.\n3\n#\nEffects: Equivalent to:\nif (*this) {\n  return invoke(std::forward<F>(f), val);\n} else {\n  return remove_cvref_t<U>();\n}\n\ud83d\udd17\ntemplate<class F> constexpr auto and_then(F&& f) &&;\ntemplate<class F> constexpr auto and_then(F&& f) const &&;\n4\n#\nLet U be invoke_result_t<F, decltype(std\u200b::\u200bmove(val))>.\n5\n#\nMandates: remove_cvref_t<U> is a specialization of optional.\n6\n#\nEffects: Equivalent to:\nif (*this) {\n  return invoke(std::forward<F>(f), std::move(val));\n} else {\n  return remove_cvref_t<U>();\n}\n\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &;\ntemplate<class F> constexpr auto transform(F&& f) const &;\n7\n#\nLet U be remove_cv_t<invoke_result_t<F, decltype((val))>>.\n8\n#\nMandates: U is a valid contained type for optional.\n The declaration\nU u(invoke(std::forward<F>(f), val));\nis well-formed for some invented variable u.\n [Note\u00a01:\u2002There is no requirement that U is movable ([dcl.init.general]).\n \u2014\u00a0end note]\n9\n#\nReturns: If *this contains a value, an optional<U> object\nwhose contained value is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), val);\notherwise, optional<U>().\n\ud83d\udd17\ntemplate<class F> constexpr auto transform(F&& f) &&;\ntemplate<class F> constexpr auto transform(F&& f) const &&;\n10\n#\nLet U be\nremove_cv_t<invoke_result_t<F, decltype(std\u200b::\u200bmove(val))>>.\n11\n#\nMandates: U is a valid contained type for optional.\n The declaration\nU u(invoke(std::forward<F>(f), std::move(val)));\nis well-formed for some invented variable u.\n [Note\u00a02:\u2002There is no requirement that U is movable ([dcl.init.general]).\n \u2014\u00a0end note]\n12\n#\nReturns: If *this contains a value, an optional<U> object\nwhose contained value is direct-non-list-initialized with\ninvoke(std\u200b::\u200bforward<F>(f), std\u200b::\u200bmove(val));\notherwise, optional<U>().\n\ud83d\udd17\ntemplate<class F> constexpr optional or_else(F&& f) const &;\n13\n#\nConstraints: F models invocable and\nT models copy_constructible.\n14\n#\nMandates: is_same_v<remove_cvref_t<invoke_result_t<F>>, optional> is true.\n15\n#\nEffects: Equivalent to:\nif (*this) {\n  return *this;\n} else {\n  return std::forward<F>(f)();\n}\n\ud83d\udd17\ntemplate<class F> constexpr optional or_else(F&& f) &&;\n16\n#\nConstraints: F models invocable and\nT models move_constructible.\n17\n#\nMandates: is_same_v<remove_cvref_t<invoke_result_t<F>>, optional> is true.\n18\n#\nEffects: Equivalent to:\nif (*this) {\n  return std::move(*this);\n} else {\n  return std::forward<F>(f)();\n}\n",
+    "optional.optional.general": "22.5.3.1 General [optional.optional.general]\n\ud83d\udd17\nnamespace std {\n  template<class T>\n  class optional {\n  public:\n    using value_type     = T;\n    using iterator       = implementation-defined;              // see [optional.iterators]\n    using const_iterator = implementation-defined;              // see [optional.iterators]\n    // [optional.ctor], constructors\n    constexpr optional() noexcept;\n    constexpr optional(nullopt_t) noexcept;\n    constexpr optional(const optional&);\n    constexpr optional(optional&&) noexcept(see below);\n    template<class... Args>\n      constexpr explicit optional(in_place_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit optional(in_place_t, initializer_list<U>, Args&&...);\n    template<class U = remove_cv_t<T>>\n      constexpr explicit(see below) optional(U&&);\n    template<class U>\n      constexpr explicit(see below) optional(const optional<U>&);\n    template<class U>\n      constexpr explicit(see below) optional(optional<U>&&);\n    // [optional.dtor], destructor\n    constexpr ~optional();\n    // [optional.assign], assignment\n    constexpr optional& operator=(nullopt_t) noexcept;\n    constexpr optional& operator=(const optional&);\n    constexpr optional& operator=(optional&&) noexcept(see below);\n    template<class U = remove_cv_t<T>> constexpr optional& operator=(U&&);\n    template<class U> constexpr optional& operator=(const optional<U>&);\n    template<class U> constexpr optional& operator=(optional<U>&&);\n    template<class... Args> constexpr T& emplace(Args&&...);\n    template<class U, class... Args> constexpr T& emplace(initializer_list<U>, Args&&...);\n    // [optional.swap], swap\n    constexpr void swap(optional&) noexcept(see below);\n    // [optional.iterators], iterator support\n    constexpr iterator begin() noexcept;\n    constexpr const_iterator begin() const noexcept;\n    constexpr iterator end() noexcept;\n    constexpr const_iterator end() const noexcept;\n    // [optional.observe], observers\n    constexpr const T* operator->() const noexcept;\n    constexpr T* operator->() noexcept;\n    constexpr const T& operator*() const & noexcept;\n    constexpr T& operator*() & noexcept;\n    constexpr T&& operator*() && noexcept;\n    constexpr const T&& operator*() const && noexcept;\n    constexpr explicit operator bool() const noexcept;\n    constexpr bool has_value() const noexcept;\n    constexpr const T& value() const &;                                 // freestanding-deleted\n    constexpr T& value() &;                                             // freestanding-deleted\n    constexpr T&& value() &&;                                           // freestanding-deleted\n    constexpr const T&& value() const &&;                               // freestanding-deleted\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) const &;\n    template<class U = remove_cv_t<T>> constexpr T value_or(U&&) &&;\n    // [optional.monadic], monadic operations\n    template<class F> constexpr auto and_then(F&& f) &;\n    template<class F> constexpr auto and_then(F&& f) &&;\n    template<class F> constexpr auto and_then(F&& f) const &;\n    template<class F> constexpr auto and_then(F&& f) const &&;\n    template<class F> constexpr auto transform(F&& f) &;\n    template<class F> constexpr auto transform(F&& f) &&;\n    template<class F> constexpr auto transform(F&& f) const &;\n    template<class F> constexpr auto transform(F&& f) const &&;\n    template<class F> constexpr optional or_else(F&& f) &&;\n    template<class F> constexpr optional or_else(F&& f) const &;\n    // [optional.mod], modifiers\n    constexpr void reset() noexcept;\n  private:\n    union {\n      remove_cv_t<T> val;       // exposition only\n    };\n  };\n  template<class T>\n    optional(T) -> optional<T>;\n}\n1\n#\nAn instance of optional<T> is said to\ncontain a value\nwhen and only when\nits member val is active ([class.union.general]);\nval is referred to as its\ncontained value.\n An optional object's contained value\nis nested within ([intro.object]) the optional object.\n2\n#\nA type X is a\nvalid contained type for optional\nif X is an lvalue reference type or a complete non-array object type,\nand remove_cvref_t<X> is a type other than in_place_t or nullopt_t.\n If a specialization of optional is instantiated with a type T\nthat is not a valid contained type for optional, the program is ill-formed.\n If T is an object type,\nT shall meet the Cpp17Destructible requirements (Table 35).\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*optional::transform: invalid result type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n \n void f() {\n   std::optional<int> o(1);\n-  (void)o.transform([](int) { return std::nullopt; });\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/optional/transform_invalid_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '!is_same_v<std::nullopt_t, std::nullopt_t>': Result of f(value()) should not be std::nullopt_t"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/optional/transform_invalid_type.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/optional__transform_invalid_type.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

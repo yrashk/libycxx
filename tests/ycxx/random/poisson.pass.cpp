@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.pois.poisson]: integers i >= 0 with P(i | mu) = e^-mu mu^i / i!, 0 < mean; the mean
 // and the variance are both mu; P(0) = e^-mu. min() is 0.
 #include <random>

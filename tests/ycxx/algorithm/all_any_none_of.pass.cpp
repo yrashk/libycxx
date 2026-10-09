@@ -47,17 +47,22 @@ static_assert(test());
 
 int main() {
   CHECK(test());
-  // Short-circuit: no element after the deciding one is examined.
+  // Each result is specified; evaluation order and short-circuiting are not.
+  // Complexity: at most N predicate applications, including zero for an empty range.
   int a[] = {1, 2, 3, 4, 5};
   int calls = 0;
   auto pred = [&](int x) {
     ++calls;
     return x < 3;
   };
-  CHECK(!std::all_of(a, a + 5, pred) && calls == 3);
+  CHECK(!std::all_of(a, a + 5, pred) && calls <= 5);
   calls = 0;
-  CHECK(std::any_of(a, a + 5, [&](int x) { ++calls; return x == 2; }) && calls == 2);
+  CHECK(std::any_of(a, a + 5, [&](int x) { ++calls; return x == 2; }) && calls <= 5);
   calls = 0;
-  CHECK(!std::ranges::none_of(a, [&](int x) { ++calls; return x == 1; }) && calls == 1);
+  CHECK(!std::ranges::none_of(a, [&](int x) { ++calls; return x == 1; }) && calls <= 5);
+  calls = 0;
+  CHECK(std::all_of(a, a, pred) && calls == 0);
+  CHECK(!std::any_of(a, a, pred) && calls == 0);
+  CHECK(std::none_of(a, a, pred) && calls == 0);
   return 0;
 }

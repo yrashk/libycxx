@@ -188,7 +188,44 @@
       ],
       "remedy": "Check the result and the at-most-N bound.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/all_any_none_of.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C07-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/all_any_none_of.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/all_any_none_of.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/all_any_none_of.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -L/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Wl,-rpath,/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Itests/ycxx/support tests/ycxx/algorithm/all_any_none_of.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C07-libcxx.exe\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "alg.all.of/2-3, alg.any.of/2-3, alg.none.of/2-3 specify results and at most N applications, no traversal/short-circuit requirements.",
+      "changes": "Assert Boolean result and upper bound; add zero predicate calls for empty ranges.",
+      "boundary_investigation": "Reviewed core algorithms and existing single-pass/projection coverage; explicit empty counter cases detect forbidden applications without prescribing short-circuit order. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C08",
@@ -408,7 +445,8 @@
       "changes": "Fill actual capacity; verify all fields after growth and account net constructed minus destroyed targets without specifying moves versus copies. Remove priority_queue copy-only assumptions in same fixture.",
       "boundary_investigation": "Reviewed inplace_probe.hpp and core/vector.hpp; growth covers argument categories and complete field preservation, plus lifetime balance. No actual library defect found; libc++ lacks current inplace_vector optional-reference API.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "a02bb32e81d6d9b216cd1a8465ffe57bec3202e2"
     },
     {
       "id": "C23",

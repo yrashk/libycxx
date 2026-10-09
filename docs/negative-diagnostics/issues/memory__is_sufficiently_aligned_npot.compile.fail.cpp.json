@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/memory/is_sufficiently_aligned_npot.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "ptr.align"
+  ],
+  "normative_text": {
+    "ptr.align": "20.2.5 Pointer alignment [ptr.align]\n\ud83d\udd17\nvoid* align(size_t alignment, size_t size, void*& ptr, size_t& space);\n1\n#\nPreconditions: (1.1)\nalignment is a power of two\n(1.2)\nptr represents the address of contiguous storage of at least\nspace bytes\n2\n#\nEffects: If it is possible to fit size bytes\nof storage aligned by alignment into the buffer pointed to by\nptr with length space, the function updates\nptr to represent the first possible address of such storage\nand decreases space by the number of bytes used for alignment.\n Otherwise, the function does nothing.\n3\n#\nReturns: A null pointer if the requested aligned buffer\nwould not fit into the available space, otherwise the adjusted value\nof ptr.\n4\n#\n[Note\u00a01:\u2002The function updates its ptr\nand space arguments so that it can be called repeatedly\nwith possibly different alignment and size\narguments for the same buffer.\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<size_t N, class T>\n  constexpr T* assume_aligned(T* ptr);\n5\n#\nMandates: N is a power of two.\n6\n#\nPreconditions: ptr points to an object X of\na type similar ([conv.qual]) to T,\nwhere X has alignment N ([basic.align]).\n7\n#\nReturns: ptr.\n8\n#\nThrows: Nothing.\n9\n#\n[Note\u00a02:\u2002The alignment assumption on an object X\nexpressed by a call to assume_aligned\nmight result in generation of more efficient code.\n It is up to the program to ensure that the assumption actually holds.\n The call does not cause the implementation to verify or enforce this.\n An implementation might only make the assumption\nfor those operations on X that access X\nthrough the pointer returned by assume_aligned.\n \u2014\u00a0end note]\n\ud83d\udd17\ntemplate<size_t Alignment, class T>\n  bool is_sufficiently_aligned(T* ptr);\n10\n#\nMandates: Alignment is a power of two.\n11\n#\nPreconditions: p points to\nan object X of a type similar ([conv.qual]) to T.\n12\n#\nReturns: true if X has alignment at least Alignment,\notherwise false.\n13\n#\nThrows: Nothing.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*Alignment must be a power of two"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [ptr.align]/10: is_sufficiently_aligned \"Mandates: Alignment is a power of two.\"\n #include <memory>\n \n-bool f(int* p) { return std::is_sufficiently_aligned<3>(p); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 0,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/is_sufficiently_aligned_npot.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.libcxx.clang.log",
+      "first_error": null
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/is_sufficiently_aligned_npot.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__is_sufficiently_aligned_npot.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

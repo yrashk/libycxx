@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/format/fmt_user_type_no_formatter.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.formatter.spec"
+  ],
+  "normative_text": {
+    "format.formatter.spec": "28.5.6.4 Formatter specializations [format.formatter.spec]\n1\n#\nThe functions defined in [format.functions] use\nspecializations of the class template formatter to format\nindividual arguments.\n2\n#\nLet charT be either char or wchar_t.\n Each specialization of formatter is either enabled or disabled,\nas described below.\n A debug-enabled specialization of formatter\nadditionally provides\na public, constexpr, non-static member function set_debug_format()\nwhich modifies the state of the formatter to be as if\nthe type of the std-format-spec\nparsed by the last call to parse were ?.\n A constexpr-enabled specialization of formatter\nhas its format member function declared constexpr.\n Each header that declares the template formatter\nprovides the following enabled specializations:\n(2.1)\nThe debug-enabled and constexpr-enabled specializations\ntemplate<> struct formatter<char, char>;\ntemplate<> struct formatter<char, wchar_t>;\ntemplate<> struct formatter<wchar_t, wchar_t>;\n(2.2)\nFor each charT,\nthe debug-enabled and constexpr-enabled string type specializations\ntemplate<> struct formatter<charT*, charT>;\ntemplate<> struct formatter<const charT*, charT>;\ntemplate<size_t N> struct formatter<charT[N], charT>;\ntemplate<class traits, class Allocator>\n  struct formatter<basic_string<charT, traits, Allocator>, charT>;\ntemplate<class traits>\n  struct formatter<basic_string_view<charT, traits>, charT>;\n(2.3)\nFor each charT,\nfor each IntegerT that is either\na signed or unsigned integer type or bool,\na constexpr-enabled specialization\ntemplate<> struct formatter<IntegerT, charT>;\n(2.4)\nFor each charT,\nfor each FloatingT that is a cv-unqualified floating-point type,\na specialization\ntemplate<> struct formatter<FloatingT, charT>;\n(2.5)\nFor each charT,\nthe constexpr-enabled pointer type specialization\ntemplate<> struct formatter<nullptr_t, charT>;\n(2.6)\nFor each charT,\nthe pointer type specializations\ntemplate<> struct formatter<void*, charT>;\ntemplate<> struct formatter<const void*, charT>;\nThe parse member functions of these formatters\ninterpret the format specification\nas a std-format-spec\nas described in [format.string.std].\n3\n#\nUnless specified otherwise, for each type T for which\na formatter specialization is provided by the library,\neach of the headers provides the following specialization:\ntemplate<> inline constexpr bool enable_nonlocking_formatter_optimization<T> = true;\n[Note\u00a01:\u2002Specializations such as formatter<wchar_t, char>\nthat would require implicit\nmultibyte / wide string or character conversion are disabled.\n \u2014\u00a0end note]\n4\n#\nThe header _'><format> provides\nthe following disabled specializations:\n(4.1)\nThe string type specializations\ntemplate<> struct formatter<char*, wchar_t>;\ntemplate<> struct formatter<const char*, wchar_t>;\ntemplate<size_t N> struct formatter<char[N], wchar_t>;\ntemplate<class traits, class Allocator>\n  struct formatter<basic_string<char, traits, Allocator>, wchar_t>;\ntemplate<class traits>\n  struct formatter<basic_string_view<char, traits>, wchar_t>;\n5\n#\nFor any types T and charT for which\nneither the library nor the user provides\nan explicit or partial specialization of\nthe class template formatter,\nformatter<T, charT> is disabled.\n6\n#\nIf the library provides an explicit or partial specialization of\nformatter<T, charT>, that specialization is enabled\nand meets the Formatter requirements\nexcept as noted otherwise.\n7\n#\nIf F is a disabled specialization of formatter, these\nvalues are false:\n(7.1)\nis_default_constructible_v<F>,\n(7.2)\nis_copy_constructible_v<F>,\n(7.3)\nis_move_constructible_v<F>,\n(7.4)\nis_copy_assignable_v<F>, and\n(7.5)\nis_move_assignable_v<F>.\n8\n#\nAn enabled specialization formatter<T, charT> meets the\nBasicFormatter requirements ([formatter.requirements]).\n [Example\u00a01:\u2002#include <format>\n#include <string>\nenum color { red, green, blue };\nconst char* color_names[] = { \"red\", \"green\", \"blue\" };\ntemplate<> struct std::formatter<color> : std::formatter<const char*> {\n  auto format(color c, format_context& ctx) const {\n    return formatter<const char*>::format(color_names[c], ctx);\n  }\n};\nstruct err {};\nstd::string s0 = std::format(\"{}\", 42);         // OK, library-provided formatter\nstd::string s1 = std::format(\"{}\", L\"foo\");     // error: disabled formatter\nstd::string s2 = std::format(\"{}\", red);        // OK, user-provided formatter\nstd::string s3 = std::format(\"{}\", err{});      // error: disabled formatter\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::format: an argument type has no enabled formatter \\(std::formattable is false\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -5,4 +5,3 @@\n \n struct err {};\n \n-int main() { (void)std::format(\"{}\", err{}); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_user_type_no_formatter.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to implicitly-deleted default constructor of 'formatter<err, char>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_user_type_no_formatter.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_user_type_no_formatter.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::formatter must be specialized for each type being formatted"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/ratio/add_denominator_overflow.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "ratio.arithmetic"
+  ],
+  "normative_text": {
+    "ratio.arithmetic": "21.5.4 Arithmetic on ratios [ratio.arithmetic]\n1\n#\nEach of the alias templates ratio_add, ratio_subtract, ratio_multiply,\nand ratio_divide denotes the result of an arithmetic computation on two\nratios R1 and R2.\n With X and Y computed (in the\nabsence of arithmetic overflow) as specified by Table 65, each alias\ndenotes a ratio<U, V> such that U is the same as ratio<X, Y>\u200b::\u200bnum and\nV is the same as ratio<X, Y>\u200b::\u200bden.\n2\n#\nIf it is not possible to represent U or V with intmax_t, the program is\nill-formed.\n Otherwise, an implementation should yield correct values of U and\nV.\n If it is not possible to represent X or Y with intmax_t, the\nprogram is ill-formed unless the implementation yields correct values of U and\nV.\nTable 65 \u2014 Expressions used to perform ratio arithmetic\u2003[tab:ratio.arithmetic]\n\ud83d\udd17\nType\nValue of X\nValue of Y\n\ud83d\udd17\nratio_add<R1, R2>\nR1\u200b::\u200bnum * R2\u200b::\u200bden +\nR1\u200b::\u200bden * R2\u200b::\u200bden\n\ud83d\udd17\nR2\u200b::\u200bnum * R1\u200b::\u200bden\n\ud83d\udd17\nratio_subtract<R1, R2>\nR1\u200b::\u200bnum * R2\u200b::\u200bden -\nR1\u200b::\u200bden * R2\u200b::\u200bden\n\ud83d\udd17\nR2\u200b::\u200bnum * R1\u200b::\u200bden\n\ud83d\udd17\nratio_multiply<R1, R2>\nR1\u200b::\u200bnum * R2\u200b::\u200bnum\nR1\u200b::\u200bden * R2\u200b::\u200bden\n\ud83d\udd17\nratio_divide<R1, R2>\nR1\u200b::\u200bnum * R2\u200b::\u200bden\nR1\u200b::\u200bden * R2\u200b::\u200bnum\n3\n#\n[Example\u00a01:\u2002static_assert(ratio_add<ratio<1, 3>, ratio<1, 6>>::num == 1, \"1/3+1/6 == 1/2\");\nstatic_assert(ratio_add<ratio<1, 3>, ratio<1, 6>>::den == 2, \"1/3+1/6 == 1/2\");\nstatic_assert(ratio_multiply<ratio<1, 3>, ratio<3, 2>>::num == 1, \"1/3*3/2 == 1/2\");\nstatic_assert(ratio_multiply<ratio<1, 3>, ratio<3, 2>>::den == 2, \"1/3*3/2 == 1/2\");\n// The following cases may cause the program to be ill-formed under some implementations\nstatic_assert(ratio_add<ratio<1, INT_MAX>, ratio<1, INT_MAX>>::num == 2,\n  \"1/MAX+1/MAX == 2/MAX\");\nstatic_assert(ratio_add<ratio<1, INT_MAX>, ratio<1, INT_MAX>>::den == INT_MAX,\n  \"1/MAX+1/MAX == 2/MAX\");\nstatic_assert(ratio_multiply<ratio<1, INT_MAX>, ratio<INT_MAX, 2>>::num == 1,\n  \"1/MAX * MAX/2 == 1/2\");\nstatic_assert(ratio_multiply<ratio<1, INT_MAX>, ratio<INT_MAX, 2>>::den == 2,\n  \"1/MAX * MAX/2 == 1/2\");\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*\\[ratio\\.arithmetic\\]/2: the result of the std::ratio arithmetic is not representable by intmax_t"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -7,5 +7,3 @@\n #include <cstdint>\n #include <ratio>\n \n-using R = std::ratio_add<std::ratio<1, INTMAX_MAX>, std::ratio<1, INTMAX_MAX - 1>>;\n-constexpr auto d = R::den;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ratio/add_denominator_overflow.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '9223372036854775806L <= max - 9223372036854775807L': overflow in __ll_add"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/ratio/add_denominator_overflow.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/ratio__add_denominator_overflow.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: overflow in addition"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

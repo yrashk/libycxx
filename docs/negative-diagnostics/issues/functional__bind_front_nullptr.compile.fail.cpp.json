@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/functional/bind_front_nullptr.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "func.bind.partial"
+  ],
+  "normative_text": {
+    "func.bind.partial": "22.10.14 Function templates bind_front and bind_back [func.bind.partial]\n\ud83d\udd17\ntemplate<class F, class... Args>\n  constexpr unspecified bind_front(F&& f, Args&&... args);\ntemplate<class F, class... Args>\n  constexpr unspecified bind_back(F&& f, Args&&... args);\n1\n#\nWithin this subclause:\n(1.1)\ng is a value of\nthe result of a bind_front or bind_back invocation,\n(1.2)\nFD is the type decay_t<F>,\n(1.3)\nfd is the target object of g ([func.def])\n  of type FD,\n  direct-non-list-initialized with std\u200b::\u200bforward<F\u200b>(f),\n(1.4)\nBoundArgs is a pack\n  that denotes decay_t<Args>...,\n(1.5)\nbound_args is\n  a pack of bound argument entities of g ([func.def])\n  of types BoundArgs...,\n  direct-non-list-initialized with std\u200b::\u200bforward<Args>(args)...,\n  respectively, and\n(1.6)\ncall_args is an argument pack used in\n  a function call expression ([expr.call]) of g.\n2\n#\nMandates: is_constructible_v<FD, F> &&\nis_move_constructible_v<FD> &&\n(is_constructible_v<BoundArgs, Args> && ...) &&\n(is_move_constructible_v<BoundArgs> && ...)\nis true.\n3\n#\nPreconditions: FD meets the Cpp17MoveConstructible requirements.\n For each Ti in BoundArgs,\nif Ti is an object type,\nTi meets the Cpp17MoveConstructible requirements.\n4\n#\nReturns: A perfect forwarding call wrapper ([func.require]) g\nwith call pattern:\n(4.1)\ninvoke(fd, bound_args..., call_args...)\nfor a bind_front invocation, or\n(4.2)\ninvoke(fd, call_args..., bound_args...)\nfor a bind_back invocation.\n5\n#\nThrows: Any exception thrown by\nthe initialization of the state entities of g ([func.def]).\n\ud83d\udd17\ntemplate<auto f, class... Args>\n  constexpr unspecified bind_front(Args&&... args);\ntemplate<auto f, class... Args>\n  constexpr unspecified bind_back(Args&&... args);\n6\n#\nWithin this subclause:\n(6.1)\nF is the type of f,\n(6.2)\ng is a value of the result of\na bind_front or bind_back invocation,\n(6.3)\nBoundArgs is a pack that denotes decay_t<Args>...,\n(6.4)\nbound_args is a pack of bound argument entities of\ng ([func.def]) of types BoundArgs...,\ndirect-non-list-initialized with std\u200b::\u200bforward<Args>(args)...,\nrespectively, and\n(6.5)\ncall_args is an argument pack used in\na function call expression ([expr.call]) of g.\n7\n#\nMandates: (7.1)\n(is_constructible_v<BoundArgs, Args> && ...) is true, and\n(7.2)\n(is_move_constructible_v<BoundArgs> && ...) is true, and\n(7.3)\nif is_pointer_v<F> || is_member_pointer_v<F> is true,\nthen f != nullptr is true.\n8\n#\nPreconditions: For each Ti in BoundArgs,\nTi meets the Cpp17MoveConstructible requirements.\n9\n#\nReturns: A perfect forwarding call wrapper ([func.require]) g\nwhose target object is a copy of cw<f>, and\nwhose call pattern is:\n(9.1)\ninvoke(f, bound_args..., call_args...)\nfor a bind_front invocation, or\n(9.2)\ninvoke(f, call_args..., bound_args...)\nfor a bind_back invocation.\n10\n#\nThrows: Any exception thrown by the initialization of bound_args.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::bind_front<f>: f must not be a null pointer"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,4 +4,3 @@\n \n struct S { int g(int) const; };\n constexpr int (S::*null_mf)(int) const = nullptr;\n-auto g = std::bind_front<null_mf>(S{});\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/bind_front_nullptr.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'nullptr != nullptr': bind_front: f cannot be equal to nullptr"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/functional/bind_front_nullptr.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/functional__bind_front_nullptr.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

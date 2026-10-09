@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/numeric/lcm_floating.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "numeric.ops.lcm"
+  ],
+  "normative_text": {
+    "numeric.ops.lcm": "26.10.15 Least common multiple [numeric.ops.lcm]\n\ud83d\udd17\ntemplate<class M, class N>\n  constexpr common_type_t<M, N> lcm(M m, N n);\n1\n#\nMandates: M and N both are integer types other than\ncv bool.\n2\n#\nPreconditions: |m| and |n|\nare representable as a value of common_type_t<M, N>.\n The least common multiple of |m| and |n|\nis representable as a value of type common_type_t<M, N>.\n3\n#\nReturns: Zero when either m or n is zero.\n Otherwise, returns the least common multiple of |m| and |n|.\n4\n#\nThrows: Nothing.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::lcm: M and N must be integer types other than bool"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,5 +2,4 @@\n #include <numeric>\n \n int main() {\n-  return static_cast<int>(std::lcm(4.0, 6));\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/lcm_floating.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::is_integral<double>::value': Arguments to lcm must be integer types"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/numeric/lcm_floating.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/numeric__lcm_floating.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::lcm arguments must be integers"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

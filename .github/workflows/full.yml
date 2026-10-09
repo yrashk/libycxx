@@ -204,7 +204,41 @@ jobs:
         with:
           locales: 'true'
       - name: Real-world projects, ${{ matrix.compiler }} (tools/test; fetches the projects)
-        run: tools/test -j4 -c ${{ matrix.compiler }} build realworld
+        shell: bash
+        run: |
+          # These jobs have lost their runners during Abseil tests, before artifacts could
+          # upload. Keep test progress and resource usage in the remote job log as they run.
+          apt-get install -y -qq procps >/dev/null
+          report_resources() {
+            trap 'kill "${resource_sleep_pid:-}" 2>/dev/null || true; exit 0' TERM
+            while :; do
+              date -u '+Resource snapshot %Y-%m-%dT%H:%M:%SZ'
+              awk '/^(MemAvailable|SwapFree):/ { print }' /proc/meminfo
+              df -h .
+              for counter in memory.current memory.peak memory.max memory.events; do
+                if [ -r "/sys/fs/cgroup/$counter" ]; then
+                  printf '%s: ' "$counter"
+                  tr '\n' ' ' < "/sys/fs/cgroup/$counter"
+                  printf '\n'
+                fi
+              done
+              # Command names only: arguments and environments may contain credentials.
+              ps -eo pid,ppid,comm,rss,pcpu --sort=-rss | head -n16 || true
+              for log in build/test-logs/realworld-*/*/test.log; do
+                if [ -f "$log" ]; then
+                  printf 'Latest CTest output: %s\n' "$log"
+                  tail -n4 "$log"
+                fi
+              done
+              sleep 30 &
+              resource_sleep_pid=$!
+              wait "$resource_sleep_pid"
+            done
+          }
+          report_resources &
+          resource_monitor_pid=$!
+          trap 'kill "$resource_monitor_pid" 2>/dev/null || true; wait "$resource_monitor_pid" 2>/dev/null || true' EXIT
+          tools/test -v -j4 -c ${{ matrix.compiler }} build realworld
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4

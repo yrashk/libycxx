@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; distribution/shuffle algorithms are implementation-defined.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.samp.pconst]: x in [b_0, b_n), uniform within each [b_i, b_{i+1}) with density
 // rho_k = w_k / (S (b_{k+1} - b_k)), S = sum w_k. Defaults n = 1, rho_0 = 1, b = {0, 1} (/3, and
 // when firstB == lastB, ++firstB == lastB, or bl.size() < 2); the initializer_list form uses

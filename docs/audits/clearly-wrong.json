@@ -953,7 +953,8 @@
       "changes": "Use atomic loads for every underlying-object observation and store for INT_MAX; use USHRT_MAX for portable unsigned wrap.",
       "boundary_investigation": "Reviewed signed/unsigned wrapping, floating fetch min/max and pointer arithmetic endpoints. Existing return-value and new load checks agree; no actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "598e58bef9b5eb39968fbc925c5a4cb6f0d1289f"
     },
     {
       "id": "C14",

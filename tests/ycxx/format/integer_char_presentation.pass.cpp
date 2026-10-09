@@ -6,6 +6,7 @@
 // REQUIRES: exceptions
 // COUNTERPART: libcxx:utilities/format/format.formatter/format.formatter.spec/formatter.char(.fsigned-char|.funsigned-char)?.pass.cpp
 #include <format>
+#include <limits>
 #include <string>
 #include "check.hpp"
 
@@ -15,7 +16,18 @@ int main() {
   CHECK(std::format("{:3c}|", 66) == "B  |");
   CHECK(std::format("{:>3c}|", 66) == "  B|");
   CHECK(std::format("{:c}", 127) == "\x7f");
-  CHECK(std::format("{:c}", -1) == "\xff"); // char is signed here: -1 is representable
+  constexpr int first = std::numeric_limits<char>::min(), last = std::numeric_limits<char>::max();
+  CHECK(std::format("{:c}", first) == std::string(1, static_cast<char>(first)));
+  CHECK(std::format("{:c}", last) == std::string(1, static_cast<char>(last)));
+  for (const int outside : {first - 1, last + 1}) {
+    bool rejected = false;
+    try {
+      (void)std::format("{:c}", outside);
+    } catch (const std::format_error&) {
+      rejected = true;
+    }
+    CHECK(rejected);
+  }
   bool threw = false;
   try {
     (void)std::format("{:c}", 256);

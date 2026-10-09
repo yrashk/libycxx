@@ -898,7 +898,8 @@
       "changes": "Use load/store for all int, Pair, bool access and add ordinary-access-after-last-ref-scope check.",
       "boundary_investigation": "Reviewed lifetime, required alignment, cross-ref storage visibility and CAS expected-value accesses; extra lifetime-end boundary passes. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "036a74efef180c46ae994045b7408e8766aa40e4"
     },
     {
       "id": "C13",

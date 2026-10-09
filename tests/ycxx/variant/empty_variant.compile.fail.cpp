@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*variant must have at least one alternative
 // [variant.variant.general]/3: "A program that instantiates the definition of variant with
 // no template arguments is ill-formed."
 #include <variant>

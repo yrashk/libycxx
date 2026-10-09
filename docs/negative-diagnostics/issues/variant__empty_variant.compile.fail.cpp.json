@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/variant/empty_variant.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "variant.variant.general"
+  ],
+  "normative_text": {
+    "variant.variant.general": "22.6.3.1 General [variant.variant.general]\nnamespace std {\n  template<class... Types>\n  class variant {\n  public:\n    // [variant.ctor], constructors\n    constexpr variant() noexcept(see below);\n    constexpr variant(const variant&) noexcept(see below);\n    constexpr variant(variant&&) noexcept(see below);\n    template<class T>\n      constexpr variant(T&&) noexcept(see below);\n    template<class T, class... Args>\n      constexpr explicit variant(in_place_type_t<T>, Args&&...);\n    template<class T, class U, class... Args>\n      constexpr explicit variant(in_place_type_t<T>, initializer_list<U>, Args&&...);\n    template<size_t I, class... Args>\n      constexpr explicit variant(in_place_index_t<I>, Args&&...);\n    template<size_t I, class U, class... Args>\n      constexpr explicit variant(in_place_index_t<I>, initializer_list<U>, Args&&...);\n    // [variant.dtor], destructor\n    constexpr ~variant();\n    // [variant.assign], assignment\n    constexpr variant& operator=(const variant&);\n    constexpr variant& operator=(variant&&) noexcept(see below);\n    template<class T> constexpr variant& operator=(T&&) noexcept(see below);\n    // [variant.mod], modifiers\n    template<class T, class... Args>\n      constexpr T& emplace(Args&&...);\n    template<class T, class U, class... Args>\n      constexpr T& emplace(initializer_list<U>, Args&&...);\n    template<size_t I, class... Args>\n      constexpr variant_alternative_t<I, variant<Types...>>& emplace(Args&&...);\n    template<size_t I, class U, class... Args>\n      constexpr variant_alternative_t<I, variant<Types...>>&\n        emplace(initializer_list<U>, Args&&...);\n    // [variant.status], value status\n    constexpr bool valueless_by_exception() const noexcept;\n    constexpr size_t index() const noexcept;\n    // [variant.swap], swap\n    constexpr void swap(variant&) noexcept(see below);\n    // [variant.visit], visitation\n    template<class Self, class Visitor>\n      constexpr decltype(auto) visit(this Self&&, Visitor&&);\n    template<class R, class Self, class Visitor>\n      constexpr R visit(this Self&&, Visitor&&);\n  };\n}\n1\n#\nAny instance of variant at any given time either holds a value\nof one of its alternative types or holds no value.\n When an instance of variant holds a value of alternative type T,\nit means that a value of type T, referred to as the variant\nobject's contained value,\nis nested within ([intro.object]) the\nvariant object.\n2\n#\nAll types in Types shall meet\nthe Cpp17Destructible requirements (Table 35).\n3\n#\nA program that instantiates the definition of variant with\nno template arguments is ill-formed.\n4\n#\nIf a program declares an explicit or partial specialization of variant,\nthe program is ill-formed, no diagnostic required.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*variant must have at least one alternative"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // no template arguments is ill-formed.\"\n #include <variant>\n \n-std::variant<> v;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/empty_variant.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '0 < sizeof...(_Types)': variant must consist of at least one alternative."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/variant/empty_variant.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/variant__empty_variant.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: variant must have at least one alternative"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

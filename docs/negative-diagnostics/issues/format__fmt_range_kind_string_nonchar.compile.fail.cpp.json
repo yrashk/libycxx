@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/format/fmt_range_kind_string_nonchar.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.range.fmtstr"
+  ],
+  "normative_text": {
+    "format.range.fmtstr": "28.5.7.6 Specialization of range-default-formatter for strings [format.range.fmtstr]\n\ud83d\udd17\nnamespace std {\n  template<range_format K, ranges::input_range R, class charT>\n    requires (K == range_format::string || K == range_format::debug_string)\n  struct range-default-formatter<K, R, charT> {\n  private:\n    formatter<basic_string<charT>, charT> underlying_;                  // exposition only\n  public:\n    template<class ParseContext>\n      constexpr typename ParseContext::iterator\n        parse(ParseContext& ctx);\n    template<class FormatContext>\n      constexpr typename FormatContext::iterator\n        format(see below& str, FormatContext& ctx) const;\n  };\n}\n1\n#\nMandates: same_as<remove_cvref_t<range_reference_t<R>>, charT>\nis true.\n\ud83d\udd17\ntemplate<class ParseContext>\n  constexpr typename ParseContext::iterator\n    parse(ParseContext& ctx);\n2\n#\nEffects: Equivalent to:\nauto i = underlying_.parse(ctx);\nif constexpr (K == range_format::debug_string) {\n  underlying_.set_debug_format();\n}\nreturn i;\n\ud83d\udd17\ntemplate<class FormatContext>\n  typename FormatContext::iterator\n    format(see below& r, FormatContext& ctx) const;\n3\n#\nThe type of r is const R&\nif ranges\u200b::\u200binput_range<const R> is true and\nR& otherwise.\n4\n#\nEffects: Let s be a basic_string<charT> such that\nranges\u200b::\u200bequal(s, r) is true.\n Equivalent to: return underlying_.format(s, ctx);\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::formatter: a range formatted as a string must have elements of the character type \\(\\[format\\.range\\.fmtstr\\]/1\\)"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -14,4 +14,3 @@\n template <>\n inline constexpr std::range_format std::format_kind<Ints> = std::range_format::string;\n \n-int main() { (void)std::format(\"{}\", Ints{{1, 2}}); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_range_kind_string_nonchar.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no matching constructor for initialization of 'basic_string_view<char>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_range_kind_string_nonchar.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_range_kind_string_nonchar.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

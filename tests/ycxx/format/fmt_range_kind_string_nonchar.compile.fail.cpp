@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::formatter: a range formatted as a string must have elements of the character type \(\[format\.range\.fmtstr\]/1\)
 // [format.range.fmtstr]/1: range-default-formatter<range_format::string, R, charT>
 // "Mandates: same_as<remove_cvref_t<range_reference_t<R>>, charT> is true." A program-defined
 // range of int whose format_kind is specialized to range_format::string is therefore

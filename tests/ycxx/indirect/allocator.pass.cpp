@@ -14,12 +14,14 @@
 
 using A = IdAlloc<int>;
 using I = std::indirect<int, A>;
-static_assert(!std::is_nothrow_constructible_v<I, std::allocator_arg_t, const A&, I&&>);  // is_always_equal false
+// [res.on.exception.handling]/5 permits nonvirtual noexcept strengthening when a
+// synopsis condition is false. Only the mandated true cases are asserted.
 static_assert(std::is_nothrow_constructible_v<std::indirect<int>, std::allocator_arg_t, const std::allocator<int>&,
                                               std::indirect<int>&&>);
-static_assert(!std::is_nothrow_move_assignable_v<I>);
 static_assert(std::is_nothrow_move_assignable_v<std::indirect<int, IdAlloc<int, false, true>>>);
-static_assert(!noexcept(std::declval<I&>().swap(std::declval<I&>())));
+static_assert(noexcept(std::declval<std::indirect<int>&>().swap(std::declval<std::indirect<int>&>())));
+static_assert(noexcept(std::declval<std::indirect<int, IdAlloc<int, false, false, true>>&>().swap(
+    std::declval<std::indirect<int, IdAlloc<int, false, false, true>>&>())));
 static_assert(std::is_same_v<decltype(std::indirect(std::allocator_arg, IdAlloc<char>(1), 5)), std::indirect<int, IdAlloc<int>>>);
 
 int main() {
@@ -70,12 +72,29 @@ int main() {
   // swap with POCS exchanges the allocators.
   using IS = std::indirect<int, IdAlloc<int, false, false, true>>;
   IS s1(std::allocator_arg, IdAlloc<int, false, false, true>(1), 1), s2(std::allocator_arg, IdAlloc<int, false, false, true>(2), 2);
+  int* ps1 = &*s1;
+  int* ps2 = &*s2;
   s1.swap(s2);
+  CHECK(&*s1 == ps2 && &*s2 == ps1);
   CHECK(*s1 == 2 && s1.get_allocator().id == 2 && *s2 == 1 && s2.get_allocator().id == 1);
   // Without POCS, equal allocators required; they stay.
   I e1(std::allocator_arg, A(7), 1), e2(std::allocator_arg, A(7), 2);
+  int* pe1 = &*e1;
+  int* pe2 = &*e2;
   swap(e1, e2);
+  CHECK(&*e1 == pe2 && &*e2 == pe1);
   CHECK(*e1 == 2 && *e2 == 1 && e1.get_allocator().id == 7);
+
+  // Swapping an owned object and a valueless state transfers the same object identity.
+  I owner(std::allocator_arg, A(7), 42);
+  I moved(std::move(owner));
+  int* identity = &*moved;
+  owner.swap(moved);
+  CHECK(!owner.valueless_after_move() && moved.valueless_after_move());
+  CHECK(&*owner == identity && *owner == 42 && owner.get_allocator().id == 7);
+  I& alias = owner;
+  owner = std::move(alias);  // [indirect.assign]/6: self move has no effects
+  CHECK(&*owner == identity && *owner == 42);
 
   // Every allocation and construction goes through the allocator.
   alloc_counters = {};

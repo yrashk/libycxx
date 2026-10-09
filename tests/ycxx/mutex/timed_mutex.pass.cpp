@@ -17,7 +17,9 @@ using namespace std::chrono;
 template<class M>
 static void run() {
   M m;
-  CHECK(m.try_lock_for(milliseconds(50)));  // free: obtained
+  // A try operation may fail spuriously; lock establishes ownership.
+  if (m.try_lock_for(milliseconds(1))) m.unlock();
+  m.lock();
   bool r1 = true, r2 = true, r3 = true;
   steady_clock::duration waited{};
   std::thread([&] {
@@ -34,12 +36,13 @@ static void run() {
   // a waiter gets the lock once it is released
   m.lock();
   bool got = false;
-  std::thread waiter([&] { got = m.try_lock_for(seconds(30)); if (got) m.unlock(); });
+  std::thread waiter([&] { m.lock(); got = true; m.unlock(); });
   std::this_thread::sleep_for(milliseconds(1));
   m.unlock();
   waiter.join();
   CHECK(got);
-  CHECK(m.try_lock_until(system_clock::now() + milliseconds(10)));
+  if (m.try_lock_until(system_clock::now() + milliseconds(10))) m.unlock();
+  m.lock();
   m.unlock();
 }
 

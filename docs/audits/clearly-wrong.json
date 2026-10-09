@@ -1,0 +1,616 @@
+{
+  "baseline": "2f91a1a5238ba6d9b4302f2f55b9fd988093d1ec",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "workflow": "Read complete assigned sources/fixtures and exact revision clauses; correct normative oracles; targeted boundary/negative search; GCC and Clang own suite; installed reference libraries; relevant upstream tests; independent commits. Generated evidence under build/test-logs/own-audit. No AGENTS guidance (ancestor file empty).",
+  "issues": [
+    {
+      "id": "C01",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/vector/exception_safety.pass.cpp",
+          "line": 44
+        }
+      ],
+      "reason": "The first block reserves 3 and inserts 3 elements, then requires the next push_back to reallocate and throw from a copy. reserve(3) may give capacity greater than 3, so the call can succeed without copying any old element. The exception guarantee does not require this operation to throw.",
+      "clauses": [
+        "vector.capacity",
+        "vector.modifiers"
+      ],
+      "remedy": "Fill to the actual capacity and test an operation with an independently required throwing construction; do not require a particular relocation strategy.",
+      "priority": 1,
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc vector/exception_safety.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C01', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang vector/exception_safety.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C01', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc vector/exception_safety.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C01', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang vector/exception_safety.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C01', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C01-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -Itests/ycxx/support tests/ycxx/vector/exception_safety.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C01-libcxx.exe\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C01', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "vector.capacity/4,7 and vector.modifiers/2 guarantee no effects on failure for CopyInsertable T; reserve may overallocate; relocation strategy unspecified. Audit also missed reserve block requiring copies to throw.",
+      "changes": "Fill actual capacity, force an inserted lvalue copy to throw, preserve original values/storage; reserve allows successful move relocation.",
+      "boundary_investigation": "Examined reallocation guards in core/vector.hpp; aliasing push_back(v.front()) now checked for failure and successful growth. No defect found in inserted-copy rollback.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+    },
+    {
+      "id": "C03",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/vector/move_if_noexcept_growth.pass.cpp",
+          "line": 41
+        }
+      ],
+      "reason": "Requires exactly four moves and zero copies for a nothrow-movable element, and an exact copy-only strategy for a potentially throwing move. The cited clauses specify values, complexity and exception guarantees, not that relocation algorithm. Copying a nothrow-movable, copyable value is permitted.",
+      "clauses": [
+        "vector.capacity",
+        "vector.modifiers"
+      ],
+      "remedy": "Assert preservation of values and the specified exception guarantees; label move/copy counts as implementation policy.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C04",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/string/capacity.pass.cpp",
+          "line": 37
+        }
+      ],
+      "reason": "After reserve(100), requires 100 push_back calls to preserve capacity and data(). basic_string has no vector-style no-reallocation-until-capacity promise; push_back is among the non-const functions permitted to invalidate references.",
+      "clauses": [
+        "string.require",
+        "string.capacity"
+      ],
+      "remedy": "Test reserve itself and final contents/capacity >= size; remove cross-push_back pointer stability.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C07",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/algorithm/all_any_none_of.pass.cpp",
+          "line": 50
+        }
+      ],
+      "reason": "Requires left-to-right short-circuit evaluation and exact predicate call counts 3, 2 and 1. These algorithms specify the Boolean result and at most N calls, not that evaluation order or early exit.",
+      "clauses": [
+        "alg.all.of",
+        "alg.any.of",
+        "alg.none.of"
+      ],
+      "remedy": "Check the result and the at-most-N bound.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C08",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/algorithm/find.pass.cpp",
+          "line": 66
+        }
+      ],
+      "reason": "Requires find_if to call the predicate exactly twice for a match at index 1. Returning the first matching iterator does not require stopping all evaluation there; the complexity requirement is at most N applications.",
+      "clauses": [
+        "alg.find"
+      ],
+      "remedy": "Check the returned iterator and calls <= N; an exact sequential count is implementation policy.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C09",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/memory/default_allocator.pass.cpp",
+          "line": 59
+        }
+      ],
+      "reason": "Uses built-in relational comparison between pointers into separate allocated arrays to prove non-overlap. The relational results for unrelated arrays are unspecified and can make this disjunction false even for disjoint storage.",
+      "clauses": [
+        "expr.rel",
+        "allocator.members"
+      ],
+      "remedy": "Compare each pair of live element pointers for inequality, or explicitly make this a platform-address test.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C10",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/memory/allocate_at_least.pass.cpp",
+          "line": 23
+        }
+      ],
+      "reason": "Requires allocation_result to have exactly the sum of the sizes of its two members. No extra members or bases does not prohibit padding or extra alignment.",
+      "clauses": [
+        "allocator.traits.other"
+      ],
+      "remedy": "Check member types, aggregate structure and structured binding without assuming a byte size.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C25",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/algorithm/no_extra_memory.pass.cpp",
+          "line": 73
+        }
+      ],
+      "reason": "With every global allocation forced to fail, requires stable_sort/inplace_merge/stable_partition to complete normally. The non-parallel functions have potentially throwing specifications and no restrictive Throws paragraph, so res.on.exception.handling/4 permits allocation failures to propagate as implementation-defined exceptions, including bad_alloc. The fallback complexity clauses do not prohibit that exception.",
+      "clauses": [
+        "res.on.exception.handling",
+        "stable.sort",
+        "alg.merge",
+        "alg.partitions"
+      ],
+      "remedy": "If keeping this behavior, label it a libycxx allocation-fallback policy test; do not claim it is universally required.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C26",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/algorithm/no_extra_memory_bidi_proxy.pass.cpp",
+          "line": 69
+        }
+      ],
+      "reason": "With every global allocation forced to fail, requires stable_sort/inplace_merge/stable_partition to complete normally. The non-parallel functions have potentially throwing specifications and no restrictive Throws paragraph, so res.on.exception.handling/4 permits allocation failures to propagate as implementation-defined exceptions, including bad_alloc. The fallback complexity clauses do not prohibit that exception.",
+      "clauses": [
+        "res.on.exception.handling",
+        "stable.sort",
+        "alg.merge",
+        "alg.partitions"
+      ],
+      "remedy": "If keeping this behavior, label it a libycxx allocation-fallback policy test; do not claim it is universally required.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C05",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/variant/valueless.pass.cpp",
+          "line": 46
+        }
+      ],
+      "reason": "The fixture requires a throwing emplace to make the variant valueless. variant.mod permits that outcome but does not require it. In particular, the old float can be saved and restored after the constructor throws. Throwing constructors of the new alternative do not prevent restoration of the old alternative.",
+      "clauses": [
+        "variant.mod",
+        "variant.assign"
+      ],
+      "remedy": "Construct the valueless fixture through type-changing variant move assignment whose alternative move constructor throws; variant.assign/10.1 requires the valueless result.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C06",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/variant/relops_valueless.pass.cpp",
+          "line": 44
+        }
+      ],
+      "reason": "Uses throwing same-alternative emplace as a supposedly guaranteed valueless fixture. Preserving/restoring the old alternative is allowed; its copy constructor in this test does not actually throw.",
+      "clauses": [
+        "variant.mod",
+        "variant.assign"
+      ],
+      "remedy": "Use the required move-assignment failure case to construct the fixture.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C22",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/utility/self_swap_move_library_types.pass.cpp",
+          "line": 247
+        }
+      ],
+      "reason": "Requires a free real mutex to be acquired by a single try operation or a fixed finite number of tries. try_lock and the timed try operations may fail spuriously even when ownership is available. The recursive_mutex test also assumes success within 1000 tries.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general",
+        "thread.timedmutex.requirements.general"
+      ],
+      "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C27",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/functional/in_place_target_no_copies.pass.cpp",
+          "line": 71
+        }
+      ],
+      "reason": "After moving, swapping and move-assigning wrappers, requires exactly one destruction before leaving the scope and exactly four overall. The movable small target can use permitted small-object storage: moving the target constructs another object and destroying the moved-from object adds destructor calls. The test allows target moves but fails to account for their destructions.",
+      "clauses": [
+        "func.wrap.move.class",
+        "func.wrap.move.ctor",
+        "func.wrap.move.util"
+      ],
+      "remedy": "Require destruction exactly once per constructed target (including move constructions); retain the stricter identity/count checks for the immovable case.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C02",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/containers/emplace_in_place_sequences.pass.cpp",
+          "line": 77
+        }
+      ],
+      "reason": "Requires shrink_to_fit to make capacity equal size. The request is non-binding. Later exact relocation counts also assume that request was honored and that old elements are moved rather than copied.",
+      "clauses": [
+        "vector.capacity",
+        "vector.modifiers"
+      ],
+      "remedy": "Fill to actual capacity to force growth; keep any exact move-count policy separate from conformance.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C23",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/charconv/to_chars_float_special.pass.cpp",
+          "line": 35
+        }
+      ],
+      "reason": "The precision overload requires infinity to print as inf/-inf. Unlike the no-precision shortest overloads, this overload only specifies printf-style output with the supplied precision. C23 permits the implementation-defined spelling infinity/-infinity.",
+      "clauses": [
+        "charconv.to.chars"
+      ],
+      "remedy": "Accept both permitted infinity spellings in precision forms; preserve shortest requirements for non-precision forms.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C12",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/atomic/ref_basic.pass.cpp",
+          "line": 18
+        }
+      ],
+      "reason": "Reads x, p.a/p.b and b directly, and writes x = 12, while named atomic_ref instances still exist. The comment claiming the refs are gone is false: they have main scope. All access must occur through atomic_ref while any referencing instance exists.",
+      "clauses": [
+        "atomics.ref.generic.general"
+      ],
+      "remedy": "Use load/store, or end the atomic_ref scopes before ordinary access.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C13",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/atomic/ref_arith.pass.cpp",
+          "line": 12
+        }
+      ],
+      "reason": "Repeatedly reads the underlying x/us/d/p objects directly and assigns x = INT_MAX while their atomic_ref instances are alive, violating exclusive access through atomic_ref.",
+      "clauses": [
+        "atomics.ref.generic.general"
+      ],
+      "remedy": "Use the corresponding load/store operations.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C14",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/atomic/constexpr.pass.cpp",
+          "line": 72
+        }
+      ],
+      "reason": "The constexpr ref() check reads x directly while r still exists. Constant evaluation does not exempt this test from the atomic_ref exclusive-access rule.",
+      "clauses": [
+        "atomics.ref.generic.general"
+      ],
+      "remedy": "Use r.load() or destroy r before reading x.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C17",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/shared_mutex.pass.cpp",
+          "line": 71
+        }
+      ],
+      "reason": "Calls try_lock_shared_until on the same thread after successfully taking shared ownership with try_lock_shared_for. Its precondition requires the calling thread to have no ownership. Two shared unlocks do not make recursive shared locking valid.",
+      "clauses": [
+        "thread.sharedtimedmutex.requirements.general"
+      ],
+      "remedy": "Unlock between the two acquisitions, or acquire the second shared lock on another thread.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C18",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/timed_mutex.pass.cpp",
+          "line": 20
+        }
+      ],
+      "reason": "Requires a free real mutex to be acquired by a single try operation or a fixed finite number of tries. try_lock and the timed try operations may fail spuriously even when ownership is available. The recursive_mutex test also assumes success within 1000 tries.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general",
+        "thread.timedmutex.requirements.general"
+      ],
+      "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C19",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/timed_user_clock.pass.cpp",
+          "line": 75
+        }
+      ],
+      "reason": "Requires a free real mutex to be acquired by a single try operation or a fixed finite number of tries. try_lock and the timed try operations may fail spuriously even when ownership is available. The recursive_mutex test also assumes success within 1000 tries.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general",
+        "thread.timedmutex.requirements.general"
+      ],
+      "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C20",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/recursive_mutex.pass.cpp",
+          "line": 47
+        }
+      ],
+      "reason": "Requires a free real mutex to be acquired by a single try operation or a fixed finite number of tries. try_lock and the timed try operations may fail spuriously even when ownership is available. The recursive_mutex test also assumes success within 1000 tries.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general",
+        "thread.timedmutex.requirements.general"
+      ],
+      "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C21",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/lock_guard.pass.cpp",
+          "line": 48
+        }
+      ],
+      "reason": "Requires a free real mutex to be acquired by a single try operation or a fixed finite number of tries. try_lock and the timed try operations may fail spuriously even when ownership is available. The recursive_mutex test also assumes success within 1000 tries. Separately, line 37 adopts the Spy after the previous guard has already unlocked it, violating the adopt_lock precondition that the calling thread holds a lock.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general",
+        "thread.timedmutex.requirements.general",
+        "thread.lock.guard"
+      ],
+      "remedy": "Use lock() to establish availability after release, or separate a retry-based quality-of-implementation test from conformance. Call s.lock() before the Spy adopt_lock case and update its counters.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C28",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/shared_lock.pass.cpp",
+          "line": 80
+        }
+      ],
+      "reason": "Constructs a try-to-lock shared_lock on a real shared_mutex while the same thread already holds shared ownership through a. try_lock_shared requires the calling thread to have no ownership. The final three-try success check additionally rejects permitted spurious failures. The recursive Spy exercise is a different user-defined lockable contract and is not this finding.",
+      "clauses": [
+        "thread.sharedmutex.requirements.general",
+        "thread.mutex.requirements.mutex.general"
+      ],
+      "remedy": "Exercise simultaneous readers on distinct threads; use lock() after release instead of requiring a try operation to succeed.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C29",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/mutex_basic.pass.cpp",
+          "line": 38
+        }
+      ],
+      "reason": "Requires an available real mutex to be acquired within 10000 try_lock attempts, although permitted spurious failure has no specified retry bound.",
+      "clauses": [
+        "thread.mutex.requirements.mutex.general"
+      ],
+      "remedy": "Use lock() to establish availability; treat the bounded retry as a policy/watchdog test.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C30",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/lock_many.pass.cpp",
+          "line": 74
+        }
+      ],
+      "reason": "Requires std::try_lock on six unlocked real mutexes to return -1. Any underlying try_lock may fail spuriously, so this call may return a failing index with no implementation defect.",
+      "clauses": [
+        "thread.lock.algorithm",
+        "thread.mutex.requirements.mutex.general"
+      ],
+      "remedy": "Use std::lock to verify the released locks can all be acquired.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C31",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/mutex/lock_algorithm.pass.cpp",
+          "line": 96
+        }
+      ],
+      "reason": "Requires std::try_lock(y,x) to fail at index 1 because x is held elsewhere. The unlocked y may fail spuriously at index 0. The earlier deterministic Spy cases are valid and are not this finding.",
+      "clauses": [
+        "thread.lock.algorithm",
+        "thread.mutex.requirements.mutex.general"
+      ],
+      "remedy": "Accept either failure index for real mutexes; use the Spy to verify exact traversal order.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C11",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/chrono/duration_types.compile.pass.cpp",
+          "line": 38
+        }
+      ],
+      "reason": "Requires sizeof(seconds) == sizeof(seconds::rep). The representation member is exposition-only; the specification gives no exact object-size or padding requirement.",
+      "clauses": [
+        "time.duration.general"
+      ],
+      "remedy": "Keep the representation type and defaulted special-member checks; remove the size equality.",
+      "priority": 1,
+      "disposition": "pending"
+    },
+    {
+      "id": "C24",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/random/uniform_real_upper_bound.pass.cpp",
+          "line": 32
+        }
+      ],
+      "reason": "Requires an engine returning its minimum to produce the distribution lower bound exactly. The distribution specifies the output interval and density, not the mapping from an individual engine value. A uniform mapping with reversed bit order can produce a different in-range result.",
+      "clauses": [
+        "rand.dist.uni.real",
+        "rand.req.dist"
+      ],
+      "remedy": "Check the result is in [a,b); do not prescribe which input maps to a.",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C15",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/modes/freestanding_items.pass.cpp",
+          "line": 205
+        }
+      ],
+      "reason": "Reads plain directly after ar.store(9), while ar is alive; the atomic_ref access rule applies in freestanding mode too.",
+      "clauses": [
+        "atomics.ref.generic.general"
+      ],
+      "remedy": "Use ar.load().",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C16",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/modules/import_std_concurrency.pass.cpp",
+          "line": 58
+        }
+      ],
+      "reason": "Reads guarded directly while the referencing atomic_ref ar exists. Importing std does not change the atomic_ref access rule.",
+      "clauses": [
+        "atomics.ref.generic.general"
+      ],
+      "remedy": "Use ar.load().",
+      "priority": 2,
+      "disposition": "pending"
+    },
+    {
+      "id": "C32",
+      "classification": "clearly wrong",
+      "locations": [
+        {
+          "path": "tests/ycxx/condition_variable/predicate_throws.pass.cpp",
+          "line": 115
+        }
+      ],
+      "reason": "The notifier loop waits for the predicate-evaluation counter to equal each of 1 and 2 exactly. Permitted spurious wakes can advance the counter to 3 and throw before the notifier observes the intermediate value. The notifier then loops forever until the watchdog kills an otherwise conforming run.",
+      "clauses": [
+        "thread.condvarany.wait",
+        "thread.condvarany.intwait"
+      ],
+      "remedy": "Use explicit phase/notification handshakes and break when the future is ready; do not equate evaluations with notifications.",
+      "priority": 2,
+      "disposition": "pending"
+    }
+  ]
+}

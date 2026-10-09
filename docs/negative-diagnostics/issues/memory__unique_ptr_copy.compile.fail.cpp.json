@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/memory/unique_ptr_copy.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "unique.ptr.single.general"
+  ],
+  "normative_text": {
+    "unique.ptr.single.general": "20.4.1.3.1 General [unique.ptr.single.general]\n\ud83d\udd17\nnamespace std {\n  template<class T, class D = default_delete<T>> class unique_ptr {\n  public:\n    using pointer      = see below;\n    using element_type = T;\n    using deleter_type = D;\n    // [unique.ptr.single.ctor], constructors\n    constexpr unique_ptr() noexcept;\n    constexpr explicit unique_ptr(type_identity_t<pointer> p) noexcept;\n    constexpr unique_ptr(type_identity_t<pointer> p, see below d1) noexcept;\n    constexpr unique_ptr(type_identity_t<pointer> p, see below d2) noexcept;\n    constexpr unique_ptr(unique_ptr&& u) noexcept;\n    constexpr unique_ptr(nullptr_t) noexcept;\n    template<class U, class E>\n      constexpr unique_ptr(unique_ptr<U, E>&& u) noexcept;\n    // [unique.ptr.single.dtor], destructor\n    constexpr ~unique_ptr();\n    // [unique.ptr.single.asgn], assignment\n    constexpr unique_ptr& operator=(unique_ptr&& u) noexcept;\n    template<class U, class E>\n      constexpr unique_ptr& operator=(unique_ptr<U, E>&& u) noexcept;\n    constexpr unique_ptr& operator=(nullptr_t) noexcept;\n    // [unique.ptr.single.observers], observers\n    constexpr add_lvalue_reference_t<T> operator*() const noexcept(see below);\n    constexpr pointer operator->() const noexcept;\n    constexpr pointer get() const noexcept;\n    constexpr deleter_type& get_deleter() noexcept;\n    constexpr const deleter_type& get_deleter() const noexcept;\n    constexpr explicit operator bool() const noexcept;\n    // [unique.ptr.single.modifiers], modifiers\n    constexpr pointer release() noexcept;\n    constexpr void reset(pointer p = pointer()) noexcept;\n    constexpr void swap(unique_ptr& u) noexcept;\n    // disable copy from lvalue\n    unique_ptr(const unique_ptr&) = delete;\n    unique_ptr& operator=(const unique_ptr&) = delete;\n  };\n}\n1\n#\nA program that instantiates the definition of unique_ptr<T, D>\nis ill-formed if T* is an invalid type.\n [Note\u00a01:\u2002This prevents the instantiation of specializations such as\nunique_ptr<T&, D> and unique_ptr<int() const, D>.\n \u2014\u00a0end note]\n2\n#\nThe default type for the template parameter D is\ndefault_delete.\n A client-supplied template argument\nD shall be a function\nobject type ([function.objects]), lvalue reference to function, or\nlvalue reference to function object type\nfor which, given\na value d of type D and a value\nptr of type unique_ptr<T, D>\u200b::\u200bpointer, the expression\nd(ptr) is valid and has the effect of disposing of the\npointer as appropriate for that deleter.\n3\n#\nIf the deleter's type D is not a reference type, D shall meet\nthe Cpp17Destructible requirements (Table 35).\n4\n#\nIf the qualified-id remove_reference_t<D>\u200b::\u200bpointer is valid and denotes a\ntype ([temp.deduct]), then unique_ptr<T,\nD>\u200b::\u200bpointer shall be a synonym for remove_reference_t<D>\u200b::\u200bpointer.\n Otherwise\nunique_ptr<T, D>\u200b::\u200bpointer shall be a synonym for element_type*.\n The type unique_ptr<T,\nD>\u200b::\u200bpointer shall\nmeet the Cpp17NullablePointer requirements (Table 36).\n5\n#\n[Example\u00a01:\u2002Given an allocator type X ([allocator.requirements.general]) and\nletting A be a synonym for allocator_traits<X>, the types A\u200b::\u200bpointer,\nA\u200b::\u200bconst_pointer, A\u200b::\u200bvoid_pointer, and A\u200b::\u200bconst_void_pointer\nmay be used as unique_ptr<T, D>\u200b::\u200bpointer.\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::unique_ptr[^\\n]*unique_ptr\\(const std::unique_ptr"
+    ],
+    "clang": [
+      "error: call to deleted constructor of 'std::unique_ptr<int>'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -4,5 +4,4 @@\n \n int main() {\n   std::unique_ptr<int> a(new int(1));\n-  std::unique_ptr<int> b(a);\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_copy.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to implicitly-deleted copy constructor of 'std::unique_ptr<int>'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/memory/unique_ptr_copy.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/memory__unique_ptr_copy.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'std::unique_ptr<_Tp, _Dp>::unique_ptr(const std::unique_ptr<_Tp, _Dp>&) [with _Tp = int; _Dp = std::default_delete<int>]'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

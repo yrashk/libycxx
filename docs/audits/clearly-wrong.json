@@ -449,7 +449,8 @@
       "changes": "Explicitly classify normal completion under forced allocation failure and concrete complexity constants as libycxx fallback policy; retain stability and result oracles.",
       "boundary_investigation": "Reviewed array/proxy fallback algorithms and all-pattern stress. No actual libycxx defect found. libstdc++ completes but returns a wrong ranges partition end; libc++ propagates permitted bad_alloc.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "1629dd0cc721c950b9a70b3a19ff7653fc0cefcd"
     },
     {
       "id": "C26",
@@ -469,7 +470,44 @@
       ],
       "remedy": "If keeping this behavior, label it a libycxx allocation-fallback policy test; do not claim it is universally required.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/no_extra_memory_bidi_proxy.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C26', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C26-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/no_extra_memory_bidi_proxy.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C26', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C26-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/no_extra_memory_bidi_proxy.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C26', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C26-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/no_extra_memory_bidi_proxy.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C26', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C26-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -L/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Wl,-rpath,/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Itests/ycxx/support tests/ycxx/algorithm/no_extra_memory_bidi_proxy.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C26-libcxx.exe -lc++abi\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C26', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C26-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "res.on.exception.handling/4 permits bad_alloc; alg.partitions/11-13, alg.merge/8-12 and stable.sort constrain successful results and complexity rather than require fallback completion.",
+      "changes": "Explicit policy banner for bidirectional/proxy normal completion under forced allocation failure.",
+      "boundary_investigation": "Reviewed all-equal/all-false/all-true partition and merge cuts 0,1,N/3,N/2,N-1,N; no libycxx defect found. libstdc++ wrong ranges partition end; libc++ propagates permitted bad_alloc.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C05",

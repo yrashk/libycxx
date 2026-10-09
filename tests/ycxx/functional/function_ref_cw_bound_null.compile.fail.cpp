@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::function_ref: Mandates: f\.value != nullptr
 // [func.wrap.ref.ctor]/15: function_ref(constant_wrapper<c, F> f, U&& obj): "Mandates: If
 // is_pointer_v<F> || is_member_pointer_v<F> is true, then f.value != nullptr is true."
 #include <functional>

@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*tuple_element index out of range for std::array
 // [array.tuple]/1: tuple_element<I, array<T, N>>: "Mandates: I < N is true."
 #include <array>
 

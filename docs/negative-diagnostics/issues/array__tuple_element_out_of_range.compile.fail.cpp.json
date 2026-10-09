@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/array/tuple_element_out_of_range.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "array.tuple"
+  ],
+  "normative_text": {
+    "array.tuple": "23.3.3.7 Tuple interface [array.tuple]\n\ud83d\udd17\ntemplate<class T, size_t N>\n  struct tuple_size<array<T, N>> : integral_constant<size_t, N> { };\n\ud83d\udd17\ntemplate<size_t I, class T, size_t N>\n  struct tuple_element<I, array<T, N>> {\n    using type = T;\n  };\n1\n#\nMandates: I < N is true.\n\ud83d\udd17\ntemplate<size_t I, class T, size_t N>\n  constexpr T& get(array<T, N>& a) noexcept;\ntemplate<size_t I, class T, size_t N>\n  constexpr T&& get(array<T, N>&& a) noexcept;\ntemplate<size_t I, class T, size_t N>\n  constexpr const T& get(const array<T, N>& a) noexcept;\ntemplate<size_t I, class T, size_t N>\n  constexpr const T&& get(const array<T, N>&& a) noexcept;\n2\n#\nMandates: I < N is true.\n3\n#\nReturns: A reference to the Ith element of a,\nwhere indexing is zero-based.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*tuple_element index out of range for std::array"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,5 +1,3 @@\n // [array.tuple]/1: tuple_element<I, array<T, N>>: \"Mandates: I < N is true.\"\n #include <array>\n \n-using T = std::tuple_element<3, std::array<int, 3>>::type;\n-T* p = nullptr;\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/tuple_element_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement '3UL < 3UL': Index out of bounds in std::tuple_element<> (std::array)"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/array/tuple_element_out_of_range.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/array__tuple_element_out_of_range.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: array index is in range"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

@@ -314,6 +314,13 @@
 #else
 #  define _YCXX_MATH_ERRNO 1
 #endif
+// FP_ILOGB0: glibc on AArch64 returns -INT_MAX for zero; the other supported targets use
+// INT_MIN. Both values are permitted by C ([library.c]); cmath_check.cpp checks the C header.
+#if defined(__aarch64__) && defined(__gnu_linux__)
+#  define _YCXX_FP_ILOGB0 (-2147483647)
+#else
+#  define _YCXX_FP_ILOGB0 (-2147483647 - 1)
+#endif
 // FP_ILOGBNAN: what the C library's ilogb returns for a NaN (glibc: INT_MIN on x86, INT_MAX
 // elsewhere; Darwin: INT_MIN on every architecture). src/hosted/cmath_check.cpp verifies it
 // against <math.h>.
@@ -588,4 +595,3 @@ using __y_make_integer_seq = _Seq<_Tp, __integer_pack(_Np)...>;
 #endif
 
 }} // namespace __ycxx::__detail
-

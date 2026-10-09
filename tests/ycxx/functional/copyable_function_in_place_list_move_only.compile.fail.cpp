@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::function/move_only_function/copyable_function: Mandates: VT is copy constructible
 // [func.wrap.copy.ctor]/20: explicit copyable_function(in_place_type_t<T>,
 // initializer_list<U>, Args&&...): "Mandates: VT is the same type as T, and
 // is_copy_constructible_v<VT> is true."

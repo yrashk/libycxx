@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::expected::transform: invalid result type
 // [expected.object.monadic]/19: "Mandates: U is a valid value type for expected."
 // ([expected.object.general]/2: in_place_t is not a valid value type.)
 #include <expected>

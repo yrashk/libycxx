@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*atomic_ref<T> needs a trivially copyable T
 // [atomics.ref.generic.general]/2: "The program is ill-formed if is_trivially_copyable_v<T>
 // is false."
 #include <atomic>

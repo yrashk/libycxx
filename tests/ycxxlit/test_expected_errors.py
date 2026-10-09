@@ -24,6 +24,18 @@ class ExpectedErrorsTests(unittest.TestCase):
     def test_empty_pattern_is_not_a_diagnostic(self):
         self.assertEqual(self.check('// EXPECT-ERROR: ', 'error: unrelated').code, lit.Test.FAIL)
 
+    def test_empty_pattern_cannot_use_the_next_source_line_as_an_oracle(self):
+        source = '// EXPECT-ERROR:\nint unrelated;\n'
+        result = self.check(source, 'error: invalid declaration\nint unrelated;')
+        self.assertEqual(result.code, lit.Test.FAIL)
+        self.assertIn('empty pattern', result.output)
+
+    def test_empty_pattern_before_another_directive_is_still_empty(self):
+        source = '// EXPECT-ERROR: \t\n// EXPECT-ERROR-GCC: deleted constructor\n'
+        result = self.check(source, 'error: deleted constructor')
+        self.assertEqual(result.code, lit.Test.FAIL)
+        self.assertIn('empty pattern', result.output)
+
     def test_every_applicable_pattern_must_match(self):
         source = '// EXPECT-ERROR: deleted constructor\n// EXPECT-ERROR-GCC: dangling reference'
         self.assertEqual(self.check(source, 'error: deleted constructor').code, lit.Test.FAIL)

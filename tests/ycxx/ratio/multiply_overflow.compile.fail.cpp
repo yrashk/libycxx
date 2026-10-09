@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*\[ratio\.arithmetic\]/2: the result of the std::ratio arithmetic is not representable by intmax_t
 // [ratio.arithmetic]/2: "If it is not possible to represent U or V with intmax_t, the program
 // is ill-formed." INTMAX_MAX * 2 is not representable.
 #include <ratio>

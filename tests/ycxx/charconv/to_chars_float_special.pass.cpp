@@ -1,6 +1,6 @@
 // [charconv.to.chars]: floating-point values are converted "in the style of printf in the
-// "C" locale": an infinity is "inf" or "-inf" in every format (the f, e, g and a
-// conversions), a NaN is "nan" or "-nan" optionally followed by an implementation-defined
+// "C" locale": shortest forms use "inf" or "-inf"; precision forms also permit
+// "infinity" or "-infinity" (ISO C 7.23.6.2). A NaN is "nan" or "-nan", optionally followed by an implementation-defined
 // "(n-char-sequence)" (ISO C 7.23.6.1), and negative zero keeps its sign. The from_chars
 // pattern accepts what is produced.
 #include <charconv>
@@ -25,6 +25,9 @@ void check_type() {
     std::string_view p = neg ? "-nan" : "nan";
     return s.substr(0, p.size()) == p && (s.size() == p.size() || (s[p.size()] == '(' && s.back() == ')'));
   };
+  auto is_inf = [](std::string_view s, bool neg) {
+    return neg ? (s == "-inf" || s == "-infinity") : (s == "inf" || s == "infinity");
+  };
   CHECK(str(std::to_chars(buf, buf + 64, inf)) == "inf");
   CHECK(str(std::to_chars(buf, buf + 64, -inf)) == "-inf");
   CHECK(is_nan(str(std::to_chars(buf, buf + 64, nan)), false));
@@ -32,11 +35,16 @@ void check_type() {
   for (F f : {F::fixed, F::scientific, F::general, F::hex}) {
     CHECK(str(std::to_chars(buf, buf + 64, inf, f)) == "inf");
     CHECK(str(std::to_chars(buf, buf + 64, -inf, f)) == "-inf");
-    CHECK(str(std::to_chars(buf, buf + 64, inf, f, 5)) == "inf");
-    CHECK(str(std::to_chars(buf, buf + 64, -inf, f, 0)) == "-inf");
+    CHECK(is_inf(str(std::to_chars(buf, buf + 64, inf, f, 5)), false));
+    CHECK(is_inf(str(std::to_chars(buf, buf + 64, -inf, f, 0)), true));
     CHECK(is_nan(str(std::to_chars(buf, buf + 64, nan, f)), false));
     CHECK(is_nan(str(std::to_chars(buf, buf + 64, -nan, f, 3)), true));
   }
+  // Empty and too-short buffers must report value_too_large, with ptr == last.
+  auto empty = std::to_chars(buf, buf, inf, F::fixed, 5);
+  CHECK(empty.ec == std::errc::value_too_large && empty.ptr == buf);
+  auto short_buffer = std::to_chars(buf, buf + 2, -inf, F::general, 0);
+  CHECK(short_buffer.ec == std::errc::value_too_large && short_buffer.ptr == buf + 2);
   // round trip of the specials
   std::string_view s = str(std::to_chars(buf, buf + 64, -inf));
   T v{};

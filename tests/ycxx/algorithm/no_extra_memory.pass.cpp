@@ -1,5 +1,7 @@
-// The algorithms whose complexity depends on whether "enough extra memory is available" still
-// work, stably and within the stated bound, when no memory can be obtained:
+// libycxx allocation-fallback policy: these algorithms complete normally when allocation fails.
+// This is stronger than conformance: [res.on.exception.handling]/4 permits bad_alloc to propagate
+// from these potentially-throwing functions without a restrictive Throws paragraph.
+// If an invocation completes, its results and complexity follow the clauses below:
 // [stable.sort]/5: "If enough extra memory is available, N log(N) comparisons. Otherwise, at
 // most N log^2(N) comparisons"; /6 "Remarks: Stable".
 // [alg.merge]/11 (inplace_merge): "if enough additional memory is available, at most N - 1

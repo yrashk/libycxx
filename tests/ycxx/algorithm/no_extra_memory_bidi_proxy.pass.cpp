@@ -1,6 +1,7 @@
-// As algorithm/no_extra_memory, for bidirectional iterators and for proxy iterators: the
-// algorithms whose complexity depends on whether "enough extra memory is available" must still
-// produce their specified, stable results when no memory can be obtained.
+// libycxx allocation-fallback policy, as algorithm/no_extra_memory, for bidirectional/proxy
+// iterators. Normal completion under allocation failure is an implementation policy;
+// [res.on.exception.handling]/4 permits bad_alloc to propagate from these algorithms.
+// The clauses below govern successful results, stability, and complexity.
 // [alg.partitions]/11-13 (stable_partition, BidirectionalIterator; ranges: bidirectional_iterator):
 // "Effects: Places all the elements e in [first, last) that satisfy E(e) before all the
 // elements that do not. The relative order of the elements in both groups is preserved."

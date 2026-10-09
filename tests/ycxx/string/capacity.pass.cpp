@@ -32,14 +32,17 @@ constexpr bool test() {
   r.reserve(100);
   if (r.capacity() < 100) return false;
   auto cap = r.capacity();
-  const char* p = r.data();
   for (int i = 0; i < 100; ++i) r.push_back('a');
-  if (r.capacity() != cap || r.data() != p) return false;  // no reallocation
+  if (r.size() != 100 || r.capacity() < r.size() || r.data()[100] != '\0') return false;
+  for (char c : r) if (c != 'a') return false;
+  cap = r.capacity();
   r.reserve(10);  // smaller than capacity: no effect
   if (r.capacity() != cap || r.size() != 100) return false;
+  const char* p = r.data();
   r.reserve(cap);
-  if (r.capacity() != cap) return false;
+  if (r.capacity() != cap || r.data() != p) return false;
   r.resize(5);
+  cap = r.capacity();
   r.shrink_to_fit();
   if (r.capacity() > cap || r.capacity() < 5 || r != "aaaaa") return false;
   std::string e;

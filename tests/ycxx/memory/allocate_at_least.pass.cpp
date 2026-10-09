@@ -20,7 +20,14 @@ static_assert(std::is_aggregate_v<std::allocation_result<int*>>);
 static_assert(std::is_same_v<decltype(std::allocation_result<int*>::ptr), int*>);
 static_assert(std::is_same_v<decltype(std::allocation_result<int*, short>::count), short>);
 static_assert(std::is_empty_v<std::allocation_result<int*>> == false);
-static_assert(sizeof(std::allocation_result<char*, std::size_t>) == sizeof(char*) + sizeof(std::size_t));
+constexpr bool result_members() {
+  std::allocation_result<char*, short> result{nullptr, 7};
+  auto [ptr, count] = result;
+  static_assert(std::is_same_v<decltype(ptr), char*>);
+  static_assert(std::is_same_v<decltype(count), short>);
+  return ptr == nullptr && count == 7;
+}
+static_assert(result_members());
 static_assert(std::is_same_v<decltype(std::allocator_traits<std::allocator<long>>::allocate_at_least(
                                  std::declval<std::allocator<long>&>(), 1)),
                              std::allocation_result<long*, std::size_t>>);

@@ -64,12 +64,12 @@ constexpr bool flag() {
 static_assert(flag());
 
 constexpr bool ref() {
-  int x = 1;
+  alignas(std::atomic_ref<int>::required_alignment) int x = 1;
   std::atomic_ref<int> r(x);
   r.fetch_add(4);
   r.store(r.load() * 2);
   int e = 10;
-  return r.compare_exchange_strong(e, 11) && x == 11;
+  return r.compare_exchange_strong(e, 11) && r.load() == 11;
 }
 static_assert(ref());
 

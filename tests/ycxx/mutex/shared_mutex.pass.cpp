@@ -16,21 +16,15 @@ static_assert(std::is_standard_layout_v<std::shared_mutex>);
 static_assert(!std::is_copy_constructible_v<std::shared_timed_mutex>);
 
 template<class M>
-static bool retry(M& m, bool (M::*f)()) {
-  for (int i = 0; i < 10000; ++i)
-    if ((m.*f)()) return true;
-  return false;
-}
-
-template<class M>
 static void run() {
   M m;
   m.lock_shared();
   // another thread can share it, but not lock it exclusively
   bool shared = false, excl = true;
   std::thread([&] {
-    shared = retry(m, &M::try_lock_shared);
-    if (shared) m.unlock_shared();
+    m.lock_shared();
+    shared = true;
+    m.unlock_shared();
     excl = m.try_lock();
   }).join();
   CHECK(shared && !excl);
@@ -67,9 +61,9 @@ int main() {
   run<std::shared_timed_mutex>();
 
   std::shared_timed_mutex tm;
-  CHECK(tm.try_lock_shared_for(std::chrono::milliseconds(1)));
-  CHECK(tm.try_lock_shared_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(1)));
-  tm.unlock_shared();
+  if (tm.try_lock_shared_for(std::chrono::milliseconds(1))) tm.unlock_shared();
+  if (tm.try_lock_shared_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(1))) tm.unlock_shared();
+  tm.lock_shared();
   tm.unlock_shared();
   tm.lock();
   bool r = true;

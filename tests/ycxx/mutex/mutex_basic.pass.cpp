@@ -19,13 +19,6 @@ static_assert(std::is_same_v<decltype(std::declval<std::mutex&>().try_lock()), b
 
 constinit std::mutex global;  // constexpr mutex() noexcept
 
-template<class M>
-static bool try_lock_retry(M& m) {
-  for (int i = 0; i < 10000; ++i)
-    if (m.try_lock()) return true;
-  return false;
-}
-
 int main() {
   std::mutex m;
   m.lock();
@@ -34,9 +27,10 @@ int main() {
   CHECK(!other);  // held by main: never obtained
   m.unlock();
   bool got = false;
-  std::thread([&] { got = try_lock_retry(m); if (got) m.unlock(); }).join();
+  std::thread([&] { m.lock(); got = true; m.unlock(); }).join();
   CHECK(got);
-  CHECK(try_lock_retry(m));
+  if (m.try_lock()) m.unlock();  // a spurious failure is permitted
+  m.lock();
   m.unlock();
   global.lock();
   global.unlock();

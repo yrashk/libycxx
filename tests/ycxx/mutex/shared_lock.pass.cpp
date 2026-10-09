@@ -2,6 +2,8 @@
 // adopt_lock / timed constructors; the destructor calls unlock_shared() if owns; move leaves
 // the source empty; swap; release() returns pm without unlocking; owns_lock / operator bool /
 // mutex(). CTAD.
+// FLAGS: -pthread
+#include <thread>
 #include <shared_mutex>
 #include <mutex>
 #include <chrono>
@@ -77,10 +79,14 @@ int main() {
   {
     std::shared_lock a(sm);
     static_assert(std::is_same_v<decltype(a), std::shared_lock<std::shared_mutex>>);
-    std::shared_lock<std::shared_mutex> b(sm, std::try_to_lock);
+    std::thread([&] {
+      std::shared_lock<std::shared_mutex> b(sm, std::try_to_lock);
+      if (!b.owns_lock()) b.lock();  // try may fail spuriously
+      CHECK(b.owns_lock() && b.mutex() == &sm);
+    }).join();
     CHECK(a.owns_lock());
   }
-  CHECK(sm.try_lock() || sm.try_lock() || sm.try_lock());
+  sm.lock();
   sm.unlock();
   return 0;
 }

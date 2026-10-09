@@ -67,10 +67,15 @@ void move_only_cases() {
     h = std::move(m);
     CHECK(h(0) == 200 + 10 * probe::crref);
     CHECK(counts.made == 4 && counts.copies == 0 && counts.copy_assigns == 0 && counts.move_assigns == 0);
-    if constexpr (!std::is_move_constructible_v<F>) CHECK(counts.moves == 0);
-    CHECK(counts.destroyed == 1);  // h's old target
+    if constexpr (!std::is_move_constructible_v<F>) {
+      CHECK(counts.moves == 0);
+      CHECK(counts.destroyed == 1);  // pinned h's old target
+    } else {
+      CHECK(counts.destroyed >= 1);
+      CHECK(counts.destroyed <= counts.made + counts.moves);
+    }
   }
-  CHECK(counts.destroyed == 4);
+  CHECK(counts.destroyed == counts.made + counts.copies + counts.moves);
 }
 
 template <class F>

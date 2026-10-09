@@ -1,9 +1,9 @@
-// [vector.modifiers]/2 and [vector.capacity]/4: on reallocation the existing elements must
-// be relocated so that the strong guarantee holds when T is Cpp17CopyInsertable; a type with
-// a non-throwing move constructor is moved (no copies), a copyable type whose move
-// constructor may throw is copied. A move-only type with a potentially-throwing move is
-// still supported (effects unspecified if it throws).
+// [vector.capacity]/4,7,9 and [vector.modifiers]/2: reallocation preserves values,
+// with no effects on an exception for CopyInsertable T. Copy/move selection is unspecified.
+// Move-only types with potentially throwing moves are supported (effects unspecified if thrown).
+// REQUIRES: exceptions
 #include <vector>
+#include <stdexcept>
 #include "check.hpp"
 
 struct NothrowMove {
@@ -11,16 +11,24 @@ struct NothrowMove {
   int v;
   NothrowMove(int x) : v(x) {}
   NothrowMove(const NothrowMove& o) : v(o.v) { ++copies; }
-  NothrowMove(NothrowMove&& o) noexcept : v(o.v) { ++moves; }
+  NothrowMove(NothrowMove&& o) noexcept : v(o.v) { o.v = -99; ++moves; }
   NothrowMove& operator=(const NothrowMove&) = default;
   NothrowMove& operator=(NothrowMove&&) noexcept = default;
 };
 struct ThrowingMove {
+  static inline bool fail = false;
   static inline int copies = 0, moves = 0;
   int v;
   ThrowingMove(int x) : v(x) {}
-  ThrowingMove(const ThrowingMove& o) : v(o.v) { ++copies; }
-  ThrowingMove(ThrowingMove&& o) noexcept(false) : v(o.v) { ++moves; }
+  ThrowingMove(const ThrowingMove& o) : v(o.v) {
+    if (fail) throw std::runtime_error("copy");
+    ++copies;
+  }
+  ThrowingMove(ThrowingMove&& o) noexcept(false) : v(o.v) {
+    o.v = -99;
+    if (fail) throw std::runtime_error("move");
+    ++moves;
+  }
   ThrowingMove& operator=(const ThrowingMove&) = default;
   ThrowingMove& operator=(ThrowingMove&&) = default;
 };
@@ -38,10 +46,12 @@ int main() {
     for (int i = 0; i < 4; ++i) v.emplace_back(i);
     NothrowMove::copies = NothrowMove::moves = 0;
     v.reserve(v.capacity() + 1);
-    CHECK(NothrowMove::copies == 0 && NothrowMove::moves == 4);
+    CHECK(v.size() == 4);
+    for (int i = 0; i < 4; ++i) CHECK(v[i].v == i);
     NothrowMove::copies = NothrowMove::moves = 0;
     v.shrink_to_fit();
-    CHECK(NothrowMove::copies == 0);
+    CHECK(v.size() == 4 && v.capacity() >= v.size());
+    for (int i = 0; i < 4; ++i) CHECK(v[i].v == i);
   }
   {
     std::vector<ThrowingMove> v;
@@ -49,12 +59,23 @@ int main() {
     for (int i = 0; i < 4; ++i) v.emplace_back(i);
     ThrowingMove::copies = ThrowingMove::moves = 0;
     v.reserve(v.capacity() + 1);
-    CHECK(ThrowingMove::copies == 4 && ThrowingMove::moves == 0);
+    CHECK(v.size() == 4);
+    for (int i = 0; i < 4; ++i) CHECK(v[i].v == i);
+    auto cap = v.capacity();
+    auto* data = v.data();
+    ThrowingMove::fail = true;
+    bool threw = false;
+    try { v.reserve(cap + 1); }
+    catch (const std::runtime_error&) { threw = true; }
+    ThrowingMove::fail = false;
+    CHECK(threw && v.size() == 4 && v.capacity() == cap && v.data() == data);
+    for (int i = 0; i < 4; ++i) CHECK(v[i].v == i);
     while (v.size() < v.capacity()) v.emplace_back(0);
     ThrowingMove::copies = ThrowingMove::moves = 0;
     v.emplace_back(1);  // reallocating single-element insertion at the end
-    CHECK(ThrowingMove::copies == static_cast<int>(v.size()) - 1);
-    CHECK(ThrowingMove::moves == 0);
+    CHECK(v.back().v == 1);
+    for (int i = 0; i < 4; ++i) CHECK(v[i].v == i);
+    for (std::size_t i = 4; i + 1 < v.size(); ++i) CHECK(v[i].v == 0);
   }
   {
     std::vector<MoveOnlyThrowing> v;

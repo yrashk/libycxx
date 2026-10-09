@@ -17,8 +17,11 @@ struct T {
   int v;
   T(int x) : v(x) {}
   T(int, bool) { throw 0; }
-  T(const T& o) : v(o.v) {}  // not trivially copyable, and a potentially-throwing move:
-  ~T() {}                     // emplace must destroy the old value before constructing
+  T(const T& o) : v(o.v) {}
+  T(T&&) { throw 0; }
+  T& operator=(const T&) = default;
+  T& operator=(T&&) = default;
+  ~T() {}
   friend bool operator==(const T& a, const T& b) { ++calls; return a.v == b.v; }
   friend bool operator!=(const T& a, const T& b) { ++calls; return a.v != b.v; }
   friend bool operator<(const T& a, const T& b) { ++calls; return a.v < b.v; }
@@ -30,9 +33,10 @@ struct T {
 using V = std::variant<T, int>;
 
 V valueless() {
-  V v(std::in_place_index<0>, 1);
+  V v(std::in_place_index<1>, 1);
+  V source(std::in_place_index<0>, 1);
   try {
-    v.emplace<0>(1, true);
+    v = std::move(source);  // [variant.assign]/10.1 requires valueless on move-construction failure
   } catch (int) {
   }
   return v;

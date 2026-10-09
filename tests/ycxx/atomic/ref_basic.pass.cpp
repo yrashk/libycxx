@@ -15,36 +15,37 @@ int main() {
   const std::atomic_ref<int> r(x);
   CHECK(r.load() == 5);
   r.store(6);
-  CHECK(x == 6);
+  CHECK(r.load() == 6);
   CHECK((r = 7) == 7);
-  CHECK(x == 7);
+  CHECK(r.load() == 7);
   CHECK(static_cast<int>(r) == 7);
   CHECK(r.exchange(8, std::memory_order::acq_rel) == 7);
-  CHECK(x == 8);
+  CHECK(r.load() == 8);
   int e = 1;
   CHECK(!r.compare_exchange_strong(e, 9));
   CHECK(e == 8);
   CHECK(r.compare_exchange_strong(e, 9));
-  CHECK(e == 8 && x == 9);
+  CHECK(e == 8 && r.load() == 9);
   e = 9;
   while (!r.compare_exchange_weak(e, 10, std::memory_order::release, std::memory_order::relaxed))
     CHECK(e == 9);
-  CHECK(x == 10);
+  CHECK(r.load() == 10);
 
   std::atomic_ref<int> r2(r);  // references the same object
   r2.store(11);
   CHECK(r.load() == 11);
   CHECK(r.is_lock_free() == r2.is_lock_free());
 
-  // after the atomic_refs are gone the object is accessed normally again
-  x = 12;
+  // All access goes through atomic_ref while any reference exists.
+  r.store(12);
   CHECK(std::atomic_ref<int>(x).load() == 12);
 
   alignas(std::atomic_ref<Pair>::required_alignment) Pair p{1, 2};
   std::atomic_ref<Pair> rp(p);
   Pair old = rp.exchange(Pair{3, 4});
   CHECK(old.a == 1 && old.b == 2);
-  CHECK(p.a == 3 && p.b == 4);
+  Pair current = rp.load();
+  CHECK(current.a == 3 && current.b == 4);
   Pair ep{0, 0};
   CHECK(!rp.compare_exchange_strong(ep, Pair{5, 6}));
   CHECK(ep.a == 3 && ep.b == 4);
@@ -54,11 +55,15 @@ int main() {
   alignas(std::atomic_ref<bool>::required_alignment) bool b = false;
   std::atomic_ref<bool> rb(b);
   CHECK(!rb.exchange(true));
-  CHECK(b);
+  CHECK(rb.load());
 
   // wait returns when the value differs
   r.wait(0);
   r.notify_one();
   r.notify_all();
+  // Ordinary access resumes after the last referencing instance is destroyed.
+  alignas(std::atomic_ref<int>::required_alignment) int plain = 0;
+  { std::atomic_ref<int> temporary(plain); temporary.store(13); }
+  CHECK(plain == 13);
   return 0;
 }

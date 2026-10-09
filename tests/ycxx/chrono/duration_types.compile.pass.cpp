@@ -35,6 +35,8 @@ static_assert(std::is_same_v<duration<short>::rep, short>);
 static_assert(std::is_trivially_copyable_v<seconds>);
 static_assert(std::is_trivially_copyable_v<duration<double>>);
 static_assert(std::is_nothrow_default_constructible_v<seconds>);
-static_assert(sizeof(seconds) == sizeof(seconds::rep));
+// Storage layout and padding are unspecified; count() exposes the representation value.
+static_assert(seconds{42}.count() == 42);
+static_assert(duration<double>{1.5}.count() == 1.5);
 
 int main() {}

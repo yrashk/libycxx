@@ -8,8 +8,9 @@
 
 struct Spy {
   int locks = 0, unlocks = 0;
-  void lock() { ++locks; }
-  void unlock() { ++unlocks; }
+  bool held = false;
+  void lock() { CHECK(!held); held = true; ++locks; }
+  void unlock() { CHECK(held); held = false; ++unlocks; }
 };
 
 static_assert(std::is_same_v<std::lock_guard<Spy>::mutex_type, Spy>);
@@ -33,11 +34,12 @@ int main() {
     CHECK(s.locks == 1 && s.unlocks == 0);
   }
   CHECK(s.locks == 1 && s.unlocks == 1);
+  s.lock();  // adopt_lock requires the calling thread to hold the lock
   {
     std::lock_guard<Spy> g(s, std::adopt_lock);
-    CHECK(s.locks == 1);
+    CHECK(s.locks == 2);
   }
-  CHECK(s.unlocks == 2);
+  CHECK(s.locks == 2 && s.unlocks == 2);
 
   std::mutex m;
   {
@@ -45,7 +47,7 @@ int main() {
   }
   m.lock();
   { std::lock_guard g(m, std::adopt_lock); }
-  CHECK(m.try_lock() || m.try_lock() || m.try_lock());
+  m.lock();
   m.unlock();
   return 0;
 }

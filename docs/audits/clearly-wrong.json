@@ -1622,7 +1622,8 @@
       "changes": "Check both interval endpoints, use standard increment engines that produce extreme first draws and then progress under rejection sampling; minimum inputs need only remain in range.",
       "boundary_investigation": "Investigated rejected-draw and rounding boundaries for float/double/long double with 32/64-bit engines and narrow/negative intervals. libycxx/libstdc++ pass. Paired SDK libc++ returns upper endpoint (genuine reference behavior difference). Constant replay fixture could exhaust its arbitrary call limit under a permitted rejection strategy; replaced it rather than prescribing mapping.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "66a04674aca605c9948dacf02c7703f9977f04d6"
     },
     {
       "id": "C15",
@@ -1639,7 +1640,7 @@
       ],
       "remedy": "Use ar.load().",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1671,7 +1672,12 @@
           "exit": 1,
           "log": "build/test-logs/own-audit/C15-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "atomics.ref.generic.general/3 applies in freestanding mode; atomics.ref.ops constructor requires required_alignment.",
+      "changes": "Use ar.load for observation and explicitly align referenced storage.",
+      "boundary_investigation": "Reviewed full freestanding item fixture and configuration flags (-ffreestanding, no exceptions/RTTI). libycxx passes both compilers; reference full fixture lacks several current draft features. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C16",

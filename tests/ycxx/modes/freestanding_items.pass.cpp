@@ -199,10 +199,10 @@ extern "C" int main() {
   CHECK(a.fetch_add(2) == 1 && a.load() == 3);
   std::atomic_flag f;
   CHECK(!f.test_and_set() && f.test());
-  int plain = 4;
+  alignas(std::atomic_ref<int>::required_alignment) int plain = 4;
   std::atomic_ref<int> ar(plain);
   ar.store(9);
-  CHECK(plain == 9);
+  CHECK(ar.load() == 9);
 
   std::coroutine_handle<> h = std::noop_coroutine();
   CHECK(h && !h.done());

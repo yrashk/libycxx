@@ -11,11 +11,13 @@
 #include <functional>
 #include <iterator>
 #include <memory>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include "check.hpp"
+#include "test_allocators.hpp"
 
 using ST = std::stacktrace;
 static_assert(std::is_same_v<ST, std::basic_stacktrace<std::allocator<std::stacktrace_entry>>>);
@@ -58,18 +60,26 @@ int main() {
     CHECK(!std::to_string(t).empty());
   }
 
-  // skip and max_depth relative to the full trace of the same evaluation.
-  ST full = ST::current();
-  ST skipped = ST::current(1);
-  ST huge_skip = ST::current(100000);
-  ST limited = ST::current(0, 1);
-  ST zero = ST::current(0, 0);
-  CHECK(huge_skip.empty());
-  CHECK(zero.empty());
-  CHECK(limited.size() <= 1);
-  if (!full.empty()) {
-    CHECK(limited.size() == 1);
-    CHECK(skipped.size() + 1 == full.size());
+  // Each current() call captures a different evaluation and may fail independently.
+  // Check each call's cap; no cross-call depth or success relation is specified.
+  const auto max_skip = std::numeric_limits<ST::size_type>::max();
+  CHECK(ST::current(max_skip).empty());
+  for (ST::size_type skip : {ST::size_type(0), ST::size_type(1)}) {
+    for (ST::size_type depth : {ST::size_type(0), ST::size_type(1), ST::size_type(3)}) {
+      ST limited = ST::current(skip, depth);
+      CHECK(limited.size() <= depth);
+      CHECK(limited.empty() == (limited.size() == 0));
+    }
   }
+  CHECK(ST::current(max_skip, 0).empty());  // no skip + max_depth overflow
+
+  // Deterministic allocation failure must be represented by an empty capture.
+  using FailingST = std::basic_stacktrace<CountingAlloc<std::stacktrace_entry>>;
+  alloc_counters.fail_after = 0;
+  CHECK(FailingST::current().empty());
+  CHECK(FailingST::current(1).empty());
+  CHECK(FailingST::current(0, 3).empty());
+  alloc_counters.fail_after = -1;
+  CHECK(alloc_counters.outstanding == 0);
   return 0;
 }

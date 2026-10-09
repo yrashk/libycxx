@@ -1,3 +1,5 @@
+// EXPECT-ERROR-GCC: error: 'zetta' in namespace 'std' does not name a type
+// EXPECT-ERROR-CLANG: error: no type named 'zetta' in namespace 'std'
 // [ratio.si]/1: "if either of the constants is not representable by intmax_t, the typedef is
 // not declared." With a 64-bit intmax_t, 10^21 is not representable, so std::zetta does not
 // exist.

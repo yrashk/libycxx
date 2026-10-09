@@ -45,6 +45,7 @@ Optional directives:
                                           OS (linux, darwin), the sanitizers (asan, ubsan, tsan),
                                           hardened (lit param hardened=1: -DYCXX_HARDENED=1),
                                           extended-float32 (the compiler advertises float32_t),
+                                          non-lockfree-long-double-atomic (the atomic fixture),
                                           exceptions and rtti (unless the run's cxxflags have
                                           -fno-exceptions / -fno-rtti)
   A *.pass.cpp program that exits with status 77 after printing a line "UNSUPPORTED: <reason>"

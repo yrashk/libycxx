@@ -1,10 +1,11 @@
 // [depr.atomics.volatile]/1 (Annex D): a volatile store_add of an atomic type that is not always
 // lock-free is deprecated. [depr.general]/2: "An implementation may declare library names and
 // entities described in this Clause with the deprecated attribute"; libycxx does (DECISIONS.md
-// §6): this use is diagnosed. (x86-64's 16-byte long double is not always lock-free.)
+// §6): this use is diagnosed. The compiler probe verifies the long-double atomic fixture
+// is not always lock-free; size alone does not determine that property.
 // FLAGS: -Werror=deprecated-declarations
-// REQUIRES: linux
-// EXPECT-ERROR: deprecated
+// REQUIRES: non-lockfree-long-double-atomic
+// EXPECT-ERROR: error: [^\n]*store_add[^\n]*deprecated
 #include <atomic>
 
 int main() {

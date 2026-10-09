@@ -72,6 +72,14 @@ if macro_probe.returncode:
     lit_config.fatal('cannot detect extended floating-point types:\n' + macro_probe.stderr)
 if '__STDCPP_FLOAT32_T__' in macro_probe.stdout:
     features.add('extended-float32')
+# Volatile arithmetic deprecation tests need an arithmetic atomic type that is not always
+# lock-free. In particular, 16-byte long double is lock-free on some AArch64 toolchains.
+atomic_probe = subprocess.run([os.path.join(repo, 'tools', wrapper), compiler, '-fsyntax-only',
+                               '-x', 'c++', '-'] + flags,
+                              input='#include <atomic>\nstatic_assert(!std::atomic<long double>::is_always_lock_free);\n',
+                              capture_output=True, text=True, timeout=30)
+if atomic_probe.returncode == 0:
+    features.add('non-lockfree-long-double-atomic')
 config.available_features = features
 
 # The sanitizers' options, set on each test program's command line (its transcript): for

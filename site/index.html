@@ -10,7 +10,7 @@
 <meta property="og:description" content="libycxx is an independent C++26 standard library, implemented from the working draft, for the latest GCC and Clang on Linux and macOS, with its own Itanium C++ ABI runtime, a freestanding core and import std.">
 <meta property="og:url" content="https://libycxx.org/">
 <link rel="canonical" href="https://libycxx.org/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%231d5fd1%22/%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2220%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3Ey%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/site.css">
 <style>
 /* The home page's own rules; the shared design is assets/site.css. */
@@ -36,7 +36,6 @@ section{padding-top:72px}
 .sec-head{display:flex;align-items:baseline;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:24px}
 .sec-head .no{font:600 13px/1 var(--mono);color:var(--accent)}
 .lead{font-size:18px;color:var(--fg);margin-bottom:24px}
-#overview .facts{display:none}
 section .facts{border:1px solid var(--rule);border-radius:10px;padding:4px 20px;grid-template-columns:1fr 1fr;column-gap:32px}
 section .facts div:nth-last-child(2){border-bottom:0}
 .areas,.limits{list-style:none;padding:0;margin:0 0 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--rule);border-radius:10px;overflow:hidden}
@@ -80,15 +79,27 @@ ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
   .sheet .cell{padding:18px 16px}
   section{padding-top:56px}
 }
+
+/* Detailed evidence stays available without filling the initial reading path. */
+.more{margin:16px 0;border:1px solid var(--rule);border-radius:8px;padding:14px 18px}
+.more>summary{cursor:pointer;color:var(--accent);font-size:15px;font-weight:600}
+.more[open]>summary{margin-bottom:18px}
+.more>h3:first-of-type{margin-top:20px}
+.more>p:last-child{margin-bottom:0}
+.more p code,.more li code{white-space:normal;overflow-wrap:anywhere}
+.sheet .more figure.code{margin-top:16px}
+.sheet .note{margin:16px 0 0;font-size:14px;color:var(--muted)}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+@media (max-width:860px){html{scroll-padding-top:80px}}
 </style>
 <link rel="preload" href="fonts/anaheim-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/lekton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
-<div class="mobile-bar"><a class="brand" href="#"><i>y</i>libycxx</a><details><summary>Contents</summary><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="api/index.html"><span>API</span>API reference</a></li><li><a href="similarity/index.html"><span>SIM</span>Similarity analysis</a></li><li><a href="https://github.com/yrashk/libycxx"><span>↗</span>GitHub</a></li></ul></details></div>
+<div class="mobile-bar"><a class="brand" href="#"><img src="assets/logo-mark.svg" width="28" height="28" alt="">libycxx</a><details><summary>Contents</summary><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="api/index.html"><span>API</span>API reference</a></li><li><a href="similarity/index.html"><span>SIM</span>Similarity analysis</a></li><li><a href="https://github.com/yrashk/libycxx"><span>GH</span>GitHub</a></li></ul></details></div>
 <div class="layout">
 <aside class="side" aria-label="Contents">
-<a class="brand" href="#"><i>y</i>libycxx</a>
+<a class="brand" href="#"><img src="assets/logo-mark.svg" width="28" height="28" alt="">libycxx</a>
 <div class="badges"><span class="badge">v0.1.0</span><span class="badge">C++26</span><span class="badge">GCC &amp; Clang</span><span class="badge">Linux &amp; macOS</span></div>
 <nav><ul class="toc"><li><a href="#overview"><span>01</span>What it is</a></li><li><a href="#coverage"><span>02</span>What is implemented</a></li><li><a href="#approach"><span>03</span>How it is built</a></li><li><a href="#testing"><span>04</span>How it is tested</a></li><li><a href="#matrix"><span>05</span>Platform and compiler matrix</a></li><li><a href="#start"><span>06</span>Getting started</a></li><li><a href="#status"><span>07</span>Status and limitations</a></li><li><a href="api/index.html"><span>API</span>API reference</a></li><li><a href="similarity/index.html"><span>SIM</span>Similarity analysis</a></li></ul></nav>
 <div class="side-foot">
@@ -99,9 +110,9 @@ ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
 <main>
 <p class="label">Spec sheet · libycxx 0.1.0</p>
 <h1>An independent C++26 standard library</h1>
-<p class="lede">libycxx is a new implementation of the whole C++26 standard library for the latest GCC and Clang, with its own Itanium C++ ABI runtime. It is written from the working draft without access to other implementations’ sources, and tested against the standard rather than against itself.</p>
+<p class="lede">An independent C++26 standard library for GCC and Clang, implemented from the working draft, with its own Itanium C++ ABI runtime. Freestanding, hosted, and available through <code>import std;</code>.</p>
 <div class="sheet">
-<div class="cell"><dl class="facts"><div><dt>Standard</dt><dd>C++26 (the current working draft), C++26 only</dd></div><div><dt>Compilers</dt><dd>the latest GCC and Clang (<a href="#matrix">matrix</a>)</dd></div><div><dt>Platforms</dt><dd>Linux and macOS; bare-metal targets freestanding (<a href="#matrix">matrix</a>)</dd></div><div><dt>Layers</dt><dd>freestanding core · hosted library · platform abstraction layer</dd></div><div><dt>ABI runtime</dt><dd>its own: exceptions, RTTI, <code>dynamic_cast</code>, guards</dd></div><div><dt>Modules</dt><dd><code>import std;</code> and <code>import std.compat;</code></dd></div><div><dt>Version</dt><dd>0.1.0 — no stable ABI yet</dd></div><div><dt>Source</dt><dd><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></dd></div></dl></div>
+<div class="cell"><dl class="facts"><div><dt>Standard</dt><dd>C++26 (the current working draft), C++26 only</dd></div><div><dt>Compilers</dt><dd>the latest GCC and Clang (<a href="#matrix">matrix</a>)</dd></div><div><dt>Platforms</dt><dd>Linux and macOS; bare-metal targets freestanding (<a href="#matrix">matrix</a>)</dd></div><div><dt>Layers</dt><dd>freestanding core · hosted library · platform abstraction layer</dd></div><div><dt>ABI runtime</dt><dd>its own: exceptions, RTTI, <code>dynamic_cast</code>, guards</dd></div><div><dt>Modules</dt><dd><code>import std;</code> and <code>import std.compat;</code></dd></div></dl></div>
 <div class="cell"><figure class="code"><figcaption>hello.cpp</figcaption><!-- snippet: examples/quickstart/hello.cpp --><pre><code class="lang-cpp"><span class="t-k">import</span> std;
 
 <span class="t-k">int</span> <span class="t-f">main</span>() {
@@ -109,7 +120,7 @@ ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
   std::ranges::<span class="t-f">sort</span>(words);
   <span class="t-c">// prints ["import", "modules", "std"]</span>
   std::<span class="t-f">println</span>(<span class="t-s">"{}"</span>, words);
-}</code></pre></figure><figure class="code"><figcaption>CMakeLists.txt</figcaption><!-- snippet: examples/quickstart/CMakeLists.txt --><pre><code class="lang-cmake"><span class="t-f">cmake_minimum_required</span>(<span class="t-k">VERSION</span> 3.28)
+}</code></pre></figure><details class="more"><summary>CMake configuration for this example</summary><figure class="code"><figcaption>CMakeLists.txt</figcaption><!-- snippet: examples/quickstart/CMakeLists.txt --><pre><code class="lang-cmake"><span class="t-f">cmake_minimum_required</span>(<span class="t-k">VERSION</span> 3.28)
 
 <span class="t-c"># libycxx is fetched before project(): its toolchain file chooses the compiler,</span>
 <span class="t-c"># Clang 23 by default, and downloads it into a cache when it is missing.</span>
@@ -129,33 +140,21 @@ ol.footnotes sup{color:var(--accent);font-weight:700;margin-right:4px}
 
 <span class="t-f">add_executable</span>(hello hello.cpp)
 <span class="t-c"># import std; from libycxx's modules (brings ycxx::ycxx)</span>
-<span class="t-f">target_link_libraries</span>(hello <span class="t-k">PRIVATE</span> ycxx::modules)</code></pre></figure><figure class="code"><figcaption>shell: from an empty directory</figcaption><!-- snippet: examples/quickstart/README.md#1 --><pre><code class="lang-sh"><span class="t-f">mkdir</span> hello &amp;&amp; <span class="t-f">cd</span> hello
-<span class="t-f">curl</span> <span class="t-a">-fsSL</span> <span class="t-a">--remote-name-all</span> https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
-<span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja
-<span class="t-f">cmake</span> <span class="t-a">--build</span> build
-<span class="t-f">./build/hello</span></code></pre><p class="note">Needs only git, CMake&nbsp;3.28+, Ninja, curl and the host’s C toolchain: Clang&nbsp;23 is downloaded when missing. These exact commands run in CI (<a href="#start">Getting started</a>).</p></figure></div>
+<span class="t-f">target_link_libraries</span>(hello <span class="t-k">PRIVATE</span> ycxx::modules)</code></pre></figure></details><p class="note">Build this example with the commands in <a href="#start">Getting started</a>.</p></div>
 </div>
 <div class="stats"><div><b>C++26</b><span>every header</span><small>the C++26 library, freestanding and hosted</small></div><div><b>2,824</b><span>own tests</span><small>spec-derived, all passing in CI on Linux and macOS</small></div><div><b>17,098</b><span>external tests</span><small>libc++ and libstdc++ suites, run unmodified</small></div><div><b>19</b><span>real-world projects</span><small>built and tested against libycxx, linkage proved</small></div></div>
 <section id="overview">
 <div class="sec-head"><span class="no">01</span><h2>What it is</h2></div>
 
-<p class="lead">A standard library that a program selects explicitly, in place of the
-toolchain’s libstdc++ or libc++, for the latest GCC and Clang on Linux and macOS.</p>
-<p>libycxx is layered. A <strong>freestanding core</strong> needs no operating system, no C
-library and no heap unless one is supplied. The <strong>hosted library</strong> adds everything
-that needs the environment — streams, files, threads, clocks, locales — and reaches the system
-only through a small C-linkage <strong>platform abstraction layer</strong>. Underneath sits
-libycxx’s own <strong>Itanium C++ ABI runtime</strong>, so a program built with it depends on
-neither libsupc++ nor libc++abi.</p>
-<dl class="facts"><div><dt>Standard</dt><dd>C++26 (the current working draft), C++26 only</dd></div><div><dt>Compilers</dt><dd>the latest GCC and Clang (<a href="#matrix">matrix</a>)</dd></div><div><dt>Platforms</dt><dd>Linux and macOS; bare-metal targets freestanding (<a href="#matrix">matrix</a>)</dd></div><div><dt>Layers</dt><dd>freestanding core · hosted library · platform abstraction layer</dd></div><div><dt>ABI runtime</dt><dd>its own: exceptions, RTTI, <code>dynamic_cast</code>, guards</dd></div><div><dt>Modules</dt><dd><code>import std;</code> and <code>import std.compat;</code></dd></div><div><dt>Version</dt><dd>0.1.0 — no stable ABI yet</dd></div><div><dt>Source</dt><dd><a href="https://github.com/yrashk/libycxx">github.com/yrashk/libycxx</a></dd></div></dl>
+<p class="lead">Select libycxx explicitly in place of the toolchain’s libstdc++ or libc++.</p>
+<p>The <strong>freestanding core</strong> needs no operating system or C library. The <strong>hosted library</strong> adds streams, files, threads, clocks, and locales through a small C <strong>platform abstraction layer</strong>. Its own ABI runtime handles exceptions, RTTI, and guards; stack unwinding comes from the toolchain.</p>
 
 </section><section id="coverage">
 <div class="sec-head"><span class="no">02</span><h2>What is implemented</h2></div>
 
-<p class="lead">Every header of the C++26 library is provided, with the deprecated features
-the draft still specifies (Annex&nbsp;D, marked <code>[[deprecated]]</code>) and without
-the ones it has removed.</p>
-<ul class="areas"><li><h4>Language support &amp; utilities</h4><p><code>&lt;type_traits&gt;</code>, <code>&lt;expected&gt;</code>, <code>&lt;optional&gt;</code>, <code>&lt;variant&gt;</code>, the function wrappers including <code>function_ref</code>, <code>indirect</code> and <code>polymorphic</code>, constexpr exceptions on GCC.</p></li><li><h4>Containers &amp; ranges</h4><p>Every container, constexpr, including <code>&lt;hive&gt;</code>, <code>&lt;inplace_vector&gt;</code>, <code>&lt;flat_map&gt;</code> and <code>&lt;mdspan&gt;</code>; every range factory and adaptor; every <code>std::</code> and <code>ranges::</code> algorithm.</p></li><li><h4>Text</h4><p><code>&lt;format&gt;</code> and <code>&lt;print&gt;</code> in full, <code>&lt;charconv&gt;</code> with shortest round-trip floating point, <code>&lt;regex&gt;</code> with all six grammars, <code>&lt;text_encoding&gt;</code> with the IANA registry.</p></li><li><h4>Numerics</h4><p><code>&lt;random&gt;</code> with <code>philox_engine</code> and all 20 distributions, <code>&lt;simd&gt;</code>, <code>&lt;linalg&gt;</code>, <code>&lt;cmath&gt;</code>, <code>&lt;complex&gt;</code>, <code>&lt;valarray&gt;</code>.</p></li><li><h4>Time</h4><p><code>&lt;chrono&gt;</code> in full: the calendar, utc/tai/gps clocks with leap seconds, the time zone database on the system’s zoneinfo, every formatter and parser.</p></li><li><h4>Concurrency</h4><p>Threads, atomics, latches, barriers and semaphores, <code>&lt;rcu&gt;</code>, <code>&lt;hazard_pointer&gt;</code>, and senders and receivers in <code>&lt;execution&gt;</code> with <code>parallel_scheduler</code>.</p></li><li><h4>I/O &amp; locales</h4><p>Iostreams, <code>&lt;spanstream&gt;</code>, <code>&lt;syncstream&gt;</code>, <code>&lt;filesystem&gt;</code>, every standard facet, and named locales from the C library.</p></li><li><h4>Diagnostics</h4><p><code>&lt;stacktrace&gt;</code> with ELF/DWARF symbolization and its own demangler, <code>&lt;debugging&gt;</code>, <code>&lt;contracts&gt;</code> and <code>&lt;meta&gt;</code> (reflection) where GCC supports them.</p></li></ul>
+<p class="lead">Every C++26 library header is provided, including the deprecated facilities the draft still specifies. Compiler-dependent features have known gaps.</p>
+<ul class="areas"><li><h4>Language support &amp; utilities</h4><p>Type traits, vocabulary types, function wrappers, and constexpr exceptions on GCC.</p></li><li><h4>Containers &amp; ranges</h4><p>All containers, ranges, and algorithms, including <code>&lt;hive&gt;</code>, <code>&lt;inplace_vector&gt;</code>, and <code>&lt;mdspan&gt;</code>.</p></li><li><h4>Text</h4><p>Formatting, printing, character conversion, regex, and text encodings.</p></li><li><h4>Numerics</h4><p>Random engines and distributions, SIMD, linear algebra, and math facilities.</p></li><li><h4>Time</h4><p>Calendars, utc/tai/gps clocks, leap seconds, and the system’s time zone database.</p></li><li><h4>Concurrency</h4><p>Threads, atomics, synchronization, RCU, hazard pointers, and senders and receivers.</p></li><li><h4>I/O &amp; locales</h4><p>Streams, filesystem, standard locale facets, and named locales from the C library.</p></li><li><h4>Diagnostics</h4><p>Stack traces, debugging, contracts, and reflection where the compiler supports them.</p></li></ul>
+<details class="more"><summary>Freestanding builds, modules, and spec audits</summary>
 <h3>Freestanding, hosted and modules</h3>
 <p>Every core header, every header with a freestanding subset and every header of the
 draft’s freestanding table compiles with <code>-ffreestanding</code> <code>-nostdlib</code> <code>-nostdinc</code>
@@ -179,6 +178,7 @@ declaration, on both compilers (<a href="https://github.com/yrashk/libycxx/blob/
 <p class="note">What remains open is compiler-blocked: Clang&nbsp;23 has no reflection or
 contracts and cannot throw during constant evaluation; GCC&nbsp;16 lacks
 <code>is_within_lifetime</code>.</p>
+</details>
 
 </section><section id="approach">
 <div class="sec-head"><span class="no">03</span><h2>How it is built</h2></div>
@@ -189,68 +189,36 @@ and the alternatives that were rejected.</p>
 <div class="principles">
 <article>
 <h3>How it was written</h3>
-<p>Implemented by AI agents (Claude, directed by the author) from the C++ working draft, WG21
-papers, POSIX and the published Itanium C++ ABI, with no access to the source or headers of
-another standard library or C++ runtime during development. The libc++ and libstdc++ test suites
-run unmodified as oracles; their test files were read to triage failures, never copied.</p>
-<p>Not a clean room in the legal sense: the models were trained on public code that very likely
-includes those libraries, so only the absence of source access can be shown, not separation. A
-<a href="similarity/index.html">similarity analysis</a> compares libycxx with libstdc++, libc++ and the MSVC
-STL, and those three with each other, by token metrics and fingerprints against a known-derived
-positive control; it is regenerated from pinned sources on every site build.</p>
+<p>Implemented by AI agents (Claude, directed by the author) from the draft, WG21 papers, POSIX, and the Itanium ABI, without access to other implementations’ sources during development.</p><p>This is not a legal clean-room claim: the models were trained on public code. See the <a href="https://github.com/yrashk/libycxx/blob/HEAD/README.md#how-it-was-written">full account</a> and <a href="similarity/index.html">similarity analysis</a>.</p>
 </article>
 
 <article>
 <h3>Hidden namespaces and reserved names</h3>
-<p>Standard entities are declared directly in <code>std</code>; details live in
-<code>ycxx::detail</code>, and the bases of standard types in <code>ycxx::adl_free</code>, a
-namespace with no functions, so argument-dependent lookup never reaches the internals. Every
-name the headers use for themselves is a reserved identifier: a program may
-<code>#define</code> any name the standard does not declare, which a test with 5,874 such
-macros checks. Every namespace block carries hidden visibility, so a program or shared object
-exports nothing of libycxx and another C++ runtime in the process — Apple’s libc++abi, say —
-keeps its own.</p>
+<p>Public declarations live in <code>std</code>; internals use reserved names in hidden namespaces. Argument-dependent lookup stays out of implementation details, and hidden visibility isolates runtime symbols.</p>
 </article>
 
 <article>
 <h3>Strict preprocessor policy</h3>
-<p>One file, <code>config.hpp</code>, inspects compiler and target macros and turns each answer
-into a <code>constexpr</code> value or a type; the library then uses <code>if constexpr</code>,
-<code>requires</code> and templates. It defines no function-like macros, and facts about the
-target are probed against the real toolchain at configure time, not written down.</p>
+<p><code>config.hpp</code> turns compiler and target facts into constexpr values or types. The library uses templates, constraints, and <code>if constexpr</code> rather than function-like macros.</p>
 </article>
 
 <article>
 <h3>Platform layer and hosted layers</h3>
-<p>The hosted library reaches the system through the C primitives of
-<code>ycxx/pal.h</code>, implemented on POSIX by default. They are grouped into layers —
-<code>memory</code>, <code>console</code>, <code>clock</code>, <code>threads</code>,
-<code>random</code>, <code>files</code>, <code>environment</code>, <code>debug</code>,
-<code>clib</code> — that an integrator can provide one by one. Containers, exceptions and
-<code>std::print</code> then run over a heap and a serial port, as in the bare-metal x86_64
-example booted by Limine in QEMU. A feature whose layer is absent fails to compile or link,
-naming the layer, never silently at run time.</p>
+<p>The C primitives of <code>ycxx/pal.h</code> have POSIX providers by default. Supply individual layers yourself to use a custom heap, console, or other environment.</p>
 </article>
 
 <article>
 <h3>Its own ABI runtime</h3>
-<p><code>libycxx-abi.a</code> implements exception allocation, throw, catch and rethrow, the
-personality routine and LSDA parsing, <code>type_info</code> and the RTTI classes,
-<code>__dynamic_cast</code>, static-local guards, terminate and new handlers and the reference
-counting <code>exception_ptr</code> needs, from the Itanium C++ ABI documents. Only stack
-unwinding comes from the toolchain’s unwinder.</p>
+<p>Exceptions, RTTI, <code>dynamic_cast</code>, static-local guards, and handlers come from libycxx’s Itanium ABI implementation. Only stack unwinding comes from the toolchain.</p>
 </article>
 
 <article>
 <h3>Named locales on the C library</h3>
-<p><code>std::locale("de_DE.UTF-8")</code> accepts every name the C library’s
-<code>newlocale</code> accepts, on glibc and Darwin’s libc. Each named category holds
-<code>_byname</code> facets for <code>char</code> and <code>wchar_t</code> built on one shared
-<code>locale_t</code>, using the <code>_l</code> functions per call; the global C locale and
-other threads are never touched.</p>
+<p>Named locales use the C library’s per-locale functions on glibc and Darwin, without changing the global C locale or other threads.</p>
 </article>
 </div>
 
+<details class="more"><summary>Deliberate divergences from established libraries</summary>
 <h3>Deliberate divergences</h3>
 <p>Where the draft and the established libraries disagree, libycxx follows the draft and says
 so; where the letter of the draft would break portable code, it follows practice and says
@@ -267,13 +235,15 @@ key, so <code>[[=a=]]</code> keeps working there, as portable code expects.</li>
 <li><code>expected</code>’s <code>operator==</code> with a value deduces its left operand, to
 avoid a constraint recursion the literal signature causes.</li>
 </ul>
+</details>
 
 </section><section id="testing">
 <div class="sec-head"><span class="no">04</span><h2>How it is tested</h2></div>
 
-<p class="lead">Against the specification, by several independent oracles, in every
-configuration a user can select — and every run explains itself.</p>
-
+<p class="lead">Spec-derived tests, unmodified external suites, and real-world projects check the library beyond its own implementation.</p>
+<p>2,824 own tests and the libc++ and libstdc++ suites run with GCC and Clang. Nineteen real-world projects build against libycxx and run their own tests. CI checks Linux and macOS; nightly jobs cover additional configurations.</p>
+<p>Failures, skips, and expected failures carry their causes. Each run writes commands, results, and transcripts in HTML and Markdown. See the <a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/TESTING.md">testing guide</a> for how to run the suites.</p>
+<details class="more"><summary>Own suite: method and results</summary>
 <h3>Its own suite, written from the draft</h3>
 <p>2,824 tests in <code>tests/ycxx</code>, written by an author who may read only the
 working draft and cppreference — never libc++’s or libstdc++’s tests, nor any
@@ -292,7 +262,7 @@ validates the tests themselves: every difference is listed and triaged.</p>
 <tr><td>AddressSanitizer</td><td class="num">—</td><td class="num">2,685 / <b>0</b> / 39</td></tr>
 <tr><td>ThreadSanitizer</td><td class="num">2,722 / <b>0</b> / 15</td><td class="num">2,695 / <b>0</b> / 39</td></tr>
 </tbody></table></div>
-
+</details><details class="more"><summary>External suites and sanitizer configurations</summary>
 <h3>libc++ and libstdc++ conformance suites</h3>
 <p>Both suites run unmodified from pinned releases (LLVM 23.1.2’s <code>libcxx/test/std</code>,
 GCC 16.2.0’s libstdc++ testsuite), fetched on demand and never vendored.</p>
@@ -315,7 +285,7 @@ ThreadSanitizer, linked with a libycxx built with the same sanitizers — an uni
 library would hide every hand-off through its own mutexes and reference counts. The own suite
 also runs hardened, with <code>-fno-exceptions</code> and at <code>-O2</code>, each with its own
 report.</p>
-
+</details><details class="more"><summary>Real-world projects and their results</summary>
 <h3>Nineteen real-world projects</h3>
 <p><code>tools/realworld</code> builds open-source projects against libycxx with both compilers
 and runs their own test suites; then it <em>proves</em> the build was libycxx’s alone: every
@@ -352,7 +322,7 @@ library is rejected on every count.</p>
 AddressSanitizer, and five under ThreadSanitizer; neither reported anything in libycxx. The
 projects found three libycxx bugs (each fixed with a test) and four compiler bugs; their patches
 are to their own non-standard code, each with a category and reason.</p>
-
+</details><details class="more"><summary>CI and failure policy</summary>
 <h3>Continuous integration, without baselines</h3>
 <p>Every push runs the policy checks, both library builds, the freestanding check, the CMake
 package test and the own suite on <strong>Linux</strong> (the <code>gcc:16</code> container,
@@ -370,13 +340,14 @@ the mark goes when the cause does.</p>
 <p>Every test, passing ones included, records its commands, exit statuses and output; each run
 writes an HTML report with its provenance, and a Markdown copy ready to paste to a person or an
 assistant.</p>
+</details>
 
 </section><section id="matrix">
 <div class="sec-head"><span class="no">05</span><h2>Platform and compiler matrix</h2></div>
 
-<p class="lead">Exactly what has been confirmed, where, and with which compiler. A <span class="ok" aria-label="confirmed">✓</span> means
-a CI run or a run recorded in <a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">STATUS.md</a> passed with no unexpected failure; anything
-less is said in words.</p>
+<p class="lead">GCC 16.2 and Clang 23.1 on Linux and macOS; freestanding checks also cover bare-metal targets.</p>
+<p>The matrix distinguishes recorded passes from untested configurations and known gaps, with dates and references to <a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">STATUS.md</a>. Modules are tested on Linux only.</p>
+<details class="more"><summary>Full platform and compiler matrix</summary>
 <div class="table-wrap">
 <table class="data matrix">
 <caption>Hosted library. Dates are those of the recorded run.</caption>
@@ -416,6 +387,7 @@ less is said in words.</p>
 <li id="fn-f"><sup>f</sup> The nightly workflow runs both external suites on macOS; STATUS.md records no macOS result yet, and named locales and <code>&lt;stacktrace&gt;</code> symbolization are less exercised there.</li>
 <li id="fn-g"><sup>g</sup> <code>examples/hosted-layers</code>, run by the CMake package test on Linux.</li>
 </ol>
+</details>
 
 </section><section id="start">
 <div class="sec-head"><span class="no">06</span><h2>Getting started</h2></div>
@@ -424,16 +396,14 @@ less is said in words.</p>
 macOS. You need git, CMake&nbsp;3.28 or later, Ninja, curl and the host’s C toolchain (the Xcode
 Command Line Tools on macOS, <code>build-essential</code> or its equivalent on Linux). Nothing
 else has to be installed first.</p>
-
 <figure class="code"><figcaption>shell</figcaption><!-- snippet: examples/quickstart/README.md#1 --><pre><code class="lang-sh"><span class="t-f">mkdir</span> hello &amp;&amp; <span class="t-f">cd</span> hello
 <span class="t-f">curl</span> <span class="t-a">-fsSL</span> <span class="t-a">--remote-name-all</span> https://raw.githubusercontent.com/yrashk/libycxx/main/examples/quickstart/{CMakeLists.txt,hello.cpp}
 <span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja
 <span class="t-f">cmake</span> <span class="t-a">--build</span> build
 <span class="t-f">./build/hello</span></code></pre></figure>
-<p>It prints <code>["import", "modules", "std"]</code>. The two files it downloads are the
-<code>hello.cpp</code> and <code>CMakeLists.txt</code> at the top of this page, from
-<a href="https://github.com/yrashk/libycxx/tree/HEAD/examples/quickstart">examples/quickstart</a>.</p>
-
+<p>It prints <code>["import", "modules", "std"]</code>. The example fetches libycxx, provisions Clang&nbsp;23 if needed (about a 2&nbsp;GB download), and builds the modules and program. Later builds reuse the compiler cache.</p>
+<p>The <a href="https://github.com/yrashk/libycxx/blob/HEAD/examples/quickstart/README.md">quick-start guide</a> explains the example files, cache, and options. These commands run as written in CI.</p>
+<details class="more"><summary>What happens during the first build</summary>
 <h3>What the commands do</h3>
 <ul class="compact">
 <li><b>Fetch libycxx.</b> Before <code>project()</code>, <code>CMakeLists.txt</code> gets libycxx
@@ -457,40 +427,22 @@ empty directory against the commit under test and checks the output, with both c
 every CI run (the <code>cmake</code> stage of <code>tools/test</code>, Linux and macOS), and with
 Clang downloaded into an empty cache every night (the <code>quickstart</code> job of the
 <code>full</code> workflow, Linux and macOS).</p>
-
+</details><details class="more"><summary>Use GCC instead</summary>
 <h3>GCC instead of Clang</h3>
 <figure class="code"><figcaption>shell</figcaption><!-- snippet: examples/quickstart/README.md#2 --><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja <span class="t-a">-DYCXX_COMPILER=gcc</span></code></pre></figure>
 <p>This uses GCC&nbsp;16.2 when it is installed (<code>g++-16</code>, Homebrew’s <code>gcc</code>).
 Without one, it builds GCC from source into the cache, once, which takes about an hour on four
 cores; on macOS, <code>brew install gcc</code> first is quicker.</p>
-
-<h3>Other ways in</h3>
-<ul class="compact">
-<li><b>An installed libycxx.</b> Build and install it once per compiler (configured with the
-same toolchain file, which finds or downloads the compiler; README,
-<a href="https://github.com/yrashk/libycxx/blob/HEAD/README.md#using-libycxx-from-cmake">Using libycxx from CMake</a>).
-A project then uses <code>find_package(libycxx CONFIG REQUIRED)</code> and links
-<code>ycxx::modules</code> or <code>ycxx::ycxx</code>.</li>
-<li><b>An existing project that knows nothing about libycxx.</b> Configure it with the
-installation’s toolchain file (<code>lib/cmake/libycxx/toolchain.cmake</code>) as
-<code>CMAKE_TOOLCHAIN_FILE</code>, and every
-target, <code>try_compile</code> and FetchContent dependency is built against libycxx.</li>
-<li><b>Without CMake.</b> The installation’s compiler wrappers
-(<code>make CXX=/opt/libycxx/bin/ycxx-c++</code>), a Meson native file, or
-<code>pkg-config libycxx</code>; <code>ycxx-check-binary</code> then checks that a build used
-libycxx and nothing else.</li>
-</ul>
-<p>Each C++ dependency must be built from source the same way: libycxx has its own ABI, so a
-distribution’s prebuilt C++ libraries cannot be linked in. C libraries are fine.
-<a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">docs/BUILDING_PROJECTS.md</a>
-covers CMake, Meson, make, autotools, Bazel, Conan and vcpkg.</p>
+</details>
+<h3>Existing projects</h3>
+<p>Use an installed libycxx through CMake’s <code>find_package</code>, its toolchain file, or compiler wrappers. <a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">Building projects</a> covers CMake, Meson, make, autotools, Bazel, Conan, and vcpkg.</p>
+<p>Build every C++ dependency from source against the same libycxx installation: prebuilt libstdc++ or libc++ dependencies have a different ABI. C libraries are fine.</p>
 
 </section><section id="status">
 <div class="sec-head"><span class="no">07</span><h2>Status and limitations</h2></div>
 
-<p class="lead">Every header of C++26 is in place and the own suite passes on both compilers,
-on Linux and macOS. What libycxx is not yet, plainly:</p>
-<ul class="limits"><li><h4>Young, without a stable ABI</h4><p>Version 0.1.0. Type layouts change between commits: rebuild everything, dependencies included, when libycxx changes, and keep one installation per compiler.</p></li><li><h4>C++26 only</h4><p>Older <code>-std=</code> modes are raised to C++26, so features C++26 removed (<code>auto_ptr</code>, <code>&lt;strstream&gt;</code>, …) and libstdc++/libc++ extensions do not compile. Code relying on headers those libraries include from one another needs a few <code>#include</code>s.</p></li><li><h4>One runtime per image</h4><p>libycxx links statically and hides its symbols, so each shared library has its own runtime state: terminate and new handlers, <code>throw;</code> and <code>current_exception</code> do not cross shared-library boundaries.</p></li><li><h4>Compiler gaps</h4><p><code>&lt;meta&gt;</code> needs GCC with <code>-freflection</code> and <code>&lt;contracts&gt;</code> GCC’s <code>-fcontracts</code>; Clang&nbsp;23 has neither and cannot throw during constant evaluation. GCC&nbsp;16 cannot mix <code>#include</code> and <code>import std;</code> in one translation unit.</p></li><li><h4>macOS is newer</h4><p>The macOS job runs the gate on every push, but parts written for Darwin are less exercised: named locales there, and <code>&lt;stacktrace&gt;</code> symbolization, which reads ELF and DWARF only. Modules are tested on Linux only.</p></li><li><h4>Open work</h4><p>Remaining external-suite failures are triaged; two libycxx bugs are open among them. <code>&lt;filesystem&gt;</code> and the time zone database have no hosted-layer primitives yet. About ten benchmarks remain over 1.5× slower than libstdc++.</p></li></ul>
+<p class="lead">Every C++26 header is in place. Version 0.1.0 is still early: the ABI and implementation continue to evolve.</p>
+<ul class="limits"><li><h4>Young, without a stable ABI</h4><p>No stable ABI: rebuild your program and C++ dependencies when libycxx changes. Keep an installation per compiler.</p></li><li><h4>C++26 only</h4><p>Older language modes are raised to C++26. Removed facilities and compiler-library extensions are not supported.</p></li><li><h4>One runtime per image</h4><p>Shared libraries have separate runtime state. Exception state, terminate handlers, and new handlers do not cross their boundaries.</p></li><li><h4>Compiler gaps</h4><p>Reflection and contracts need GCC support. GCC cannot mix standard header includes and <code>import std;</code> in one translation unit.</p></li><li><h4>macOS is newer</h4><p>Darwin-specific facilities are less exercised. Stacktrace symbolization reads ELF/DWARF; modules are tested on Linux only.</p></li><li><h4>Open work</h4><p>External-suite failures, missing hosted-layer primitives, and performance gaps are recorded in the status report.</p></li></ul>
 <p><a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">STATUS.md</a> is the full record: per-area results, known compiler gaps, the draft
 defects noticed along the way, and what comes next.</p>
 

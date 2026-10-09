@@ -1,0 +1,176 @@
+# Testing libycxx
+
+How to run the suites, read reports, add tests, and understand failures and CI.
+For current results and limitations, see [STATUS.md](../STATUS.md).
+
+## Running tests
+
+One driver runs everything. It prints each command before running it, then live progress
+(elapsed time and the latest output line for builds; pass/fail counts and ETA for suites).
+Every test is listed as it finishes, passing ones too, with the steps it ran and what they
+returned (`compile exit 0 0.21s · run exit 0 0.00s`; for a test that must not compile, the
+compiler's first error). Failures show their whole transcript: the exact commands, their exit
+statuses and their output. A summary closes the run. Each suite run also writes
+`build/test-logs/<suite>-<compiler>.html`, a report of every test with its transcript and how
+the run was made (commit, compiler version, command), and a `.tsv` with one line per test.
+`tools/test` adds `build/test-logs/run.html`, the composite report of the whole run, made to
+be shared. It covers every stage with its command; every failure in full (a failed stage's log
+tail, such as a build error, and a failed test's transcript); and every suite run: own,
+libc++ and libstdc++, per compiler. For each suite it gives the counts, why tests were
+unsupported, an example of how a test runs, and every test with its steps. Its "Copy for an
+agent" button copies all of that except the list of every test. The reports have copy
+buttons (one failure, all failures, the whole report) that put self-contained Markdown on the
+clipboard, ready to paste to a person or an AI assistant. Each report also embeds the whole of
+itself as Markdown and writes it next to itself as `.md`, so it can be read without a browser. Colour is on for terminals and GitHub Actions; set
+`NO_COLOR=1` or `YCXX_COLOR=never` to turn it off. Full logs are in `build/test-logs/`. Works
+on Linux and macOS. lit runs through [uv](https://docs.astral.sh/uv/)'s `uvx`, pinned to the
+LLVM release of the libc++ tests, so nothing needs installing besides uv (`YCXX_LIT=lit` uses a
+lit already installed).
+
+```sh
+tools/test                            # policy checks, library builds, freestanding, own suite (both compilers)
+tools/test all                        # also the CMake package test and the libc++/libstdc++ suites
+                                      #   (fetched on first use: tools/fetch-suites)
+tools/test -c clang -f format ycxx    # one compiler, one directory of the own suite
+tools/test --help                     # stages and options (-j, -s asan, --fail-fast, -v, -q)
+tools/check-all                       # the fast gate: tools/test --fail-fast policy build freestanding
+tools/test realworld                  # real-world projects with their own tests (not a default stage)
+```
+
+### Real-world projects
+
+`tools/realworld [-c gcc|clang] [-s asan|tsan] [project...]` (the `realworld` stage of
+`tools/test`) builds open-source C++ projects against libycxx and runs their own test suites:
+GoogleTest, Catch2, doctest, nlohmann/json, {fmt}, spdlog (with `std::format`), CLI11,
+magic_enum, glaze, simdjson, Taskflow, EnTT, Google Benchmark, Microsoft GSL, oneTBB, range-v3,
+libcoro, yaml-cpp and Abseil, each pinned to a release (`tests/realworld/<name>/manifest`). It fetches
+them (into `build/realworld/src`), builds them with a C++ compiler that is `tools/ycxx-cxx`,
+runs their CTest suites, and proves for every project that it was built against libycxx and
+nothing else: every translation unit's recorded command, every object's headers, every image's
+needed libraries and symbols, and libycxx's allocation table in every image (a self-test checks
+that a build with the toolchain's own library is rejected). Patches of the projects' own
+non-standard code and skipped tests carry their category and reason. Reports:
+`build/test-logs/realworld-<cc>.html`; method: `docs/CUSTOM_STDLIB.md` ("Real-world projects");
+results: STATUS.md.
+
+The stages can also be run directly:
+
+```sh
+tests/cmake/run.sh                    # CMake package and toolchain file (YCXX_TEST_PROVISION=1:
+                                      #   also download Clang through the toolchain file)
+tools/run-conformance ycxx clang      # libycxx's own spec-derived suite (tests/ycxx)
+tools/run-conformance libcxx gcc <dirs>     # libc++'s tests (run only)
+tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)
+```
+
+The libc++ and libstdc++ suites are run only, never copied into this repository.
+`tools/fetch-suites` downloads the pinned versions into `~/.local/share/ycxx/suites`
+(`$YCXX_SUITES`). It takes `libcxx/test/std` and `libcxx/test/support` from LLVM 23.1.2 (a
+sparse, shallow clone), and `libstdc++-v3/testsuite` from the GCC 16.2.0 release tarball,
+unpacking nothing else. `tools/test` runs it on demand when a suite stage finds its suite
+missing; `--no-fetch` turns that off. `LIBCXX_TESTS` and `LIBSTDCXX_TESTS` point at other
+copies.
+
+`tools/run-conformance` options go to lit after `--`. `YCXX_QUIET=1` (`tools/test -q`) lists
+only the tests that did not pass, `YCXX_VERBOSE=1` (`-v`) prints every test's transcript,
+`YCXX_FAIL_DETAILS=N` shows the transcripts of the first N failures (default 10), and
+`YCXX_RAW=1` prints lit's own output. CI keeps the reports as the `test-reports` artifact.
+
+### Own tests
+
+A test in `tests/ycxx` is `*.pass.cpp` (compiled, linked and run; passes on exit status 0),
+`*.compile.pass.cpp` (must compile) or `*.compile.fail.cpp` (must not compile, for a reason other
+than a missing header). Directives in `//` comments adjust a test; `tests/ycxxlit/ycxx_format.py`
+documents them all. A `*.compile.fail.cpp` should say why it must fail: with
+`// EXPECT-ERROR: <regex>` (repeatable; `EXPECT-ERROR-GCC:` / `EXPECT-ERROR-CLANG:` for one
+compiler's wording) it passes only if the compiler's diagnostics match every regex, and its
+transcript names each regex that did not match, so a test cannot pass on an unrelated error:
+
+```cpp
+// EXPECT-ERROR: static assertion failed.*std::expected::value: E must be copy constructible
+// EXPECT-ERROR-GCC: use of deleted function .*basic_string\(nullptr_t\)
+// EXPECT-ERROR-CLANG: call to deleted constructor of 'std::string'
+```
+
+Every negative test must have a nonempty expectation applicable to the compiler running it;
+a failed compilation without one is a test failure.
+
+`// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
+it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
+`exceptions`, `rtti`, `extended-float32` (the compiler advertises `std::float32_t`).
+Tests that throw or catch say `// REQUIRES: exceptions`.
+`// MODULES: std` (or `std.compat`) compiles a test that imports the standard library modules
+(`tests/ycxx/modules`): they are built for the compiler and the test's flags (cached under the
+run's build directory) and passed with `--std-modules`; UNSUPPORTED with the compiler's reason
+when it cannot build a module at all. libc++'s `MODULE_DEPENDENCIES:` works the same way.
+`// EXPECT-TERMINATE[: <regex>]` makes a `*.pass.cpp` a death test: the program must be killed by
+SIGABRT, SIGTRAP or SIGILL. `tests/ycxx/precondition` holds such tests, one per hardened
+precondition ([structure.specifications]/3.5: `vector::operator[]` out of range, `front()` of an
+empty container, `*` of a disengaged `optional`, `span` and `mdspan` indexing,
+`string_view::remove_prefix` beyond the size, ...), which run only in the hardened configuration.
+
+The own suite also runs in other configurations, each with its own logs and reports (the run
+name gets the suffix):
+
+```sh
+tools/test --hardened -c gcc ycxx                     # -DYCXX_HARDENED=1: ycxx-gcc-hardened
+tools/test --cxxflags=-fno-exceptions --config-name=noexcept ycxx   # ycxx-<cc>-noexcept
+tools/test --cxxflags=-DYCXX_NO_TRANSITIVE_INCLUDES --config-name=strict-includes ycxx   # no transitive includes
+YCXX_HARDENED=1 tools/run-conformance ycxx clang precondition       # the same, directly
+YCXX_CXXFLAGS=-O2 YCXX_CONFIG_NAME=O2 tools/run-conformance ycxx gcc
+```
+
+`--cxxflags` (`YCXX_CXXFLAGS`) appends flags to every test's; without `--config-name`
+(`YCXX_CONFIG_NAME`) the name is made from the flags. `-fno-exceptions` and `-fno-rtti` remove the
+`exceptions` and `rtti` features.
+
+### Failures and CI
+
+A test reported FAIL fails the run, and CI: there are no lists of known failures. A test fails
+for one of three reasons, each handled where it is decided:
+
+- a libycxx bug: fixed (STATUS.md lists what is open);
+- a test that does not apply to libycxx (an external test of another library's internals,
+  extensions or older rules): skipped with its category and reason (`tests/<suite>/skip.txt`;
+  reported UNSUPPORTED, with the libycxx test that covers its subject, if any);
+- a cause outside the test and the library (a compiler bug, an ABI limit, a draft defect, a
+  feature not implemented yet): an expected failure with its reason, in the own test
+  (`// XFAIL: gcc|clang|any <reason>`) or the external suite's `tests/<suite>/xfail.txt`.
+  Reported XFAIL with the reason; a pass is XPASS, which fails the run, so the mark goes
+  when the cause does.
+
+A libc++ test that cannot apply in one configuration only, such as a permission-error test when
+the run is as root (CI's Linux containers), is listed in `tests/libcxx/unsupported.txt` with the
+lit feature naming that configuration (`root`), and reported UNSUPPORTED only there. A libstdc++
+test that relies on one compiler's implementation-defined behaviour or extensions (GCC's
+`source_location` columns or predefined macros, an optional `std::float32_t`) is listed the same
+way in `tests/libstdcxx/unsupported.txt`, with that compiler's name.
+
+Sanitizer runs (`tools/test -s asan,ubsan`, `-s tsan`; `SANITIZER=` for `tools/run-conformance`)
+compile the tests with the sanitizers and link them with a libycxx built with the same ones,
+`build/<cc>-<sanitizers>` (`build/clang-tsan`), which `tools/run-conformance` configures and
+brings up to date itself (CMake option `YCXX_SANITIZE`; DECISIONS §6.8). A sanitizer sees only
+instrumented code: with an uninstrumented library ThreadSanitizer reports every hand-off through
+libycxx's own mutexes, queues and reference counts. All three suites run under sanitizers. A
+ThreadSanitizer report is a race to fix, in the library or the test (an external suite's test
+with a race is skipped with its reason), or a false positive suppressed in the suite's
+`tests/<suite>/tsan.supp` with its reason (each program gets it in `TSAN_OPTIONS`, shown in its
+transcript). GCC needs its sanitizer runtimes (`libasan`, `libtsan`), which some GCC builds lack:
+`tools/toolchain/provision --with-sanitizers` builds GCC 16.2 with them.
+
+CI (`.github/workflows/ci.yml`), on every push, runs `tools/test policy build freestanding cmake
+ycxx` on Linux (the `gcc:16` container, Clang 23 from apt.llvm.org) and macOS (Apple Silicon,
+Homebrew's GCC 16, the provisioned Clang 23), plus a sample of the external suites on Linux.
+`.github/workflows/full.yml`, nightly and on demand, runs libc++'s and libstdc++'s whole suites on
+both compilers on both platforms, the own suite under ASan+UBSan (Clang), all three suites under
+ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
+with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
+suite on both compilers hardened, with `-fno-exceptions`, with `-O2` and without transitive
+includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`), and the benchmarks of `bench/` against their stored
+baseline of ratios to libstdc++ (`bench/check`: a FAIL is a regression that repeated in two
+confirmation runs; DECISIONS §15). Every job uploads its reports as an
+artifact.
+Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`
+features) run when the C library has it (`tests/ycxxlit/locales.py`); `tools/ci/gen-locales`
+generates every locale the suites name (the nightly Linux jobs do), and `YCXX_LONG_TESTS=1` runs
+libc++'s long tests.

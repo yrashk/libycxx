@@ -6,6 +6,7 @@
 <title>Not found — libycxx</title>
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="/fonts/anaheim-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Anaheim";font-style:normal;font-weight:400 800;font-display:swap;src:url(/fonts/anaheim-latin-wght-normal.woff2) format("woff2-variations"),url(/fonts/anaheim-latin-wght-normal.woff2) format("woff2")}
@@ -18,7 +19,7 @@
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font:17px/1.6 var(--sans)}
 header{background:var(--side);border-bottom:1px solid var(--rule);padding:14px 24px}
 .brand{display:inline-flex;align-items:center;gap:10px;color:var(--fg);font:700 19px/1 var(--sans);text-decoration:none}
-.brand i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;font:700 16px/1 Georgia,serif;font-style:normal}
+.brand img{display:block;flex-shrink:0}
 main{flex:1;display:grid;place-items:center;padding:48px 16px}
 main div{max-width:30em}
 .code{font:700 13px/1 var(--mono);color:var(--accent);letter-spacing:.08em;margin:0 0 12px}
@@ -29,7 +30,7 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<header><a class="brand" href="/"><i>y</i>libycxx</a></header>
+<header><a class="brand" href="/"><img src="/assets/logo-mark.svg" width="28" height="28" alt="">libycxx</a></header>
 <main><div>
 <p class="code">404 · NOT FOUND</p>
 <h1>No such page</h1>

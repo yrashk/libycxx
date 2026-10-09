@@ -30,7 +30,7 @@ code{white-space:nowrap;font:.92em/1 var(--mono);background:var(--surface);borde
 .side{position:sticky;top:0;height:100vh;overflow-y:auto;padding:28px 24px;display:flex;flex-direction:column;gap:28px}
 .brand{display:flex;align-items:center;gap:10px;color:var(--fg);font:700 19px/1 var(--sans);letter-spacing:-.01em}
 .brand:hover{text-decoration:none}
-.brand i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;font:700 16px/1 Georgia,serif;font-style:normal}
+.brand img{display:block;flex-shrink:0}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:-12px}
 .badge{font:500 11.5px/1 var(--mono);color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:5px 9px;background:var(--bg)}
 .toc{list-style:none;margin:0;padding:0;font-size:14.5px}

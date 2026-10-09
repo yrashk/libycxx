@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*std::visit: the visitor must return the same type and value category for all alternatives
 // [variant.visit]/5: "Mandates: For each valid pack m, e(m) is a valid expression.
 // All such expressions are of the same type and value category."
 #include <variant>

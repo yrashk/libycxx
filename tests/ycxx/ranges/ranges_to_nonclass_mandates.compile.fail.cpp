@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*ranges::to: C must be a cv\-unqualified class type
 // [range.utility.conv.adaptors]/1: "Mandates: For the first overload, C is a cv-unqualified
 // class type." (here C is int)
 #include <ranges>

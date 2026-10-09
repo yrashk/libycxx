@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/new/launder_function.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "ptr.launder"
+  ],
+  "normative_text": {
+    "ptr.launder": "17.6.5 Pointer optimization barrier [ptr.launder]\n\ud83d\udd17\ntemplate<class T> constexpr T* launder(T* p) noexcept;\n1\n#\nMandates: !is_function_v<T> && !is_void_v<T> is true.\n2\n#\nPreconditions: p represents the address A of a byte in memory.\n An object X\nwhose type is similar ([conv.qual]) to T\nis located at the address A, and\nis either within its lifetime ([basic.life]) or\nis an array element subobject\nwhose containing array object is within its lifetime.\n All bytes of storage that would be\nreachable through ([basic.compound]) the result\nare reachable through p.\n3\n#\nReturns: A value of type T* that points to X.\n4\n#\nRemarks: An invocation of this function\nmay be used in a core constant expression\nif and only if the (converted) value of its argument\nmay be used in place of the function invocation.\n5\n#\n[Note\u00a01:\u2002If a new object is created\nin storage occupied by an existing object of the same type,\na pointer to the original object\ncan be used to refer to the new object\nunless its complete object is a const object or it is a base class subobject;\nin the latter cases,\nthis function can be used to obtain a usable pointer to the new object.\n See [basic.life].\n \u2014\u00a0end note]\n6\n#\n[Example\u00a01:\u2002struct X { int n; };\nconst X *p = new const X{3};\nconst int a = p->n;\nnew (const_cast<X*>(p)) const X{5}; // p does not point to new object ([basic.life]) because its type is const\nconst int b = p->n;                 // undefined behavior\nconst int c = std::launder(p)->n;   // OK\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::launder of function or void pointer"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n #include <new>\n \n void f();\n-auto p = std::launder(&f);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/new/launder_function.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "function pointer argument to '__builtin_launder' is not allowed"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/new/launder_function.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/new__launder_function.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed: std::launder argument must not be a function pointer"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

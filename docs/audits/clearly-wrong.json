@@ -1566,7 +1566,8 @@
       "changes": "Replace sizeof equality with constexpr count checks for integer and floating representations.",
       "boundary_investigation": "Reviewed full duration typedef width/period and defaulted special-member checks; count preservation at 42 and 1.5 pass all references. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "b2a7c6e48c8065f4c501d8635ef55df269d5d71a"
     },
     {
       "id": "C24",
@@ -1584,7 +1585,7 @@
       ],
       "remedy": "Check the result is in [a,b); do not prescribe which input maps to a.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -1616,7 +1617,12 @@
           "exit": -6,
           "log": "build/test-logs/own-audit/C24-libcxx-clang.log"
         }
-      ]
+      ],
+      "normative_review": "rand.dist.uni.real/1 specifies [a,b) and density, not mapping from individual engine inputs; rand.eng.lcong/1-5 permits full-period increment engines and modulo-width overflow.",
+      "changes": "Check both interval endpoints, use standard increment engines that produce extreme first draws and then progress under rejection sampling; minimum inputs need only remain in range.",
+      "boundary_investigation": "Investigated rejected-draw and rounding boundaries for float/double/long double with 32/64-bit engines and narrow/negative intervals. libycxx/libstdc++ pass. Paired SDK libc++ returns upper endpoint (genuine reference behavior difference). Constant replay fixture could exhaust its arbitrary call limit under a permitted rejection strategy; replaced it rather than prescribing mapping.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C15",

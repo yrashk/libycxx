@@ -9,7 +9,7 @@
 // the lock are destroyed - a lingering registration would use them) and must still run other
 // callbacks.
 // Exceptions also cross threads: the waiter is a jthread whose predicate throws on its third
-// evaluation (after two notifications); the exception is caught in that thread and handed to
+// phase reached after two explicit phase handshakes; the exception is caught in that thread and handed to
 // the main thread through a promise ([futures.promise] set_exception).
 // FLAGS: -pthread
 // REQUIRES: exceptions
@@ -94,13 +94,16 @@ int main() {
     std::mutex m;
     std::condition_variable_any cv;
     int evaluations = 0;
+    int phase = 0, observed = -1;
     std::promise<void> p;
     std::future<void> f = p.get_future();
     std::jthread t([&](std::stop_token st) {
       std::unique_lock lk(m);
       try {
         cv.wait(lk, st, [&] {
-          if (++evaluations == 3) throw Boom{};
+          ++evaluations;
+          observed = phase;
+          if (phase == 2) throw Boom{};
           return false;
         });
         p.set_value();
@@ -109,12 +112,19 @@ int main() {
         p.set_exception(std::current_exception());
       }
     });
-    for (int i = 0; i < 2;) {
-      std::this_thread::sleep_for(1ms);
-      std::lock_guard g(m);
-      if (evaluations == i + 1) {
-        ++i;
-        cv.notify_all();
+    for (int next = 1; next <= 2; ++next) {
+      // Spurious wakes can evaluate the predicate repeatedly in one phase.
+      // Change the phase only after the waiter has observed the preceding phase.
+      while (f.wait_for(0ms) != std::future_status::ready) {
+        {
+          std::lock_guard g(m);
+          if (observed >= next - 1) {
+            phase = next;
+            cv.notify_all();
+            break;
+          }
+        }
+        std::this_thread::yield();
       }
     }
     bool caught = false;
@@ -124,7 +134,7 @@ int main() {
       caught = true;
     }
     CHECK(caught);
-    CHECK(evaluations == 3);
+    CHECK(observed == 2 && evaluations >= 3);
   }
   return 0;
 }

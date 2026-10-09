@@ -2352,7 +2352,8 @@
           "exit": "unsupported",
           "log": "build/test-logs/own-audit/C16-libcxx-clang-final.log"
         }
-      ]
+      ],
+      "commit": "2c0925af2e4cea0c02e051d6850301427245a802"
     },
     {
       "id": "C32",
@@ -2370,7 +2371,7 @@
       ],
       "remedy": "Use explicit phase/notification handshakes and break when the future is ready; do not equate evaluations with notifications.",
       "priority": 2,
-      "disposition": "pending",
+      "disposition": "corrected",
       "validation": [
         {
           "library": "own-gcc",
@@ -2401,6 +2402,31 @@
           "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/condition_variable/predicate_throws.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C32-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
           "exit": 0,
           "log": "build/test-logs/own-audit/C32-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "thread.condvarany.wait/1.3 permits spurious wakes; interruptible waits evaluate pred while locked, independently of notification count. intwait/2,5 requires propagated predicate exception and owned lock.",
+      "changes": "Advance explicit protected phase only after preceding phase acknowledged; terminate notifier polling if future ready; throw at phase 2, require >=3 evaluations, retain owned-lock/exception/callback lifetime checks.",
+      "boundary_investigation": "Reviewed promise synchronization, stop callback lifetime and held-lock access. Repaired wait passes libycxx/GCC/Clang and available references. Spurious-wake stress and baseline comparison are recorded below; no actual library defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/condition_variable/predicate_throws.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C32-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/condition_variable/predicate_throws.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C32-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/condition_variable/predicate_throws.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C32-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-libcxx-clang-final.log"
         }
       ]
     }

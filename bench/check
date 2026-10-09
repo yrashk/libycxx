@@ -11,7 +11,9 @@ machine (bench/run builds every program against both), not absolute times. Ratio
 and load differences, but still depend on CPU architecture, toolchains and scheduling. With
 --reference-baseline (used by CI), measure the baseline's reference_commit in a temporary git
 worktree on the same machine with the same compiler, options and run counts, then compare with
-those ratios. The baseline measurement is saved beside --json-out as *.baseline.json. Without
+those ratios. Confirmation runs remeasure both revisions, so noise in the initial baseline
+measurement cannot confirm a regression. Baseline measurements are saved beside --json-out as
+*.baseline*.json. Without
 that option, compare with the stored ratios, intended for the machine that recorded them.
 
 A benchmark regresses when its ratio exceeds the baseline's by more than the tolerance: relative
@@ -36,6 +38,7 @@ check; updating the baseline after one tightens it. --update also pins reference
 run's commit (the full commit ID, which must be available to --reference-baseline).
 """
 import argparse
+from contextlib import contextmanager
 import json
 import subprocess
 import sys
@@ -73,7 +76,8 @@ def run_bench(ccs, runs, samples, opt, filters, only, out, runner=RUN):
     return json.loads(Path(out).read_text())
 
 
-def measure_reference(ref, ccs, runs, samples, opt, out):
+@contextmanager
+def reference_checkout(ref):
     # Use a real checkout so bench/run records its commit and each revision builds its own
     # headers and archives. Always remove it, including when its build or benchmarks fail.
     git = ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT)]
@@ -83,7 +87,7 @@ def measure_reference(ref, ccs, runs, samples, opt, out):
         if r.returncode:
             sys.exit(f"bench/check: cannot check out baseline revision {ref}; fetch its history first")
         try:
-            return run_bench(ccs, runs, samples, opt, [], None, out, checkout / "bench" / "run")
+            yield checkout / "bench" / "run"
         finally:
             subprocess.run([*git, "worktree", "remove", "--force", str(checkout)], check=True)
 
@@ -142,9 +146,15 @@ def main():
         ref = base.get("reference_commit")
         if not ref:
             ap.error("baseline lacks reference_commit; pin the revision that recorded it")
-        measured = measure_reference(ref, ccs, a.runs, a.samples, a.opt,
-                                     Path(a.json_out).with_suffix(".baseline.json"))
-        base = dict(base, ratios=ratios(measured), commit=ref, date=measured.get("date"))
+        with reference_checkout(ref) as runner:
+            measured = run_bench(ccs, a.runs, a.samples, a.opt, [], None,
+                                 Path(a.json_out).with_suffix(".baseline.json"), runner)
+            base = dict(base, ratios=ratios(measured), commit=ref, date=measured.get("date"))
+            return compare(a, ccs, base, runner)
+    return compare(a, ccs, base)
+
+
+def compare(a, ccs, base, reference_runner=None):
     bratios, per = base["ratios"], base.get("tolerance", {})
     bratios = {k: v for k, v in bratios.items() if k.split(":", 1)[0] in ccs}
     doc = json.loads(Path(a.compare).read_text()) if a.compare else run_bench(
@@ -157,6 +167,7 @@ def main():
             lim, _ = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
             if r > lim:
                 suspects[k] = [r]
+    confirmation_bases = {k: [bratios[k]] for k in suspects}
     new = sorted(set(cur) - set(bratios))
     gone = sorted(set(bratios) - set(cur))
 
@@ -173,16 +184,26 @@ def main():
                 d = run_bench([cc], a.runs, a.samples, a.opt, sorted(names), progs,
                               Path(a.json_out).with_suffix(f".confirm{i + 1}-{cc}.json"))
                 rr = ratios(d)
+                reference_ratios = bratios
+                if reference_runner:
+                    reference_ratios = ratios(run_bench(
+                        [cc], a.runs, a.samples, a.opt, sorted(names), progs,
+                        Path(a.json_out).with_suffix(f".baseline.confirm{i + 1}-{cc}.json"),
+                        reference_runner))
                 for k in suspects:
                     if k.startswith(cc + ": "):
                         suspects[k].append(rr.get(k, float("nan")))
+                        confirmation_bases[k].append(reference_ratios.get(k, float("nan")))
 
     failed, noise = [], []
     for k, rs in sorted(suspects.items()):
-        lim, t = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
-        confirmed = all(r > lim for r in rs)  # NaN (benchmark vanished) does not confirm
+        _, t = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
+        confirmed = all(r > limit(b, k, a.tolerance, a.abs_tolerance, per)[0]
+                        for r, b in zip(rs, confirmation_bases[k]))  # NaN does not confirm
         msg = (f"{k}: ratio {rs[0]:.2f} > baseline {bratios[k]:.2f} (+{t:.0%}, +{a.abs_tolerance:.2f})"
                + (f"; confirmations {' '.join(f'{r:.2f}' for r in rs[1:])}" if len(rs) > 1 else ""))
+        if reference_runner and len(rs) > 1:
+            msg += "; reference ratios " + " ".join(f"{b:.2f}" for b in confirmation_bases[k][1:])
         (failed if confirmed else noise).append(msg)
 
     if a.md:

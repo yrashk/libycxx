@@ -69,6 +69,30 @@ class ReferenceBaselineTests(unittest.TestCase):
         self.assertIn('confirmations 2.00 2.00', result.stdout)
         self.assert_clean_worktrees()
 
+    def test_noise_in_initial_reference_does_not_confirm_regression(self):
+        counter = self.root / 'reference_calls'
+        noisy = FAKE_RUN.replace('Path(a.json).write_text', f'''
+if (root / '.git').is_file():
+    counter = Path({str(counter)!r})
+    calls = int(counter.read_text()) if counter.exists() else 0
+    counter.write_text(str(calls + 1))
+    if calls == 0:
+        ratio = 0.1
+Path(a.json).write_text''')
+        (self.root / 'bench/run').write_text(noisy)
+        self.git('add', 'bench/run')
+        self.git('-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+                 'commit', '-qm', 'noisy reference')
+        base = self.root / 'bench/baseline.json'
+        doc = json.loads(base.read_text())
+        doc['reference_commit'] = self.git('rev-parse', 'HEAD').stdout.strip()
+        base.write_text(json.dumps(doc))
+        result = self.check('--reference-baseline')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('1 suspect(s), 0 confirmed', result.stdout)
+        self.assertEqual(counter.read_text(), '3')
+        self.assert_clean_worktrees()
+
     def test_failed_reference_measurement_removes_worktree(self):
         (self.root / 'bench/run').write_text('raise SystemExit(7)')
         self.git('add', 'bench/run')

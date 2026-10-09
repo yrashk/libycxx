@@ -3,7 +3,7 @@
 // [basic.types.general]/4: padding bits are not part of the value representation. So for a
 // struct with padding, a compare-exchange through an atomic_ref succeeds whenever the members
 // match, whatever the padding bytes of the referenced object and of expected contain. (A weak
-// exchange may fail spuriously, /27, but not forever.)
+// exchange may fail spuriously, /27, with no normative retry bound.)
 // FLAGS: -latomic
 // (-latomic: the toolchain's out-of-line atomics for types that are not lock-free; Clang does not link it implicitly)
 #include <atomic>
@@ -42,12 +42,19 @@ void run(T v1, T v2) {
   T e = with_garbage(v1, 0x33);
   CHECK(r.compare_exchange_strong(e, with_garbage(v2, 0x77)));
   T e2 = with_garbage(v2, 0xEE);
-  int tries = 0;
-  while (!r.compare_exchange_weak(e2, v1)) CHECK(++tries < 1000);
+  // A weak attempt may fail spuriously; strong CAS deterministically completes the check.
+  if (!r.compare_exchange_weak(e2, v1)) {
+    CHECK(std::memcmp(&e2.c, &v2.c, sizeof v2.c) == 0);
+    if constexpr (requires { v2.i; }) CHECK(e2.i == v2.i);
+    else for (int j = 0; j < 3; ++j) CHECK(e2.v[j] == v2.v[j]);
+    CHECK(r.compare_exchange_strong(e2, v1));
+  }
   // a member mismatch still fails and reports the current value
   T e3 = v2;
   CHECK(!r.compare_exchange_strong(e3, v2));
   CHECK(std::memcmp(&e3.c, &v1.c, sizeof v1.c) == 0);
+  if constexpr (requires { v1.i; }) CHECK(e3.i == v1.i);
+  else for (int j = 0; j < 3; ++j) CHECK(e3.v[j] == v1.v[j]);
 }
 
 int main() {

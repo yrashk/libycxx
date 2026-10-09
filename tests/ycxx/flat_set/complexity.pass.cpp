@@ -1,3 +1,5 @@
+// The helper also enforces user-approved libycxx comparison budgets. Those finite
+// performance policies are stronger than the draft's asymptotic complexity requirements.
 // [flat.set.overview]: flat_set and flat_multiset meet the associative container requirements, including their
 // complexity clauses ([associative.reqmts.general]), measured in comparisons by the counting
 // comparator of support/reqs/assoc_complexity.hpp (see there for the bounds used):

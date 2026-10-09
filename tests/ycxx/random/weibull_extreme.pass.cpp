@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.pois.weibull]: x >= 0 with p(x | a, b) = (a/b) (x/b)^(a-1) exp(-(x/b)^a); the CDF is
 // 1 - exp(-(x/b)^a), so the median is b (ln 2)^(1/a); mean b Gamma(1 + 1/a).
 // [rand.dist.pois.extreme]: p(x | a, b) = (1/b) exp((a - x)/b - exp((a - x)/b)); the CDF is

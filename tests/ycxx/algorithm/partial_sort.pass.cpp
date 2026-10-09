@@ -1,3 +1,6 @@
+// Libycxx performance policy: 3 N ceil(log2 M) + 3 N comparisons for the fixed inputs.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [partial.sort]: "Places the first middle - first elements from the range [first, last)
 // as sorted with respect to comp and proj into the range [first, middle). The rest of the
 // elements in the range [middle, last) are placed in an unspecified order." ranges forms

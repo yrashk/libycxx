@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.bern.bin]: integers 0 <= i (<= t) with P(i | t, p) = C(t, i) p^i (1 - p)^(t - i);
 // preconditions 0 <= p <= 1 and 0 <= t. Mean t*p, variance t*p*(1-p).
 #include <random>
@@ -43,7 +49,11 @@ int main() {
   std::binomial_distribution<> two(2, 0.5);
   int c[3] = {};
   const int N = 200000;
-  for (int i = 0; i < N; ++i) ++c[two(g)];
+  for (int i = 0; i < N; ++i) {
+    int value = two(g);
+    CHECK(0 <= value && value <= 2);
+    ++c[value];
+  }
   CHECK(rs::near(c[0], N / 4.0, 0.03 * N / 4.0));
   CHECK(rs::near(c[1], N / 2.0, 0.03 * N / 2.0));
   CHECK(rs::near(c[2], N / 4.0, 0.03 * N / 4.0));

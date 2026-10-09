@@ -19,12 +19,11 @@
 //     [flat.set.modifiers]: insert(first, last) / insert_range(rg): N + M log M;
 //     insert(sorted_unique, first, last) / insert_range(sorted_unique, rg): linear in the
 //     size after the operation.
-// The draft gives no constants. With N = 2^14 elements, log2(N) = 14 and a balanced tree of
-// height at most 2 log2(N + 1), the bounds below (an average of at most 6 comparisons per
-// "amortized constant" operation, 4 log2(N) + 4 per "logarithmic" one, 8 per element for
-// "linear") are far above any reasonable constant and far below the cost of a logarithmic
-// (resp. linear, N log N) algorithm, so they tell the complexity classes apart without
-// depending on implementation details.
+// Libycxx performance policy: the constants below are finite-workload regression budgets.
+// The draft specifies complexity classes, not these constants. A conforming implementation
+// can exceed a budget; a nonconforming asymptotic algorithm can pass a finite workload.
+// CountLess records comparisons only, not pointer traversal or wall-clock cost. Successful
+// measurements are evidence for these chosen workloads, not a complexity-class proof.
 #pragma once
 #include <cstddef>
 #include <flat_set>  // std::sorted_unique / sorted_equivalent, named for every container kind
@@ -75,7 +74,7 @@ std::vector<typename X::value_type> sorted_values(int n, int step = 1) {
 // Reports a measurement above its bound (on stderr) so that a failure names the operation.
 inline bool within(const char* what, long c, long bound) {
   if (c <= bound) return true;
-  dprintf(2, "complexity: %s: %ld comparisons, bound %ld\n", what, c, bound);
+  dprintf(2, "libycxx comparison policy: %s: %ld comparisons, budget %ld\n", what, c, bound);
   return false;
 }
 
@@ -122,7 +121,23 @@ bool lookups() {
     const char* names[6] = {"find", "contains", "lower_bound", "upper_bound", "equal_range", "equal_range const"};
     for (int i = 0; i < 6; ++i)
       if (!within(names[i], c[i], LOG_BOUND)) return false;
+    // Normative lookup results use an independent linear scan, outside the measurements.
+    auto key = [](const auto& value) {
+      if constexpr (is_map<X>) return value.first;
+      else return value;
+    };
+    auto lo = x.begin();
+    while (lo != x.end() && key(*lo) < k) ++lo;
+    auto hi = lo;
+    while (hi != x.end() && key(*hi) == k) ++hi;
+    if (x.lower_bound(k) != lo || cx.upper_bound(k) != hi) return false;
+    auto er = cx.equal_range(k);
+    if (er.first != lo || er.second != hi) return false;
+    if (cx.contains(k) != (lo != hi)) return false;
+    auto found = x.find(k);
+    if (lo == hi ? found != x.end() : found == x.end() || key(*found) != k) return false;
     long cnt = static_cast<long>(x.count(k));
+    if (cnt != std::distance(lo, hi)) return false;
     if (!within("count", count([&] { (void)x.count(k); }), LOG_BOUND + 2 * cnt)) return false;
   }
   if constexpr (is_multi<X>) {  // the equivalent range is found in logarithmic time

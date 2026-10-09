@@ -1,3 +1,6 @@
+// Libycxx performance policy: 4 N log2 N + 4 N comparisons for the fixed 4096-element sort.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // hive with a move-only element type (support/move_only_elem.hpp): every member used needs
 // only Cpp17EmplaceConstructible / Cpp17MoveInsertable / Cpp17MoveAssignable / Cpp17Swappable
 // elements. [hive.modifiers]/1-6: emplace, insert(T&&); /7-9: insert_range over
@@ -52,6 +55,7 @@ int main() {
   long comparisons = 0;
   H big;
   for (int i = 0; i < 4096; ++i) big.emplace((i * 2654435761u) % 10007);
+  const auto before_sort = sorted_values(big);
   big.sort([&](const MOElem& a, const MOElem& b) {
     ++comparisons;
     return a.value() > b.value();
@@ -61,6 +65,7 @@ int main() {
     CHECK(e.value() <= prev);
     prev = e.value();
   }
+  CHECK(sorted_values(big) == before_sort);
   CHECK(comparisons <= 4L * 4096 * 12 + 4L * 4096);  // O(N log N), log2(4096) = 12
 
   // reshape, shrink_to_fit, trim_capacity keep the elements

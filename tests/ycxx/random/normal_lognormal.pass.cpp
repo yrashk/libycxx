@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.norm.normal]: p(x | mu, sigma) = exp(-(x - mu)^2 / (2 sigma^2)) / (sigma sqrt(2 pi));
 // mean and stddev are the parameters. [rand.dist.norm.lognormal]: x > 0 with ln x normal with
 // parameters m and s (mean exp(m + s^2/2)). [rand.req.dist]: after reset(), "Subsequent uses of d

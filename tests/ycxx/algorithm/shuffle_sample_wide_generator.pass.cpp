@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [alg.random.shuffle]/2-3, [alg.random.sample]/3-5 with a uniform random bit generator whose range
 // exceeds 64 bits ([rand.req.urng]: any unsigned integer result_type): shuffle permutes, sample
 // selects the requested count, both terminate, and every position is equally likely (within a
@@ -49,10 +55,11 @@ void check(G g) {
   std::array<int, 3> out{};
   auto e = std::sample(pop.begin(), pop.end(), out.begin(), 3, g);
   CHECK(e == out.end());
-  CHECK(std::ranges::is_sorted(out));
+  CHECK(0 <= out[0] && out[2] < 10 && out[0] < out[1] && out[1] < out[2]);
   int chosen[10] = {};
   for (int t = 0; t < trials; ++t) {
     std::sample(pop.begin(), pop.end(), out.begin(), 3, g);
+    CHECK(0 <= out[0] && out[2] < 10 && out[0] < out[1] && out[1] < out[2]);
     for (int x : out)
       ++chosen[x];
   }

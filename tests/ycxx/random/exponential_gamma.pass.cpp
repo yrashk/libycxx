@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.pois.exp]: x > 0 with p(x | lambda) = lambda e^(-lambda x) (mean 1/lambda,
 // variance 1/lambda^2). [rand.dist.pois.gamma]: x > 0 with
 // p(x | alpha, beta) = e^(-x/beta) / (beta^alpha Gamma(alpha)) x^(alpha-1) (mean alpha*beta,

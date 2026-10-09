@@ -1,6 +1,8 @@
 // EXPECT-ERROR: error: static assertion failed[^\n]*uniform_int_distribution: IntType must be a standard integer type \(\[rand\.req\.genl\]/1\.6\)
-// [rand.req.genl]/1.6: IntType must be a standard signed or unsigned integer type (or an extended
-// or implementation-defined integer type); bool is none of these, so the program is ill-formed.
+// [rand.req.genl]/1.6 permits an implementation-defined additional subset of integer
+// types. Bool is outside the mandatory IntType set; libycxx chooses an empty additional
+// subset (DECISIONS.md section 10), so this specialization is rejected.
+// This is a libycxx supported-type policy test, not a universal draft rejection oracle.
 #include <random>
 
 int main() {

@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.req.dist] Table 128: d.param(p): "Postconditions: d.param() == p." and d(g): "With
 // p = d.param(), the sequence of numbers returned by successive invocations with the same object g
 // is randomly distributed according to the associated p(z | {p}) or P(z_i | {p}) function."
@@ -10,7 +16,9 @@
 
 template <class D>
 void check(const D& target, double mean, double tol) {
-  D d;  // default parameters, then switch
+  D d;  // warm any cached state with default parameters, then switch
+  std::mt19937_64 warm(17);
+  (void)d(warm);
   d.param(target.param());
   CHECK(d.param() == target.param());
   std::mt19937_64 g(2024);
@@ -18,6 +26,7 @@ void check(const D& target, double mean, double tol) {
   double sum = 0;
   for (int i = 0; i < N; ++i) sum += double(d(g));
   CHECK(rs::near(sum / N, mean, tol));
+  CHECK(d.param() == target.param());
   // The same through d(g, p) on a default-constructed distribution.
   D e;
   sum = 0;

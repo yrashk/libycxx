@@ -101,9 +101,25 @@ template <class _Gp>
 __rand_u64 __rand_uniform_upto(_Gp& __g, __rand_u64 n) {
   using _GT = std::remove_cvref_t<_Gp>;
   using _Rp = std::invoke_result_t<_Gp&>;
-  constexpr __rand_u64 __gmin = static_cast<__rand_u64>(_GT::min());
-  constexpr __rand_u64 __grange = static_cast<__rand_u64>(_GT::max()) - __gmin;
-  auto __draw = [&__g] { return static_cast<__rand_u64>(static_cast<_Rp>(__g())) - __gmin; };
+  // Wider generators must be reduced without bias before the 64-bit integer mapping.
+  // Accept a whole number of 2^64-sized blocks, then take the low limb of each draw.
+  constexpr bool __wide = static_cast<_Rp>(_GT::max() - _GT::min()) > static_cast<_Rp>(~0ull);
+  constexpr __rand_u64 __gmin = __wide ? 0 : static_cast<__rand_u64>(_GT::min());
+  constexpr __rand_u64 __grange = __wide ? ~0ull : static_cast<__rand_u64>(_GT::max()) - __gmin;
+  auto __draw = [&__g] {
+    if constexpr (__wide) {
+      constexpr _Rp __wrange = static_cast<_Rp>(_GT::max() - _GT::min());
+      constexpr _Rp __base = static_cast<_Rp>(~0ull) + 1;
+      constexpr _Rp __limit = __wrange % __base == __base - 1 ? __wrange : __wrange / __base * __base - 1;
+      for (;;) {
+        const _Rp __value = static_cast<_Rp>(__g() - _GT::min());
+        if (__value <= __limit)
+          return static_cast<__rand_u64>(__value);
+      }
+    } else {
+      return static_cast<__rand_u64>(static_cast<_Rp>(__g())) - __gmin;
+    }
+  };
   if (n == 0)
     return 0;
   if (n == __grange)
@@ -154,10 +170,10 @@ __rand_u64 __rand_uniform_upto(_Gp& __g, __rand_u64 n) {
 }
 
 // ---- [rand.util.canonical] ------------------------------------------------------------------------
-// A 192-bit unsigned integer for the general case of generate_canonical: S < R^k < R * 2^d
-// <= 2^64 * 2^113.
+// A 256-bit unsigned integer for generate_canonical: S < R^k < R * 2^d,
+// including 128-bit generator ranges and the supported 113-bit floating significands.
 struct __rand_big {
-  __rand_u64 __w[3] = {0, 0, 0}; // little-endian limbs
+  __rand_u64 __w[4] = {0, 0, 0, 0}; // little-endian limbs
 
   constexpr void __mul_add(__rand_u64 m, __rand_u64 a) noexcept { // *this = *this * m + a
     __rand_u64 __carry = a;
@@ -167,9 +183,21 @@ struct __rand_big {
       __carry = p.__hi + (__limb < __carry);
     }
   }
+  // Multiplication/addition by a generator value wider than one limb (at most 128 bits).
+  template <class _UInt>
+  constexpr void __mul_add_wide(_UInt m, _UInt a) noexcept {
+    __rand_big __upper = *this;
+    __upper.__mul_add(static_cast<__rand_u64>(m >> 64), 0);
+    __upper = __upper.shl(64);
+    __mul_add(static_cast<__rand_u64>(m), static_cast<__rand_u64>(a));
+    add(__upper);
+    __rand_big __high_add;
+    __high_add.__w[1] = static_cast<__rand_u64>(a >> 64);
+    add(__high_add);
+  }
   constexpr void add(const __rand_big& __o) noexcept {
     __rand_u64 __carry = 0;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
       const __rand_u64 t = __w[i] + __carry;
       const __rand_u64 __c1 = t < __carry;
       __w[i] = t + __o.__w[i];
@@ -178,7 +206,7 @@ struct __rand_big {
   }
   constexpr void __sub(const __rand_big& __o) noexcept { // requires *this >= o
     __rand_u64 __borrow = 0;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
       const __rand_u64 t = __w[i] - __o.__w[i];
       const __rand_u64 __b1 = __w[i] < __o.__w[i];
       __w[i] = t - __borrow;
@@ -186,34 +214,34 @@ struct __rand_big {
     }
   }
   constexpr void __shl1() noexcept {
-    __w[2] = (__w[2] << 1) | (__w[1] >> 63);
-    __w[1] = (__w[1] << 1) | (__w[0] >> 63);
+    for (int i = 3; i > 0; --i)
+      __w[i] = (__w[i] << 1) | (__w[i - 1] >> 63);
     __w[0] <<= 1;
   }
   constexpr bool __bit(size_t i) const noexcept { return (__w[i / 64] >> (i % 64)) & 1; }
   constexpr void __set_bit(size_t i) noexcept { __w[i / 64] |= 1ull << (i % 64); }
   constexpr size_t __bit_length() const noexcept {
-    for (int i = 2; i >= 0; --i)
+    for (int i = 3; i >= 0; --i)
       if (__w[i] != 0)
         return static_cast<size_t>(i) * 64 + static_cast<size_t>(std::bit_width(__w[i]));
     return 0;
   }
   constexpr __rand_big shr(size_t s) const noexcept {
     __rand_big r;
-    for (size_t i = 0; i < 192; ++i)
-      if (i + s < 192 && __bit(i + s))
+    for (size_t i = 0; i < 256; ++i)
+      if (i + s < 256 && __bit(i + s))
         r.__set_bit(i);
     return r;
   }
   constexpr __rand_big shl(size_t s) const noexcept {
     __rand_big r;
-    for (size_t i = s; i < 192; ++i)
+    for (size_t i = s; i < 256; ++i)
       if (__bit(i - s))
         r.__set_bit(i);
     return r;
   }
   friend constexpr bool operator<(const __rand_big& a, const __rand_big& b) noexcept {
-    for (int i = 2; i >= 0; --i)
+    for (int i = 3; i >= 0; --i)
       if (a.__w[i] != b.__w[i])
         return a.__w[i] < b.__w[i];
     return false;
@@ -251,6 +279,62 @@ _Real __rand_scale_down(__rand_u64 __hi, __rand_u64 __lo, size_t d) {
   return static_cast<_Real>(__v * scale);
 }
 
+// The C++26 arithmetic with a generator range wider than 64 bits. Keeping the draws
+// in their own unsigned type avoids narrowing either R or the high bits of S.
+template <class _Real, size_t _Digits, class _Gp>
+_Real __rand_canonical_wide(_Gp& __g) {
+  using _UInt = std::invoke_result_t<_Gp&>;
+  constexpr _UInt __min = _Gp::min();
+  constexpr _UInt __rm1 = _Gp::max() - __min;
+  if constexpr (_Digits == 0) {
+    return _Real(0);
+  } else if constexpr ((__rm1 & (__rm1 + 1)) == 0) {
+    constexpr size_t b = static_cast<size_t>(std::bit_width(__rm1));
+    constexpr size_t k = (_Digits + b - 1) / b;
+    __rand_big s;
+    for (size_t i = 0; i < k; ++i) {
+      const _UInt __draw = __g() - __min;
+      __rand_big t;
+      t.__w[0] = static_cast<__rand_u64>(__draw);
+      t.__w[1] = static_cast<__rand_u64>(__draw >> 64);
+      s.add(t.shl(i * b));
+    }
+    const __rand_big __q = s.shr(k * b - _Digits);
+    return __rand_scale_down<_Real>(__q.__w[1], __q.__w[0], _Digits);
+  } else {
+    constexpr _UInt __base = __rm1 + 1;
+    struct __consts {
+      size_t k = 0;
+      __rand_big __rk, __x, __limit;
+    };
+    constexpr __consts c = [] {
+      __consts r;
+      r.__rk.__w[0] = 1;
+      while (r.__rk.__bit_length() <= _Digits) {
+        r.__rk.__mul_add_wide(__base, _UInt(0));
+        ++r.k;
+      }
+      r.__x = r.__rk.shr(_Digits);
+      r.__limit = r.__x.shl(_Digits);
+      return r;
+    }();
+    for (;;) {
+      __rand_big s, p;
+      p.__w[0] = 1;
+      for (size_t i = 0; i < c.k; ++i) {
+        __rand_big t = p;
+        t.__mul_add_wide(_UInt(__g() - __min), _UInt(0));
+        s.add(t);
+        p.__mul_add_wide(__base, _UInt(0));
+      }
+      if (s < c.__limit) {
+        const __rand_big __q = s.div(c.__x);
+        return __rand_scale_down<_Real>(__q.__w[1], __q.__w[0], _Digits);
+      }
+    }
+  }
+}
+
 }} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__("hidden")]] std {
@@ -263,79 +347,85 @@ _RealType generate_canonical(_URBG& __g) {
   using _Lp = numeric_limits<_RealType>;
   static_assert(_Lp::radix == 2);
   constexpr size_t d = digits < static_cast<size_t>(_Lp::digits) ? digits : static_cast<size_t>(_Lp::digits);
-  constexpr __rand_u64 __gmin = static_cast<__rand_u64>(_URBG::min());
-  constexpr __rand_u64 __rm1 = static_cast<__rand_u64>(_URBG::max()) - __gmin; // R - 1
-  auto __draw = [&__g] { return static_cast<__rand_u64>(__g()) - __gmin; };
-  if constexpr (d == 0) {
-    return _RealType(0);
-  } else if constexpr ((__rm1 & (__rm1 + 1)) == 0) {
-    // R = 2^b: one attempt; the result is the top d of the k*b bits of S, all the bits below
-    // them coming from g_0 (k*b - d < b).
-    constexpr size_t b = static_cast<size_t>(std::bit_width(__rm1));
-    constexpr size_t k = (d + b - 1) / b;
-    constexpr size_t drop = k * b - d;
-    __rand_u64 __hi = 0, __lo = __draw() >> drop; // the d-bit result as two limbs
-    for (size_t i = 1; i < k; ++i) {
-      const __rand_u64 __v = __draw();
-      const size_t __pos = i * b - drop;
-      __lo |= __ycxx::__detail::__rand_shl(__v, __pos);
-      if (__pos + b > 64)
-        __hi |= __pos >= 64 ? __ycxx::__detail::__rand_shl(__v, __pos - 64) : __ycxx::__detail::__rand_shr(__v, 64 - __pos);
-    }
-    if constexpr (d <= 64) {
-      // lo < 2^d with d <= digits converts exactly, and scaling by 2^-d is exact.
-      constexpr _RealType scale = [] {
-        _RealType s = 1;
-        for (size_t i = 0; i < d; ++i)
-          s /= 2;
-        return s;
-      }();
-      return static_cast<_RealType>(__lo) * scale;
-    } else {
-      return __ycxx::__detail::__rand_scale_down<_RealType>(__hi, __lo, d);
-    }
+  using _UInt = invoke_result_t<_URBG&>;
+  constexpr _UInt __range = _URBG::max() - _URBG::min();
+  if constexpr (__range > static_cast<_UInt>(~0ull)) {
+    return __ycxx::__detail::__rand_canonical_wide<_RealType, d>(__g);
   } else {
-    // General R: R^k and x = floor(R^k / 2^d) are compile-time constants; attempts are made until
-    // S < x * 2^d, then the result is floor(S / x) / 2^d.
-    constexpr __rand_u64 _Rp = __rm1 + 1;
-    struct __consts {
-      size_t k = 0;
-      __ycxx::__detail::__rand_big __rk, __x, __limit;
-    };
-    constexpr __consts c = [] {
-      __consts r;
-      r.__rk.__w[0] = 1;
-      while (r.__rk.__bit_length() <= d) { // R^k < 2^d
-        r.__rk.__mul_add(_Rp, 0);
-        ++r.k;
+    constexpr __rand_u64 __gmin = static_cast<__rand_u64>(_URBG::min());
+    constexpr __rand_u64 __rm1 = static_cast<__rand_u64>(_URBG::max()) - __gmin; // R - 1
+    auto __draw = [&__g] { return static_cast<__rand_u64>(__g()) - __gmin; };
+    if constexpr (d == 0) {
+      return _RealType(0);
+    } else if constexpr ((__rm1 & (__rm1 + 1)) == 0) {
+      // R = 2^b: one attempt; the result is the top d of the k*b bits of S, all the bits below
+      // them coming from g_0 (k*b - d < b).
+      constexpr size_t b = static_cast<size_t>(std::bit_width(__rm1));
+      constexpr size_t k = (d + b - 1) / b;
+      constexpr size_t drop = k * b - d;
+      __rand_u64 __hi = 0, __lo = __draw() >> drop; // the d-bit result as two limbs
+      for (size_t i = 1; i < k; ++i) {
+        const __rand_u64 __v = __draw();
+        const size_t __pos = i * b - drop;
+        __lo |= __ycxx::__detail::__rand_shl(__v, __pos);
+        if (__pos + b > 64)
+          __hi |= __pos >= 64 ? __ycxx::__detail::__rand_shl(__v, __pos - 64) : __ycxx::__detail::__rand_shr(__v, 64 - __pos);
       }
-      r.__x = r.__rk.shr(d);
-      r.__limit = r.__x.shl(d);
-      return r;
-    }();
-    if constexpr (c.__rk.__w[1] == 0 && c.__rk.__w[2] == 0) {
-      // R^k fits in 64 bits.
-      constexpr __rand_u64 __x = c.__x.__w[0], __limit = c.__limit.__w[0];
-      for (;;) {
-        __rand_u64 s = 0, p = 1;
-        for (size_t i = 0; i < c.k; ++i, p *= _Rp)
-          s += __draw() * p;
-        if (s < __limit)
-          return __ycxx::__detail::__rand_scale_down<_RealType>(0, s / __x, d);
+      if constexpr (d <= 64) {
+        // lo < 2^d with d <= digits converts exactly, and scaling by 2^-d is exact.
+        constexpr _RealType scale = [] {
+          _RealType s = 1;
+          for (size_t i = 0; i < d; ++i)
+            s /= 2;
+          return s;
+        }();
+        return static_cast<_RealType>(__lo) * scale;
+      } else {
+        return __ycxx::__detail::__rand_scale_down<_RealType>(__hi, __lo, d);
       }
     } else {
-      for (;;) {
-        __ycxx::__detail::__rand_big s, p;
-        p.__w[0] = 1;
-        for (size_t i = 0; i < c.k; ++i) {
-          __ycxx::__detail::__rand_big t = p;
-          t.__mul_add(__draw(), 0);
-          s.add(t);
-          p.__mul_add(_Rp, 0);
+      // General R: R^k and x = floor(R^k / 2^d) are compile-time constants; attempts are made until
+      // S < x * 2^d, then the result is floor(S / x) / 2^d.
+      constexpr __rand_u64 _Rp = __rm1 + 1;
+      struct __consts {
+        size_t k = 0;
+        __ycxx::__detail::__rand_big __rk, __x, __limit;
+      };
+      constexpr __consts c = [] {
+        __consts r;
+        r.__rk.__w[0] = 1;
+        while (r.__rk.__bit_length() <= d) { // R^k < 2^d
+          r.__rk.__mul_add(_Rp, 0);
+          ++r.k;
         }
-        if (s < c.__limit) {
-          const __ycxx::__detail::__rand_big __q = s.div(c.__x);
-          return __ycxx::__detail::__rand_scale_down<_RealType>(__q.__w[1], __q.__w[0], d);
+        r.__x = r.__rk.shr(d);
+        r.__limit = r.__x.shl(d);
+        return r;
+      }();
+      if constexpr (c.__rk.__w[1] == 0 && c.__rk.__w[2] == 0 && c.__rk.__w[3] == 0) {
+        // R^k fits in 64 bits.
+        constexpr __rand_u64 __x = c.__x.__w[0], __limit = c.__limit.__w[0];
+        for (;;) {
+          __rand_u64 s = 0, p = 1;
+          for (size_t i = 0; i < c.k; ++i, p *= _Rp)
+            s += __draw() * p;
+          if (s < __limit)
+            return __ycxx::__detail::__rand_scale_down<_RealType>(0, s / __x, d);
+        }
+      } else {
+        for (;;) {
+          __ycxx::__detail::__rand_big s, p;
+          p.__w[0] = 1;
+          for (size_t i = 0; i < c.k; ++i) {
+            __ycxx::__detail::__rand_big t = p;
+            t.__mul_add(__draw(), 0);
+            s.add(t);
+            p.__mul_add(_Rp, 0);
+          }
+          if (s < c.__limit) {
+            const __ycxx::__detail::__rand_big __q = s.div(c.__x);
+            return __ycxx::__detail::__rand_scale_down<_RealType>(__q.__w[1], __q.__w[0], d);
+          }
         }
       }
     }

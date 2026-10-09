@@ -1,3 +1,9 @@
+// Statistical smoke test: finite sample moments, frequencies, tails and observed coverage
+// use chosen tolerances, not deterministic specification guarantees. Fixed seeds reproduce
+// one implementation; sampling strategies can differ across implementations.
+// Outlier estimates assume independent ideal draws; moment tolerances use normal/large-sample
+// approximations where applicable. No universal or family-wide false-positive rate is claimed.
+// Retained as a user-approved quality regression alongside independent deterministic checks.
 // [rand.dist.bern.geo]: integers i >= 0 with P(i | p) = p (1 - p)^i, 0 < p < 1 (mean (1-p)/p,
 // variance (1-p)/p^2). [rand.dist.bern.negbin]: integers i >= 0 with
 // P(i | k, p) = C(k + i - 1, i) p^k (1 - p)^i, 0 < p <= 1 and 0 < k (mean k(1-p)/p,

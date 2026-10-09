@@ -1,3 +1,6 @@
+// Libycxx performance policy: 2 floor(log2 N) + 4 (equal_range) and floor(log2 N) + 2 (binary_search).
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [equal.range]: returns {lower_bound(first, last, value, comp), upper_bound(first, last,
 // value, comp)} (ranges: a subrange of the two, with proj); "At most 2 * log2(last - first)
 // + O(1) comparisons and projections". [binary.search]: "true if and only if for some

@@ -1,9 +1,10 @@
-// [list.ops]/33-35: sort() sorts by operator<, sort(comp) by comp; "Remarks: Stable." and the
-// operation "Does not affect the validity of iterators and references": an iterator to an
-// element still refers to that element (at its new position) afterwards, and no element is
-// copied. Checked on many sizes with many equivalent keys. (The detailed description in
-// [list.ops] declares sort without constexpr while the [list.overview] synopsis has it, so
-// sort is checked only at run time here.)
+// [list.ops]/33-35: sort preserves iterator/reference identity and is stable, with
+// approximately N log N comparisons. These requirements do not prohibit temporary copies
+// when T is copyable. Unlike list::merge, sort has no explicit no-copy wording.
+// Libycxx policy: sorting copyable elements makes zero temporary copies. Retain this
+// performance check separately from identity/stability and the normative immovable-type case.
+// Runtime only: the declared draft's detailed sort declarations omit constexpr despite the
+// list overview synopsis including it.
 #include <list>
 #include <iterator>
 #include <memory>
@@ -57,10 +58,38 @@ bool test(int n, int distinct) {
     if (prev && (prev->key < e.key || (e.key == prev->key && e.tag < prev->tag))) return false;
     prev = &e;
   }
-  return K::copies == 0;
+  for (int i = 0; i < n; ++i)
+    if (std::addressof(*its[i]) != addr[i] || its[i]->tag != i) return false;
+  return K::copies == 0;  // libycxx policy, independent of the identity checks
+
 }
 
+struct Immovable {
+  int key, tag;
+  Immovable(int k, int t) : key(k), tag(t) {}
+  Immovable(const Immovable&) = delete;
+  Immovable(Immovable&&) = delete;
+  Immovable& operator=(const Immovable&) = delete;
+  Immovable& operator=(Immovable&&) = delete;
+  friend bool operator<(const Immovable& a, const Immovable& b) { return a.key < b.key; }
+};
+
 int main() {
+  // sort requires comparison, not element copy/move construction or assignment.
+  std::list<Immovable> nodes;
+  nodes.emplace_back(2, 0);
+  nodes.emplace_back(1, 1);
+  nodes.emplace_back(2, 2);
+  auto first = nodes.begin();
+  const Immovable* address = std::addressof(*first);
+  nodes.sort();
+  auto it = nodes.begin();
+  CHECK(it++->tag == 1 && it++->tag == 0 && it++->tag == 2 && it == nodes.end());
+  CHECK(std::addressof(*first) == address && first->key == 2 && first->tag == 0);
+  nodes.sort([](const Immovable& a, const Immovable& b) { return a.key > b.key; });
+  it = nodes.begin();
+  CHECK(it++->tag == 0 && it++->tag == 2 && it++->tag == 1 && it == nodes.end());
+  CHECK(std::addressof(*first) == address && first->key == 2 && first->tag == 0);
   for (int n : {0, 1, 2, 3, 5, 16, 17, 100, 1000, 1999})
     for (int d : {1, 2, 10, 1000}) CHECK(test(n, d));
   std::list<int> l{3, 1, 2};

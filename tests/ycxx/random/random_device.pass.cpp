@@ -1,3 +1,8 @@
+// Statistical smoke test: bit coverage/different values are probable, not guaranteed.
+// Under independent uniform draws, failure to see both states for any of w bits in m draws
+// has union bound 2*w*2^-m. No independence guarantee or fixed engine algorithm is assumed by
+// [rand.device]; a deterministic engine fallback is permitted. Keep this user-approved
+// smoke test separately from the return type, range and entropy requirements.
 // [rand.device]: result_type is unsigned int; min() and max() are the limits of unsigned int;
 // entropy() is noexcept and returns 0.0 or a value in [min(), log2(max() + 1)]; random_device is
 // a uniform random bit generator and neither copyable nor assignable.
@@ -24,12 +29,13 @@ int main() {
   bool differs = false;
   for (int i = 0; i < 1000; ++i) {
     unsigned v = rd();
+    CHECK(std::random_device::min() <= v && v <= std::random_device::max());
     differs = differs || v != first;
     all_or |= v;
     all_and &= v;
   }
   CHECK(differs);
-  CHECK(all_or == ~0u && all_and == 0u);  // 1000 uniform values cover every bit both ways
+  CHECK(all_or == ~0u && all_and == 0u);  // statistical smoke: both states observed for every bit
   std::uniform_int_distribution<> d(1, 6);
   int v = d(rd);
   CHECK(1 <= v && v <= 6);

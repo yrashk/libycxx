@@ -1,3 +1,6 @@
+// Libycxx performance policy: 12 N comparisons averaged over the fixed seeds and nth positions.
+// The finite comparison budget is a regression heuristic, not an exact draft bound or
+// proof of asymptotic/average-case complexity. Normative effects remain independent.
 // [alg.nth.element]: "After nth_element the element in the position pointed to by nth is
 // the element that would be in that position if the whole range were sorted with respect to
 // comp and proj, unless nth == last. Also for every iterator i in the range [first, nth) and
@@ -95,6 +98,7 @@ int main() {
       total += comps;
       ++runs;
       CHECK(big[nth] == sorted_big[nth]);
+      CHECK(same_multiset(big, sorted_big, N));
       for (int i = 0; i < nth; ++i) CHECK(!(big[nth] < big[i]));
       for (int j = nth + 1; j < N; ++j) CHECK(!(big[j] < big[nth]));
     }
@@ -107,6 +111,7 @@ int main() {
     std::sort(sorted_big, sorted_big + N);
     std::ranges::nth_element(big, big + N / 3);
     CHECK(big[N / 3] == sorted_big[N / 3]);
+    CHECK(same_multiset(big, sorted_big, N));
   }
   return 0;
 }

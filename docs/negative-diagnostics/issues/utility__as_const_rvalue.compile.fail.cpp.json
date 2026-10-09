@@ -1,0 +1,87 @@
+{
+  "test": "tests/ycxx/utility/as_const_rvalue.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "utility.syn"
+  ],
+  "normative_text": {
+    "utility.syn": "22.2.1 Header <utility> synopsis [utility.syn]\n1\n#\nThe header '><utility>\ncontains some basic function and class templates that are used\nthroughout the rest of the library.\n// all freestanding\n#include <compare>              // see [compare.syn]\n#include <initializer_list>     // see [initializer.list.syn]\nnamespace std {\n  // [utility.swap], swap\n  template<class T>\n    constexpr void swap(T& a, T& b) noexcept(see below);\n  template<class T, size_t N>\n    constexpr void swap(T (&a)[N], T (&b)[N]) noexcept(is_nothrow_swappable_v<T>);\n  // [utility.exchange], exchange\n  template<class T, class U = T>\n    constexpr T exchange(T& obj, U&& new_val) noexcept(see below);\n  // [forward], forward/move\n  template<class T>\n    constexpr T&& forward(remove_reference_t<T>& t) noexcept;\n  template<class T>\n    constexpr T&& forward(remove_reference_t<T>&& t) noexcept;\n  template<class T, class U>\n    constexpr auto forward_like(U&& x) noexcept -> see below;\n  template<class T>\n    constexpr remove_reference_t<T>&& move(T&&) noexcept;\n  template<class T>\n    constexpr conditional_t<\n        !is_nothrow_move_constructible_v<T> && is_copy_constructible_v<T>, const T&, T&&>\n      move_if_noexcept(T& x) noexcept;\n  // [utility.as.const], as_const\n  template<class T>\n    constexpr add_const_t<T>& as_const(T& t) noexcept;\n  template<class T>\n    void as_const(const T&&) = delete;\n  // [declval], declval\n  template<class T>\n    add_rvalue_reference_t<T> declval() noexcept;   // as unevaluated operand\n  // [utility.intcmp], integer comparison functions\n  template<class T, class U>\n    constexpr bool cmp_equal(T t, U u) noexcept;\n  template<class T, class U>\n    constexpr bool cmp_not_equal(T t, U u) noexcept;\n  template<class T, class U>\n    constexpr bool cmp_less(T t, U u) noexcept;\n  template<class T, class U>\n    constexpr bool cmp_greater(T t, U u) noexcept;\n  template<class T, class U>\n    constexpr bool cmp_less_equal(T t, U u) noexcept;\n  template<class T, class U>\n    constexpr bool cmp_greater_equal(T t, U u) noexcept;\n  template<class R, class T>\n    constexpr bool in_range(T t) noexcept;\n  // [utility.underlying], to_underlying\n  template<class T>\n    constexpr underlying_type_t<T> to_underlying(T value) noexcept;\n  // [utility.undefined], undefined behavior\n  [[noreturn]] void unreachable();\n  void observable_checkpoint() noexcept;\n  // [const.wrap.class], class template constant_wrapper\n  template<auto X, class = decltype(X)>\n    struct constant_wrapper;\n  template<class T>\n    concept constexpr-param =           // exposition only\n      requires { typename constant_wrapper<T::value>; };\n  struct cw-operators;                  // exposition only\n  template<auto X>\n    constexpr auto cw = constant_wrapper<X>{};\n  // [intseq], compile-time integer sequences\n  template<class T, T...>\n    struct integer_sequence;\n  template<size_t... I>\n    using index_sequence = integer_sequence<size_t, I...>;\n  template<class T, T N>\n    using make_integer_sequence = integer_sequence<T, see below>;\n  template<size_t N>\n    using make_index_sequence = make_integer_sequence<size_t, N>;\n  template<class... T>\n    using index_sequence_for = make_index_sequence<sizeof...(T)>;\n  // [intseq.binding], structured binding support\n  template<class T> struct tuple_size;\n  template<size_t I, class T> struct tuple_element;\n  template<class T, T... Values>\n    struct tuple_size<integer_sequence<T, Values...>>;\n  template<size_t I, class T, T... Values>\n    struct tuple_element<I, integer_sequence<T, Values...>>;\n  template<size_t I, class T, T... Values>\n    struct tuple_element<I, const integer_sequence<T, Values...>>;\n  template<size_t I, class T, T... Values>\n    constexpr T get(integer_sequence<T, Values...>) noexcept;\n  // [pairs], class template pair\n  template<class T1, class T2>\n    struct pair;\n  template<class T1, class T2, class U1, class U2,\n           template<class> class TQual, template<class> class UQual>\n    requires requires { typename pair<common_reference_t<TQual<T1>, UQual<U1>>,\n                                      common_reference_t<TQual<T2>, UQual<U2>>>; }\n  struct basic_common_reference<pair<T1, T2>, pair<U1, U2>, TQual, UQual> {\n    using type = pair<common_reference_t<TQual<T1>, UQual<U1>>,\n                      common_reference_t<TQual<T2>, UQual<U2>>>;\n  };\n  template<class T1, class T2, class U1, class U2>\n    requires requires { typename pair<common_type_t<T1, U1>, common_type_t<T2, U2>>; }\n  struct common_type<pair<T1, T2>, pair<U1, U2>> {\n    using type = pair<common_type_t<T1, U1>, common_type_t<T2, U2>>;\n  };\n  // [pairs.spec], pair specialized algorithms\n  template<class T1, class T2, class U1, class U2>\n    constexpr bool operator==(const pair<T1, T2>&, const pair<U1, U2>&);\n  template<class T1, class T2, class U1, class U2>\n    constexpr common_comparison_category_t<synth-three-way-result<T1, U1>,\n                                           synth-three-way-result<T2, U2>>\n      operator<=>(const pair<T1, T2>&, const pair<U1, U2>&);\n  template<class T1, class T2>\n    constexpr void swap(pair<T1, T2>& x, pair<T1, T2>& y) noexcept(noexcept(x.swap(y)));\n  template<class T1, class T2>\n    constexpr void swap(const pair<T1, T2>& x, const pair<T1, T2>& y)\n      noexcept(noexcept(x.swap(y)));\n  template<class T1, class T2>\n    constexpr see below make_pair(T1&&, T2&&);\n  // [pair.astuple], tuple-like access to pair\n  template<class T1, class T2> struct tuple_size<pair<T1, T2>>;\n  template<size_t I, class T1, class T2> struct tuple_element<I, pair<T1, T2>>;\n  template<size_t I, class T1, class T2>\n    constexpr tuple_element_t<I, pair<T1, T2>>& get(pair<T1, T2>&) noexcept;\n  template<size_t I, class T1, class T2>\n    constexpr tuple_element_t<I, pair<T1, T2>>&& get(pair<T1, T2>&&) noexcept;\n  template<size_t I, class T1, class T2>\n    constexpr const tuple_element_t<I, pair<T1, T2>>& get(const pair<T1, T2>&) noexcept;\n  template<size_t I, class T1, class T2>\n    constexpr const tuple_element_t<I, pair<T1, T2>>&& get(const pair<T1, T2>&&) noexcept;\n  template<class T1, class T2>\n    constexpr T1& get(pair<T1, T2>& p) noexcept;\n  template<class T1, class T2>\n    constexpr const T1& get(const pair<T1, T2>& p) noexcept;\n  template<class T1, class T2>\n    constexpr T1&& get(pair<T1, T2>&& p) noexcept;\n  template<class T1, class T2>\n    constexpr const T1&& get(const pair<T1, T2>&& p) noexcept;\n  template<class T2, class T1>\n    constexpr T2& get(pair<T1, T2>& p) noexcept;\n  template<class T2, class T1>\n    constexpr const T2& get(const pair<T1, T2>& p) noexcept;\n  template<class T2, class T1>\n    constexpr T2&& get(pair<T1, T2>&& p) noexcept;\n  template<class T2, class T1>\n    constexpr const T2&& get(const pair<T1, T2>&& p) noexcept;\n  // [pair.piecewise], pair piecewise construction\n  struct piecewise_construct_t {\n    explicit piecewise_construct_t() = default;\n  };\n  inline constexpr piecewise_construct_t piecewise_construct{};\n  template<class... Types> class tuple;         // defined in _________'><tuple>\n  // in-place construction\n  struct in_place_t {\n    explicit in_place_t() = default;\n  };\n  inline constexpr in_place_t in_place{};\n  template<class T>\n    struct in_place_type_t {\n      explicit in_place_type_t() = default;\n    };\n  template<class T> constexpr in_place_type_t<T> in_place_type{};\n  template<size_t I>\n    struct in_place_index_t {\n      explicit in_place_index_t() = default;\n    };\n  template<size_t I> constexpr in_place_index_t<I> in_place_index{};\n  // [variant.monostate], class monostate\n  struct monostate;\n  // [variant.monostate.relops], monostate relational operators,monostate'>'>\n  constexpr bool operator==(monostate, monostate) noexcept;\n  constexpr strong_ordering operator<=>(monostate, monostate) noexcept;\n  // [variant.hash], hash support\n  template<class T> struct hash;\n  template<> struct hash<monostate>;\n}\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: use of deleted function [^\\n]*std::as_const\\(const _Tp&&\\)"
+    ],
+    "clang": [
+      "error: call to deleted function 'as_const'"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,4 +1,3 @@\n // [utility.syn]: \"template<class T> void as_const(const T&&) = delete;\"\n #include <utility>\n \n-void test() { (void)std::as_const(42); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/as_const_rvalue.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "use of deleted function 'void std::as_const(const _Tp&&) [with _Tp = int]'"
+    },
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/as_const_rvalue.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__as_const_rvalue.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to deleted function 'as_const'"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

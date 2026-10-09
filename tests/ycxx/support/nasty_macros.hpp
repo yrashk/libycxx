@@ -3,7 +3,8 @@
 // identifier that the standard library does not declare and that is not reserved ([lex.name]/4).
 // These are the 5862 such identifiers that libycxx's headers used as names of their own
 // before tools/uglify.py renamed them (DECISIONS §2). Each is defined to tokens that are never
-// valid C++ (`@`), so any header that still spells one fails to compile.
+// valid C++ (`@`), so any header that still spells one fails to compile. Names declared by
+// platform headers included by a standard header are excluded on that target ([macro.names]).
 #pragma once
 #define A NASTY_MACRO_A @
 #define A1 NASTY_MACRO_A1 @
@@ -2743,7 +2744,9 @@
 #define have_year NASTY_MACRO_have_year @
 #define hazard_protectable NASTY_MACRO_hazard_protectable @
 #define hdr_ NASTY_MACRO_hdr_ @
+#if !(defined(__aarch64__) && defined(__gnu_linux__))
 #define head NASTY_MACRO_head @
+#endif
 #define head_ NASTY_MACRO_head_ @
 #define header NASTY_MACRO_header @
 #define headers NASTY_MACRO_headers @
@@ -4109,7 +4112,9 @@
 #define pbeg_ NASTY_MACRO_pbeg_ @
 #define pbegin NASTY_MACRO_pbegin @
 #define pbrk NASTY_MACRO_pbrk @
+#if !(defined(__aarch64__) && defined(__gnu_linux__))
 #define pc NASTY_MACRO_pc @
+#endif
 #define pc0 NASTY_MACRO_pc0 @
 #define pc16 NASTY_MACRO_pc16 @
 #define pc32 NASTY_MACRO_pc32 @
@@ -4989,7 +4994,9 @@
 #define source_link NASTY_MACRO_source_link @
 #define sources NASTY_MACRO_sources @
 #define sources_domain NASTY_MACRO_sources_domain @
+#if !(defined(__aarch64__) && defined(__gnu_linux__))
 #define sp NASTY_MACRO_sp @
+#endif
 #define sp_access NASTY_MACRO_sp_access @
 #define sp_allocate_block NASTY_MACRO_sp_allocate_block @
 #define sp_array_block NASTY_MACRO_sp_array_block @
@@ -5556,7 +5563,9 @@
 #define va_mask_indices NASTY_MACRO_va_mask_indices @
 #define va_math NASTY_MACRO_va_math @
 #define va_op NASTY_MACRO_va_op @
+#if !(defined(__aarch64__) && defined(__gnu_linux__))
 #define val NASTY_MACRO_val @
+#endif
 #define val_ NASTY_MACRO_val_ @
 #define valarray_indexed NASTY_MACRO_valarray_indexed @
 #define valid_completion_for NASTY_MACRO_valid_completion_for @

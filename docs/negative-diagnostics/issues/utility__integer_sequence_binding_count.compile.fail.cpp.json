@@ -1,0 +1,90 @@
+{
+  "test": "tests/ycxx/utility/integer_sequence_binding_count.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "intseq.binding",
+    "dcl.struct.bind"
+  ],
+  "normative_text": {
+    "intseq.binding": "21.2.4 Structured binding support [intseq.binding]\n\ud83d\udd17\ntemplate<class T, T... Values>\n  struct tuple_size<integer_sequence<T, Values...>>\n    : integral_constant<size_t, sizeof...(Values)> { };\ntemplate<size_t I, class T, T... Values>\n  struct tuple_element<I, integer_sequence<T, Values...>> {\n    using type = T;\n  };\ntemplate<size_t I, class T, T... Values>\n  struct tuple_element<I, const integer_sequence<T, Values...>> {\n    using type = T;\n  };\n1\n#\nMandates: I < sizeof...(Values).\n\ud83d\udd17\ntemplate<size_t I, class T, T... Values>\n  constexpr T get(integer_sequence<T, Values...>) noexcept;\n2\n#\nMandates: I < sizeof...(Values).\n3\n#\nReturns: Values...[I].\n",
+    "dcl.struct.bind": "9.7 Structured binding declarations [dcl.struct.bind]\n1\n#\nA structured binding declaration introduces the identifiers\nv0, v1, v2,\u2026,vN\u22121\nof the\nsb-identifier-list as names.\n An sb-identifier that contains an ellipsis\nintroduces a structured binding pack ([temp.variadic]).\n A structured binding is either\nan sb-identifier that does not contain an ellipsis or\nan element of a structured binding pack.\n The optional attribute-specifier-seq of\nan sb-identifier\nappertains to the associated structured bindings.\n Let cv denote the cv-qualifiers in\nthe decl-specifier-seq and\nS consist of\neach decl-specifier of the decl-specifier-seq\nthat is constexpr, constinit, or\na storage-class-specifier.\n A cv that includes volatile is deprecated;\nsee [depr.volatile.type].\n First, a variable with a unique name e is introduced.\n If the\nassignment-expression in the initializer\nhas array type cv1 A and no ref-qualifier is present,\ne is defined by\nattribute-specifier-seqopt S cv A e ;\nand each element is copy-initialized or direct-initialized\nfrom the corresponding element of the assignment-expression as specified\nby the form of the initializer.\n Otherwise, e\nis defined as-if by\nattribute-specifier-seqopt decl-specifier-seq ref-qualifieropt e initializer ;\nwhere\nthe declaration is never interpreted as a function declaration and\nthe parts of the declaration other than the declarator-id are taken\nfrom the corresponding structured binding declaration.\n The type of the id-expression\ne is called E.\n [Note\u00a01:\u2002E is never a reference type ([expr.prop]).\n \u2014\u00a0end note]\n2\n#\nThe structured binding size of E, as defined below,\nis the number of structured bindings\nthat need to be introduced by the structured binding declaration.\n If there is no structured binding pack,\nthen the number of elements in the sb-identifier-list\nshall be equal to the structured binding size of E.\n Otherwise, the number of non-pack elements shall be no more than\nthe structured binding size of E;\nthe number of elements of the structured binding pack is\nthe structured binding size of E less\nthe number of non-pack elements in the sb-identifier-list.\n3\n#\nLet SBi denote\nthe ith structured binding in the structured binding declaration\nafter expanding the structured binding pack, if any.\n [Note\u00a02:\u2002If there is no structured binding pack,\nthen SBi denotes vi.\n \u2014\u00a0end note]\n [Example\u00a01:\u2002struct C { int x, y, z; };\ntemplate<class T>\nvoid now_i_know_my() {\n  auto [a, b, c] = C();     // OK, SB0 is a, SB1 is b, and SB2 is c\n  auto [d, ...e] = C();     // OK, SB0 is d, the pack e (v1) contains two structured bindings: SB1 and SB2\n  auto [...f, g] = C();     // OK, the pack f (v0) contains two structured bindings: SB0 and SB1, and SB2 is g\n  auto [h, i, j, ...k] = C();           // OK, the pack k is empty\n  auto [l, m, n, o, ...p] = C();        // error: structured binding size is too small\n}\n \u2014\u00a0end example]\n4\n#\nIf a structured binding declaration appears as a condition,\nthe decision variable ([stmt.pre]) of the condition is e.\n5\n#\nIf the initializer refers to\none of the names introduced by the structured binding declaration,\nthe program is ill-formed.\n6\n#\nE shall not be an array type of unknown bound.\n If E is any other array type with element type T,\nthe structured binding size of E is equal to the\nnumber of elements of E.\n Each SBi is the name of an\nlvalue that refers to the element i of the array and whose type\nis T; the referenced type is T.\n [Note\u00a03:\u2002The top-level cv-qualifiers of T are cv.\n \u2014\u00a0end note]\n [Example\u00a02:\u2002auto f() -> int(&)[2];\nauto [ x, y ] = f();            // x and y refer to elements in a copy of the array return value\nauto& [ xr, yr ] = f();         // xr and yr refer to elements in the array referred to by f's return value\nauto g() -> int(&)[4];\ntemplate<size_t N>\nvoid h(int (&arr)[N]) {\n  auto [a, ...b, c] = arr;  // a names the first element of the array, b is a pack referring to the second and\n                            // third elements, and c names the fourth element\n  auto& [...e] = arr;       // e is a pack referring to the four elements of the array\n}\nvoid call_h() {\n  h(g());\n}\n \u2014\u00a0end example]\n7\n#\nOtherwise, if\nthe qualified-id std\u200b::\u200btuple_size<E>\nnames a complete class type with a member named value,\nthe expression std\u200b::\u200btuple_size<E>\u200b::\u200bvalue\nshall be a well-formed integral constant expression\nwhose value is non-negative;\nthe structured binding size of E is equal to that value.\n Let i be an index prvalue of type std\u200b::\u200bsize_t\ncorresponding to SBi.\n If a search for the name get\nin the scope of E ([class.member.lookup])\nfinds at least one declaration\nthat is a function template whose first template parameter\nis a constant template parameter,\nthe initializer is\ne.get<i>().\n Otherwise, the initializer is get<i>(e),\nwhere get undergoes argument-dependent lookup ([basic.lookup.argdep]).\n In either case, get<i> is interpreted as a template-id.\n [Note\u00a04:\u2002Ordinary unqualified lookup is not performed.\n \u2014\u00a0end note]\nIn either case, e is an lvalue if the type of the entity e\nis an lvalue reference and an xvalue otherwise.\n Given the type Ti designated by\nstd\u200b::\u200btuple_element<i, E>\u200b::\u200btype and\nthe type Ui defined\nas Ti if the initializer is a prvalue,\nas \u201clvalue reference to Ti\u201d if the initializer is an lvalue, or\nas \u201crvalue reference to Ti\u201d otherwise,\nvariables are introduced with unique names ri as follows:\nS Ui ri = initializer ;\nEach SBi is the name of an lvalue of type Ti\nthat refers to the object bound to ri;\nthe referenced type is Ti.\n The initialization of e and\nany conversion of e considered as a decision variable ([stmt.pre])\nis\nsequenced before the initialization of any ri.\n The initialization of each ri is\nsequenced before the initialization of any rj where i<j.\n8\n#\nOtherwise,\nall of E's non-static data members\nshall be direct members of E or\nof the same base class of E,\nwell-formed when named as e.name\nin the context of the structured binding,\nE shall not have an anonymous union member, and\nthe structured binding size of E is\nequal to the number of non-static data members of E.\n Designating the non-static data members of E as\nm0, m1, m2,\u2026\n(in declaration order),\neach SBi is the\nname of an lvalue that refers to the member mi of e and\nwhose type is\nthat of e.mi ([expr.ref]);\nthe referenced type is\nthe declared type of mi if that type is a reference type, or\nthe type of e.mi otherwise.\n The lvalue is a\nbit-field if that member is a bit-field.\n [Example\u00a03:\u2002struct S { mutable int x1 : 2; volatile double y1; };\nS f();\nconst auto [ x, y ] = f();\nThe type of the id-expression x is \u201cint\u201d,\nthe type of the id-expression y is \u201cconst volatile double\u201d.\n \u2014\u00a0end example]\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: 3 names provided for structured binding",
+      "note: while 'std::integer_sequence<int, 1, 2>' decomposes into 2 elements"
+    ],
+    "clang": [
+      "error: type 'std::integer_sequence<int, 1, 2>' binds to 2 elements, but 3 names were provided"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,6 +3,4 @@\n #include <utility>\n \n void f() {\n-  auto [a, b, c] = std::integer_sequence<int, 1, 2>{};\n-  (void)a; (void)b; (void)c;\n }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/integer_sequence_binding_count.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "type 'std::integer_sequence<int, 1, 2>' binds to 2 elements, but 3 names were provided"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/utility/integer_sequence_binding_count.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/utility__integer_sequence_binding_count.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "3 names provided for structured binding"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

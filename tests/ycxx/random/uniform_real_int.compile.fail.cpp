@@ -1,3 +1,4 @@
+// EXPECT-ERROR: error: static assertion failed[^\n]*uniform_real_distribution: RealType must be float, double or long double \(\[rand\.req\.genl\]/1\.5\)
 // [rand.req.genl]/1.5: "If a template argument corresponding to a template parameter named
 // RealType is neither a standard floating-point type nor a member of an implementation-defined
 // subset of extended floating-point types, the program is ill-formed."

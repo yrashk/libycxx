@@ -6,6 +6,7 @@
 // FLAGS: -pthread
 // COUNTERPART: libstdcxx:30_threads/recursive_timed_mutex/try_lock_for/2.cc
 #include <mutex>
+#include <system_error>
 #include <thread>
 #include <chrono>
 #include <type_traits>
@@ -25,28 +26,31 @@ template<class M>
 static void run() {
   M m;
   m.lock();
-  m.lock();
-  bool t = false;
-  for (int i = 0; i < 1000 && !t; ++i) t = m.try_lock();
-  CHECK(t);
+  int levels = 1;
+#if defined(__cpp_exceptions)
+  try { m.lock(); ++levels; }
+  catch (const std::system_error&) {}  // an unspecified recursion maximum may be reached
+#endif
+  // Extra recursion can hit an unspecified maximum or fail spuriously.
+  for (int i = 0; i < 2; ++i) if (m.try_lock()) ++levels;
+  while (levels > 1) {
+    CHECK(!other_thread_try(m));
+    m.unlock();
+    --levels;
+  }
   CHECK(!other_thread_try(m));
   m.unlock();
-  CHECK(!other_thread_try(m));
-  m.unlock();
-  CHECK(!other_thread_try(m));
-  m.unlock();
-  bool ok = false;
-  for (int i = 0; i < 1000 && !ok; ++i) ok = other_thread_try(m);
-  CHECK(ok);
+  std::thread([&] { m.lock(); m.unlock(); }).join();
 }
 
 int main() {
   run<std::recursive_mutex>();
   run<std::recursive_timed_mutex>();
   std::recursive_timed_mutex rt;
-  CHECK(rt.try_lock_for(std::chrono::milliseconds(1)));
-  CHECK(rt.try_lock_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(1)));
-  rt.unlock();
+  rt.lock();
+  if (rt.try_lock_for(std::chrono::milliseconds(1))) rt.unlock();
+  if (rt.try_lock_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(1))) rt.unlock();
+  CHECK(!other_thread_try(rt));
   rt.unlock();
   return 0;
 }

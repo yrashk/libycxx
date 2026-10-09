@@ -1,0 +1,9 @@
+{
+  "issue": "detect extended float32 prerequisite",
+  "features": {
+    "gcc": true,
+    "clang": false
+  },
+  "command": "source tools/toolchain/activate.sh; tools/ycxx-cxx <compiler> -dM -E -x c++ - (stdin: #include <stdfloat>)",
+  "purpose": "Gate nexttoward_extended with the actual prerequisite; an unavailable type must not pass a negative test through its fallback static assertion."
+}

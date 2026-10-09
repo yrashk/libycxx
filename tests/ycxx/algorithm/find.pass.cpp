@@ -62,10 +62,15 @@ int main() {
   CHECK(test());
   int a[] = {1, 2, 3, 4};
   int calls = 0;
-  (void)std::find_if(a, a + 4, [&](int x) { ++calls; return x == 2; });
-  CHECK(calls == 2);
+  CHECK(std::find_if(a, a + 4, [&](int x) { ++calls; return x == 2; }) == a + 1);
+  CHECK(calls <= 4);
   calls = 0;
-  (void)std::ranges::find(a, 9, [&](int x) { ++calls; return x; });
-  CHECK(calls == 4);  // at most last - first applications of the projection
+  CHECK(std::ranges::find(a, 9, [&](int x) { ++calls; return x; }) == a + 4);
+  CHECK(calls <= 4);  // at most last - first applications of the projection
+  // A duplicate match must still return the first matching iterator.
+  int duplicates[] = {0, 2, 2, 3};
+  CHECK(std::find_if(duplicates, duplicates + 4, [](int x) { return x == 2; }) == duplicates + 1);
+  calls = 0;
+  CHECK(std::find_if(a, a, [&](int) { ++calls; return true; }) == a && calls == 0);
   return 0;
 }

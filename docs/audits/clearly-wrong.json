@@ -193,7 +193,7 @@
         {
           "library": "own-gcc",
           "command": "$ tools/run-conformance ycxx gcc algorithm/all_any_none_of.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C07', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
-          "exit": 1,
+          "exit": 0,
           "log": "build/test-logs/own-audit/C07-own-gcc.log"
         },
         {
@@ -225,7 +225,8 @@
       "changes": "Assert Boolean result and upper bound; add zero predicate calls for empty ranges.",
       "boundary_investigation": "Reviewed core algorithms and existing single-pass/projection coverage; explicit empty counter cases detect forbidden applications without prescribing short-circuit order. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "54eea33c93ecf48bf9521290cdc4dcb2013e5c85"
     },
     {
       "id": "C08",
@@ -242,7 +243,44 @@
       ],
       "remedy": "Check the returned iterator and calls <= N; an exact sequential count is implementation policy.",
       "priority": 1,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/find.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C08', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/find.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C08', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc algorithm/find.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C08', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang algorithm/find.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C08', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -L/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Wl,-rpath,/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/lib -Itests/ycxx/support tests/ycxx/algorithm/find.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C08-libcxx.exe\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C08', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C08-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "alg.find/2-3 specifies first matching iterator and at most N applications; exact sequential stopping count is not required.",
+      "changes": "Check returned iterators and <= N calls, duplicate first-match and zero calls on empty input.",
+      "boundary_investigation": "Reviewed find and ranges projection paths; duplicate-match and empty boundary checks pass. No actual library defect found. libc++ lacks C++26 braced value default template parameter.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
     },
     {
       "id": "C09",

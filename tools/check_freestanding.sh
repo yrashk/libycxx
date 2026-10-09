@@ -73,9 +73,16 @@ run "$clangxx --target=riscv64-unknown-elf -march=rv64gc -mabi=lp64d" clang-risc
 # The host GCC's own target: the bare-metal link needs ELF objects, so a GCC producing Mach-O or
 # PE (Homebrew's on macOS) checks the headers only; an ELF cross GCC can be named by YCXX_GXX.
 gcc_target=$($gxx -dumpmachine)
+gcc_bare_flags=
+case $gcc_target in
+  aarch64*)
+    # Linux GCC defaults to helpers that probe libc's auxiliary vector for LSE support.
+    # A bare-metal program uses the base ISA's inline atomics and has no libc to query.
+    gcc_bare_flags=-mno-outline-atomics ;;
+esac
 case $gcc_target in
   *darwin*|*mingw*|*cygwin*|*windows*) gcc_nolink="GCC targets $gcc_target, not ELF: a bare-metal link needs an ELF cross GCC" ;;
   *) gcc_nolink= ;;
 esac
-run "$gxx" "gcc-${gcc_target%%-*}" "$gcc" "$lld -e _start $($gcc -print-libgcc-file-name)" "$gcc_nolink"
+run "$gxx $gcc_bare_flags" "gcc-${gcc_target%%-*}" "$gcc $gcc_bare_flags" "$lld -e _start $($gcc -print-libgcc-file-name)" "$gcc_nolink"
 exit $fail

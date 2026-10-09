@@ -1,0 +1,94 @@
+{
+  "test": "tests/ycxx/format/fmt_tuple_two_types.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "format.tuple",
+    "format.range.formatter",
+    "format.string.general",
+    "format.fmt.string"
+  ],
+  "normative_text": {
+    "format.tuple": "28.5.9 Tuple formatter [format.tuple]\n1\n#\nFor each of pair and tuple,\nthe library provides the following formatter specialization\nwhere pair-or-tuple is the name of the template:\n\ud83d\udd17\nnamespace std {\n  template<class charT, formattable<charT>... Ts>\n  struct formatter<pair-or-tuple<Ts...>, charT> {\n  private:\n    tuple<formatter<remove_cvref_t<Ts>, charT>...> underlying_;               // exposition only\n    basic_string_view<charT> separator_ = STATICALLY-WIDEN<charT>(\", \");      // exposition only\n    basic_string_view<charT> opening-bracket_ = STATICALLY-WIDEN<charT>(\"(\"); // exposition only\n    basic_string_view<charT> closing-bracket_ = STATICALLY-WIDEN<charT>(\")\"); // exposition only\n  public:\n    constexpr void set_separator(basic_string_view<charT> sep) noexcept;\n    constexpr void set_brackets(basic_string_view<charT> opening,\n                                basic_string_view<charT> closing) noexcept;\n    template<class ParseContext>\n      constexpr typename ParseContext::iterator\n        parse(ParseContext& ctx);\n    template<class FormatContext>\n      constexpr typename FormatContext::iterator\n        format(see below& elems, FormatContext& ctx) const;\n  };\n  template<class... Ts>\n    constexpr bool enable_nonlocking_formatter_optimization<pair-or-tuple<Ts...>> =\n      (enable_nonlocking_formatter_optimization<remove_cvref_t<Ts>> && ...);\n}\n2\n#\nThe parse member functions of these formatters\ninterpret the format specification as\na tuple-format-spec according to the following syntax:\ntuple-format-spec\u2009:\ntuple-fill-and-alignopt widthopt tuple-typeopt\ntuple-fill-and-align\u2009:\ntuple-fillopt align\ntuple-fill\u2009:\nany character other than { or } or :\ntuple-type\u2009:\nm\nn\n3\n#\nThe tuple-fill-and-align is interpreted the same way as\na fill-and-align ([format.string.std]).\n The productions align and width\nare described in [format.string].\n4\n#\nThe tuple-type specifier\nchanges the way a pair or tuple is formatted,\nwith certain options only valid with certain argument types.\n The meaning of the various type options\nis as specified in Table 116.\nTable 116 \u2014 Meaning of tuple-type options\u2003[tab:formatter.tuple.type]\n\ud83d\udd17\nOption\nRequirements\nMeaning\n\ud83d\udd17\nm\nsizeof...(Ts) == 2\nEquivalent to:\nset_separator(STATICALLY-WIDEN<charT>(\": \"));\nset_brackets({}, {});\n\ud83d\udd17\nn\nnone\nEquivalent to: set_brackets({}, {});\n\ud83d\udd17\nnone\nnone\nNo effects\n\ud83d\udd17\nconstexpr void set_separator(basic_string_view<charT> sep) noexcept;\n5\n#\nEffects: Equivalent to: separator_ = sep;\n\ud83d\udd17\nconstexpr void set_brackets(basic_string_view<charT> opening,\n                            basic_string_view<charT> closing) noexcept;\n6\n#\nEffects: Equivalent to:\nopening-bracket_ = opening;\nclosing-bracket_ = closing;\n\ud83d\udd17\ntemplate<class ParseContext>\n  constexpr typename ParseContext::iterator\n    parse(ParseContext& ctx);\n7\n#\nEffects: Parses the format specifiers as a tuple-format-spec and\nstores the parsed specifiers in *this.\n The values of\nopening-bracket_,\nclosing-bracket_, and\nseparator_\nare modified if and only if\nrequired by the tuple-type, if present.\n For each element e in underlying_,\ncalls e.parse(ctx) to parse\nan empty format-spec and,\nif e.set_debug_format() is a valid expression,\ncalls e.set_debug_format().\n8\n#\nReturns: An iterator past the end of the tuple-format-spec.\n\ud83d\udd17\ntemplate<class FormatContext>\n  constexpr typename FormatContext::iterator\n    format(see below& elems, FormatContext& ctx) const;\n9\n#\nThe type of elems is:\n(9.1)\nIf (formattable<const Ts, charT> && ...) is true,\nconst pair-or-tuple<Ts...>&.\n(9.2)\nOtherwise pair-or-tuple<Ts...>&.\n10\n#\nEffects: Writes the following into ctx.out(),\nadjusted according to the tuple-format-spec:\n(10.1)\nopening-bracket_,\n(10.2)\nfor each index I in the [0, sizeof...(Ts)):\n(10.2.1)\nif I != 0, separator_,\n(10.2.2)\nthe result of writing get<I>(elems)\nvia get<I>(underlying_), and\n(10.3)\nclosing-bracket_.\n11\n#\nReturns: An iterator past the end of the output range.\n",
+    "format.range.formatter": "28.5.7.2 Class template range_formatter [format.range.formatter]\n\ud83d\udd17\nnamespace std {\n  template<class T, class charT = char>\n    requires same_as<remove_cvref_t<T>, T> && formattable<T, charT>\n  class range_formatter {\n    formatter<T, charT> underlying_;                                          // exposition only\n    basic_string_view<charT> separator_ = STATICALLY-WIDEN<charT>(\", \");      // exposition only\n    basic_string_view<charT> opening-bracket_ = STATICALLY-WIDEN<charT>(\"[\"); // exposition only\n    basic_string_view<charT> closing-bracket_ = STATICALLY-WIDEN<charT>(\"]\"); // exposition only\n  public:\n    constexpr void set_separator(basic_string_view<charT> sep) noexcept;\n    constexpr void set_brackets(basic_string_view<charT> opening,\n                                basic_string_view<charT> closing) noexcept;\n    constexpr formatter<T, charT>& underlying() noexcept { return underlying_; }\n    constexpr const formatter<T, charT>& underlying() const noexcept { return underlying_; }\n    template<class ParseContext>\n      constexpr typename ParseContext::iterator\n        parse(ParseContext& ctx);\n    template<ranges::input_range R, class FormatContext>\n        requires formattable<ranges::range_reference_t<R>, charT> &&\n                 same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>\n      constexpr typename FormatContext::iterator\n        format(R&& r, FormatContext& ctx) const;\n  };\n}\n1\n#\nThe class template range_formatter is a utility\nfor implementing formatter specializations for range types.\n2\n#\nrange_formatter interprets format-spec\nas a range-format-spec.\n The syntax of format specifications is as follows:\nrange-format-spec\u2009:\nrange-fill-and-alignopt widthopt nopt range-typeopt range-underlying-specopt\nrange-fill-and-align\u2009:\nrange-fillopt align\nrange-fill\u2009:\nany character other than { or } or :\nrange-type\u2009:\nm\ns\n?s\nrange-underlying-spec\u2009:\n: format-spec\n3\n#\nFor range_formatter<T, charT>,\nthe format-spec\nin a range-underlying-spec, if any,\nis interpreted by formatter<T, charT>.\n4\n#\nThe range-fill-and-align is interpreted\nthe same way as a fill-and-align ([format.string.std]).\n The productions align and width\nare described in [format.string].\n5\n#\nThe n option causes the range to be formatted\nwithout the opening and closing brackets.\n [Note\u00a01:\u2002This is equivalent to invoking set_brackets({}, {}).\n \u2014\u00a0end note]\n6\n#\nThe range-type specifier changes the way a range is formatted,\nwith certain options only valid with certain argument types.\n The meaning of the various type options\nis as specified in Table 115.\nTable 115 \u2014 Meaning of range-type options\u2003[tab:formatter.range.type]\n\ud83d\udd17\nOption\nRequirements\nMeaning\n\ud83d\udd17\nm\nT shall be\neither a specialization of pair or a specialization of tuple\nsuch that tuple_size_v<T> is 2.\nIndicates that\nthe opening bracket should be \"{\",\nthe closing bracket should be \"}\",\nthe separator should be \", \", and\neach range element should be formatted as if\nm were specified for its tuple-type.\n [Note\u00a02:\u2002If the n option is provided in addition to the m option,\nboth the opening and closing brackets are still empty.\n \u2014\u00a0end note]\n\ud83d\udd17\ns\nT shall be charT.\nIndicates that the range should be formatted as a string.\n\ud83d\udd17\n?s\nT shall be charT.\nIndicates that the range should be formatted as\nan escaped string ([format.string.escaped]).\nIf the range-type is s or ?s,\nthen there shall be\nno n option and no range-underlying-spec.\n\ud83d\udd17\nconstexpr void set_separator(basic_string_view<charT> sep) noexcept;\n7\n#\nEffects: Equivalent to: separator_ = sep;\n\ud83d\udd17\nconstexpr void set_brackets(basic_string_view<charT> opening,\n                            basic_string_view<charT> closing) noexcept;\n8\n#\nEffects: Equivalent to:\nopening-bracket_ = opening;\nclosing-bracket_ = closing;\n\ud83d\udd17\ntemplate<class ParseContext>\n  constexpr typename ParseContext::iterator\n    parse(ParseContext& ctx);\n9\n#\nEffects: Parses the format specifiers as a range-format-spec and\nstores the parsed specifiers in *this.\n Calls underlying_.parse(ctx) to parse\nformat-spec in range-format-spec or,\nif the latter is not present, an empty format-spec.\n The values of\nopening-bracket_, closing-bracket_, and separator_\nare modified if and only if required by\nthe range-type or the n option, if present.\n If:\n(9.1)\nthe range-type is neither s nor ?s,\n(9.2)\nunderlying_.set_debug_format() is a valid expression, and\n(9.3)\nthere is no range-underlying-spec,\nthen calls underlying_.set_debug_format().\n10\n#\nReturns: An iterator past the end of the range-format-spec.\n\ud83d\udd17\ntemplate<ranges::input_range R, class FormatContext>\n    requires formattable<ranges::range_reference_t<R>, charT> &&\n             same_as<remove_cvref_t<ranges::range_reference_t<R>>, T>\n  constexpr typename FormatContext::iterator\n    format(R&& r, FormatContext& ctx) const;\n11\n#\nEffects: Writes the following into ctx.out(),\nadjusted according to the range-format-spec:\n(11.1)\nIf the range-type was s,\nthen as if by formatting basic_string<charT>(from_range, r).\n(11.2)\nOtherwise, if the range-type was ?s,\nthen as if by formatting basic_string<charT>(from_range, r)\nas an escaped string ([format.string.escaped]).\n(11.3)\nOtherwise,\n(11.3.1)\nopening-bracket_,\n(11.3.2)\nfor each element e of the range r:\n(11.3.2.1)\nthe result of writing e via underlying_ and\n(11.3.2.2)\nseparator_, unless e is the last element of r, and\n(11.3.3)\nclosing-bracket_.\n12\n#\nReturns: An iterator past the end of the output range.\n",
+    "format.string.general": "28.5.2.1 General [format.string.general]\n1\n#\nA format string for arguments args is\na (possibly empty) sequence of\nreplacement fields,\nescape sequences,\nand characters other than { and }.\n Let charT be the character type of the format string.\n Each character that is not part of\na replacement field or an escape sequence\nis copied unchanged to the output.\n An escape sequence is one of {{ or }}.\n It is replaced with { or }, respectively, in the output.\n The syntax of replacement fields is as follows:\nreplacement-field\u2009:\n{ arg-idopt format-specifieropt }\narg-id\u2009:\n0\npositive-integer\npositive-integer\u2009:\nnonzero-digit\npositive-integer digit\nnonnegative-integer\u2009:\ndigit\nnonnegative-integer digit\nnonzero-digit\u2009: one of\n1 2 3 4 5 6 7 8 9\ndigit\u2009: one of\n0 1 2 3 4 5 6 7 8 9\nformat-specifier\u2009:\n: format-spec\nformat-spec\u2009:\nas specified by the formatter specialization for the argument type; cannot start with } \n2\n#\nThe arg-id field specifies the index of\nthe argument in args\nwhose value is to be formatted and inserted into the output\ninstead of the replacement field.\n If there is no argument with\nthe index arg-id in args,\nthe string is not a format string for args.\n The optional format-specifier field\nexplicitly specifies a format for the replacement value.\n3\n#\n[Example\u00a01:\u2002string s = format(\"{0}-{{\", 8);         // value of s is \"8-{\"\n \u2014\u00a0end example]\n4\n#\nIf all arg-ids in a format string are omitted\n(including those in the format-spec,\nas interpreted by the corresponding formatter specialization),\nargument indices 0, 1, 2, \u2026 will automatically be used in that order.\n If some arg-ids are omitted and some are present,\nthe string is not a format string.\n [Note\u00a01:\u2002A format string cannot contain a\nmixture of automatic and manual indexing.\n \u2014\u00a0end note]\n [Example\u00a02:\u2002string s0 = format(\"{} to {}\",   \"a\", \"b\"); // OK, automatic indexing\nstring s1 = format(\"{1} to {0}\", \"a\", \"b\"); // OK, manual indexing\nstring s2 = format(\"{0} to {}\",  \"a\", \"b\"); // not a format string (mixing automatic and manual indexing),\n                                            // ill-formed\nstring s3 = format(\"{} to {1}\",  \"a\", \"b\"); // not a format string (mixing automatic and manual indexing),\n                                            // ill-formed\n \u2014\u00a0end example]\n5\n#\nThe format-spec field contains\nformat specifications\nthat define how the value should be presented.\n Each type can define its own\ninterpretation of the format-spec field.\n If format-spec does not conform\nto the format specifications for\nthe argument type referred to by arg-id,\nthe string is not a format string for args.\n [Example\u00a03:\u2002(5.1)\nFor arithmetic, pointer, and string types\nthe format-spec\nis interpreted as a std-format-spec\nas described in [format.string.std].\n(5.2)\nFor chrono types\nthe format-spec\nis interpreted as a chrono-format-spec\nas described in [time.format].\n(5.3)\nFor user-defined formatter specializations,\nthe behavior of the parse member function\ndetermines how the format-spec\nis interpreted.\n \u2014\u00a0end example]\n",
+    "format.fmt.string": "28.5.4 Class template basic_format_string [format.fmt.string]\nnamespace std {\n  template<class charT, class... Args>\n  struct basic_format_string {\n  private:\n    basic_string_view<charT> str;         // exposition only\n  public:\n    template<class T> consteval basic_format_string(const T& s);\n    constexpr basic_format_string(dynamic-format-string<charT> s) noexcept : str(s.str) {}\n    constexpr basic_string_view<charT> get() const noexcept { return str; }\n  };\n}\n\ud83d\udd17\ntemplate<class T> consteval basic_format_string(const T& s);\n1\n#\nConstraints: const T& models convertible_to<basic_string_view<charT>>.\n2\n#\nEffects: Direct-non-list-initializes str with s.\n3\n#\nRemarks: A call to this function is not a core constant expression ([expr.const.core])\nunless there exist args of types Args\nsuch that str is a format string for args.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "gcc": [
+      "error: uncaught exception of type 'std::format_error';[^\\n]*std::formatter: invalid tuple\\-format\\-spec"
+    ],
+    "clang": [
+      "error: call to consteval function [^\\n]*std::basic_format_string[^\\n]*is not a constant expression",
+      "note: in call to [^\\n]*std::formatter: invalid tuple\\-format\\-spec"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -1,3 +1,4 @@\n+#define YCXX_CONTROL 1\n // [format.tuple]/2: \"tuple-format-spec: tuple-fill-and-align_opt width_opt tuple-type_opt\"\n // with a single tuple-type, m or n; \"{:nm}\" (valid for a range of pairs,\n // [format.range.formatter]/2) is not a format string for a pair ([format.string.general]/5,\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_tuple_two_types.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, std::pair<int, int>>::basic_format_string<char[6]>' is not a constant expression"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/format/fmt_tuple_two_types.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/format__fmt_tuple_two_types.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "call to consteval function 'std::basic_format_string<char, std::pair<int, int> >(\"{:nm}\")' is not a constant expression"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

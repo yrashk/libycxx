@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/exception/exception_ptr_cast_function.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "propagation"
+  ],
+  "normative_text": {
+    "propagation": "17.9.7 Exception propagation [propagation]\n\ud83d\udd17\nusing exception_ptr = unspecified;\n1\n#\nThe type exception_ptr can be used to refer to an exception object.\n2\n#\nexception_ptr meets the requirements of\nCpp17NullablePointer (Table 36).\n3\n#\nTwo non-null values of type exception_ptr are equivalent and compare equal if and\nonly if they refer to the same exception.\n4\n#\nThe default constructor of exception_ptr produces the null value of the\ntype.\n5\n#\nexception_ptr shall not be implicitly convertible to any arithmetic,\nenumeration, or pointer type.\n6\n#\n[Note\u00a01:\u2002An implementation can use a reference-counted smart\npointer as exception_ptr.\n \u2014\u00a0end note]\n7\n#\nFor purposes of determining the presence of a data race, operations on\nexception_ptr objects shall access and modify only the\nexception_ptr objects themselves and not the exceptions they refer to.\n Use of rethrow_exception or exception_ptr_cast\non exception_ptr objects that refer to\nthe same exception object shall not introduce a data race.\n [Note\u00a02:\u2002If\nrethrow_exception rethrows the same exception object (rather than a copy),\nconcurrent access to that rethrown exception object can introduce a data race.\n Changes in the number of exception_ptr objects that refer to a\nparticular exception do not introduce a data race.\n \u2014\u00a0end note]\n8\n#\nAll member functions are marked constexpr.\n\ud83d\udd17\nconstexpr exception_ptr current-exception() noexcept;\nexception_ptr current_exception() noexcept;\n9\n#\nReturns: An exception_ptr object that refers to the\ncurrently handled exception\nor a copy of the currently\nhandled exception, or a null exception_ptr object if no exception is being\nhandled.\n The referenced object shall remain valid at least as long as there is an\nexception_ptr object that refers to it.\n If the function needs to allocate memory and the attempt fails, it returns an\nexception_ptr object that refers to an instance of bad_alloc.\n It is unspecified whether the return values of two successive calls to\ncurrent_exception refer to the same exception object.\n [Note\u00a03:\u2002That is, it is unspecified whether current_exception\ncreates a new copy each time it is called.\n \u2014\u00a0end note]\nIf the attempt to copy the current exception object throws an exception, the function\nreturns an exception_ptr object that refers to the thrown exception or,\nif this is not possible, to an instance of bad_exception.\n [Note\u00a04:\u2002The copy constructor of the thrown exception can also fail,\nso the implementation can substitute a bad_exception object\nto avoid infinite recursion.\n \u2014\u00a0end note]\n\ud83d\udd17\n[[noreturn]] constexpr void rethrow_exception(exception_ptr p);\n10\n#\nPreconditions: p is not a null pointer.\n11\n#\nEffects: Let u be the exception object to which p refers, or\na copy of that exception object.\n It is unspecified whether a copy is made, and\nmemory for the copy is allocated in an unspecified way.\n (11.1)\nIf allocating memory to form u fails,\nthrows an instance of bad_alloc;\n(11.2)\notherwise, if copying the exception to which p refers\nto form u throws an exception, throws that exception;\n(11.3)\notherwise, throws u.\n\ud83d\udd17\ntemplate<class E> constexpr exception_ptr make_exception_ptr(E e) noexcept;\n12\n#\nEffects: Creates an exception_ptr object that refers to a copy of e, as if:\ntry {\n  throw e;\n} catch(...) {\n  return current-exception();\n}\n\ud83d\udd17\ntemplate<class E>\n  constexpr optional<const E&> exception_ptr_cast(const exception_ptr& p) noexcept;\n13\n#\nMandates: E is a cv-unqualified complete object type.\n E is not an array type.\n E is not a pointer or pointer-to-member type.\n [Note\u00a05:\u2002When E is a pointer or pointer-to-member type,\na handler of type const E& can match\nwithout binding to the exception object itself.\n \u2014\u00a0end note]\n14\n#\nReturns: An optional containing a reference\nto the exception object referred to by p,\nif p is not null and\na handler of type const E&\nwould be a match ([except.handle]) for that exception object.\n Otherwise, nullopt.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::exception_ptr_cast: Mandates: E is a cv\\-unqualified complete object type"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -2,4 +2,3 @@\n // type.\" A function type is not an object type.\n #include <exception>\n \n-void f(const std::exception_ptr& p) { (void)std::exception_ptr_cast<void()>(p); }\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/exception/exception_ptr_cast_function.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "no member named 'exception_ptr_cast' in namespace 'std'"
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/exception/exception_ptr_cast_function.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/exception__exception_ptr_cast_function.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

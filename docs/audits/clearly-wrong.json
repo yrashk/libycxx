@@ -57,7 +57,27 @@
       "boundary_investigation": "Examined reallocation guards in core/vector.hpp; aliasing push_back(v.front()) now checked for failure and successful growth. No defect found in inserted-copy rollback.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "6e8dacd3f10dac77abfe3b3103afb0d0a49dcbb1"
+      "commit": "6e8dacd3f10dac77abfe3b3103afb0d0a49dcbb1",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/vector/exception_safety.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C01-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/vector/exception_safety.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C01-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/vector/exception_safety.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C01-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C01-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C03",
@@ -113,7 +133,27 @@
       "boundary_investigation": "Inspected relocation guards; both construction paths armed force reserve to throw. Source mutation before a throwing move detects unsafe move selection. No library defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "fc7d241befd8c355a4cac6995f99aa0b16ea843c"
+      "commit": "fc7d241befd8c355a4cac6995f99aa0b16ea843c",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/vector/move_if_noexcept_growth.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C03-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C03-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/vector/move_if_noexcept_growth.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C03-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C03-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/vector/move_if_noexcept_growth.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C03-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C03-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C04",
@@ -169,7 +209,27 @@
       "boundary_investigation": "Reviewed string resize/reserve/shrink implementation and zero/oversize tests; existing length_error check retains original contents. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "004991bc6c5a8de83fa2f4c0b07e3e00a6b9fcf5"
+      "commit": "004991bc6c5a8de83fa2f4c0b07e3e00a6b9fcf5",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/string/capacity.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C04-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C04-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/string/capacity.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C04-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C04-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/string/capacity.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C04-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C04-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C07",
@@ -226,7 +286,27 @@
       "boundary_investigation": "Reviewed core algorithms and existing single-pass/projection coverage; explicit empty counter cases detect forbidden applications without prescribing short-circuit order. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "54eea33c93ecf48bf9521290cdc4dcb2013e5c85"
+      "commit": "54eea33c93ecf48bf9521290cdc4dcb2013e5c85",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/algorithm/all_any_none_of.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C07-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/algorithm/all_any_none_of.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C07-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/algorithm/all_any_none_of.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C07-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C07-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C08",
@@ -281,7 +361,27 @@
       "boundary_investigation": "Reviewed find and ranges projection paths; duplicate-match and empty boundary checks pass. No actual library defect found. libc++ lacks C++26 braced value default template parameter.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "04ab3703ca9006739d39fe76c4e66a5c04ddb3b9"
+      "commit": "04ab3703ca9006739d39fe76c4e66a5c04ddb3b9",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/algorithm/find.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C08-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/algorithm/find.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C08-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C08-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/algorithm/find.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C08-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C08-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C09",
@@ -337,7 +437,27 @@
       "boundary_investigation": "Reviewed allocation alignment/constexpr coverage and runtime allocation path; added interleaved contents catch overlap. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "7a732cae0e507a8df8e5460c8361ad0286258120"
+      "commit": "7a732cae0e507a8df8e5460c8361ad0286258120",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/memory/default_allocator.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C09-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/memory/default_allocator.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C09-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/memory/default_allocator.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C09-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C09-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C10",
@@ -392,7 +512,27 @@
       "boundary_investigation": "Reviewed allocator allocate_at_least overflow and traits forwarding; existing constexpr probes cover generous count and requested/count deallocation endpoints. No actual library defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "0137d2eb48833bb5df062538ef02e7ffdf0d830c"
+      "commit": "0137d2eb48833bb5df062538ef02e7ffdf0d830c",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/memory/allocate_at_least.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C10-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C10-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/memory/allocate_at_least.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C10-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C10-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/memory/allocate_at_least.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C10-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C10-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C25",
@@ -450,7 +590,27 @@
       "boundary_investigation": "Reviewed array/proxy fallback algorithms and all-pattern stress. No actual libycxx defect found. libstdc++ completes but returns a wrong ranges partition end; libc++ propagates permitted bad_alloc.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "1629dd0cc721c950b9a70b3a19ff7653fc0cefcd"
+      "commit": "1629dd0cc721c950b9a70b3a19ff7653fc0cefcd",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/algorithm/no_extra_memory.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C25-libstdcxx-gcc-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C25-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/algorithm/no_extra_memory.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C25-libstdcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C25-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/algorithm/no_extra_memory.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C25-libcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C25-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C26",
@@ -508,7 +668,27 @@
       "boundary_investigation": "Reviewed all-equal/all-false/all-true partition and merge cuts 0,1,N/3,N/2,N-1,N; no libycxx defect found. libstdc++ wrong ranges partition end; libc++ propagates permitted bad_alloc.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "468008860fd337e2df53a2f0a1941145e5e6d03c"
+      "commit": "468008860fd337e2df53a2f0a1941145e5e6d03c",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/algorithm/no_extra_memory_bidi_proxy.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C26-libstdcxx-gcc-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C26-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/algorithm/no_extra_memory_bidi_proxy.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C26-libstdcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C26-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/algorithm/no_extra_memory_bidi_proxy.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C26-libcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C26-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C05",
@@ -564,7 +744,27 @@
       "boundary_investigation": "Reviewed variant move assignment, valueless propagation, swap/visit/get and restoration paths. Required fixture passes libycxx. Both references fail later one-valueless swap (already described in REFERENCE.md); fixture itself is valid.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "ad758c3b5d3a3168e6485ee0a81f9911e6cbad8f"
+      "commit": "ad758c3b5d3a3168e6485ee0a81f9911e6cbad8f",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/variant/valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C05-libstdcxx-gcc-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C05-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/variant/valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C05-libstdcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C05-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/variant/valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C05-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C05-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C06",
@@ -620,7 +820,27 @@
       "boundary_investigation": "Reviewed comparison dispatch and fixture requirements; both-valueless and value-vs-valueless comparisons cover first and second alternative. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "c8fb4efd487730e98ca4fde66ae6fd6c5ce1fdeb"
+      "commit": "c8fb4efd487730e98ca4fde66ae6fd6c5ce1fdeb",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/variant/relops_valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C06-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/variant/relops_valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C06-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/variant/relops_valueless.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C06-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C06-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C22",
@@ -676,7 +896,27 @@
       "boundary_investigation": "Reviewed complete library-type self-swap/self-move fixtures and their specified self-assignment behavior; mutex ownership and release still checked before/after. No actual libycxx defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "fb135ba44b02e8426d572daa2beb5d1f95f8c353"
+      "commit": "fb135ba44b02e8426d572daa2beb5d1f95f8c353",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/utility/self_swap_move_library_types.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C22-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C22-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/utility/self_swap_move_library_types.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C22-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C22-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/utility/self_swap_move_library_types.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C22-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C22-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C27",
@@ -733,7 +973,27 @@
       "boundary_investigation": "Small and large movable/pinned targets, wrapper move/swap/move assignment and direct initializer-list construction pass; reviewed function storage/destroy paths. No actual libycxx defect found; libstdc++ small-object path now satisfies lifetime balance.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "feb8b7d30e0f3de53d655cbf2e8a7bfa0b2c3ecc"
+      "commit": "feb8b7d30e0f3de53d655cbf2e8a7bfa0b2c3ecc",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/functional/in_place_target_no_copies.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C27-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C27-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/functional/in_place_target_no_copies.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C27-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C27-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/functional/in_place_target_no_copies.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C27-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C27-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C02",
@@ -789,7 +1049,27 @@
       "boundary_investigation": "Reviewed inplace_probe.hpp and core/vector.hpp; growth covers argument categories and complete field preservation, plus lifetime balance. No actual library defect found; libc++ lacks current inplace_vector optional-reference API.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "a02bb32e81d6d9b216cd1a8465ffe57bec3202e2"
+      "commit": "a02bb32e81d6d9b216cd1a8465ffe57bec3202e2",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/containers/emplace_in_place_sequences.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C02-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C02-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/containers/emplace_in_place_sequences.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C02-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C02-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/containers/emplace_in_place_sequences.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C02-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C02-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C23",
@@ -844,7 +1124,27 @@
       "boundary_investigation": "Reviewed special rendering and buffer checks. All libycxx/libstdc++ forms pass; no actual defect found. C source consulted: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3096.pdf .",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "e83df186115aa6b24a6deac74a76f9126a5866ec"
+      "commit": "e83df186115aa6b24a6deac74a76f9126a5866ec",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/charconv/to_chars_float_special.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C23-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C23-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/charconv/to_chars_float_special.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C23-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C23-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/charconv/to_chars_float_special.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C23-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C23-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C12",
@@ -899,7 +1199,27 @@
       "boundary_investigation": "Reviewed lifetime, required alignment, cross-ref storage visibility and CAS expected-value accesses; extra lifetime-end boundary passes. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "036a74efef180c46ae994045b7408e8766aa40e4"
+      "commit": "036a74efef180c46ae994045b7408e8766aa40e4",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/atomic/ref_basic.pass.cpp -Itests/ycxx/support -pthread -latomic -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C12-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C12-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/atomic/ref_basic.pass.cpp -Itests/ycxx/support -pthread -latomic -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C12-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C12-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/atomic/ref_basic.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C12-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C12-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C13",
@@ -954,7 +1274,27 @@
       "boundary_investigation": "Reviewed signed/unsigned wrapping, floating fetch min/max and pointer arithmetic endpoints. Existing return-value and new load checks agree; no actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "598e58bef9b5eb39968fbc925c5a4cb6f0d1289f"
+      "commit": "598e58bef9b5eb39968fbc925c5a4cb6f0d1289f",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/atomic/ref_arith.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C13-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C13-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/atomic/ref_arith.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C13-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C13-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/atomic/ref_arith.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C13-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C13-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C14",
@@ -1009,7 +1349,27 @@
       "boundary_investigation": "Reviewed constexpr ref paths and lifetime; existing complete integral/floating/pointer/user/flag constexpr matrix passes libycxx. References lack constexpr atomic operations. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "3819a3faed9d25e94fc689bb13b4665d433d0b2d"
+      "commit": "3819a3faed9d25e94fc689bb13b4665d433d0b2d",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/atomic/constexpr.pass.cpp -Itests/ycxx/support -pthread -latomic -Wno-deprecated-declarations -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C14-libstdcxx-gcc-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C14-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/atomic/constexpr.pass.cpp -Itests/ycxx/support -pthread -latomic -Wno-deprecated-declarations -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C14-libstdcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C14-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/atomic/constexpr.pass.cpp -Itests/ycxx/support -pthread -Wno-deprecated-declarations -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C14-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C14-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C17",
@@ -1064,7 +1424,27 @@
       "boundary_investigation": "Reviewed reader phase/counter synchronization; all three shared readers overlap and contended tries fail while ownership is held elsewhere. No actual defect found. SDK libc++ lacks atomic fetch_max used in existing multi-reader fixture.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "b95f81c0796e4c7e3ee61c6b4a22f2ff9ce0ef11"
+      "commit": "b95f81c0796e4c7e3ee61c6b4a22f2ff9ce0ef11",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/shared_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C17-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C17-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/shared_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C17-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C17-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/shared_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C17-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C17-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C18",
@@ -1120,7 +1500,27 @@
       "boundary_investigation": "Reviewed timed mutex native fallback and timeout conversion; negative durations, steady/system clocks, and three mutex types pass. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "da4ce7a30b1991f949d6c26c04f2b41d7ca9d064"
+      "commit": "da4ce7a30b1991f949d6c26c04f2b41d7ca9d064",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/timed_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C18-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C18-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/timed_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C18-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C18-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/timed_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C18-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C18-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C19",
@@ -1176,7 +1576,27 @@
       "boundary_investigation": "Reviewed offset_clock/throwing_clock validity and while_held handshake. Required timed failures and user-clock exceptions pass in all three library comparisons. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "5aea1ee1630ba724393fd82175ad9bcb99e899d0"
+      "commit": "5aea1ee1630ba724393fd82175ad9bcb99e899d0",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/timed_user_clock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C19-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C19-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/timed_user_clock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C19-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C19-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/timed_user_clock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C19-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C19-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C20",
@@ -1232,7 +1652,27 @@
       "boundary_investigation": "Reviewed lock recursion/ownership transitions and native mutex paths; recursive lock plus optional try levels remain held until final release. No actual defect found. Audit also missed unspecified maximum in unconditional nested lock setup.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "0729b1b7d5f94282df74152ef3da8a98a3e7370b"
+      "commit": "0729b1b7d5f94282df74152ef3da8a98a3e7370b",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/recursive_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C20-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C20-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/recursive_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C20-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C20-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/recursive_mutex.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C20-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C20-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C21",
@@ -1289,7 +1729,27 @@
       "boundary_investigation": "Reviewed guard constructor/destructor, deduction and tag checks; held-state regression would reject original double unlock, and balanced normal/adopted scopes pass all libraries. No actual library defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "ffe3977a3cdc3c2c1877c50f96b60273f8d70b87"
+      "commit": "ffe3977a3cdc3c2c1877c50f96b60273f8d70b87",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/lock_guard.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C21-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C21-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/lock_guard.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C21-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C21-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/lock_guard.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C21-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C21-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C28",
@@ -1345,7 +1805,27 @@
       "boundary_investigation": "Reviewed complete recursive Spy contract separately (user Lockable permits it); real-reader overlap, CTAD, fallback ownership and release pass all comparisons. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "47a9ec74cc028bfc4dd7adb8b42a4b1e1d50018f"
+      "commit": "47a9ec74cc028bfc4dd7adb8b42a4b1e1d50018f",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/shared_lock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C28-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C28-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/shared_lock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C28-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C28-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/shared_lock.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C28-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C28-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C29",
@@ -1400,7 +1880,27 @@
       "boundary_investigation": "Reviewed ownership synchronization and cross-thread held try failure; released acquisition on worker and main pass all comparisons. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "2904466ce47d66de169fab167977a25e9cf998df"
+      "commit": "2904466ce47d66de169fab167977a25e9cf998df",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/mutex_basic.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C29-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/mutex_basic.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C29-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/mutex_basic.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C29-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C29-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C30",
@@ -1456,7 +1956,27 @@
       "boundary_investigation": "Reviewed lock algorithm rollback and complete 4*3000 counter stress, recursive subset and unique_lock ownership checks. No actual defect found; all libraries pass.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "21c18c48fbec7f495ebfe9aa8b9d55f06f73b9a6"
+      "commit": "21c18c48fbec7f495ebfe9aa8b9d55f06f73b9a6",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/lock_many.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C30-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/lock_many.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C30-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/lock_many.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C30-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C30-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C31",
@@ -1512,7 +2032,27 @@
       "boundary_investigation": "Reviewed complete Spy and opposite-order real mutex fixtures; added prefix-release boundary and preserved exact deterministic failure-index oracle. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "f1c8858229a2b86b1add3c96e013bbff362a0248"
+      "commit": "f1c8858229a2b86b1add3c96e013bbff362a0248",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/mutex/lock_algorithm.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C31-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/mutex/lock_algorithm.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C31-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/mutex/lock_algorithm.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C31-libcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C31-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C11",
@@ -1567,7 +2107,27 @@
       "boundary_investigation": "Reviewed full duration typedef width/period and defaulted special-member checks; count preservation at 42 and 1.5 pass all references. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "b2a7c6e48c8065f4c501d8635ef55df269d5d71a"
+      "commit": "b2a7c6e48c8065f4c501d8635ef55df269d5d71a",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/chrono/duration_types.compile.pass.cpp -Itests/ycxx/support -pthread -fsyntax-only",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C11-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/chrono/duration_types.compile.pass.cpp -Itests/ycxx/support -pthread -fsyntax-only",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C11-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/chrono/duration_types.compile.pass.cpp -Itests/ycxx/support -pthread -fsyntax-only",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C11-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C24",
@@ -1623,7 +2183,27 @@
       "boundary_investigation": "Investigated rejected-draw and rounding boundaries for float/double/long double with 32/64-bit engines and narrow/negative intervals. libycxx/libstdc++ pass. Paired SDK libc++ returns upper endpoint (genuine reference behavior difference). Constant replay fixture could exhaust its arbitrary call limit under a permitted rejection strategy; replaced it rather than prescribing mapping.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
       "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
-      "commit": "66a04674aca605c9948dacf02c7703f9977f04d6"
+      "commit": "66a04674aca605c9948dacf02c7703f9977f04d6",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/random/uniform_real_upper_bound.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C24-libstdcxx-gcc-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C24-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/random/uniform_real_upper_bound.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C24-libstdcxx-clang-final.exe",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C24-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/random/uniform_real_upper_bound.pass.cpp -Itests/ycxx/support -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C24-libcxx-clang-final.exe",
+          "exit": -6,
+          "log": "build/test-logs/own-audit/C24-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C15",
@@ -1677,7 +2257,28 @@
       "changes": "Use ar.load for observation and explicitly align referenced storage.",
       "boundary_investigation": "Reviewed full freestanding item fixture and configuration flags (-ffreestanding, no exceptions/RTTI). libycxx passes both compilers; reference full fixture lacks several current draft features. No actual defect found.",
       "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
-      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied."
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "commit": "e876beaa2c8fc8a5af9961a43fd772abe463f350",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/modes/freestanding_items.pass.cpp -Itests/ycxx/support -pthread -ffreestanding -fno-exceptions -fno-rtti -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C15-libstdcxx-gcc-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C15-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/modes/freestanding_items.pass.cpp -Itests/ycxx/support -pthread -ffreestanding -fno-exceptions -fno-rtti -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C15-libstdcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C15-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/modes/freestanding_items.pass.cpp -Itests/ycxx/support -pthread -ffreestanding -fno-exceptions -fno-rtti -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C15-libcxx-clang-final.exe",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C15-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C16",
@@ -1694,7 +2295,64 @@
       ],
       "remedy": "Use ar.load().",
       "priority": 2,
-      "disposition": "pending"
+      "disposition": "corrected",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc modules/import_std_concurrency.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C16', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C16-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang modules/import_std_concurrency.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C16', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C16-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc modules/import_std_concurrency.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C16', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C16-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang modules/import_std_concurrency.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C16', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C16-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/modules/import_std_concurrency.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C16-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C16', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C16-libcxx-clang.log"
+        }
+      ],
+      "normative_review": "atomics.ref.generic.general/3 and required_alignment apply to imported declarations. thread.sema.class try_acquire permits spurious failure even with available count (additional same-file issue).",
+      "changes": "Use ar.load, align guarded storage, and establish semaphore acquisition via acquire rather than single-try success.",
+      "boundary_investigation": "Reviewed full imported concurrency fixture and module_check.hpp; actual GCC and Clang std module builds/run pass. Reference wrappers do not provide reference-library std modules; temporary header-form comparison will check equivalent facility behavior. No actual defect found.",
+      "revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+      "upstream": "Pending aggregate facility check; COUNTERPART mappings inspected where supplied.",
+      "final_reference": [
+        {
+          "library": "libstdcxx-gcc",
+          "command": "tools/ref-cxx gcc tests/ycxx/modules/import_std_concurrency.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C16-libstdcxx-gcc-final.exe",
+          "exit": "unsupported",
+          "log": "build/test-logs/own-audit/C16-libstdcxx-gcc-final.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "tools/ref-cxx clang -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current -femulated-tls tests/ycxx/modules/import_std_concurrency.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C16-libstdcxx-clang-final.exe",
+          "exit": "unsupported",
+          "log": "build/test-logs/own-audit/C16-libstdcxx-clang-final.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 tests/ycxx/modules/import_std_concurrency.pass.cpp -Itests/ycxx/support -pthread -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C16-libcxx-clang-final.exe",
+          "exit": "unsupported",
+          "log": "build/test-logs/own-audit/C16-libcxx-clang-final.log"
+        }
+      ]
     },
     {
       "id": "C32",
@@ -1712,7 +2370,39 @@
       ],
       "remedy": "Use explicit phase/notification handshakes and break when the future is ready; do not equate evaluations with notifications.",
       "priority": 2,
-      "disposition": "pending"
+      "disposition": "pending",
+      "validation": [
+        {
+          "library": "own-gcc",
+          "command": "$ tools/run-conformance ycxx gcc condition_variable/predicate_throws.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-own-gcc.log"
+        },
+        {
+          "library": "own-clang",
+          "command": "$ tools/run-conformance ycxx clang condition_variable/predicate_throws.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-own-clang.log"
+        },
+        {
+          "library": "libstdcxx-gcc",
+          "command": "$ tools/run-conformance ycxx gcc condition_variable/predicate_throws.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-libstdcxx-gcc.log"
+        },
+        {
+          "library": "libstdcxx-clang",
+          "command": "$ tools/run-conformance ycxx clang condition_variable/predicate_throws.pass.cpp -- -j 2\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1', 'YCXX_STDLIB': 'libstdcxx', 'YCXX_CXXFLAGS': '-isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16 -isystem /opt/homebrew/Cellar/gcc/16.2.0/include/c++/16/aarch64-apple-darwin25 -L/opt/homebrew/Cellar/gcc/16.2.0/lib/gcc/current'}",
+          "exit": 1,
+          "log": "build/test-logs/own-audit/C32-libstdcxx-clang.log"
+        },
+        {
+          "library": "libcxx-clang",
+          "command": "$ /Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++ -std=c++26 -stdlib=libc++ -nostdinc++ -isystem /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1 -Itests/ycxx/support tests/ycxx/condition_variable/predicate_throws.pass.cpp -pthread -o /Users/yrashk/.codex/worktrees/0ae8/libycxx/build/test-logs/own-audit/C32-libcxx.exe -pthread\nEnvironment overrides: {'YCXX_CONFIG_NAME': 'audit-C32', 'UV_CACHE_DIR': '/Users/yrashk/.codex/worktrees/0ae8/libycxx/build/uv-cache', 'YCXX_QUIET': '1'}",
+          "exit": 0,
+          "log": "build/test-logs/own-audit/C32-libcxx-clang.log"
+        }
+      ]
     }
   ]
 }

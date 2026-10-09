@@ -7,7 +7,7 @@ import std;
 int main() {
   std::atomic<int> counter = 0;
   std::mutex m;
-  int guarded = 0;
+  alignas(std::atomic_ref<int>::required_alignment) int guarded = 0;
   std::latch done(2);
   std::vector<std::jthread> threads;
   for (int i = 0; i < 2; ++i)
@@ -39,7 +39,8 @@ int main() {
   cv.notify_one();
   waiter.join();
   std::counting_semaphore<2> sem(1);
-  CHECK(sem.try_acquire() && !sem.try_acquire());
+  sem.acquire();
+  CHECK(!sem.try_acquire());  // a free try_acquire may fail spuriously
   sem.release();
   std::barrier bar(1);
   bar.arrive_and_wait();
@@ -55,7 +56,7 @@ int main() {
   std::this_thread::sleep_for(std::chrono::microseconds(1));
   CHECK(std::this_thread::get_id() != std::thread::id());
   std::atomic_ref<int> ar(guarded);
-  CHECK(ar.exchange(5) == 2 && guarded == 5);
+  CHECK(ar.exchange(5) == 2 && ar.load() == 5);
   std::atomic_flag flag;
   CHECK(!flag.test_and_set());
   return 0;

@@ -1,0 +1,84 @@
+{
+  "test": "tests/ycxx/expected/unexpected_invalid_const.compile.fail.cpp",
+  "draft_revision": "c7015b485cc3db8efaa9dfb9ff0809c5394a4ed1",
+  "disposition": "repaired",
+  "normative_review": "The forbidden source operation was checked against the cited draft requirements. The named diagnostic enforces that rejection; the positive control isolates the offending operation.",
+  "clauses": [
+    "expected.un.general"
+  ],
+  "normative_text": {
+    "expected.un.general": "22.8.3.1 General [expected.un.general]\n1\n#\nSubclause [expected.unexpected] describes the class template unexpected\nthat represents unexpected objects stored in expected objects.\n\ud83d\udd17\nnamespace std {\n  template<class E>\n  class unexpected {\n  public:\n    // [expected.un.cons], constructors\n    constexpr unexpected(const unexpected&) = default;\n    constexpr unexpected(unexpected&&) = default;\n    template<class Err = E>\n      constexpr explicit unexpected(Err&&);\n    template<class... Args>\n      constexpr explicit unexpected(in_place_t, Args&&...);\n    template<class U, class... Args>\n      constexpr explicit unexpected(in_place_t, initializer_list<U>, Args&&...);\n    constexpr unexpected& operator=(const unexpected&) = default;\n    constexpr unexpected& operator=(unexpected&&) = default;\n    constexpr const E& error() const & noexcept;\n    constexpr E& error() & noexcept;\n    constexpr const E&& error() const && noexcept;\n    constexpr E&& error() && noexcept;\n    constexpr void swap(unexpected& other) noexcept(see below);\n    template<class E2>\n      friend constexpr bool operator==(const unexpected&, const unexpected<E2>&);\n    friend constexpr void swap(unexpected& x, unexpected& y) noexcept(noexcept(x.swap(y)));\n  private:\n    E unex;             // exposition only\n  };\n  template<class E> unexpected(E) -> unexpected<E>;\n}\n2\n#\nA program that instantiates the definition of unexpected for\na non-object type,\nan array type,\na specialization of unexpected, or\na cv-qualified type\nis ill-formed.\n"
+  },
+  "changes": "Add diagnostic expectations; no semantic rewrite unless explicitly recorded below.",
+  "patterns": {
+    "both": [
+      "error: static assertion failed[^\\n]*std::unexpected: E must be a non\\-array, non\\-cv object type that is not a specialization of unexpected"
+    ]
+  },
+  "validation": {
+    "gcc": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.validated.gcc.log"
+    },
+    "clang": {
+      "result": "PASS",
+      "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.validated.clang.log"
+    }
+  },
+  "controls": {
+    "positive": {
+      "diff": "--- negative\n+++ positive\n@@ -3,4 +3,3 @@\n // ill-formed.\" Here: a cv-qualified type.\n #include <expected>\n \n-int n = sizeof(std::unexpected<const int>);\n",
+      "results": {
+        "gcc": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.positive.gcc.log",
+        "clang": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.positive.clang.log"
+      }
+    },
+    "unrelated": {
+      "gcc": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.unrelated.gcc.log"
+      },
+      "clang": {
+        "compiler_exit": 1,
+        "harness_result": "FAIL (correctly rejected)",
+        "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.unrelated.clang.log"
+      }
+    }
+  },
+  "reference_comparison": {
+    "libcxx.clang": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.local/share/ycxx/toolchains/llvm-23.1.2/bin/clang++",
+        "-std=c++26",
+        "-stdlib=libc++",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/unexpected_invalid_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.libcxx.clang.log",
+      "first_error": "static assertion failed due to requirement 'std::integral_constant<bool, false>::value': [expected.un.general] states a program that instantiates std::unexpected for a non-object type, an array type, a specialization of unexpected, or a cv-qualified type is ill-formed."
+    },
+    "libstdcxx.gcc": {
+      "exit": 1,
+      "command": [
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tools/ref-cxx",
+        "gcc",
+        "-fsyntax-only",
+        "/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/expected/unexpected_invalid_const.compile.fail.cpp",
+        "-I/Users/yrashk/.codex/worktrees/f932/libycxx/tests/ycxx/support",
+        "-Wall",
+        "-Wextra",
+        "-fdiagnostics-color=never"
+      ],
+      "log": "build/test-logs/negative-diagnostics/expected__unexpected_invalid_const.compile.fail.cpp.libstdcxx.gcc.log",
+      "first_error": "static assertion failed"
+    }
+  },
+  "counterpart_directives": [],
+  "commit": "See ../commits.json for this test (written after the commit)."
+}

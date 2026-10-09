@@ -228,7 +228,7 @@ summary() {
   set --
   for c in $compilers; do set -- "$@" "$c=$($(cxx_of $c) --version 2>/dev/null | head -n 1)"; done
   [ "${ui_interrupted}" = 0 ] || set -- "$@" "interrupted=yes (Ctrl-C): the steps after it were not run"
-  if python3 "$repo/tools/lib/run_report.py" "$results" "$logs/run" "command=$invocation" "started=$started" \
+  if uv run --no-project --python ">=3.11" python "$repo/tools/lib/run_report.py" "$results" "$logs/run" "command=$invocation" "started=$started" \
        "commit=$commit" "host=$(uname -srm)" "$@" "logs=$logs"; then
     echo
     printf '  %sComposite report%s (every stage and suite, every failure in full; share it, or use its\n' "${ui_bold}" "${ui_reset}"
@@ -254,23 +254,23 @@ for stage in $stages; do
   case $stage in
     policy)
       ui_section "Policy checks"
-      step "preprocessor policy" policy-preprocessor python3 tools/check_preprocessor.py || :
-      step "include layering" policy-includes python3 tools/check_includes.py || :
+      step "preprocessor policy" policy-preprocessor uv run --no-project --python ">=3.11" python tools/check_preprocessor.py || :
+      step "include layering" policy-includes uv run --no-project --python ">=3.11" python tools/check_includes.py || :
       # The transitive-include blocks and tests match tools/data/transitive-includes.txt, which
       # matches the probe results; no include cycle through them (DECISIONS §19).
-      step "transitive includes" policy-transitive-includes python3 tools/gen_transitive_includes.py --check || :
-      step "hidden visibility of the library namespaces" policy-visibility python3 tools/check_visibility.py || :
-      step "shell portability (bash 3.2, dash)" policy-shell python3 tools/check_shell.py || :
+      step "transitive includes" policy-transitive-includes uv run --no-project --python ">=3.11" python tools/gen_transitive_includes.py --check || :
+      step "hidden visibility of the library namespaces" policy-visibility uv run --no-project --python ">=3.11" python tools/check_visibility.py || :
+      step "shell portability (bash 3.2, dash)" policy-shell uv run --no-project --python ">=3.11" python tools/check_shell.py || :
       # [macro.names]: the headers spell no name a program may #define (DECISIONS §2).
-      step "reserved names only in the headers" policy-names python3 tools/uglify.py --check || :
+      step "reserved names only in the headers" policy-names uv run --no-project --python ">=3.11" python tools/uglify.py --check || :
       # The export lists of the modules std and std.compat are read from the headers by both
       # compilers (Clang's AST, GCC's reflection): stale when a header adds or removes a name.
-      step "std modules up to date with the headers" policy-std-modules python3 tools/gen_std_module.py --check || :
+      step "std modules up to date with the headers" policy-std-modules uv run --no-project --python ">=3.11" python tools/gen_std_module.py --check || :
       # The website's code samples are the files tests/quickstart/run.sh runs (examples/quickstart).
-      step "website code samples match their sources" policy-site-snippets python3 tools/gen-site-snippets --check || :
+      step "website code samples match their sources" policy-site-snippets uv run --no-project --python ">=3.11" python tools/gen-site-snippets --check || :
       # The committed similarity tools and judgments contain nothing from the other implementations
       # (docs/similarity/METHOD.md, "Leak check"); the hashed vocabulary is committed.
-      step "similarity files free of other implementations' code" policy-similarity-leak python3 tools/similarity/leakcheck --quick || :
+      step "similarity files free of other implementations' code" policy-similarity-leak uv run --script tools/similarity/leakcheck --quick || :
       ;;
     build)
       for c in $compilers; do

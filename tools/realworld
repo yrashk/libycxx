@@ -30,6 +30,10 @@
 #   -s, --sanitizer LIST       build the projects with these sanitizers (asan, ubsan, tsan) and
 #                              link them with libycxx built with the same ones
 #                              (build/<cc>-<sanitizers>, configured and built on first use)
+#   --linkage static|shared    link the projects with libycxx's archives (default) or its shared
+#                              library (DECISIONS §20: build/<cc>-shared, configured with
+#                              -DYCXX_SHARED=ON on first use; tools/ycxx-cxx --shared). Not with
+#                              --sanitizer. skip.txt's condition: shared
 #   -j, --jobs N               parallel jobs for ninja and ctest (default 4)
 #   --clean                    remove each project's build tree once it is tested (the logs and
 #                              the report stay)
@@ -38,10 +42,10 @@
 #   -v, --verbose              stream every command's output
 #   -h, --help
 #
-# Writes build/test-logs/realworld-<cc>[-<sanitizers>].{html,md,tsv} (every project's build with
+# Writes build/test-logs/realworld-<cc>[-shared][-<sanitizers>].{html,md,tsv} (every project's build with
 # its steps, its linkage proof, and every test with its output, in the style of the suites'
 # reports), .summary.md (one line per project), and each step's log under
-# build/test-logs/realworld-<cc>[-<sanitizers>]/<project>/. Exit status 1 when anything failed:
+# build/test-logs/realworld-<cc>[-shared][-<sanitizers>]/<project>/. Exit status 1 when anything failed:
 # a build, a linkage proof or a test (a test that does not apply is skipped with its reason in
 # skip.txt; there are no lists of known failures).
 #
@@ -55,11 +59,13 @@ cd "$repo"
 
 usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 
-compilers= sanitizer= jobs=4 clean=0 fresh=0 list=0 projects=
+compilers= sanitizer= jobs=4 clean=0 fresh=0 list=0 projects= linkage=static
 while [ $# -gt 0 ]; do
   case $1 in
     -c|--compiler) compilers="$compilers $2"; shift ;;
     -s|--sanitizer) sanitizer=$2; shift ;;
+    --linkage) linkage=$2; shift ;;
+    --linkage=*) linkage=${1#--linkage=} ;;
     -j|--jobs) jobs=$2; shift ;;
     -j*) jobs=${1#-j} ;;
     --clean) clean=1 ;;
@@ -89,8 +95,14 @@ if [ $list = 1 ]; then
 fi
 
 ycxx_env_load
+case $linkage in
+  static) ;;
+  shared) [ -z "$sanitizer" ] || { echo "tools/realworld: --linkage shared is not supported with --sanitizer" >&2; exit 2; } ;;
+  *) echo "tools/realworld: --linkage must be static or shared" >&2; exit 2 ;;
+esac
+YCXX_LINKAGE=$linkage
 SANITIZER=$sanitizer
-export SANITIZER
+export SANITIZER YCXX_LINKAGE
 ycxx_run_config || exit 2
 san_flags=
 for s in $(echo "$sanitizer" | tr , ' '); do
@@ -236,7 +248,7 @@ for a in "\$@"; do
   esac
   set -- "\$@" "\$a"
 done
-exec '$repo/tools/ycxx-cxx' $c '--libdir=$libdir' $san_opts "\$@"
+exec '$repo/tools/ycxx-cxx' $c --$linkage '--libdir=$libdir' $san_opts "\$@"
 EOF
   chmod +x "$cfgdir/bin/c++"
   cflags=$san_opts
@@ -253,14 +265,16 @@ set(CMAKE_C_FLAGS_INIT "$cflags")
 EOF
 }
 
-# The library: build/<cc>, or for a sanitizer run build/<cc>-<sanitizers>, configured on first use
-# (as tools/run-conformance does) and brought up to date.
+# The library: build/<cc>, for a sanitizer run build/<cc>-<sanitizers>, for a shared run
+# build/<cc>-shared, configured on first use (as tools/run-conformance does) and brought up to date.
 setup_library() {
   libdir=$repo/build/$c${san_flags:+-$(echo "$sanitizer" | tr , -)}
+  kind=${san_flags:+-DYCXX_SANITIZE=$san_flags}
+  if [ $linkage = shared ]; then libdir=$repo/build/$c-shared kind=-DYCXX_SHARED=ON; fi
   if [ ! -f "$libdir/build.ninja" ]; then
     ui_step "configure ${libdir#"$repo/"}" "$res/library-configure.log" \
       cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$(cc_of "$c")" -DCMAKE_CXX_COMPILER="$(cxx_of "$c")" \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo ${san_flags:+-DYCXX_SANITIZE=$san_flags} || return 1
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo $kind || return 1
   fi
   ui_step "library up to date (${libdir#"$repo/"})" "$res/library-build.log" ninja -C "$libdir" -j"$jobs"
 }
@@ -373,6 +387,7 @@ for c in $compilers; do
   res=$logs/realworld-$cfg
   # What skip.txt's conditions and the manifests' key.<condition> values test.
   YCXX_RW_CONDITIONS="$c $(uname -s | tr 'A-Z' 'a-z') $(echo "$sanitizer" | tr , ' ')"
+  [ $linkage = shared ] && YCXX_RW_CONDITIONS="$YCXX_RW_CONDITIONS shared"
   # no-ipv6: the host cannot open an IPv6 socket (containers without IPv6), which tests that
   # listen on [::] need.
   python3 -c 'import socket; socket.socket(socket.AF_INET6).close()' 2>/dev/null ||

@@ -5,6 +5,9 @@
 #
 #   tests/quickstart/run.sh [gcc] [clang]        (default: both) the compiler already installed
 #   tests/quickstart/run.sh --provision          Clang downloaded into an empty toolchain cache
+#   tests/quickstart/run.sh --shared [gcc] [clang]  with the README's option for libycxx's shared
+#                                                library, -DYCXX_SHARED=ON -DYCXX_STATIC=OFF: hello
+#                                                must then need libycxx.so.0.<minor>
 #
 # Three substitutions point the commands at this checkout instead of GitHub; each must apply:
 #   - the files are downloaded from this checkout (file://) instead of raw.githubusercontent.com;
@@ -27,14 +30,20 @@ raw=https://raw.githubusercontent.com/yrashk/libycxx/main/
 configure='cmake -B build -G Ninja'
 
 provision=0
+shared=0
 compilers=
 for a in "$@"; do
   case $a in
     --provision) provision=1 ;;
+    --shared) shared=1 ;;
     gcc|clang) compilers="$compilers $a" ;;
-    *) echo "usage: tests/quickstart/run.sh [--provision] [gcc] [clang]" >&2; exit 2 ;;
+    *) echo "usage: tests/quickstart/run.sh [--provision] [--shared] [gcc] [clang]" >&2; exit 2 ;;
   esac
 done
+shared_option='-DYCXX_SHARED=ON -DYCXX_STATIC=OFF'
+if [ $shared = 1 ] && ! grep -qF "$shared_option" "$readme"; then
+  ui_fail "$readme no longer documents '$shared_option'; update tests/quickstart/run.sh"; exit 1
+fi
 if [ $provision = 1 ]; then
   [ -z "$compilers" ] || [ "$compilers" = " clang" ] || { echo "--provision: Clang only" >&2; exit 2; }
   compilers=clang variant=provision what="Clang downloaded into an empty cache"
@@ -44,6 +53,7 @@ else
   ycxx_env_load
   compilers=${compilers:-gcc clang} variant=installed what="compiler already installed"
 fi
+[ $shared = 1 ] && variant=$variant-shared what="$what, shared library"
 fail=0
 ok() { ui_ok "[$1] $2"; }
 bad() { ui_fail "[$1] $2"; fail=1; }
@@ -76,6 +86,7 @@ for c in $compilers; do
   [ $c = gcc ] && extra="$extra -DYCXX_COMPILER=gcc"
   if [ $provision = 1 ]; then extra="$extra -DYCXX_USE_SYSTEM_COMPILERS=OFF"
   else extra="$extra -DYCXX_PROVISION=OFF"; fi
+  [ $shared = 1 ] && extra="$extra $shared_option"
   # The repository's path is used literally in the substitutions below.
   case $repo in *'|'*|*'&'*|*'\'*) ui_fail "unsupported characters in $repo"; exit 1 ;; esac
   printf '%s\n' "$commands" |
@@ -112,6 +123,13 @@ for c in $compilers; do
     bad $c "the program links the toolchain's C++ library (see $log)"
   else
     ok $c "no libstdc++/libc++"
+  fi
+  if [ $shared = 1 ]; then
+    if printf '%s\n' "$libs" | grep -qE 'libycxx\.so\.0\.[0-9]+|libycxx\.0\.[0-9]+\.dylib'; then
+      ok $c "hello needs libycxx's shared library"
+    else
+      bad $c "hello does not need libycxx's shared library (see $log)"
+    fi
   fi
   key=YCXX_GXX; [ $c = clang ] && key=YCXX_CLANGXX
   if [ $provision = 1 ]; then

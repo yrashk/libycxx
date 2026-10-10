@@ -5,6 +5,12 @@
 #   host    program built with the toolchain's C++ library, linked with `other` and `mine`
 #   catcher program built with libycxx, catching the exceptions of `thrower`, a shared library
 #           built with libycxx (prints "caught 15 uncaught 0 0")
+# VIS_LINKAGE names the kind of libycxx the libycxx images link: ycxx (the default, ycxx::ycxx),
+# static or shared (DECISIONS §20.2; tests/cmake/run.sh runs both kinds).
+# With both kinds installed, the host/plugin matrix (plugin/, DECISIONS §20.6): host_<kind> dlopen()s
+# plugin_<kind>, exchanges std::string and std::vector both ways and catches the plugin's
+# exceptions ("plugin 15"), and reports the runtime state they share ("shared-state 15" only when
+# both are shared-mode images, one runtime in libycxx.so; "shared-state 0" otherwise).
 # Each of `other` and `mine` throws and catches exceptions, asks std::current_exception, and makes
 # an allocation fail (its own new_handler, its own bad_alloc); both programs print "mine 7 other 7"
 # when each library uses its own runtime, allocation functions included (libycxx's defaults are
@@ -15,6 +21,8 @@ cmake_minimum_required(VERSION 3.28)
 project(ycxx_visibility LANGUAGES CXX)
 
 find_package(libycxx 0.1 CONFIG REQUIRED)
+set(VIS_LINKAGE ycxx CACHE STRING "The kind of libycxx: ycxx (the default), static or shared")
+set(ycxx_lib ycxx::${VIS_LINKAGE})
 
 # The toolchain's C++ library may not be the system's (GCC 16's libstdc++ under its prefix).
 set(_rpath)
@@ -32,10 +40,10 @@ target_compile_features(other PRIVATE cxx_std_20)
 set_target_properties(other PROPERTIES BUILD_RPATH "${_rpath}")
 
 add_library(mine SHARED mine.cpp)
-target_link_libraries(mine PRIVATE ycxx::ycxx)
+target_link_libraries(mine PRIVATE ${ycxx_lib})
 
 add_executable(prog main.cpp mine.cpp)
-target_link_libraries(prog PRIVATE ycxx::ycxx other)
+target_link_libraries(prog PRIVATE ${ycxx_lib} other)
 
 add_executable(host main.cpp)
 target_compile_features(host PRIVATE cxx_std_20)
@@ -45,6 +53,19 @@ set_target_properties(host PROPERTIES BUILD_RPATH "${_rpath}")
 # Two images built with libycxx, each with its own copy of the runtime: exceptions thrown in one
 # are caught in the other.
 add_library(thrower SHARED thrower.cpp)
-target_link_libraries(thrower PRIVATE ycxx::ycxx)
+target_link_libraries(thrower PRIVATE ${ycxx_lib})
 add_executable(catcher catcher.cpp)
-target_link_libraries(catcher PRIVATE ycxx::ycxx thrower)
+target_link_libraries(catcher PRIVATE ${ycxx_lib} thrower)
+
+# The host/plugin matrix, when both kinds are installed. The plugins' entry points are extern "C";
+# a static-mode plugin built with GCC needs them marked for export (their signatures name library
+# types, hidden in static mode), a shared-mode one does not (PLUGIN_EXPORT_ATTRIBUTE).
+if(TARGET ycxx::static AND TARGET ycxx::shared)
+  foreach(kind static shared)
+    add_executable(host_${kind} plugin/host.cpp)
+    target_link_libraries(host_${kind} PRIVATE ycxx::${kind} ${CMAKE_DL_LIBS})
+    add_library(plugin_${kind} MODULE plugin/plugin.cpp)
+    target_link_libraries(plugin_${kind} PRIVATE ycxx::${kind})
+  endforeach()
+  target_compile_definitions(plugin_static PRIVATE PLUGIN_EXPORT_ATTRIBUTE)
+endif()

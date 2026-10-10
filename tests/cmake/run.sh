@@ -36,7 +36,15 @@
 #      (tests/integration/run.sh, docs/BUILDING_PROJECTS.md): the toolchain file, CC/CXX, make with
 #      ycxx-c++ and with pkg-config, a moved installation, activate.sh --use, Meson, autotools;
 #  13. the whole of libycxx.a and libycxx-abi.a links into one shared library (--whole-archive,
-#      -force_load): no duplicate definitions among the archives' members.
+#      -force_load): no duplicate definitions among the archives' members;
+#  14. the shared library (DECISIONS §20): libycxx built with both kinds (-DYCXX_SHARED=ON) and
+#      installed: the installed files (the ELF linker script libycxx.so, the soname / install
+#      name and compatibility version), the library's exports (only std::__y1, __ycxx,
+#      __ycxx_abi_*, the allocation table and the marker), tests/cmake/shared (ycxx::shared,
+#      ycxx::static, ycxx::ycxx, ycxx::shared_modules; a target linking both kinds refused),
+#      ycxx-c++ with YCXX_LINKAGE=shared, libycxx-shared.pc with the plain compiler, the link-time
+#      mode guard in both directions, tests/cmake/visibility in shared mode and its host/plugin
+#      matrix, and tests/integration/run.sh with YCXX_LINKAGE=shared.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -268,6 +276,163 @@ for c in $compilers; do
   # 12. projects that know nothing about libycxx, built against the installed prefix
   ui_section "Building existing projects with $c (tests/integration)"
   sh "$repo/tests/integration/run.sh" $c "$d/prefix" "$d/integration" || fail=1
+
+  # 14. the shared library
+  ui_section "Shared library with $c (DECISIONS §20)"
+  ds=$d/shared
+  sp=$ds/prefix
+  log=$ds/log.txt
+  mkdir -p "$ds"
+  ui_info "log" "$log"
+  if x cmake -S "$repo" -B "$ds/lib" $gen -DCMAKE_INSTALL_PREFIX="$sp" -DYCXX_SHARED=ON &&
+     x cmake --build "$ds/lib" &&
+     x cmake --install "$ds/lib"; then
+    ok $c "shared: build and install both kinds"
+  else
+    bad $c "shared: build and install (see $log)"; continue
+  fi
+  if [ "$(uname -s)" = Darwin ]; then
+    so=$sp/lib/libycxx.0.1.dylib
+    files="lib/libycxx.0.1.dylib lib/libycxx.0.1.0.dylib"
+  else
+    so=$sp/lib/libycxx.so.0.1
+    files="lib/libycxx.so lib/libycxx.so.0.1 lib/libycxx.so.0.1.0"
+  fi
+  for f in $files lib/libycxx_nonshared.a lib/libycxx.a lib/libycxx-abi.a lib/libycxx-modules-shared.a \
+           lib/pkgconfig/libycxx.pc lib/pkgconfig/libycxx-static.pc lib/pkgconfig/libycxx-shared.pc \
+           share/libycxx/meson-native-shared.ini; do
+    [ -e "$sp/$f" ] || bad $c "shared: installed file missing: $f"
+  done
+  if [ "$(uname -s)" = Darwin ]; then
+    if otool -D "$so" | grep -qx '@rpath/libycxx.0.1.dylib' && otool -L "$so" | grep -q 'compatibility version 0.1.0'; then
+      ok $c "shared: install name @rpath/libycxx.0.1.dylib, compatibility version 0.1"
+    else
+      otool -D -L "$so" >>"$log" 2>&1; bad $c "shared: install name or compatibility version (see $log)"
+    fi
+  else
+    if readelf -d "$so" | grep -q 'SONAME.*\[libycxx.so.0.1\]' &&
+       grep -q 'GROUP ( libycxx.so.0.1 libycxx_nonshared.a )' "$sp/lib/libycxx.so"; then
+      ok $c "shared: soname libycxx.so.0.1; libycxx.so is the linker script naming it and libycxx_nonshared.a"
+    else
+      readelf -d "$so" >>"$log" 2>&1; bad $c "shared: soname or linker script (see $log)"
+    fi
+  fi
+  # The exports: libycxx's own names only (DECISIONS §20.3), none another C++ runtime defines.
+  if [ "$(uname -s)" = Darwin ]; then exports=$(nm -gU "$so" | awk '{ print $NF }' | sed 's/^_//')
+  else exports=$(nm -D --defined-only "$so" | awk '{ print $NF }' | sed 's/@.*//'); fi
+  foreign=$(printf '%s\n' "$exports" | grep -vE 'St4__y1|6__ycxx|^__ycxx_abi_|^__ycxx_allocation_functions$|^__ycxx_linkage_shared_v1$|^YCXX_' || :)
+  if [ -n "$exports" ] && [ -z "$foreign" ]; then
+    ok $c "shared: the library exports $(printf '%s\n' "$exports" | wc -l | tr -d ' ') symbols, all libycxx's own"
+  else
+    printf 'exports that are not libycxx'"'"'s own:\n%s\n' "$foreign" >>"$log"
+    bad $c "shared: the library exports other names (see $log)"
+  fi
+  b=$ds/project
+  if x cmake -S "$repo/tests/cmake/shared" -B "$b" $gen -DCMAKE_PREFIX_PATH="$sp" && x cmake --build "$b"; then
+    for p in demo_shared demo_static demo_default; do
+      if run_demo "$b/$p" "$log"; then ok $c "shared: $p: build and run"
+      else bad $c "shared: $p: the program failed (see $log)"; fi
+    done
+    if [ -x "$b/modules_shared" ]; then
+      if run_demo "$b/modules_shared" "$log"; then ok $c "shared: modules_shared (ycxx::shared_modules): build and run"
+      else bad $c "shared: modules_shared failed (see $log)"; fi
+    else
+      bad $c "shared: ycxx::shared_modules missing"
+    fi
+    needs() { if [ "$(uname -s)" = Darwin ]; then otool -L "$1" | grep -q 'libycxx\.0\.1\.dylib'
+              else readelf -d "$1" | grep -q 'NEEDED.*\[libycxx.so.0.1\]'; fi; }
+    if needs "$b/demo_shared" && ! needs "$b/demo_static" && ! needs "$b/demo_default"; then
+      ok $c "shared: demo_shared needs the shared library; demo_static and demo_default (static, the default) do not"
+    else
+      bad $c "shared: wrong library dependencies (see $log)"
+    fi
+    if links_toolchain_cxx "$b/demo_shared"; then bad $c "shared: demo_shared links the toolchain's C++ library"; fi
+  else
+    bad $c "shared: tests/cmake/shared: configure/build (see $log)"
+  fi
+  if cmake -S "$repo/tests/cmake/shared" -B "$ds/both" $gen -DCMAKE_PREFIX_PATH="$sp" -DBOTH=ON >"$ds/both.log" 2>&1; then
+    bad $c "shared: a target linking both kinds was accepted"
+  elif grep -q 'INTERFACE_YCXX_LINKAGE' "$ds/both.log"; then
+    ok $c "shared: CMake refuses a target linking both kinds (YCXX_LINKAGE)"
+  else
+    bad $c "shared: linking both kinds failed without the YCXX_LINKAGE message (see $ds/both.log)"
+  fi
+  # The wrapper, the pkg-config file and the link-time mode guard.
+  ex=$repo/examples/demo.cpp
+  if x env YCXX_LINKAGE=shared "$sp/bin/ycxx-c++" -O2 "$ex" -o "$ds/wrapped" && run_demo "$ds/wrapped" "$log" &&
+     needs "$ds/wrapped"; then
+    ok $c "shared: ycxx-c++ with YCXX_LINKAGE=shared builds and runs a program needing the shared library"
+  else
+    bad $c "shared: ycxx-c++ with YCXX_LINKAGE=shared (see $log)"
+  fi
+  if command -v pkg-config >/dev/null; then
+    pcflags=$(PKG_CONFIG_PATH=$sp/lib/pkgconfig pkg-config --cflags --libs libycxx-shared)
+    if x $cxx $pcflags "$ex" -o "$ds/pkgconfig" $pcflags && run_demo "$ds/pkgconfig" "$log" && needs "$ds/pkgconfig"; then
+      ok $c "shared: the plain compiler with libycxx-shared.pc"
+    else
+      bad $c "shared: libycxx-shared.pc (see $log)"
+    fi
+  fi
+  if x env YCXX_LINKAGE=static "$sp/bin/ycxx-c++" -c "$ex" -o "$ds/static.o" &&
+     x env YCXX_LINKAGE=shared "$sp/bin/ycxx-c++" -c "$ex" -o "$ds/shared.o"; then
+    env YCXX_LINKAGE=shared "$sp/bin/ycxx-c++" "$ds/static.o" -o "$ds/mismatch1" >"$ds/mismatch1.log" 2>&1 && m1=linked || m1=failed
+    env YCXX_LINKAGE=static "$sp/bin/ycxx-c++" "$ds/shared.o" -o "$ds/mismatch2" >"$ds/mismatch2.log" 2>&1 && m2=linked || m2=failed
+    if [ $m1 = failed ] && grep -q '__ycxx_linkage_static_v1' "$ds/mismatch1.log" &&
+       [ $m2 = failed ] && grep -q '__ycxx_linkage_shared_v1' "$ds/mismatch2.log"; then
+      ok $c "shared: the mode guard: a static-mode object does not link in shared mode, nor the reverse, naming the marker"
+    else
+      bad $c "shared: the mode guard (static object in a shared link: $m1; shared object in a static link: $m2; see $ds/mismatch*.log)"
+    fi
+  else
+    bad $c "shared: compiling for the mode guard (see $log)"
+  fi
+  # tests/cmake/visibility in shared mode, and the host/plugin matrix.
+  b=$ds/visibility
+  if x cmake -S "$repo/tests/cmake/visibility" -B "$b" $gen -DCMAKE_PREFIX_PATH="$sp" -DVIS_LINKAGE=shared &&
+     x cmake --build "$b"; then
+    for p in prog host; do
+      if run_pair "$b/$p" "$log" "mine 7 other 7"; then ok $c "shared: visibility: $p: each library uses its own runtime"
+      else bad $c "shared: visibility: $p: a library used the other's runtime (see $log)"; fi
+    done
+    if run_pair "$b/catcher" "$log" "caught 15 uncaught 0 0"; then
+      ok $c "shared: visibility: catcher: catches a libycxx shared library's exceptions"
+    else bad $c "shared: visibility: catcher (see $log)"; fi
+    for h in static shared; do
+      for pl in static shared; do
+        state=0; [ $h = shared ] && [ $pl = shared ] && state=15
+        plugin=$(ls "$b"/*plugin_$pl.* 2>/dev/null | head -n 1)
+        printf '$ %s %s\n' "$b/host_$h" "$plugin" >>"$log"
+        out=$("$b/host_$h" "$plugin" 2>&1) || :
+        printf '%s\n' "$out" >>"$log"
+        if [ "$out" = "plugin 15 shared-state $state" ]; then
+          ok $c "shared: $h host, $pl plugin: plugin 15 shared-state $state"
+        else
+          bad $c "shared: $h host, $pl plugin: expected \"plugin 15 shared-state $state\" (see $log)"
+        fi
+      done
+    done
+    # Version skew: a process whose allocation table is another libycxx version's stops when a
+    # libycxx plugin loads, naming both versions (DECISIONS §20.6).
+    dl=; [ "$(uname -s)" = Darwin ] || dl="-ldl -Wl,--export-dynamic-symbol=__ycxx_allocation_functions"
+    if x $cc -O2 "$repo/tests/cmake/visibility/skew.c" -o "$ds/skew" $dl; then
+      for pl in static shared; do
+        plugin=$(ls "$b"/*plugin_$pl.* 2>/dev/null | head -n 1)
+        out=$("$ds/skew" "$plugin" 2>&1) && st=0 || st=$?
+        printf '$ %s %s\n%s\n[exit %s]\n' "$ds/skew" "$plugin" "$out" "$st" >>"$log"
+        if [ "$st" != 0 ] && printf '%s\n' "$out" | grep -q 'built against libycxx 0\.1, the process.s first libycxx image against libycxx 0\.0-skewed'; then
+          ok $c "shared: a $pl plugin stops in a process of another libycxx version, naming both"
+        else
+          bad $c "shared: version skew: the $pl plugin did not stop with the message (see $log)"
+        fi
+      done
+    else
+      bad $c "shared: version skew: building the host (see $log)"
+    fi
+  else
+    bad $c "shared: visibility: configure/build (see $log)"
+  fi
+  ui_section "Building existing projects with $c against the shared library (tests/integration, YCXX_LINKAGE=shared)"
+  YCXX_LINKAGE=shared sh "$repo/tests/integration/run.sh" $c "$sp" "$ds/integration" || fail=1
 done
 
 # 11. the hosted layers: Example A (host program, own providers), its absent-layer programs, and

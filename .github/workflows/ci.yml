@@ -19,6 +19,11 @@ jobs:
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: tools/test -j4 policy build freestanding cmake ycxx
 
+      # libycxx's shared library (DECISIONS §20): the own suite with every test linked against it
+      # (build/<cc>-shared); the cmake stage above already built, installed and checked it.
+      - name: Own suite against the shared library (tools/test --shared)
+        run: tools/test -j4 --shared build ycxx
+
       - name: Fetch conformance suites (run only; tools/fetch-suites)
         run: tools/fetch-suites
 
@@ -63,6 +68,20 @@ jobs:
         run: |
           . tools/toolchain/activate.sh
           tools/test -j3 policy build freestanding cmake ycxx
+
+      # The shared library (DECISIONS §20): the own suite linked against libycxx.0.1.dylib, and
+      # the dylib's checks (exports, coexistence with Apple's libc++ and Homebrew's libstdc++,
+      # host/plugin sharing, the mode guard; tools/check-shared-macos.sh).
+      - name: Own suite against the shared library (tools/test --shared)
+        if: always()
+        run: |
+          . tools/toolchain/activate.sh
+          tools/test -j3 --shared build ycxx
+      - name: The shared library on macOS (tools/check-shared-macos.sh)
+        if: always()
+        run: |
+          . tools/toolchain/activate.sh
+          tools/check-shared-macos.sh
 
       # Which library each C++ ABI symbol of a test program binds to (libycxx's static runtime or
       # libSystem's libc++abi), and how the program behaves: diagnostics for the macOS port.

@@ -15,6 +15,10 @@
 #              comma-separated list: the tests are compiled with those sanitizers and linked with
 #              libycxx built with them, build/<compiler>-<sanitizers>, configured and brought up
 #              to date here; DECISIONS §6.8),
+#              YCXX_LINKAGE=shared (link every test against libycxx's shared library, DECISIONS §20:
+#              build/<compiler>-shared, configured with -DYCXX_SHARED=ON and brought up to date
+#              here; the tests are compiled in shared mode, tools/ycxx-cxx --shared; lit feature
+#              shared-linkage, else static-linkage),
 #              YCXX_LIBDIR (the libycxx build to test instead of build/<compiler>[-<sanitizers>]),
 #              YCXX_STDLIB=libstdcxx (ycxx suite only: build against libstdc++ instead, the
 #              reference runs documented in tests/ycxx/REFERENCE.md),
@@ -84,10 +88,18 @@ fi
 if [ -z "$libdir" ] && [ -n "$san_flags" ] && [ "${YCXX_STDLIB:-}" != libstdcxx ]; then
   libdir=$repo/build/$compiler-$(echo "$SANITIZER" | tr , -)
 fi
+linkage=${YCXX_LINKAGE:-static}
+if [ $linkage = shared ]; then
+  if [ -n "$san_flags" ] || [ "${YCXX_STDLIB:-}" = libstdcxx ]; then
+    echo "YCXX_LINKAGE=shared: not with SANITIZER (instrumented shared libraries are not supported yet) nor YCXX_STDLIB" >&2
+    exit 2
+  fi
+  [ -z "$libdir" ] && libdir=$repo/build/$compiler-shared
+fi
 # lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
 set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
   --param tests="$tests" ${SANITIZER:+--param sanitizer=$SANITIZER} ${libdir:+--param libdir=$libdir} \
-  ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} "$@"
+  ${YCXX_STDLIB:+--param stdlib=$YCXX_STDLIB} --param linkage=$linkage "$@"
 [ "${YCXX_HARDENED:-0}" = 1 ] && set -- --param hardened=1 "$@"
 if [ -n "${ycxx_config_name}" ]; then
   set -- --param "cxxflags=${YCXX_CXXFLAGS:-}" --param "config=${ycxx_config_name}" "$@"
@@ -101,6 +113,7 @@ name=$suite-$compiler${ycxx_run_suffix}
 log=$repo/build/test-logs/$name.log
 mkdir -p "$(dirname "$log")"
 what="$suite suite, $compiler"
+[ $linkage = shared ] && what="$what, shared library"
 [ -n "${SANITIZER:-}" ] && what="$what, -fsanitize=$SANITIZER"
 [ "${YCXX_HARDENED:-0}" = 1 ] && what="$what, hardened"
 [ -n "${ycxx_config_name}" ] && what="$what, ${ycxx_config_name} (${YCXX_CXXFLAGS:-no extra flags})"
@@ -126,7 +139,8 @@ if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
     exit 2
   fi
   # A sanitizer run: the instrumented library, configured on first use like build/<compiler>
-  # (RelWithDebInfo, the same compilers) with YCXX_SANITIZE, and brought up to date.
+  # (RelWithDebInfo, the same compilers) with YCXX_SANITIZE, and brought up to date. A shared run:
+  # the build with the shared library (-DYCXX_SHARED=ON), likewise.
   if [ -n "$libdir" ]; then
     rel=${libdir#"$repo/"}
     if [ ! -f "$libdir/build.ninja" ]; then
@@ -134,14 +148,16 @@ if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
         gcc) cc=${YCXX_GCC:-gcc-16} cxx=${YCXX_GXX:-g++-16} ;;
         *) cc=${YCXX_CLANG:-clang-23} cxx=${YCXX_CLANGXX:-clang++-23} ;;
       esac
-      if ! ui_step "configure $rel (-fsanitize=$san_flags)" "$repo/build/test-logs/configure-$compiler-for-$name.log" \
+      if [ $linkage = shared ]; then kind="-DYCXX_SHARED=ON" what_lib="shared library"
+      else kind="-DYCXX_SANITIZE=$san_flags" what_lib="-fsanitize=$san_flags"; fi
+      if ! ui_step "configure $rel ($what_lib)" "$repo/build/test-logs/configure-$compiler-for-$name.log" \
         cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$cc" -DCMAKE_CXX_COMPILER="$cxx" \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYCXX_SANITIZE="$san_flags"; then
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo "$kind"; then
         [ "${ui_interrupted}" = 0 ] || exit 130
         exit 1
       fi
     fi
-    if ! ui_step "library up to date ($rel, -fsanitize=$san_flags)" "$repo/build/test-logs/build-$compiler-for-$name-lib.log" \
+    if ! ui_step "library up to date ($rel${san_flags:+, -fsanitize=$san_flags}${linkage#static})" "$repo/build/test-logs/build-$compiler-for-$name-lib.log" \
       ninja -C "$libdir"; then
       [ "${ui_interrupted}" = 0 ] || exit 130
       exit 1

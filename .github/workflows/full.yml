@@ -4,8 +4,9 @@ name: full
 # whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
 # ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
 # -fno-exceptions, with -O2 and without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES);
-# the benchmarks against their baseline (bench/check); and the quickstart's commands on bare
-# runners, with Clang downloaded (tests/quickstart/run.sh --provision).
+# the benchmarks against their baseline (bench/check); the external suites and the real-world
+# projects linked against libycxx's shared library (DECISIONS §20; tools/test --shared); and the
+# quickstart's commands on bare runners, with Clang downloaded (tests/quickstart/run.sh --provision).
 # Any test reported FAIL (or XPASS) fails its job: there are no lists of known failures. A test
 # that cannot pass for a reason outside the test and the library (a compiler bug) is an expected
 # failure with its reason (the suite's xfail.txt, or // XFAIL in an own test); one that does not
@@ -184,6 +185,38 @@ jobs:
             build/test-logs/*.tsv
             build/test-logs/*.log
 
+  # The external suites against libycxx's shared library (DECISIONS §20.9): every test compiled in
+  # shared mode and linked with build/<cc>-shared (tools/test --shared).
+  linux-suites-shared:
+    runs-on: ubuntu-24.04
+    container: gcc:16
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [libcxx, libstdcxx]
+        compiler: [gcc, clang]
+    env:
+      YCXX_LONG_TESTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchains, and the named locales the suites require
+        uses: ./.github/actions/setup-linux
+        with:
+          locales: 'true'
+      - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }}, shared library (tools/test --shared)
+        run: tools/test -j4 -q -c ${{ matrix.compiler }} --shared build ${{ matrix.suite }}
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-linux-${{ matrix.suite }}-${{ matrix.compiler }}-shared
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.log
+
   # Real-world projects (tests/realworld) built against libycxx and tested with their own suites,
   # with the proof that every translation unit, object and image is libycxx's
   # (tools/realworld, the realworld stage of tools/test): any build, linkage or test failure fails
@@ -201,6 +234,7 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
+        linkage: [static, shared]
     steps:
       - name: Disable host core collector for death tests
         shell: bash
@@ -214,7 +248,7 @@ jobs:
         uses: ./.github/actions/setup-linux
         with:
           locales: 'true'
-      - name: Real-world projects, ${{ matrix.compiler }} (tools/test; fetches the projects)
+      - name: Real-world projects, ${{ matrix.compiler }}, ${{ matrix.linkage }} (tools/test; fetches the projects)
         shell: bash
         run: |
           # These jobs have lost their runners during Abseil tests, before artifacts could
@@ -249,12 +283,14 @@ jobs:
           report_resources &
           resource_monitor_pid=$!
           trap 'kill "$resource_monitor_pid" 2>/dev/null || true; wait "$resource_monitor_pid" 2>/dev/null || true' EXIT
-          tools/test -v -j4 -c ${{ matrix.compiler }} build realworld
+          linkage=
+          [ "${{ matrix.linkage }}" = shared ] && linkage=--shared
+          tools/test -v -j4 -c ${{ matrix.compiler }} $linkage build realworld
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: full-linux-realworld-${{ matrix.compiler }}
+          name: full-linux-realworld-${{ matrix.compiler }}-${{ matrix.linkage }}
           path: |
             build/test-logs/*.html
             build/test-logs/*.md
@@ -315,6 +351,11 @@ jobs:
         run: |
           . tools/toolchain/activate.sh
           tools/test -j3 -q -c ${{ matrix.compiler }} build ${{ matrix.suite }}
+      - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }}, shared library (tools/test --shared)
+        if: always()
+        run: |
+          . tools/toolchain/activate.sh
+          tools/test -j3 -q -c ${{ matrix.compiler }} --shared build ${{ matrix.suite }}
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -14,8 +14,9 @@
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
-#   cmake         CMake package, add_subdirectory and toolchain file (tests/cmake/run.sh), and the
-#                 quickstart's commands as documented (tests/quickstart/run.sh)
+#   cmake         CMake package, add_subdirectory and toolchain file, the shared library
+#                 (tests/cmake/run.sh), and the quickstart's commands as documented
+#                 (tests/quickstart/run.sh; with --shared also with its shared-library option)
 #   ycxx          libycxx's own spec-derived suite (tests/ycxx)
 #                 (each suite lists every test with the steps it ran and their exit statuses,
 #                 and writes build/test-logs/<suite>-<cc>.html, a report of every test with the
@@ -33,6 +34,11 @@
 #   -s, --sanitizer LIST       suite and realworld stages: build tests with -fsanitize (asan, ubsan, tsan) and
 #                              link them with libycxx built with the same sanitizers
 #                              (build/<cc>-<sanitizers>, configured and built on first use)
+#   --shared                   suite and realworld stages: link the tests and projects with libycxx's
+#                              shared library (DECISIONS §20; build/<cc>-shared, configured with
+#                              -DYCXX_SHARED=ON and built on first use; YCXX_LINKAGE=shared), with
+#                              the tests compiled in shared mode; logs and reports named
+#                              <suite>-<cc>-shared
 #   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
 #                              run-time precondition checks) and run the death tests of
 #                              tests/ycxx/precondition (YCXX_HARDENED=1)
@@ -77,6 +83,7 @@ while [ $# -gt 0 ]; do
     -j*) jobs=${1#-j} ;;
     -s|--sanitizer) sanitizer=$2; shift ;;
     --hardened) YCXX_HARDENED=1; export YCXX_HARDENED ;;
+    --shared) YCXX_LINKAGE=shared; export YCXX_LINKAGE ;;
     --cxxflags) YCXX_CXXFLAGS=$2; export YCXX_CXXFLAGS; shift ;;
     --cxxflags=*) YCXX_CXXFLAGS=${1#--cxxflags=}; export YCXX_CXXFLAGS ;;
     --config-name) YCXX_CONFIG_NAME=$2; export YCXX_CONFIG_NAME; shift ;;
@@ -262,6 +269,9 @@ for stage in $stages; do
       step "hidden visibility of the library namespaces" policy-visibility uv run --no-project --python ">=3.11" python tools/check_visibility.py || :
       # The shared mode's platform-layer forwarders match include/ycxx/pal.h (DECISIONS §20.6).
       step "platform-layer forwarders up to date" policy-pal-forwarders uv run --no-project --python ">=3.11" python tools/gen_pal_forwarders.py --check || :
+      # The shared library's exports match abi/*.abilist, for each compiler whose shared build
+      # exists (build/<cc>-shared; DECISIONS §20.7): an ABI change comes with its baseline.
+      step "shared library exports match the ABI baselines" policy-abi uv run --no-project --python ">=3.11" python tools/check_abi.py --check $compilers || :
       step "shell portability (bash 3.2, dash)" policy-shell uv run --no-project --python ">=3.11" python tools/check_shell.py || :
       # [macro.names]: the headers spell no name a program may #define (DECISIONS §2).
       step "reserved names only in the headers" policy-names uv run --no-project --python ">=3.11" python tools/uglify.py --check || :
@@ -287,6 +297,18 @@ for stage in $stages; do
           step "$c $t: build ($d)" build-$c-$t ninja -C $d ${jobs:+-j$jobs} ||
             { [ $t = Release ] || broken="$broken $c"; }
         done
+        # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
+        if [ "${YCXX_LINKAGE:-static}" = shared ]; then
+          d=build/$c-shared
+          if [ ! -f $d/build.ninja ]; then
+            step "$c shared: configure ($d)" build-$c-shared-configure cmake -S . -B $d -G Ninja \
+              -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DYCXX_SHARED=ON || { broken="$broken $c"; continue; }
+          fi
+          step "$c shared: build ($d)" build-$c-shared ninja -C $d ${jobs:+-j$jobs} || broken="$broken $c"
+          step "$c shared: exports match the ABI baseline (tools/check_abi.py)" build-$c-shared-abi \
+            uv run --no-project --python ">=3.11" python tools/check_abi.py --check $c || :
+        fi
       done
       ;;
     freestanding)
@@ -298,22 +320,28 @@ for stage in $stages; do
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/cmake/run.sh $compilers || :
       direct "quickstart commands, as documented (examples/quickstart)" quickstart "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh $compilers || :
+      if [ "${YCXX_LINKAGE:-static}" = shared ]; then
+        direct "quickstart commands with the shared library option (examples/quickstart)" quickstart-shared "" \
+          env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh --shared $compilers || :
+      fi
       ;;
     realworld)
       for c in $compilers; do
         label="real-world projects, $c${sanitizer:+, $sanitizer}"
+        [ "${YCXX_LINKAGE:-static}" = shared ] && label="$label, shared library"
         ! not_run "$label" || continue
         case " $broken " in *" $c "*)
           ui_section "$label"; ui_skip "$label" "(the $c build failed)"
           record skip "$label" "(the $c build failed)"; continue ;;
         esac
         direct "$label" "" "$logs/realworld-$c${ycxx_run_suffix}.html" \
-          tools/realworld -c $c ${sanitizer:+-s $sanitizer} ${jobs:+-j $jobs} || :
+          tools/realworld -c $c ${sanitizer:+-s $sanitizer} --linkage "${YCXX_LINKAGE:-static}" ${jobs:+-j $jobs} || :
       done
       ;;
     ycxx|libcxx|libstdcxx)
       for c in $compilers; do
         label="$stage suite, $c${sanitizer:+, $sanitizer}"
+        [ "${YCXX_LINKAGE:-static}" = shared ] && label="$label, shared library"
         [ "${YCXX_HARDENED:-0}" = 1 ] && label="$label, hardened"
         label=$label${ycxx_config_name:+, ${ycxx_config_name}}
         ! not_run "$label" || continue

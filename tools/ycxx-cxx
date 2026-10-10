@@ -10,7 +10,8 @@
 # options), e.g. an instrumented one, build/<compiler>-tsan (DECISIONS §6.8); $YCXX_LIBDIR
 # does the same.
 # --std-modules[=DIR]: `import std;` and `import std.compat;` use the modules tools/ycxx-modules
-# built in DIR (default build/<compiler>/modules), and a link includes their objects.
+# built in DIR (default build/<compiler>/modules; shared mode: build/<compiler>-shared/modules), and
+# a link includes their objects.
 # $YCXX_CXX_LOG=DIR: also record each command this runs in DIR, one file per invocation (the
 # working directory, then every argument, each ended by a NUL byte): the evidence tools/realworld
 # checks that every translation unit and link of a project went through libycxx.
@@ -31,7 +32,7 @@ for a in "$@"; do
     --shared) linkage=shared ;;
     --static) linkage=static ;;
     --libdir=*) libdir=${a#--libdir=} ;;
-    --std-modules) modules=$here/build/$which/modules ;;
+    --std-modules) modules=default ;;
     --std-modules=*) modules=${a#--std-modules=} ;;
     *) set -- "$@" "$a" ;;
   esac
@@ -41,6 +42,7 @@ case $linkage in
   shared) libdir=${libdir:-${YCXX_LIBDIR:-$here/build/$which-shared}} mode_flags=-DYCXX_SHARED ;;
   *) echo "ycxx-cxx: YCXX_LINKAGE must be static or shared, not '$linkage'" >&2; exit 2 ;;
 esac
+[ "$modules" = default ] && modules=$here/build/$which/modules && [ $linkage = shared ] && modules=$here/build/$which-shared/modules
 modules_flags= modules_lib=
 if [ -n "$modules" ]; then
   if [ ! -f "$modules/flags" ]; then
@@ -49,7 +51,6 @@ if [ -n "$modules" ]; then
   fi
   modules_flags=$(cat "$modules/flags")
   modules_lib=$modules/libycxx-modules.a
-  [ $linkage = shared ] && modules_lib=$modules/libycxx-modules-shared.a
 fi
 extra=
 # Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member

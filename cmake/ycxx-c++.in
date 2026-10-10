@@ -7,6 +7,12 @@
 # allocation table's link options (cmake/ycxx-link.cmake) and the platform's specifics, as
 # tools/ycxx-cxx does for the source tree (keep the two consistent).
 #
+# $YCXX_LINKAGE=static|shared picks the kind of libycxx (DECISIONS §20.2; default: @YCXX_W_DEFAULT_LINKAGE@,
+# this installation's): static links the archives; shared compiles with -DYCXX_SHARED and links
+# the shared library and libycxx_nonshared.a, with a run path to them unless $YCXX_NO_RPATH is set.
+# Every translation unit of an image must be compiled in the mode it is linked in (a mismatch
+# fails to link, naming __ycxx_linkage_static_v1 or __ycxx_linkage_shared_v1).
+#
 # libycxx is C++26 only: an older -std=c++NN (gnu++NN) of the project becomes -std=c++26
 # (gnu++26). docs/BUILDING_PROJECTS.md is the guide.
 # $YCXX_CXX: run this compiler instead (it must be the same compiler libycxx was built with).
@@ -14,6 +20,14 @@ here=$(cd "$(dirname "$0")" && pwd)
 @YCXX_W_LOCATE@
 cxx=${YCXX_CXX:-'@YCXX_W_CXX@'}
 family=@YCXX_W_FAMILY@
+linkage=${YCXX_LINKAGE:-@YCXX_W_DEFAULT_LINKAGE@}
+mode=
+case $linkage in
+  static) [ -n '@YCXX_W_STATIC@' ] || { echo "ycxx-c++: this libycxx has no static archives (built with YCXX_STATIC=OFF); YCXX_LINKAGE=shared" >&2; exit 2; } ;;
+  shared) [ -n '@YCXX_W_SHARED@' ] || { echo "ycxx-c++: this libycxx has no shared library (built without YCXX_SHARED=ON); YCXX_LINKAGE=static" >&2; exit 2; }
+          mode=-DYCXX_SHARED ;;
+  *) echo "ycxx-c++: YCXX_LINKAGE must be static or shared, not '$linkage'" >&2; exit 2 ;;
+esac
 
 extra=
 # Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member
@@ -70,8 +84,14 @@ fi
 
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM|--precompile) link=0 ;; esac; done
-if [ $link = 1 ]; then
+if [ $link = 1 ] && [ $linkage = shared ]; then
+  # The shared library by its soname's file, and each image's part of it (libycxx_nonshared.a).
+  rpath=-Wl,-rpath,$libdir
+  [ -n "${YCXX_NO_RPATH:-}" ] && rpath=
+  exec $cxx $extra -std=c++26 -nostdinc++ $mode @YCXX_W_INCLUDES@ "$@" \
+    -nostdlib++ @YCXX_W_LINK_OPTIONS@ "$libdir/@YCXX_W_SONAME@" "$libdir/libycxx_nonshared.a" ${rpath:+"$rpath"} -lm $libgcc
+elif [ $link = 1 ]; then
   exec $cxx $extra -std=c++26 -nostdinc++ @YCXX_W_INCLUDES@ "$@" \
     -nostdlib++ @YCXX_W_LINK_OPTIONS@ $group_begin "$libdir/libycxx.a" "$libdir/libycxx-abi.a" $group_end -lm $libgcc
 fi
-exec $cxx $extra -std=c++26 -nostdinc++ @YCXX_W_INCLUDES@ "$@"
+exec $cxx $extra -std=c++26 -nostdinc++ $mode @YCXX_W_INCLUDES@ "$@"

@@ -8,8 +8,14 @@
 #   bin/ycxx-clang-scan-deps  Clang builds: the compiler's clang-scan-deps, where CMake looks for it
 #   bin/ycxx-check-binary is a binary built against libycxx alone? (tools/ycxx-check-binary)
 #   toolchain.cmake       a CMake toolchain file naming both compilers
-#   libycxx.pc            pkg-config: the compile and link flags, for the plain compiler
-#   meson-native.ini      a Meson native file naming both compilers
+#   libycxx.pc            pkg-config: the compile and link flags, for the plain compiler (the
+#                         default kind's); libycxx-static.pc and libycxx-shared.pc for each kind
+#                         built (DECISIONS §20.2)
+#   meson-native.ini      a Meson native file naming both compilers; with both kinds built,
+#                         meson-native-shared.ini, whose ycxx-c++ links the shared library
+#
+# ycxx-c++ links the default kind (static when the archives are built); $YCXX_LINKAGE=shared or
+# static picks the other.
 #
 # Build tree: <build>/bin/ycxx-c++, <build>/bin/ycxx-cc, <build>/toolchain.cmake,
 # <build>/pkgconfig/libycxx.pc, <build>/meson-native.ini (absolute paths).
@@ -78,6 +84,23 @@ function(ycxx_consumer_files link_options)
   set(YCXX_W_GCC_INSTALL_DIR "${gcc_install_dir}")
   set(YCXX_W_LIBGCC "${libgcc}")
   set(YCXX_W_LINK_OPTIONS "${opts}")
+  set(YCXX_W_DEFAULT_LINKAGE ${YCXX_DEFAULT_LINKAGE})
+  set(YCXX_W_STATIC "")
+  set(YCXX_W_SHARED "")
+  if(YCXX_STATIC)
+    set(YCXX_W_STATIC 1)
+  endif()
+  set(soname "")
+  if(YCXX_SHARED)
+    set(YCXX_W_SHARED 1)
+    # The shared library by the name its consumers record (a symbolic link in both trees).
+    if(APPLE)
+      set(soname "libycxx.${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.dylib")
+    else()
+      set(soname "libycxx.so.${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+    endif()
+  endif()
+  set(YCXX_W_SONAME "${soname}")
   set(c_extra "")
   if(gcc_install_dir)
     set(c_extra " '--gcc-install-dir=${gcc_install_dir}'")
@@ -169,23 +192,52 @@ ${scan}${osx}")
     set(group_begin "-Wl,--start-group ")
     set(group_end " -Wl,--end-group")
   endif()
-  set(pc_body "Name: libycxx
-Description: An independent C++26 standard library, implemented from the working draft (for ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}: ${CMAKE_CXX_COMPILER})
+  set(pc_common "Description: An independent C++26 standard library, implemented from the working draft (for ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}: ${CMAKE_CXX_COMPILER})
 Version: ${PROJECT_VERSION}
-Cflags: -std=c++26 -nostdinc++ @PC_INCLUDES@${cflags_extra}
+")
+  set(pc_kinds "")
+  if(YCXX_STATIC)
+    list(APPEND pc_kinds static)
+    set(pc_static "Name: libycxx
+${pc_common}Cflags: -std=c++26 -nostdinc++ @PC_INCLUDES@${cflags_extra}
 Libs: -nostdlib++ ${opts} ${group_begin}\${libdir}/libycxx.a \${libdir}/libycxx-abi.a${group_end} -lm ${libgcc}${libs_extra}
 ")
-  string(REPLACE "  " " " pc_body "${pc_body}")
-  # Build tree: the sources' headers, then the generated ones.
-  string(REPLACE "@PC_INCLUDES@" "-isystem \${includedir} -isystem ${YCXX_GENERATED_INCLUDE}" pc "${pc_body}")
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/libycxx.pc
-       "includedir=${YCXX_INCLUDE}\nlibdir=${CMAKE_CURRENT_BINARY_DIR}\n\n${pc}")
-  string(REPLACE "@PC_INCLUDES@" "-isystem \${includedir}" pc "${pc_body}")
-  file(WRITE ${stage}/libycxx.pc "prefix=\${pcfiledir}/${pc_to_prefix}
+  endif()
+  if(YCXX_SHARED)
+    list(APPEND pc_kinds shared)
+    # Shared mode (DECISIONS §20.2): compiled with YCXX_SHARED; the shared library and each image's
+    # part of it, with a run path. An installation on ELF has the linker script libycxx.so, so
+    # -lycxx links both; the build tree and Mach-O name the pair.
+    set(pc_shared_libs "\${libdir}/${soname} \${libdir}/libycxx_nonshared.a")
+    set(pc_shared "Name: libycxx
+${pc_common}Cflags: -std=c++26 -nostdinc++ -DYCXX_SHARED @PC_INCLUDES@${cflags_extra}
+Libs: -nostdlib++ ${opts} @PC_SHARED_LIBS@ -Wl,-rpath,\${libdir} -lm ${libgcc}${libs_extra}
+")
+  endif()
+  foreach(kind IN LISTS pc_kinds)
+    set(pc_body "${pc_${kind}}")
+    string(REPLACE "  " " " pc_body "${pc_body}")
+    # Build tree: the sources' headers, then the generated ones.
+    string(REPLACE "@PC_INCLUDES@" "-isystem \${includedir} -isystem ${YCXX_GENERATED_INCLUDE}" pc "${pc_body}")
+    string(REPLACE "@PC_SHARED_LIBS@" "${pc_shared_libs}" pc "${pc}")
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/libycxx-${kind}.pc
+         "includedir=${YCXX_INCLUDE}\nlibdir=${CMAKE_CURRENT_BINARY_DIR}\n\n${pc}")
+    string(REPLACE "@PC_INCLUDES@" "-isystem \${includedir}" pc "${pc_body}")
+    if(APPLE)
+      string(REPLACE "@PC_SHARED_LIBS@" "${pc_shared_libs}" pc "${pc}")
+    else()
+      string(REPLACE "@PC_SHARED_LIBS@" "-L\${libdir} -lycxx" pc "${pc}")
+    endif()
+    file(WRITE ${stage}/libycxx-${kind}.pc "prefix=\${pcfiledir}/${pc_to_prefix}
 includedir=\${prefix}/${YCXX_INSTALL_INCLUDEDIR}
 libdir=\${prefix}/${CMAKE_INSTALL_LIBDIR}
 
 ${pc}")
+  endforeach()
+  # libycxx.pc: the default kind's.
+  file(COPY_FILE ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/libycxx-${YCXX_DEFAULT_LINKAGE}.pc
+       ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig/libycxx.pc)
+  file(COPY_FILE ${stage}/libycxx-${YCXX_DEFAULT_LINKAGE}.pc ${stage}/libycxx.pc)
 
   # Meson native files.
   set(meson_head "# libycxx's Meson native file (docs/BUILDING_PROJECTS.md; generated by cmake/ycxx-consumer.cmake):
@@ -201,6 +253,19 @@ cpp = '${CMAKE_CURRENT_BINARY_DIR}/bin/ycxx-c++'
 c = '@DIRNAME@' / '${share_to_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-cc'
 cpp = '@DIRNAME@' / '${share_to_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-c++'
 ")
+  # With both kinds: the shared library's (ycxx-c++ with YCXX_LINKAGE=shared).
+  if(YCXX_STATIC AND YCXX_SHARED)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/meson-native-shared.ini "${meson_head}
+[binaries]
+c = '${CMAKE_CURRENT_BINARY_DIR}/bin/ycxx-cc'
+cpp = ['env', 'YCXX_LINKAGE=shared', '${CMAKE_CURRENT_BINARY_DIR}/bin/ycxx-c++']
+")
+    file(WRITE ${stage}/meson-native-shared.ini "${meson_head}
+[binaries]
+c = '@DIRNAME@' / '${share_to_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-cc'
+cpp = ['env', 'YCXX_LINKAGE=shared', '@DIRNAME@' / '${share_to_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-c++']
+")
+  endif()
 
   if(YCXX_INSTALL)
     install(PROGRAMS ${stage}/ycxx-c++ ${stage}/ycxx-cc ${CMAKE_CURRENT_SOURCE_DIR}/tools/ycxx-check-binary
@@ -208,7 +273,13 @@ cpp = '@DIRNAME@' / '${share_to_prefix}/${CMAKE_INSTALL_BINDIR}/ycxx-c++'
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/tools/lib/ycxx_linkage.py
             DESTINATION ${CMAKE_INSTALL_DATADIR}/libycxx/python)
     install(FILES ${stage}/toolchain.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libycxx)
+    foreach(kind IN LISTS pc_kinds)
+      install(FILES ${stage}/libycxx-${kind}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+    endforeach()
     install(FILES ${stage}/libycxx.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
     install(FILES ${stage}/meson-native.ini DESTINATION ${CMAKE_INSTALL_DATADIR}/libycxx)
+    if(YCXX_STATIC AND YCXX_SHARED)
+      install(FILES ${stage}/meson-native-shared.ini DESTINATION ${CMAKE_INSTALL_DATADIR}/libycxx)
+    endif()
   endif()
 endfunction()

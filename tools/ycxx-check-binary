@@ -13,7 +13,9 @@ makes of every real-world project):
     with the toolchain's headers has them;
   - an executable or shared library with C++ code defines __ycxx_allocation_functions, the
     allocation table only libycxx's runtime defines (DECISIONS §2) and that its link options keep
-    in every image linked against it.
+    in every image linked against it (the shared library's images too: libycxx_nonshared.a).
+It names how each image links libycxx (DECISIONS §20.2): static (the archives), shared (it needs
+libycxx.so.0.<minor> / libycxx.0.<minor>.dylib), or the shared library itself.
 Prints one line per file (-q: only the problems) and exits 1 when any file fails, 2 on a usage
 error. ELF (binutils' readelf and nm) and Mach-O (otool, nm). Installed as
 <prefix>/bin/ycxx-check-binary; docs/BUILDING_PROJECTS.md, "Is my binary using libycxx?".
@@ -72,7 +74,8 @@ def check(path):
             return 'c', f'{shown}: no C++ code (needs {needed})'
     if probs:
         return 'fail', f'{shown}: ' + '; '.join(probs)
-    return 'ok', f'{shown}: libycxx (allocation table {ev["marker"]}; needs {needed})'
+    how = {'static': 'static', 'shared': 'shared library', 'library': 'is the shared library'}[ev['linkage']]
+    return 'ok', f'{shown}: libycxx, {how} (allocation table {ev["marker"]}; needs {needed})'
 
 
 def main(argv):

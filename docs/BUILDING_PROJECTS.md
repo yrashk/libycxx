@@ -175,33 +175,50 @@ layouts. So:
 
 ### Shared libraries
 
-libycxx is a pair of static archives (there is no `libycxx.so`). Each executable and each shared
-library linking it gets its own copy, with everything hidden (DECISIONS §2), and the images share
-only libycxx's allocation table, so that an object allocated in one image and freed in another
-uses one `operator new`/`delete` (the program's replacement, if any). This has consequences for
-projects with shared libraries (STATUS, "Known limitations"):
+libycxx comes in two kinds (DECISIONS §20.2; [Static and shared libycxx](#static-and-shared-libycxx)
+says how to choose). Each image (executable or shared library) links one of them; a process may
+mix images of both kinds, and images built with libstdc++ or libc++. What a project with shared
+libraries sees depends on the kind:
 
-- **With GCC, a function whose signature names a standard library type is hidden** unless the
-  function itself is declared with default visibility: GCC constrains a declaration's visibility
-  by its types', and libycxx's types are hidden. A shared library that exports `std::string
-  greet(const std::vector<std::string>&)` without marking it gives "undefined reference to
-  `greet(...)`" when a program links it (checked). Libraries with export macros (`GTEST_API_`,
-  `FMT_API`, Qt's `Q_DECL_EXPORT`, CMake's `GenerateExportHeader`) work, since those expand to
-  `__attribute__((visibility("default")))` on ELF when the library is built as shared; a project
-  relying on everything being exported does not. Clang has no such rule. Mark the exported
-  functions (`[[gnu::visibility("default")]]`), build the library static, or use Clang.
-- **Exceptions cross** between libycxx images (a shared library throws, the program catches), and
-  the standard library types cross (`std::string` built in one, destroyed in another).
-- **Per-image runtime state**: `std::set_terminate`, `std::set_new_handler`, `throw;` and
-  `std::current_exception()` in another image than the handler's, `std::uncaught_exceptions()`,
-  `std::error_category` objects (`generic_category()` compares unequal across images),
-  `locate_zone`, the default memory resources: each image has its own. Tests that install a
-  handler in the program and expect a shared library to call it (doctest's exception
-  translators, oneTBB's `terminate_on_exception`) do not work.
-- **Exceptions from code built against another library** (libstdc++, libc++, Apple's libc++abi)
-  are foreign to libycxx's runtime: `catch (...)` catches them, `catch (const std::exception&)`
-  does not, and the other way round. Do not let exceptions cross a C++ boundary between
-  libraries built against different standard libraries.
+- **Static libycxx** (the default). Each image linking the archives gets its own copy, with
+  everything hidden (DECISIONS §2); the images share only libycxx's allocation table, so that an
+  object allocated in one image and freed in another uses one `operator new`/`delete` (the
+  program's replacement, if any). Consequences (STATUS, "Known limitations"):
+  - **With GCC, a function whose signature names a standard library type is hidden** unless the
+    function itself is declared with default visibility: GCC constrains a declaration's
+    visibility by its types', and libycxx's types are hidden. A shared library that exports
+    `std::string greet(const std::vector<std::string>&)` without marking it gives "undefined
+    reference to `greet(...)`" when a program links it (checked). Libraries with export macros
+    (`GTEST_API_`, `FMT_API`, Qt's `Q_DECL_EXPORT`, CMake's `GenerateExportHeader`) work, since
+    those expand to `__attribute__((visibility("default")))` on ELF when the library is built as
+    shared; a project relying on everything being exported does not. Clang has no such rule. Mark
+    the exported functions (`[[gnu::visibility("default")]]`), build the library static, use
+    Clang, or use the shared libycxx.
+  - **Per-image runtime state**: `std::set_terminate`, `std::set_new_handler`, `throw;` and
+    `std::current_exception()` in another image than the handler's, `std::uncaught_exceptions()`,
+    `std::error_category` objects (`generic_category()` compares unequal across images),
+    `locate_zone`, the default memory resources, the standard streams' objects: each image has
+    its own. Tests that install a handler in the program and expect a shared library to call it
+    (doctest's exception translators, oneTBB's `terminate_on_exception`) do not work.
+- **Shared libycxx.** Every image needs `libycxx.so.0.<minor>` (`libycxx.0.<minor>.dylib`) and
+  links its small per-image part, `libycxx_nonshared.a`. The library and its runtime exist once in
+  the process: handlers, the current exception, `uncaught_exceptions()`, the error categories, the
+  streams and the memory resources are shared by every shared-mode image, and GCC's visibility
+  rule above does not apply (the library's types have default visibility). Each image still has its
+  own hidden Itanium entry points, `std::nothrow` and default allocation functions, bound to the
+  program's through the allocation table, so no name another C++ runtime defines is exported.
+- **Either kind**:
+  - **Exceptions cross** between libycxx images (a shared library throws, the program catches), and
+    the standard library types cross (`std::string` built in one, destroyed in another), static
+    and shared images alike: the names (`std::__y1`, DECISIONS §20.4) and layouts are the same.
+    Between a static-mode image and a shared-mode one the runtime state is per image, as between
+    two static ones.
+  - **Exceptions from code built against another library** (libstdc++, libc++, Apple's libc++abi)
+    are foreign to libycxx's runtime: `catch (...)` catches them, `catch (const std::exception&)`
+    does not, and the other way round. Do not let exceptions cross a C++ boundary between
+    libraries built against different standard libraries.
+  - **One libycxx version per process**: every image must be built against the same libycxx
+    (layouts are not stable during 0.x, DECISIONS §20.7).
 
 ### Libraries that detect the standard library by its macros
 
@@ -437,14 +454,52 @@ other libycxx build is needed. Define it the same way in all of a program's tran
 
 ### Static and shared libycxx
 
-Only static archives exist (`libycxx.a`, `libycxx-abi.a`, position-independent), by design while
-there is no stable ABI (CUSTOM_STDLIB §3). Every executable and shared library linking libycxx
-contains the parts it uses, hidden. What the images share is the allocation table
-(`__ycxx_allocation_functions`, exported from each image and bound by the dynamic linker to the
-program's), so that one `operator new`/`delete` serves all of them: a `std::string` created in a
-shared library and destroyed in the program works, and a program's replacement `operator new`
-serves its libycxx shared libraries. The link options that keep the table (below) are in every
-supported way of linking; a hand-written link line must add them.
+libycxx builds static archives (`libycxx.a`, `libycxx-abi.a`, position-independent), a shared
+library (`libycxx.so.0.<minor>` with `libycxx_nonshared.a`; on macOS `libycxx.0.<minor>.dylib`), or
+both (DECISIONS §20.2). Configure with
+
+| | `-DYCXX_STATIC` | `-DYCXX_SHARED` | what the unqualified consumers link |
+|---|---|---|---|
+| default | `ON` | `OFF` | the archives |
+| both | `ON` | `ON` | the archives; the shared library on request |
+| shared only | `OFF` | `ON` | the shared library |
+
+The shared library needs `YCXX_PAL=posix` and no `YCXX_SANITIZE` (instrumented builds stay
+static for now).
+
+**Choosing per image.** Every translation unit of an image is compiled in the mode the image is
+linked in: shared mode compiles with `YCXX_SHARED` defined. A mismatch fails to link, naming
+`__ycxx_linkage_static_v1` or `__ycxx_linkage_shared_v1` (each translation unit refers to its mode's
+marker). The ways of linking each kind:
+
+| | static | shared |
+|---|---|---|
+| CMake package | `ycxx::static` | `ycxx::shared` (CMake stops a target whose dependencies link both) |
+| `ycxx::ycxx` | the default kind | |
+| modules | `ycxx::modules` (default kind) | `ycxx::shared_modules` (when both are built) |
+| `ycxx-c++` | `YCXX_LINKAGE=static` | `YCXX_LINKAGE=shared` (adds a run path; `YCXX_NO_RPATH=1` drops it) |
+| pkg-config | `libycxx-static.pc` | `libycxx-shared.pc` (`libycxx.pc`: the default kind) |
+| Meson | `meson-native.ini` | `meson-native-shared.ini` (both built), or `meson-native.ini` of a shared-only build |
+| `activate.sh` | `--use DIR` | `--use DIR --shared` (`--use gcc --shared`: `build/gcc-shared`) |
+| `tools/ycxx-cxx` (source tree) | default | `--shared` (`build/<compiler>-shared`) |
+
+**Static.** Every executable and shared library linking libycxx contains the parts it uses,
+hidden. What the images share is the allocation table (`__ycxx_allocation_functions`, exported
+from each image and bound by the dynamic linker to the program's), so that one
+`operator new`/`delete` serves all of them: a `std::string` created in a shared library and
+destroyed in the program works, and a program's replacement `operator new` serves its libycxx
+shared libraries. The link options that keep the table (below) are in every supported way of
+linking; a hand-written link line must add them.
+
+**Shared.** Programs need the library at run time: the consumers above record a run path to the
+library's directory (CMake's own `RPATH` handling for `ycxx::shared`), and an installation moved
+elsewhere needs `LD_LIBRARY_PATH` or a new run path. On ELF, the installed `libycxx.so` is a linker
+script naming `libycxx.so.0.<minor>` and `libycxx_nonshared.a`, so `-lycxx` links both (GNU ld and
+lld; other linkers take the two files by name, as the build tree does). The library exports only
+`std::__y1`, `__ycxx`, the runtime's entry points under its own names (`__ycxx_abi_*`) and the
+allocation table, with the ELF symbol version `YCXX_0.<minor>`. Hand-written link lines: compile
+with `-DYCXX_SHARED`, link `-nostdlib++ <libdir>/libycxx.so.0.1 <libdir>/libycxx_nonshared.a` (macOS:
+`libycxx.0.1.dylib`) with the allocation table's options and `-lm`.
 
 ## 3. Projects that do not use CMake
 

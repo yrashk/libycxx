@@ -106,12 +106,25 @@ def defines_marker(path):
     return 'local' if re.search(r'\s' + MARKER + r'$', run(['nm', '--defined-only', path]), re.M) else ''
 
 
+# libycxx's shared library by the names its consumers record (DECISIONS §20.2, §20.7).
+SHARED_LIBRARY = re.compile(r'(^|/)libycxx(\.so\.\d+(\.\d+)*|\.\d+(\.\d+)*\.dylib)$')
+
+
+def linkage_of(path, libs):
+    """How an image links libycxx: 'shared' when it needs libycxx's shared library, 'library' for
+    that library itself, else 'static' (DECISIONS §20.2)."""
+    if SHARED_LIBRARY.search(os.path.basename(os.path.realpath(path))):
+        return 'library'
+    return 'shared' if any(SHARED_LIBRARY.search(l) for l in libs) else 'static'
+
+
 def check_image(path, kind, linked_by_driver):
     """(problems, evidence) for one image."""
     probs, ev = [], {}
     if kind != 'archive':
         libs = needed_libs(path)
         ev['needed'] = libs
+        ev['linkage'] = linkage_of(path, libs)
         for l in libs:
             if FORBIDDEN_LIB.search(l):
                 probs.append(f'needs {l}')

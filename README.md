@@ -59,6 +59,7 @@ selection, cache options, and first-build timing. These commands are tested as w
 | Hosted library | Files, streams, threads, clocks, and locales, connected to the system through a small C platform abstraction layer (PAL). You can supply individual hosted layers yourself. |
 | ABI runtime | libycxx's own exceptions, RTTI, `dynamic_cast`, and static-local guards; stack unwinding comes from the toolchain. |
 | Standard modules | `import std;` and `import std.compat;`, compiled with your project's flags. |
+| Static or shared | Static archives by default; a shared library, `libycxx.so.0.<minor>` (`libycxx.0.<minor>.dylib`), on request, chosen per program or library ([details](docs/BUILDING_PROJECTS.md#static-and-shared-libycxx)). |
 
 Header availability does not mean every feature works with every compiler or platform.
 See [spec coverage](docs/SPEC_COVERAGE.md) and [status](STATUS.md) for the evidence and limitations.
@@ -80,6 +81,10 @@ and runtime in place of the compiler's usual C++ library.
 For `import std;`, link `ycxx::modules` instead. Modules need CMake 3.28+, Ninja, and,
 with Clang, `clang-scan-deps`. You can also bring libycxx into a project with
 `add_subdirectory` or FetchContent.
+
+`ycxx::ycxx` links libycxx's static archives. When libycxx was built with `-DYCXX_SHARED=ON`,
+`ycxx::shared` links its shared library instead (and `ycxx::static` the archives, when they were
+built too); one target may not link both.
 
 Working examples: [installed package](examples/find_package),
 [add_subdirectory](examples/add_subdirectory), and [modules](examples/modules).
@@ -121,7 +126,8 @@ cmake --install build/gcc --prefix /opt/libycxx
 
 The install step may need permission to write to `/opt`; choose a writable prefix if needed.
 For Clang, use `build/clang`, `$YCXX_CLANG`, and `$YCXX_CLANGXX`. Keep separate builds
-and installations for each compiler.
+and installations for each compiler. Add `-DYCXX_SHARED=ON` to build the shared library as well
+(`-DYCXX_STATIC=OFF` for the shared library alone).
 
 The [usage guide](docs/USAGE.md) explains provisioning, shell activation, freestanding
 builds, custom hosted layers, and transitive includes.

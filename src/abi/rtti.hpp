@@ -139,9 +139,43 @@ enum class __rtti_kind : unsigned char {
 };
 
 __rtti_kind __kind_of_any(const std::type_info& t) noexcept;
+
+// The nine concrete ABI classes by their kinds, in the order in which an image registers its
+// copy's type_info objects with the runtime (rtti_classes.cpp, __ycxx_abi_rtti_register): in
+// shared mode every image has its own hidden copy of the classes, and the runtime in libycxx.so
+// recognizes another image's type_info objects by these addresses instead of their names
+// (DECISIONS §20.6).
+inline constexpr __rtti_kind __rtti_class_kinds[] = {
+    __rtti_kind::__class_si,  __rtti_kind::__class_vmi,    __rtti_kind::__class_plain,
+    __rtti_kind::pointer,     __rtti_kind::__fundamental,  __rtti_kind::__member_pointer,
+    __rtti_kind::__enumeration, __rtti_kind::function,     __rtti_kind::array,
+};
+inline constexpr int __rtti_class_count = sizeof __rtti_class_kinds / sizeof __rtti_class_kinds[0];
+
+// The registered copies (rtti.cpp): an open-addressing table from the address of an image's type_info
+// object of an ABI class to its kind, filled when images register and read without a lock. A slot's
+// kind is written before its key is published (release); a key is never moved, and an unregistered
+// one is replaced by __kind_removed, so a lookup stops only at an empty slot.
+struct __kind_slot {
+  const std::type_info* __key;
+  __rtti_kind __kind;
+};
+inline constexpr unsigned __kind_slots = 2048;
+extern __kind_slot __registered_kinds[__kind_slots];
+inline __rtti_kind __registered_kind(const std::type_info* d) noexcept {
+  unsigned i = static_cast<unsigned>(reinterpret_cast<__UINTPTR_TYPE__>(d) >> 4) & (__kind_slots - 1);
+  for (;;) {
+    const std::type_info* k = __atomic_load_n(&__registered_kinds[i].__key, __ATOMIC_ACQUIRE);
+    if (k == d)
+      return __registered_kinds[i].__kind;
+    if (k == nullptr)
+      return __rtti_kind::unknown;
+    i = (i + 1) & (__kind_slots - 1);
+  }
+}
 // The class kinds a hierarchy walk meets on every step are tested inline, by the address of the
-// type_info object's own type_info (this runtime's ABI classes); the rest, and type_info objects
-// of another image's runtime copy, go to __kind_of_any.
+// type_info object's own type_info (this runtime's ABI classes), then the registered copies of the
+// other images (shared mode); the rest goes to __kind_of_any.
 inline __rtti_kind __kind_of(const std::type_info& t) noexcept {
   const std::type_info* d = &typeid(t);
   if (d == &typeid(__cxxabiv1::__si_class_type_info))
@@ -150,6 +184,9 @@ inline __rtti_kind __kind_of(const std::type_info& t) noexcept {
     return __rtti_kind::__class_vmi;
   if (d == &typeid(__cxxabiv1::__class_type_info))
     return __rtti_kind::__class_plain;
+  if (__ycxx::__detail::__cfg::__shared)
+    if (__rtti_kind k = __registered_kind(d); k != __rtti_kind::unknown)
+      return k;
   return __kind_of_any(t);
 }
 

@@ -203,6 +203,15 @@ ctest_run() {
   c_b=$1 c_j=$2 c_t=$3
   shift 3
   rm -f "$c_j"
+  # Death tests deliberately abort many children. Core dumps can take minutes per child on
+  # hosted runners and exhaust their resources; exit status and stderr are the test oracle.
+  # Linux piped core handlers bypass this limit: full CI disables its host collector too.
+  ulimit -c 0
+  printf 'Core dump limits: soft=%s hard=%s\n' "$(ulimit -Sc)" "$(ulimit -Hc)"
+  if [ -r /proc/sys/kernel/core_pattern ]; then
+    printf 'Kernel core pattern: '
+    cat /proc/sys/kernel/core_pattern
+  fi
   $ctest_cmd --test-dir "$c_b" -j"$jobs" --timeout "$c_t" --output-junit "$c_j" --no-tests=error "$@"
 }
 

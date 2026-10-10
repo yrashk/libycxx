@@ -191,18 +191,65 @@ jobs:
   # project's own non-standard code is patched with its reason (patches/).
   linux-realworld:
     runs-on: ubuntu-24.04
-    container: gcc:16
+    container:
+      image: gcc:16
+      # core_pattern belongs to the host kernel. Allow this job to disable its piped
+      # crash collector, which bypasses RLIMIT_CORE during expected test crashes.
+      options: --privileged
     timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
     steps:
+      - name: Disable host core collector for death tests
+        shell: bash
+        run: |
+          # Piped core handlers ignore ulimit -c 0. A regular file pattern makes the
+          # zero core limit in tools/realworld effective for expected test crashes.
+          printf 'core\n' > /proc/sys/kernel/core_pattern
+          test "$(cat /proc/sys/kernel/core_pattern)" = core
       - uses: actions/checkout@v4
       - name: Toolchains
         uses: ./.github/actions/setup-linux
+        with:
+          locales: 'true'
       - name: Real-world projects, ${{ matrix.compiler }} (tools/test; fetches the projects)
-        run: tools/test -j4 -c ${{ matrix.compiler }} build realworld
+        shell: bash
+        run: |
+          # These jobs have lost their runners during Abseil tests, before artifacts could
+          # upload. Keep test progress and resource usage in the remote job log as they run.
+          apt-get install -y -qq procps >/dev/null
+          report_resources() {
+            trap 'kill "${resource_sleep_pid:-}" 2>/dev/null || true; exit 0' TERM
+            while :; do
+              date -u '+Resource snapshot %Y-%m-%dT%H:%M:%SZ'
+              awk '/^(MemAvailable|SwapFree):/ { print }' /proc/meminfo
+              df -h .
+              for counter in memory.current memory.peak memory.max memory.events; do
+                if [ -r "/sys/fs/cgroup/$counter" ]; then
+                  printf '%s: ' "$counter"
+                  tr '\n' ' ' < "/sys/fs/cgroup/$counter"
+                  printf '\n'
+                fi
+              done
+              # Command names only: arguments and environments may contain credentials.
+              ps -eo pid,ppid,comm,rss,pcpu --sort=-rss | head -n16 || true
+              for log in build/test-logs/realworld-*/*/test.log; do
+                if [ -f "$log" ]; then
+                  printf 'Latest CTest output: %s\n' "$log"
+                  tail -n4 "$log"
+                fi
+              done
+              sleep 30 &
+              resource_sleep_pid=$!
+              wait "$resource_sleep_pid"
+            done
+          }
+          report_resources &
+          resource_monitor_pid=$!
+          trap 'kill "$resource_monitor_pid" 2>/dev/null || true; wait "$resource_monitor_pid" 2>/dev/null || true' EXIT
+          tools/test -v -j4 -c ${{ matrix.compiler }} build realworld
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -217,7 +264,9 @@ jobs:
 
   # Performance regressions (bench/check, DECISIONS §15): every benchmark of bench/ built against
   # libycxx and libstdc++ with both compilers; the ratio libycxx/libstdc++ of each, the median of
-  # 5 interleaved runs, is compared with bench/baseline.json. A benchmark fails only when it is
+  # 5 interleaved runs, is compared with the baseline revision measured on this same runner.
+  # Ratios also depend on CPU architecture and scheduling (particularly atomic wait/notify);
+  # the stored ratios from another machine cannot serve as the CI gate. A benchmark fails when it is
   # more than 30% (and 0.10) above its baseline ratio in the run and in 2 confirmation runs of the
   # suspects; it is then printed as FAIL and fails the job. An intended change updates the
   # baseline (bench/check --help). One compiler per job, so the two do not share the machine.
@@ -231,10 +280,14 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # bench/check measures the pinned baseline revision in a worktree
       - name: Toolchains
         uses: ./.github/actions/setup-linux
+      - name: Performance gate regression tests
+        run: python3 -m unittest discover -s bench -p 'test_*.py'
       - name: Benchmarks against the baseline, ${{ matrix.compiler }} (bench/check)
-        run: bench/check --cc ${{ matrix.compiler }} --md build/bench/check.md
+        run: bench/check --cc ${{ matrix.compiler }} --reference-baseline --md build/bench/check.md
       - name: Results
         if: always()
         uses: actions/upload-artifact@v4

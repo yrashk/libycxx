@@ -225,9 +225,14 @@ private:
   constexpr void __copy_short(const basic_string& __o) noexcept {
     if constexpr (is_same_v<__traits, char_traits<__charT>>) {
       if !consteval {
+        // Snapshot the source before writing the destination. The compiler can keep it in
+        // registers; interleaved loads and stores make repeated copies sensitive to heap layout.
+        const size_type __n = __o.__size_;
+        __charT __copy[__sso_cap + 1];
+        __builtin_memcpy(__copy, __o.__buf_, sizeof(__buf_));
+        __builtin_memcpy(__buf_, __copy, sizeof(__buf_));
+        __size_ = __n;
         __ptr_ = __buf_;
-        __builtin_memcpy(__buf_, __o.__buf_, sizeof(__buf_));
-        __size_ = __o.__size_;
         return;
       }
     }

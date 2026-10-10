@@ -2,14 +2,20 @@
 """Performance regression check: libycxx's benchmarks against a stored baseline of ratios.
 
     bench/check [--cc gcc,clang] [--baseline bench/baseline.json] [--runs 5] [--confirm 2]
-                [--json-out FILE] [--md FILE]
+                [--json-out FILE] [--md FILE] [--reference-baseline]
     bench/check --compare CURRENT.json [--baseline ...]      compare an existing bench/run --json
     bench/check --update [--from RUN.json] [--cc ...]         write the baseline (see below)
 
 What is compared is the ratio libycxx / libstdc++ of each benchmark *in the same run* on the same
-machine (bench/run builds every program against both), not absolute times: a ratio does not
-depend on the machine's speed or load as long as both programs run under the same conditions,
-which bench/run arranges by running them in turn, R times interleaved, and taking medians.
+machine (bench/run builds every program against both), not absolute times. Ratios reduce speed
+and load differences, but still depend on CPU architecture, toolchains and scheduling. With
+--reference-baseline (used by CI), measure the baseline's reference_commit in a temporary git
+worktree on the same machine with the same compiler, options and run counts, then compare with
+those ratios. Confirmation runs remeasure both revisions, so noise in the initial baseline
+measurement cannot confirm a regression. Confirmation ratios share the current run's libstdc++
+control measurement: the identical control must not create a difference between the two libycxx
+revisions. Baseline measurements are saved beside --json-out as *.baseline*.json. Without
+that option, compare with the stored ratios, intended for the machine that recorded them.
 
 A benchmark regresses when its ratio exceeds the baseline's by more than the tolerance: relative
 (--tolerance, default 0.30, i.e. 30%) and absolute (--abs-tolerance, default 0.10) together, so
@@ -29,12 +35,15 @@ machine for CI): run `bench/check --update` (it runs the benchmarks with --runs 
 bench/baseline.json), or `bench/check --update --from build/bench/check.json` to take the ratios
 of a run already made (e.g. the JSON artifact of the CI job), review the diff of
 bench/baseline.json, and commit it with the reason in the message. An improvement never fails the
-check; updating the baseline after one tightens it.
+check; updating the baseline after one tightens it. --update also pins reference_commit to the
+run's commit (the full commit ID, which must be available to --reference-baseline).
 """
 import argparse
+from contextlib import contextmanager
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,17 +55,18 @@ def key_of(r):
     return f"{r['cc']}: {r['prog']}: {r['name']}"
 
 
-def ratios(doc):
+def ratios(doc, control=None):
+    controls = {key_of(r): r["ns"].get("libstdc++") for r in (control or doc)["results"]}
     out = {}
     for r in doc["results"]:
-        y, s = r["ns"].get("ycxx"), r["ns"].get("libstdc++")
+        y, s = r["ns"].get("ycxx"), controls.get(key_of(r))
         if y and s and s > 0:
             out[key_of(r)] = y / s
     return out
 
 
-def run_bench(ccs, runs, samples, opt, filters, only, out):
-    cmd = [sys.executable, str(RUN), "--cc", ",".join(ccs), "--libs", "ycxx,libstdc++", "--runs", str(runs),
+def run_bench(ccs, runs, samples, opt, filters, only, out, runner=RUN):
+    cmd = [sys.executable, str(runner), "--cc", ",".join(ccs), "--libs", "ycxx,libstdc++", "--runs", str(runs),
            "--samples", str(samples), "--opt", opt, "--json", str(out)]
     if only:
         cmd += ["--only", ",".join(sorted(only))]
@@ -66,6 +76,22 @@ def run_bench(ccs, runs, samples, opt, filters, only, out):
     if r.returncode:
         sys.exit(f"bench/check: bench/run failed ({r.returncode})")
     return json.loads(Path(out).read_text())
+
+
+@contextmanager
+def reference_checkout(ref):
+    # Use a real checkout so bench/run records its commit and each revision builds its own
+    # headers and archives. Always remove it, including when its build or benchmarks fail.
+    git = ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT)]
+    with tempfile.TemporaryDirectory(prefix="ycxx-bench-reference-") as tmp:
+        checkout = Path(tmp) / "source"
+        r = subprocess.run([*git, "worktree", "add", "--detach", str(checkout), ref])
+        if r.returncode:
+            sys.exit(f"bench/check: cannot check out baseline revision {ref}; fetch its history first")
+        try:
+            yield checkout / "bench" / "run"
+        finally:
+            subprocess.run([*git, "worktree", "remove", "--force", str(checkout)], check=True)
 
 
 def limit(base, key, tol, abs_tol, per):
@@ -84,17 +110,23 @@ def main():
     ap.add_argument("--tolerance", type=float, default=0.30)
     ap.add_argument("--abs-tolerance", type=float, default=0.10)
     ap.add_argument("--compare", help="compare this bench/run --json file (no confirmation runs)")
+    ap.add_argument("--reference-baseline", action="store_true",
+                    help="measure the pinned baseline revision on this machine before comparing")
     ap.add_argument("--update", action="store_true", help="write the baseline")
     ap.add_argument("--from", dest="from_", help="with --update: take the ratios of this JSON run")
     ap.add_argument("--json-out", default=str(ROOT / "build" / "bench" / "check.json"))
     ap.add_argument("--md", help="also write the comparison as a Markdown table to this file")
     a = ap.parse_args()
+    if a.reference_baseline and (a.compare or a.update):
+        ap.error("--reference-baseline cannot be combined with --compare or --update")
     ccs = [c for c in a.cc.split(",") if c]
     Path(a.json_out).parent.mkdir(parents=True, exist_ok=True)
 
     if a.update:
         doc = json.loads(Path(a.from_).read_text()) if a.from_ else run_bench(
             ccs, a.runs, a.samples, a.opt, [], None, a.json_out)
+        if not doc.get("commit"):
+            ap.error("measurement lacks a commit ID; rerun bench/run before updating the baseline")
         old = {}
         if Path(a.baseline).exists():
             old = json.loads(Path(a.baseline).read_text())
@@ -102,6 +134,7 @@ def main():
             "schema": 1,
             "about": "ratios libycxx/libstdc++ per benchmark (bench/check; DECISIONS §15)",
             "date": doc.get("date"), "commit": doc.get("commit"), "host": doc.get("host"),
+            "reference_commit": doc.get("commit"),
             "opt": doc.get("opt"), "runs": doc.get("runs"),
             "tolerance": old.get("tolerance", {}),
             "ratios": {k: round(v, 4) for k, v in sorted(ratios(doc).items())},
@@ -111,6 +144,19 @@ def main():
         return 0
 
     base = json.loads(Path(a.baseline).read_text())
+    if a.reference_baseline:
+        ref = base.get("reference_commit")
+        if not ref:
+            ap.error("baseline lacks reference_commit; pin the revision that recorded it")
+        with reference_checkout(ref) as runner:
+            measured = run_bench(ccs, a.runs, a.samples, a.opt, [], None,
+                                 Path(a.json_out).with_suffix(".baseline.json"), runner)
+            base = dict(base, ratios=ratios(measured), commit=ref, date=measured.get("date"))
+            return compare(a, ccs, base, runner)
+    return compare(a, ccs, base)
+
+
+def compare(a, ccs, base, reference_runner=None):
     bratios, per = base["ratios"], base.get("tolerance", {})
     bratios = {k: v for k, v in bratios.items() if k.split(":", 1)[0] in ccs}
     doc = json.loads(Path(a.compare).read_text()) if a.compare else run_bench(
@@ -123,6 +169,7 @@ def main():
             lim, _ = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
             if r > lim:
                 suspects[k] = [r]
+    confirmation_bases = {k: [bratios[k]] for k in suspects}
     new = sorted(set(cur) - set(bratios))
     gone = sorted(set(bratios) - set(cur))
 
@@ -139,16 +186,26 @@ def main():
                 d = run_bench([cc], a.runs, a.samples, a.opt, sorted(names), progs,
                               Path(a.json_out).with_suffix(f".confirm{i + 1}-{cc}.json"))
                 rr = ratios(d)
+                reference_ratios = bratios
+                if reference_runner:
+                    reference_ratios = ratios(run_bench(
+                        [cc], a.runs, a.samples, a.opt, sorted(names), progs,
+                        Path(a.json_out).with_suffix(f".baseline.confirm{i + 1}-{cc}.json"),
+                        reference_runner), control=d)
                 for k in suspects:
                     if k.startswith(cc + ": "):
                         suspects[k].append(rr.get(k, float("nan")))
+                        confirmation_bases[k].append(reference_ratios.get(k, float("nan")))
 
     failed, noise = [], []
     for k, rs in sorted(suspects.items()):
-        lim, t = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
-        confirmed = all(r > lim for r in rs)  # NaN (benchmark vanished) does not confirm
+        _, t = limit(bratios[k], k, a.tolerance, a.abs_tolerance, per)
+        confirmed = all(r > limit(b, k, a.tolerance, a.abs_tolerance, per)[0]
+                        for r, b in zip(rs, confirmation_bases[k]))  # NaN does not confirm
         msg = (f"{k}: ratio {rs[0]:.2f} > baseline {bratios[k]:.2f} (+{t:.0%}, +{a.abs_tolerance:.2f})"
                + (f"; confirmations {' '.join(f'{r:.2f}' for r in rs[1:])}" if len(rs) > 1 else ""))
+        if reference_runner and len(rs) > 1:
+            msg += "; reference ratios " + " ".join(f"{b:.2f}" for b in confirmation_bases[k][1:])
         (failed if confirmed else noise).append(msg)
 
     if a.md:

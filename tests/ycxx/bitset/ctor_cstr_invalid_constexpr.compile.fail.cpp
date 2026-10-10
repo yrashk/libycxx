@@ -1,4 +1,6 @@
-// EXPECT-ERROR-GCC: error: uncaught exception of type 'std::invalid_argument';[^\n]*std::bitset: character is neither zero nor one
+// EXPECT-ERROR-GCC[exceptions]: error: uncaught exception of type 'std::invalid_argument';[^\n]*std::bitset: character is neither zero nor one
+// EXPECT-ERROR-GCC[!exceptions]: error: call to non-'constexpr' function 'void ycxx_error_handler\(ycxx_error_kind, const char\*\)'
+// EXPECT-ERROR-GCC[!exceptions]: in 'constexpr' expansion of [^\n]*std::bitset: character is neither zero nor one
 // EXPECT-ERROR-CLANG: error: constexpr variable 'b' must be initialized by a constant expression
 // EXPECT-ERROR-CLANG: note: in call to [^\n]*std::bitset: character is neither zero nor one
 // [bitset.cons]/7: "Throws: ... invalid_argument if any of the rlen characters in str

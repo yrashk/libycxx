@@ -1,11 +1,32 @@
 # Benchmark results: libycxx vs libstdc++ and libc++
 
+## Short-string copy heap-layout sensitivity
+
+Full CI run [38020064399](https://github.com/yrashk/libycxx/actions/runs/38020064399)
+confirmed a Clang slowdown in `vector.copy 1e5 string`: confirmation medians were 2.378 and
+2.389 ns/string, versus 1.723 and 1.670 for the pinned reference. The copy loop's machine code
+was unchanged, but startup allocations changed the heap layout. Adding one 32-byte allocation
+to the reference reproduced the slower behavior locally (1.50 to 1.85 ns/string).
+
+`basic_string::__copy_short` now snapshots the source size and inline buffer before writing
+the destination. Clang keeps the snapshot in registers and emits the source loads before the
+destination stores. In seven alternating runs on the same host, the current layout improved
+from a median 1.965 to 1.461 ns/string; the reference measured 1.502. The benchmark, reference
+commit, and gate tolerances are unchanged.
+
+The paired Clang container/string run covered 57 measurements. The vector-copy gate passed,
+and the two other initial suspects did not repeat in either confirmation round. Focused string
+and vector conformance checks passed on GCC 16, Clang 23, and Clang AddressSanitizer (156 each).
+The GCC vector-copy comparison also stayed within the unchanged gate thresholds.
+
 ## Performance pass 2 (2026-10-07): against libstdc++ and libc++
 
 `bench/run` now builds each program against libycxx, libstdc++ and (Clang) libc++ 23.1 (Debian's
 `libc++-23-dev`, the build of the same LLVM release as the compiler), runs them R times
 interleaved and reports medians; `bench/check` compares the ratios to libstdc++ with
-`bench/baseline.json` (nightly, `full.yml`). Ratios below are libycxx / reference (below 1:
+`bench/baseline.json`. The nightly (`full.yml`) measures its pinned baseline revision on the
+same runner (`--reference-baseline`), since ratios vary with CPU and scheduling too.
+Ratios below are libycxx / reference (below 1:
 libycxx is faster). The machine was shared with other jobs (load 10 to 17 on 4 CPUs for most of
 the day), so wall-clock rows move by ±30% or more between runs; every change was also judged with
 callgrind instruction counts and, for the hot loops, by reading libycxx's generated assembly.

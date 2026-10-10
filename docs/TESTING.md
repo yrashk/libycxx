@@ -94,6 +94,10 @@ transcript names each regex that did not match, so a test cannot pass on an unre
 
 Every negative test must have a nonempty expectation applicable to the compiler running it;
 a failed compilation without one is a test failure.
+An expectation can select a configuration with a lit feature expression, such as
+`EXPECT-ERROR-GCC[exceptions]:` or `EXPECT-ERROR-GCC[!exceptions]:`. Constant evaluation
+rejects a throw with exceptions enabled and a call to the non-constexpr error handler with
+exceptions disabled; both expectations must identify the specific reason for rejection.
 
 `// REQUIRES: <features>` runs a test only when a boolean expression of lit features holds (else
 it is UNSUPPORTED): `gcc`, `clang`, `linux`, `darwin`, `asan`, `ubsan`, `tsan`, `hardened`,
@@ -166,8 +170,9 @@ both compilers on both platforms, the own suite under ASan+UBSan (Clang), all th
 ThreadSanitizer on both compilers (libycxx instrumented too; a job of its own on the bare runner,
 with GCC 16.2 built with libsanitizer by `tools/toolchain/provision` and cached), and the own
 suite on both compilers hardened, with `-fno-exceptions`, with `-O2` and without transitive
-includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`), and the benchmarks of `bench/` against their stored
-baseline of ratios to libstdc++ (`bench/check`: a FAIL is a regression that repeated in two
+includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`), and the benchmarks of `bench/` against their pinned
+baseline revision, measured on the same runner (`bench/check --reference-baseline`: a FAIL is
+a regression of the ratio to libstdc++ that repeated in two
 confirmation runs; DECISIONS §15). Every job uploads its reports as an
 artifact.
 Tests that need a named locale (libstdc++'s `dg-require-namedlocale`, libc++'s `locale.<name>`

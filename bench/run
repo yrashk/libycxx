@@ -156,7 +156,7 @@ def main():
         doc = {
             "schema": 1,
             "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-            "commit": subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"],
+            "commit": subprocess.run(["git", "-c", f"safe.directory={ROOT}", "-C", ROOT, "rev-parse", "HEAD"],
                                      capture_output=True, text=True).stdout.strip(),
             "host": platform.node(), "machine": platform.machine(), "opt": a.opt,
             "samples": a.samples, "runs": a.runs, "libs": libs_of,

@@ -1,0 +1,106 @@
+Category: implementation-specific. range-v3 redeclares the primary templates std::common_type and
+std::basic_common_reference in namespace std before specializing them, which names the library's
+templates only where they are members of std itself (libstdc++, MSVC's library) or of the
+namespace libc++'s macro opens. libycxx's are in its inline namespace std::__y1 (DECISIONS §20.4),
+so the redeclarations declare other templates and the specializations become ambiguous. With
+another library the patch leaves out the redeclarations and includes <type_traits>, which
+declares both; the specializations in namespace std then specialize them ([namespace.def]/7).
+
+diff --git a/include/range/v3/detail/config.hpp b/include/range/v3/detail/config.hpp
+index f8015f4..0b52351 100644
+--- a/include/range/v3/detail/config.hpp
++++ b/include/range/v3/detail/config.hpp
+@@ -125,6 +125,15 @@ namespace ranges
+ 
+ // Non-portable forward declarations of standard containers
+ #define RANGES_BEGIN_NAMESPACE_STD META_BEGIN_NAMESPACE_STD
++// The primary templates std::common_type and std::basic_common_reference are redeclared before
++// they are specialized only with the libraries known to declare them directly in std; another
++// library's are found in <type_traits> (and may be in an inline namespace of std).
++#if defined(_LIBCPP_VERSION) || defined(__GLIBCXX__) || defined(_MSVC_STL_VERSION)
++#define RANGES_REDECLARE_STD_TEMPLATES 1
++#else
++#define RANGES_REDECLARE_STD_TEMPLATES 0
++#include <type_traits>
++#endif
+ #define RANGES_END_NAMESPACE_STD META_END_NAMESPACE_STD
+ #define RANGES_BEGIN_NAMESPACE_VERSION META_BEGIN_NAMESPACE_VERSION
+ #define RANGES_END_NAMESPACE_VERSION META_END_NAMESPACE_VERSION
+diff --git a/include/range/v3/iterator/basic_iterator.hpp b/include/range/v3/iterator/basic_iterator.hpp
+index cef08cf..b9783eb 100644
+--- a/include/range/v3/iterator/basic_iterator.hpp
++++ b/include/range/v3/iterator/basic_iterator.hpp
+@@ -947,8 +947,10 @@ RANGES_DIAGNOSTIC_PUSH
+ RANGES_DIAGNOSTIC_IGNORE_MISMATCHED_TAGS
+ RANGES_BEGIN_NAMESPACE_STD
+ RANGES_BEGIN_NAMESPACE_VERSION
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename, typename, template <typename> class, template<typename> class>
+     struct basic_common_reference;
++#endif
+ 
+     // common_reference specializations for basic_proxy_reference
+     template<typename Cur, typename U, template<typename> class TQual,
+@@ -972,8 +974,10 @@ RANGES_BEGIN_NAMESPACE_VERSION
+                                ::ranges::detail::cursor_reference_t<Cur2>, TQual, UQual>
+     {};
+ 
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename...>
+     struct common_type;
++#endif
+ 
+     // common_type specializations for basic_proxy_reference
+     template<typename Cur, typename U>
+diff --git a/include/range/v3/utility/common_tuple.hpp b/include/range/v3/utility/common_tuple.hpp
+index ff04839..f5c2763 100644
+--- a/include/range/v3/utility/common_tuple.hpp
++++ b/include/range/v3/utility/common_tuple.hpp
+@@ -687,8 +687,10 @@ RANGES_BEGIN_NAMESPACE_STD
+ 
+ #if RANGES_CXX_VER > RANGES_CXX_STD_17
+ RANGES_BEGIN_NAMESPACE_VERSION
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename...>
+     struct common_type;
++#endif
+ 
+     // common_type for pairs
+     template<typename F1, typename S1, typename F2, typename S2>
+@@ -729,8 +731,10 @@ RANGES_BEGIN_NAMESPACE_VERSION
+                                                ::meta::quote<::ranges::common_tuple>>
+     {};
+ 
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename, typename, template<typename> class, template<typename> class>
+     struct basic_common_reference;
++#endif
+ 
+     // common reference for pairs
+     template<typename F1, typename S1, typename F2, typename S2,
+diff --git a/include/range/v3/utility/common_type.hpp b/include/range/v3/utility/common_type.hpp
+index cd73817..c66d4a5 100644
+--- a/include/range/v3/utility/common_type.hpp
++++ b/include/range/v3/utility/common_type.hpp
+@@ -112,8 +112,10 @@ RANGES_DIAGNOSTIC_IGNORE_MISMATCHED_TAGS
+ RANGES_BEGIN_NAMESPACE_STD
+ RANGES_BEGIN_NAMESPACE_VERSION
+ 
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename...>
+     struct common_type;
++#endif
+ 
+     // common_type for std::pairs
+     template<typename F1, typename S1, typename F2, typename S2>
+@@ -135,8 +137,10 @@ RANGES_BEGIN_NAMESPACE_VERSION
+     template<typename... Ts, typename... Us>
+     struct common_type<::ranges::common_tuple<Ts...>, ::ranges::common_tuple<Us...>>;
+ 
++#if RANGES_REDECLARE_STD_TEMPLATES
+     template<typename, typename, template<typename> class, template<typename> class>
+     struct basic_common_reference;
++#endif
+ 
+     // A common reference for std::pairs
+     template<typename F1, typename S1, typename F2, typename S2,

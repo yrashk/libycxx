@@ -4,9 +4,11 @@ url = https://github.com/uxlfoundation/oneTBB.git
 ref = v2023.1.0
 commit = 3046c8b0c29df995980003ea24f4d78c80ec0c8d
 exercises = threads, atomics, allocators, exceptions
-configure = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF
+# Its tests' vendored doctest declares std::tuple and the iostreams templates in namespace std unless
+# it finds libc++; DOCTEST_CONFIG_USE_STD_HEADERS includes the headers instead (tests/realworld/doctest).
+configure = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF -DCMAKE_CXX_FLAGS=-DDOCTEST_CONFIG_USE_STD_HEADERS
 timeout = 900
 # Under ThreadSanitizer, oneTBB's own TSan configuration (as upstream runs it): no ITT
 # instrumentation in tbbmalloc, whose lock-free code TSan otherwise reports, and no malloc proxy,
 # which would replace the sanitizer's malloc.
-configure.tsan = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF -DTBB_SANITIZE=thread
+configure.tsan = -DTBB_TEST=ON -DTBB_STRICT=OFF -DTBB_EXAMPLES=OFF -DTBB_SANITIZE=thread -DCMAKE_CXX_FLAGS=-DDOCTEST_CONFIG_USE_STD_HEADERS

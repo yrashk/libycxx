@@ -391,7 +391,12 @@ ui_section "Toolchain file (cmake/ycxx-toolchain.cmake)"
 for c in $compilers; do
   cache=$work/toolchain-cache-$c
   rm -rf "$cache" "$work/tc-$c"
-  if YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
+  # The compiler is found as a user's would be, on PATH: the one this run uses may live in the
+  # default toolchain cache (macOS's provisioned Clang), which this test bypasses.
+  if [ $c = gcc ]; then tc_cxx=${YCXX_GXX:-g++-16}; else tc_cxx=${YCXX_CLANGXX:-clang++-23}; fi
+  tc_cxx=$(command -v "$tc_cxx" 2>/dev/null || true)
+  tc_path=$PATH; [ -n "$tc_cxx" ] && tc_path=$(dirname "$tc_cxx"):$PATH
+  if PATH=$tc_path YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
        -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=$c \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-$c.log" 2>&1 &&
      cmake --build "$work/tc-$c" --verbose >>"$work/tc-$c.log" 2>&1 &&

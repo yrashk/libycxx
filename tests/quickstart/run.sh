@@ -86,7 +86,15 @@ for c in $compilers; do
   sed 's/^/    /' "$d/commands.sh"
   start=$(date +%s)
   st=0
-  (cd "$d/run" && YCXX_TOOLCHAINS=$d/toolchains sh -ex "$d/commands.sh") >>"$log" 2>&1 || st=$?
+  # "Already installed" means reachable on PATH, as for a user: the compiler tools/test uses may
+  # live in the default toolchain cache (macOS's provisioned Clang), which this run bypasses.
+  path=$PATH
+  if [ $provision = 0 ]; then
+    if [ $c = gcc ]; then cxx=${YCXX_GXX:-g++-16}; else cxx=${YCXX_CLANGXX:-clang++-23}; fi
+    cxx=$(command -v "$cxx" 2>/dev/null || true)
+    [ -n "$cxx" ] && path=$(dirname "$cxx"):$PATH
+  fi
+  (cd "$d/run" && PATH=$path YCXX_TOOLCHAINS=$d/toolchains sh -ex "$d/commands.sh") >>"$log" 2>&1 || st=$?
   secs=$(( $(date +%s) - start ))
   printf '%s %s %s seconds\n' "$variant" "$c" "$secs" >"$d/time.txt"
   last=$(tail -n 1 "$log")

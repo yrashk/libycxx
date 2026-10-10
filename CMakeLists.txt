@@ -58,6 +58,13 @@ endif()
 
 include(GNUInstallDirs)
 set(YCXX_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# The ABI version in the sources (ycxx/config.hpp, __abi_version: the allocation table's version
+# check, DECISIONS §20.6) must be the soname's, the project's <major>.<minor>.
+file(STRINGS ${YCXX_INCLUDE}/ycxx/config.hpp _ycxx_abi_line ENCODING UTF-8 REGEX "__abi_version\\[\\] = ")
+if(NOT _ycxx_abi_line MATCHES "\"${PROJECT_VERSION_MAJOR}\\.${PROJECT_VERSION_MINOR}\"")
+  message(FATAL_ERROR "libycxx: ycxx/config.hpp's __abi_version (${_ycxx_abi_line}) is not "
+                      "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}, the project's version")
+endif()
 # Installed under their own directory: the headers have the standard names (<vector>, ...).
 set(YCXX_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/libycxx)
 
@@ -518,10 +525,11 @@ if(YCXX_SHARED)
     set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.map)
     list(JOIN _ycxx_exports ";\n    " _text)
     file(WRITE ${_ycxx_list} "YCXX_${_ycxx_abi_version} {\n  global:\n    ${_text};\n  local: *;\n};\n")
-    # -Bsymbolic-functions: the library's own calls bind to its own definitions (its replaceable
-    # functions are hidden anyway); --no-undefined: everything is resolved now, not at load time.
-    target_link_options(ycxx_so PRIVATE LINKER:--version-script=${_ycxx_list} LINKER:-Bsymbolic-functions
-                        LINKER:--no-undefined)
+    # --no-undefined: everything is resolved now, not at load time. Not -Bsymbolic-functions: the
+    # library's calls to std::is_debugger_present must reach a program's replacement
+    # ([debugging.utility]), as every other exported function may be interposed (the allocation
+    # functions are hidden, per image).
+    target_link_options(ycxx_so PRIVATE LINKER:--version-script=${_ycxx_list} LINKER:--no-undefined)
   endif()
   set_property(TARGET ycxx_so APPEND PROPERTY LINK_DEPENDS ${_ycxx_list})
   # The library is itself an image that links libycxx: its per-image part, and the allocation
@@ -621,7 +629,7 @@ message(STATUS "libycxx: kinds built: ${_ycxx_consumer_targets}; ycxx::ycxx is y
 # meson-native.ini, in the build tree and installed (cmake/ycxx-consumer.cmake).
 include(GNUInstallDirs)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-consumer.cmake)
-if(YCXX_PAL STREQUAL "posix" AND YCXX_STATIC)
+if(YCXX_PAL STREQUAL "posix")
   ycxx_consumer_files("${_ycxx_table_link_options}")
 endif()
 

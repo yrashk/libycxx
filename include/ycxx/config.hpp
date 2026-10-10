@@ -421,6 +421,10 @@ inline constexpr bool filesystem = _YCXX_LAYER_FILESYSTEM;
 inline constexpr bool __hardened = YCXX_HARDENED;
 // Shared mode (YCXX_SHARED, DECISIONS §20).
 inline constexpr bool __shared = YCXX_SHARED;
+// The ABI version: the soname's (libycxx.so.0.<minor>, DECISIONS §20.7), which the allocation table
+// carries for the images' version check (src/runtime/new/allocation_table.cpp). CMakeLists.txt
+// stops when it is not the project's <major>.<minor>.
+inline constexpr char __abi_version[] = "0.1";
 inline constexpr bool __reflection = _YCXX_HAS_REFLECTION;
 #if defined(__SIZEOF_INT128__)
 inline constexpr bool __has_int128 = true;

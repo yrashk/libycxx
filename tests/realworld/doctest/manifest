@@ -4,4 +4,9 @@ url = https://github.com/doctest/doctest.git
 ref = v2.5.3
 commit = 2d0a9359a60c51affe2a9bebb1be1dca47868151
 exercises = test framework: iostreams, exceptions, strings, threads
-configure = -DDOCTEST_WITH_TESTS=ON
+# Unless it finds libc++ (_LIBCPP_VERSION), doctest declares std::char_traits, basic_ostream,
+# basic_istream and tuple itself, in namespace std ([namespace.std]/1: undefined behavior). libycxx
+# defines them in its inline namespace std::__y1 (DECISIONS §20.4), so those declarations name other
+# templates and make std::tuple ambiguous. doctest's DOCTEST_CONFIG_USE_STD_HEADERS, its option for
+# such libraries, includes the standard headers instead (docs/BUILDING_PROJECTS.md).
+configure = -DDOCTEST_WITH_TESTS=ON -DCMAKE_CXX_FLAGS=-DDOCTEST_CONFIG_USE_STD_HEADERS

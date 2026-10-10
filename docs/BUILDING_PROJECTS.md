@@ -217,6 +217,11 @@ libstdc++" takes a wrong branch:
 - Feature detection by library: GoogleTest uses `<cxxabi.h>` (type names, demangling) only when it
   recognises the library; libycxx provides `<cxxabi.h>` and `abi::__cxa_demangle`, so set
   `-DGTEST_HAS_CXXABI_H_=1`.
+- Declaring standard templates instead of including their headers ([namespace.std]/1: undefined
+  behavior). libycxx defines them in the inline namespace `std::__y1`, so a declaration of
+  `std::tuple` or `std::basic_ostream` in `namespace std` declares another template and makes the
+  name ambiguous ("reference to 'tuple' is ambiguous"). doctest does this unless it finds libc++:
+  define `DOCTEST_CONFIG_USE_STD_HEADERS`.
 
 Use the feature-test macros (`__cpp_lib_*` from `<version>`) and `__has_include` instead.
 

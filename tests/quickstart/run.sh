@@ -41,7 +41,7 @@ for a in "$@"; do
   esac
 done
 shared_option='-DYCXX_SHARED=ON -DYCXX_STATIC=OFF'
-if [ $shared = 1 ] && ! grep -qF "$shared_option" "$readme"; then
+if [ $shared = 1 ] && ! grep -qF -- "$shared_option" "$readme"; then
   ui_fail "$readme no longer documents '$shared_option'; update tests/quickstart/run.sh"; exit 1
 fi
 if [ $provision = 1 ]; then

@@ -74,7 +74,7 @@ started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 
-compilers= filters= jobs= sanitizer= fail_fast=0 stages=
+compilers= filters= jobs= sanitizer= fail_fast=0 stages= linkage=static
 while [ $# -gt 0 ]; do
   case $1 in
     -c|--compiler) compilers="$compilers $2"; shift ;;
@@ -83,7 +83,7 @@ while [ $# -gt 0 ]; do
     -j*) jobs=${1#-j} ;;
     -s|--sanitizer) sanitizer=$2; shift ;;
     --hardened) YCXX_HARDENED=1; export YCXX_HARDENED ;;
-    --shared) YCXX_LINKAGE=shared; export YCXX_LINKAGE ;;
+    --shared) linkage=shared ;;
     --cxxflags) YCXX_CXXFLAGS=$2; export YCXX_CXXFLAGS; shift ;;
     --cxxflags=*) YCXX_CXXFLAGS=${1#--cxxflags=}; export YCXX_CXXFLAGS ;;
     --config-name) YCXX_CONFIG_NAME=$2; export YCXX_CONFIG_NAME; shift ;;
@@ -109,6 +109,10 @@ ycxx_env_load
 ycxx_suite_dirs
 SANITIZER=$sanitizer
 export SANITIZER
+# The kind of library the suites and real-world projects link (--shared). Given to them alone: the
+# cmake stage's tests build both kinds and choose themselves.
+unset YCXX_LINKAGE
+YCXX_LINKAGE=$linkage
 ycxx_run_config || exit 2
 if [ "${YCXX_HARDENED:-0}" = 1 ] || [ -n "${ycxx_config_name}" ]; then
   case " $stages " in *" libcxx "*|*" libstdcxx "*)
@@ -298,7 +302,7 @@ for stage in $stages; do
             { [ $t = Release ] || broken="$broken $c"; }
         done
         # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
-        if [ "${YCXX_LINKAGE:-static}" = shared ]; then
+        if [ $linkage = shared ]; then
           d=build/$c-shared
           if [ ! -f $d/build.ninja ]; then
             step "$c shared: configure ($d)" build-$c-shared-configure cmake -S . -B $d -G Ninja \
@@ -320,7 +324,7 @@ for stage in $stages; do
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/cmake/run.sh $compilers || :
       direct "quickstart commands, as documented (examples/quickstart)" quickstart "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh $compilers || :
-      if [ "${YCXX_LINKAGE:-static}" = shared ]; then
+      if [ $linkage = shared ]; then
         direct "quickstart commands with the shared library option (examples/quickstart)" quickstart-shared "" \
           env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh --shared $compilers || :
       fi
@@ -328,20 +332,20 @@ for stage in $stages; do
     realworld)
       for c in $compilers; do
         label="real-world projects, $c${sanitizer:+, $sanitizer}"
-        [ "${YCXX_LINKAGE:-static}" = shared ] && label="$label, shared library"
+        [ $linkage = shared ] && label="$label, shared library"
         ! not_run "$label" || continue
         case " $broken " in *" $c "*)
           ui_section "$label"; ui_skip "$label" "(the $c build failed)"
           record skip "$label" "(the $c build failed)"; continue ;;
         esac
         direct "$label" "" "$logs/realworld-$c${ycxx_run_suffix}.html" \
-          tools/realworld -c $c ${sanitizer:+-s $sanitizer} --linkage "${YCXX_LINKAGE:-static}" ${jobs:+-j $jobs} || :
+          tools/realworld -c $c ${sanitizer:+-s $sanitizer} --linkage $linkage ${jobs:+-j $jobs} || :
       done
       ;;
     ycxx|libcxx|libstdcxx)
       for c in $compilers; do
         label="$stage suite, $c${sanitizer:+, $sanitizer}"
-        [ "${YCXX_LINKAGE:-static}" = shared ] && label="$label, shared library"
+        [ $linkage = shared ] && label="$label, shared library"
         [ "${YCXX_HARDENED:-0}" = 1 ] && label="$label, hardened"
         label=$label${ycxx_config_name:+, ${ycxx_config_name}}
         ! not_run "$label" || continue
@@ -373,7 +377,7 @@ for stage in $stages; do
           record skip "$label" "($dir not found: run tools/fetch-suites)"; continue
         fi
         run=$stage-$c${ycxx_run_suffix}
-        direct "$label" "" "$logs/$run.html" tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
+        direct "$label" "" "$logs/$run.html" env YCXX_LINKAGE=$linkage tools/run-conformance $stage $c $filters -- ${jobs:+-j$jobs} || :
       done
       ;;
   esac

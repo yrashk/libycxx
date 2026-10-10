@@ -515,7 +515,7 @@ compilers, with the results below.
 | GSL | v5.0.1 | ok | ok | 15 / 0 | 15 / 0 | Clang 23's lifetime-safety suggestions off (its `-Weverything -Werror`) |
 | nlohmann/json | v3.12.0 | ok | ok | 101 / 0 | 101 / 0 | 2 patches (`__GLIBCXX__`-guarded byte traits; `<ciso646>`) |
 | libcoro | v0.16.0 | ok | ok | 1 / 0 | 1 / 0 | one CTest test runs the whole suite; 1 patch (a racy test case under TSan) |
-| magic_enum | v0.9.8 | ok | ok | 12 + 3 XFAIL / 0 | 15 / 0 | GCC 16 miscompiles `test_flags` at `-O1 -std=c++26` (XFAIL) |
+| magic_enum | v0.9.8 | ok | ok | 15 / 0 | 15 / 0 | GCC's three `test_flags` XFAILs removed after all 456 assertions in each binary passed in full CI run 37999401616 |
 | oneTBB | v2023.1.0 | ok | ok | 141 / 3 | 141 / 1 | 3 patches (POSIX includes and portability, a per-image terminate handler, its TSan flags with Clang); `test_malloc_new_handler` (per-image new handler); GCC: `test_openmp` (GCC's `<omp.h>` includes libstdc++) |
 | range-v3 | 0.12.0 | ok | ok | 234 / 10 | 236 / 6 | 1 patch (C++23 `as_lvalue`); 5 tests not built: libstdc++/libc++ internals recognised (2), pre-C++26 rules (3; 2 of them GCC only) |
 | simdjson | v5.0.2 | ok | ok | 153 / 0 | 153 / 0 | 2 patches (amalgamation, benchmarks, `bfloat16`; deprecated `unsigned char` insertion) |
@@ -577,8 +577,7 @@ function whose signature names a library type unless the project marks it for ex
 `lib_test` with GCC).
 
 Compiler bugs met, with reproducers in the project's `repro/`: GCC 16's crash in
-`cxx_eval_indirect_ref` (worked around, Known compiler gaps); GCC 16 miscompiling magic_enum's
-`test_flags` at `-O1 -std=c++26` (XFAIL, GCC only); Clang 23 rejecting `return *opt;` for a
+`cxx_eval_indirect_ref` (worked around, Known compiler gaps); Clang 23 rejecting `return *opt;` for a
 temporary `std::optional<T&>` as dangling (glaze `inplace_vector_test`, Clang only); GCC 16's
 `<omp.h>` including libstdc++'s internal `<bits/new_throw.h>` (oneTBB `test_openmp`, GCC only).
 
@@ -605,9 +604,6 @@ a defect in a test.
   0 in constant evaluation ([ptrtag.pair.cons]/2: "Constant When: Preconditions are met"), and
   `__cpp_lib_pointer_tag_pair` is not defined (DECISIONS §9; `ptrtag/constexpr_nonzero_tag`
   XFAIL, audit P1-01).
-- GCC 16.2 at `-O1 -std=c++26` (not `-O0`, not C++23, not Clang) miscompiles magic_enum's
-  `enum_flags_contains` for a string naming a flag twice; reproduced with libstdc++
-  (`tests/realworld/magic_enum/repro/gcc16_cxx26_O1_flags.cpp`); XFAIL in the real-world run.
 - Clang 23 rejects `return *opt;` where `opt` is a temporary `std::optional<int&>` ("returning
   reference to local temporary object"), though the reference names the referred-to object, not
   the optional; the same with libstdc++ (`tests/realworld/glaze/repro/clang23_optional_ref_dangling.cpp`;

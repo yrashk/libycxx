@@ -85,16 +85,16 @@ if [ -n "${SANITIZER:-}" ]; then
     san_flags=${san_flags:+$san_flags,}$f
   done
 fi
-if [ -z "$libdir" ] && [ -n "$san_flags" ] && [ "${YCXX_STDLIB:-}" != libstdcxx ]; then
-  libdir=$repo/build/$compiler-$(echo "$SANITIZER" | tr , -)
-fi
 linkage=${YCXX_LINKAGE:-static}
-if [ $linkage = shared ]; then
-  if [ -n "$san_flags" ] || [ "${YCXX_STDLIB:-}" = libstdcxx ]; then
-    echo "YCXX_LINKAGE=shared: not with SANITIZER (instrumented shared libraries are not supported yet) nor YCXX_STDLIB" >&2
-    exit 2
-  fi
-  [ -z "$libdir" ] && libdir=$repo/build/$compiler-shared
+if [ $linkage = shared ] && [ "${YCXX_STDLIB:-}" = libstdcxx ]; then
+  echo "YCXX_LINKAGE=shared: not with YCXX_STDLIB" >&2
+  exit 2
+fi
+# build/<compiler>[-shared][-<sanitizers>]
+if [ -z "$libdir" ] && { [ -n "$san_flags" ] || [ $linkage = shared ]; } && [ "${YCXX_STDLIB:-}" != libstdcxx ]; then
+  libdir=$repo/build/$compiler
+  [ $linkage = shared ] && libdir=$repo/build/$compiler-shared
+  [ -n "$san_flags" ] && libdir=$libdir-$(echo "$SANITIZER" | tr , -)
 fi
 # lit test names are "<suite> :: <path relative to the test root>"; filter on the path.
 set -- ${filter:+--filter ":: ($filter)"} --param repo="$repo" --param compiler="$compiler" \
@@ -148,11 +148,10 @@ if [ "${YCXX_STDLIB:-}" != libstdcxx ] && [ -z "${YCXX_LIBDIR:-}" ]; then
         gcc) cc=${YCXX_GCC:-gcc-16} cxx=${YCXX_GXX:-g++-16} ;;
         *) cc=${YCXX_CLANG:-clang-23} cxx=${YCXX_CLANGXX:-clang++-23} ;;
       esac
-      if [ $linkage = shared ]; then kind="-DYCXX_SHARED=ON" what_lib="shared library"
-      else kind="-DYCXX_SANITIZE=$san_flags" what_lib="-fsanitize=$san_flags"; fi
-      if ! ui_step "configure $rel ($what_lib)" "$repo/build/test-logs/configure-$compiler-for-$name.log" \
+      shared_opt=; [ $linkage = shared ] && shared_opt=-DYCXX_SHARED=ON
+      if ! ui_step "configure $rel (${shared_opt:+shared library}${san_flags:+ -fsanitize=$san_flags})" "$repo/build/test-logs/configure-$compiler-for-$name.log" \
         cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$cc" -DCMAKE_CXX_COMPILER="$cxx" \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo "$kind"; then
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo $shared_opt "-DYCXX_SANITIZE=$san_flags"; then
         [ "${ui_interrupted}" = 0 ] || exit 130
         exit 1
       fi

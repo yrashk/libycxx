@@ -402,12 +402,10 @@ if(YCXX_SANITIZE)
   if(YCXX_SANITIZE MATCHES "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     list(APPEND _ycxx_sanitize_flags -Wno-tsan)
   endif()
-  if(YCXX_SHARED)
-    message(FATAL_ERROR "libycxx: YCXX_SANITIZE needs a static-only build (YCXX_SHARED=OFF): instrumented "
-                        "shared libraries are not supported yet (DECISIONS §20.8)")
+  if(YCXX_STATIC)
+    target_compile_options(ycxx PRIVATE ${_ycxx_sanitize_flags})
+    target_compile_options(ycxx_abi PRIVATE ${_ycxx_sanitize_flags})
   endif()
-  target_compile_options(ycxx PRIVATE ${_ycxx_sanitize_flags})
-  target_compile_options(ycxx_abi PRIVATE ${_ycxx_sanitize_flags})
   message(STATUS "libycxx: instrumented with -fsanitize=${YCXX_SANITIZE}")
 endif()
 
@@ -525,13 +523,25 @@ if(YCXX_SHARED)
     set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.map)
     list(JOIN _ycxx_exports ";\n    " _text)
     file(WRITE ${_ycxx_list} "YCXX_${_ycxx_abi_version} {\n  global:\n    ${_text};\n  local: *;\n};\n")
-    # --no-undefined: everything is resolved now, not at load time. Not -Bsymbolic-functions: the
-    # library's calls to std::is_debugger_present must reach a program's replacement
-    # ([debugging.utility]), as every other exported function may be interposed (the allocation
-    # functions are hidden, per image).
-    target_link_options(ycxx_so PRIVATE LINKER:--version-script=${_ycxx_list} LINKER:--no-undefined)
+    # --no-undefined: everything is resolved now, not at load time (but an instrumented library's
+    # sanitizer runtime is the program's, which Clang links into executables only). Not
+    # -Bsymbolic-functions: the library's calls to std::is_debugger_present must reach a program's
+    # replacement ([debugging.utility]), as every other exported function may be interposed (the
+    # allocation functions are hidden, per image).
+    target_link_options(ycxx_so PRIVATE LINKER:--version-script=${_ycxx_list})
+    if(NOT YCXX_SANITIZE)
+      target_link_options(ycxx_so PRIVATE LINKER:--no-undefined)
+    endif()
   endif()
   set_property(TARGET ycxx_so APPEND PROPERTY LINK_DEPENDS ${_ycxx_list})
+  # An instrumented shared library (YCXX_SANITIZE): its objects and each image's part compiled with
+  # the sanitizers, as the archives are; the program that loads it links the sanitizers' runtimes
+  # (ycxx::shared adds -fsanitize=).
+  if(YCXX_SANITIZE)
+    target_compile_options(ycxx_so PRIVATE ${_ycxx_sanitize_flags})
+    target_compile_options(ycxx_nonshared PRIVATE ${_ycxx_sanitize_flags})
+    target_link_options(ycxx_so PRIVATE -fsanitize=${YCXX_SANITIZE})
+  endif()
   # The library is itself an image that links libycxx: its per-image part, and the allocation
   # table's anchor (the table is exported, and the program's, when it has one, wins).
   target_link_libraries(ycxx_so PRIVATE ycxx_nonshared)

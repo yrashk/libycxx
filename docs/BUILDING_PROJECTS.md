@@ -464,8 +464,9 @@ both (DECISIONS §20.2). Configure with
 | both | `ON` | `ON` | the archives; the shared library on request |
 | shared only | `OFF` | `ON` | the shared library |
 
-The shared library needs `YCXX_PAL=posix` and no `YCXX_SANITIZE` (instrumented builds stay
-static for now).
+The shared library needs `YCXX_PAL=posix`. With `YCXX_SANITIZE` it is instrumented like the
+archives, and the programs that load it link the sanitizers' runtimes (`ycxx::shared` adds
+`-fsanitize=`).
 
 **Choosing per image.** Every translation unit of an image is compiled in the mode the image is
 linked in: shared mode compiles with `YCXX_SHARED` defined. A mismatch fails to link, naming

@@ -32,8 +32,8 @@
 #                              (build/<cc>-<sanitizers>, configured and built on first use)
 #   --linkage static|shared    link the projects with libycxx's archives (default) or its shared
 #                              library (DECISIONS §20: build/<cc>-shared, configured with
-#                              -DYCXX_SHARED=ON on first use; tools/ycxx-cxx --shared). Not with
-#                              --sanitizer. skip.txt's condition: shared
+#                              -DYCXX_SHARED=ON on first use, -<sanitizers> with --sanitizer;
+#                              tools/ycxx-cxx --shared). skip.txt's condition: shared
 #   -j, --jobs N               parallel jobs for ninja and ctest (default 4)
 #   --clean                    remove each project's build tree once it is tested (the logs and
 #                              the report stay)
@@ -97,7 +97,7 @@ fi
 ycxx_env_load
 case $linkage in
   static) ;;
-  shared) [ -z "$sanitizer" ] || { echo "tools/realworld: --linkage shared is not supported with --sanitizer" >&2; exit 2; } ;;
+  shared) ;;
   *) echo "tools/realworld: --linkage must be static or shared" >&2; exit 2 ;;
 esac
 YCXX_LINKAGE=$linkage
@@ -270,7 +270,9 @@ EOF
 setup_library() {
   libdir=$repo/build/$c${san_flags:+-$(echo "$sanitizer" | tr , -)}
   kind=${san_flags:+-DYCXX_SANITIZE=$san_flags}
-  if [ $linkage = shared ]; then libdir=$repo/build/$c-shared kind=-DYCXX_SHARED=ON; fi
+  if [ $linkage = shared ]; then
+    libdir=$repo/build/$c-shared${san_flags:+-$(echo "$sanitizer" | tr , -)} kind="-DYCXX_SHARED=ON $kind"
+  fi
   if [ ! -f "$libdir/build.ninja" ]; then
     ui_step "configure ${libdir#"$repo/"}" "$res/library-configure.log" \
       cmake -S "$repo" -B "$libdir" -G Ninja -DCMAKE_C_COMPILER="$(cc_of "$c")" -DCMAKE_CXX_COMPILER="$(cxx_of "$c")" \

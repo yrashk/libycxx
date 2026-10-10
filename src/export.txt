@@ -1,0 +1,18 @@
+# What libycxx.so exports (DECISIONS §20.3): the patterns CMakeLists.txt turns into the shared
+# library's version script (ELF) and exported-symbols list (Mach-O, with the '_' prefix added to
+# the names that do not start with a wildcard). The visibility attributes in the sources decide
+# what is exported; this list keeps every other name local, so that nothing but libycxx's own
+# names can leave the library even when an attribute is lost. tools/check_abi.py checks the result.
+#
+# std::__y1 (the inline ABI namespace) and __ycxx, in every mangled form: functions, data, vtables,
+# type_info objects and names, VTTs, construction vtables, thunks, guard variables, local statics,
+# thread_local wrappers and initializers, reference temporaries.
+*St4__y1*
+*6__ycxx*
+# The ABI runtime's entry points under its own names (src/abi/entry.hpp), and the platform layer's
+# (src/pal/export.c), which libycxx_nonshared.a forwards to.
+__ycxx_abi_*
+# The allocation table (src/runtime/new/allocation_table.cpp): weak; the program's wins.
+__ycxx_allocation_functions
+# The shared mode's link-time marker (src/runtime/linkage/shared.cpp).
+__ycxx_linkage_shared_v1

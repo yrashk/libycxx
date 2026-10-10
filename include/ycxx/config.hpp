@@ -56,7 +56,6 @@
 // the attribute takes only a string literal (§1 rule 3's one exception; tools/check_preprocessor.py
 // allows it only as that attribute's argument).
 #if YCXX_SHARED
-#  error "YCXX_SHARED: this libycxx has no shared library yet (DECISIONS §20.10, step 4)"
 #  define _YCXX_VISIBILITY "default"
 #else
 #  define _YCXX_VISIBILITY "hidden"
@@ -622,3 +621,17 @@ using __y_make_integer_seq = _Seq<_Tp, __integer_pack(_Np)...>;
 #endif
 
 }} // namespace __ycxx::__detail
+
+// The link-time mode guard (DECISIONS §20.2): every translation unit refers to the marker of its
+// mode, which only that mode's library defines (src/runtime/linkage: the static archives define
+// __ycxx_linkage_static_v1, hidden; libycxx.so exports __ycxx_linkage_shared_v1). A translation
+// unit compiled in one mode and linked in the other fails to link, naming the missing marker. One
+// relocation per translation unit.
+extern "C" {
+[[__gnu__::__visibility__("hidden")]] extern const char __ycxx_linkage_static_v1;
+[[__gnu__::__visibility__("default")]] extern const char __ycxx_linkage_shared_v1;
+}
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace {
+[[__gnu__::__used__]] constexpr const char* __linkage_marker =
+    __cfg::__shared ? &__ycxx_linkage_shared_v1 : &__ycxx_linkage_static_v1;
+}}} // namespace __ycxx::__detail::(anonymous)

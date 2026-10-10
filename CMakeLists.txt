@@ -27,6 +27,19 @@ set(YCXX_PAL "posix" CACHE STRING
 set_property(CACHE YCXX_PAL PROPERTY STRINGS posix none)
 set(YCXX_HOSTED_LAYERS "" CACHE STRING
     "YCXX_PAL=none: the hosted layers the integrator provides (abort memory console clock threads random files environment debug clib; abort is implied)")
+# The kinds of library built (DECISIONS §20.2): the static archives (libycxx.a, libycxx-abi.a), the
+# shared library (libycxx.so.0.<minor> / libycxx.0.<minor>.dylib with libycxx_nonshared.a), or both.
+# With both, the unqualified consumers (ycxx::ycxx, ycxx-c++, libycxx.pc) link statically.
+option(YCXX_STATIC "Build the static archives libycxx.a and libycxx-abi.a (ycxx::static)" ON)
+option(YCXX_SHARED "Build the shared library libycxx.so.0.<minor> / libycxx.0.<minor>.dylib (ycxx::shared)" OFF)
+if(NOT YCXX_STATIC AND NOT YCXX_SHARED)
+  message(FATAL_ERROR "libycxx: YCXX_STATIC and YCXX_SHARED are both OFF; build at least one kind")
+endif()
+if(YCXX_STATIC)
+  set(YCXX_DEFAULT_LINKAGE static)
+else()
+  set(YCXX_DEFAULT_LINKAGE shared)
+endif()
 
 if(NOT YCXX_ALLOW_UNSUPPORTED_COMPILER)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -232,22 +245,12 @@ else()
     list(APPEND YCXX_LIBRARY_SOURCES src/pal/fallback/error_message.cpp src/pal/fallback/environment_encoding.cpp)
   endif()
 endif()
-add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES})
-set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
-target_link_libraries(ycxx PRIVATE ycxx_headers)
-target_compile_options(ycxx PRIVATE
-  $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
-  $<$<COMPILE_LANGUAGE:C>:${_ycxx_warnings}>)
-
-# ---- ycxx::abi (libycxx-abi.a): the Itanium C++ ABI runtime (exception handling, RTTI,
+# ---- The ABI runtime's sources (src/abi): the Itanium C++ ABI runtime (exception handling, RTTI,
 # guards), built with RTTI and exceptions ----
 # src/abi/entry: the entry points under the Itanium C++ ABI's names, forwarding to the runtime's own
 # (src/abi/entry.hpp, DECISIONS §20.6).
 file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp src/abi/entry/*.cpp)
-add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
-set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
-target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
-target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti
+set_property(SOURCE ${YCXX_ABI_SOURCES} APPEND PROPERTY COMPILE_OPTIONS -fexceptions -frtti
   # The hierarchy walks keep fixed tables of visited virtual bases on the stack, written before
   # they are read; GCC 16 would zero-fill them on every dynamic_cast and handler search (C++26
   # erroneous values).
@@ -306,7 +309,6 @@ inline constexpr const char* fundamental_type_info_symbols[] = {
     @_ycxx_ti_text@nullptr};
 } // namespace __ycxx::__abi
 ]=] @ONLY)
-target_include_directories(ycxx_abi PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 message(STATUS "libycxx: ${_ycxx_ti_count} fundamental type_info symbols to hide (src/abi/rtti_classes.cpp)")
 # src/abi/rtti_float16.cpp defines the _Float16 type_info objects for a compiler whose
 # rtti_classes.cpp does not emit them (Clang). Where the probe shows that the compiler emits them
@@ -332,6 +334,37 @@ set_source_files_properties(src/pal/posix/pal.c PROPERTIES COMPILE_OPTIONS
 # The classic locale holds the Annex D codecvt facets ([depr.locale.category]), which are
 # declared [[deprecated]].
 set_property(SOURCE src/hosted/locale.cpp APPEND PROPERTY COMPILE_OPTIONS -Wno-deprecated-declarations)
+
+# Every source by its absolute path (the lists mix globs and names).
+foreach(_v YCXX_LIBRARY_SOURCES YCXX_ABI_SOURCES)
+  list(TRANSFORM ${_v} PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/ REGEX "^[^/]")
+endforeach()
+# What each image that links libycxx has its own hidden copy of (DECISIONS §20.6): the Itanium
+# entry points (forwarders to the runtime), the __cxxabiv1 vtables and the fundamental type_info
+# objects, std::nothrow, the default allocation functions and the allocation table. In static mode
+# they are members of the archives like the rest; in shared mode they are libycxx_nonshared.a, which
+# every image linking libycxx.so links, libycxx.so included.
+file(GLOB YCXX_PER_IMAGE_SOURCES CONFIGURE_DEPENDS src/abi/entry/*.cpp)
+list(APPEND YCXX_PER_IMAGE_SOURCES ${YCXX_NEW_SOURCES})
+foreach(_s src/abi/rtti_classes.cpp src/abi/rtti_float16.cpp src/abi/nothrow.cpp src/hosted/cxa_demangle_entry.cpp)
+  list(APPEND YCXX_PER_IMAGE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${_s})
+endforeach()
+
+# ---- Static mode (YCXX_STATIC): ycxx::core (libycxx.a, the library's out-of-line parts and the
+# platform layer) and ycxx::abi (libycxx-abi.a, the ABI runtime) ----
+if(YCXX_STATIC)
+  add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES} src/runtime/linkage/static.cpp)
+  set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
+  target_link_libraries(ycxx PRIVATE ycxx_headers)
+  target_compile_options(ycxx PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
+    $<$<COMPILE_LANGUAGE:C>:${_ycxx_warnings}>)
+  add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
+  set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
+  target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
+  target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings})
+  target_include_directories(ycxx_abi PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+endif()
 
 # ---- Sanitizer builds (YCXX_SANITIZE): libycxx itself instrumented ----
 # A comma-separated list of the compilers' -fsanitize= names: address, undefined, thread (e.g.
@@ -362,54 +395,35 @@ if(YCXX_SANITIZE)
   if(YCXX_SANITIZE MATCHES "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     list(APPEND _ycxx_sanitize_flags -Wno-tsan)
   endif()
+  if(YCXX_SHARED)
+    message(FATAL_ERROR "libycxx: YCXX_SANITIZE needs a static-only build (YCXX_SHARED=OFF): instrumented "
+                        "shared libraries are not supported yet (DECISIONS §20.8)")
+  endif()
   target_compile_options(ycxx PRIVATE ${_ycxx_sanitize_flags})
   target_compile_options(ycxx_abi PRIVATE ${_ycxx_sanitize_flags})
   message(STATUS "libycxx: instrumented with -fsanitize=${YCXX_SANITIZE}")
 endif()
 
-# The two archives refer to each other (the runtime uses the platform layer and operator
-# delete; the library throws through the runtime): a cyclic static dependency, which CMake
-# links by repeating the pair.
-target_link_libraries(ycxx INTERFACE ycxx_abi)
-target_link_libraries(ycxx_abi INTERFACE ycxx)
-set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
-# Usable in shared objects and position-independent executables.
-set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if(YCXX_STATIC)
+  # The two archives refer to each other (the runtime uses the platform layer and operator
+  # delete; the library throws through the runtime): a cyclic static dependency, which CMake
+  # links by repeating the pair.
+  target_link_libraries(ycxx INTERFACE ycxx_abi)
+  target_link_libraries(ycxx_abi INTERFACE ycxx)
+  set_property(TARGET ycxx ycxx_abi PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+  # Usable in shared objects and position-independent executables.
+  set_target_properties(ycxx ycxx_abi PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 # Nothing the archives define is exported from the program or shared object that links them,
 # except the allocation table: another C++ library in the process (Apple's libc++/libc++abi, which
 # libSystem loads into every process; libstdc++) can neither take over libycxx's definitions nor
 # be taken over by them (DECISIONS §2). The sources say so themselves, with visibility attributes
 # on their namespaces and declarations, not with -fvisibility=hidden.
 
-# ---- ycxx::ycxx: what applications link ----
-add_library(ycxx_ycxx INTERFACE)
-set_target_properties(ycxx_ycxx PROPERTIES EXPORT_NAME ycxx)
-target_link_libraries(ycxx_ycxx INTERFACE ycxx_headers ycxx)
-# <cmath> calls the C library's math functions at run time; libm is separate from libc on
-# glibc and musl (on Darwin it is part of libSystem).
-if(NOT APPLE AND _ycxx_clib)
-  target_link_libraries(ycxx_ycxx INTERFACE m)
-endif()
-# -shared-libgcc: one unwinder per process. glibc's pthread_exit/pthread_cancel unwind through
-# libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
-target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
-                    $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
-# An instrumented libycxx needs its sanitizers' runtimes in the program.
-if(YCXX_SANITIZE)
-  target_link_options(ycxx_ycxx INTERFACE -fsanitize=${YCXX_SANITIZE})
-  # Clang links ThreadSanitizer's C++ part whole: strong global allocation functions that would
-  # bypass libycxx's (and clash with a program's replacement); malloc stays intercepted
-  # (tools/ycxx-cxx does the same). GCC's libtsan.so defines them too; the link options of
-  # cmake/ycxx-link.cmake link libycxx's ahead of it.
-  if(YCXX_SANITIZE MATCHES "thread")
-    target_link_options(ycxx_ycxx INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fno-sanitize-link-c++-runtime>)
-  endif()
-endif()
 # The allocation table stays in every program and is visible to the shared libraries it loads
 # (cmake/ycxx-link.cmake; DECISIONS §2).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-link.cmake)
 ycxx_link_options(_ycxx_table_link_options "${YCXX_NEW_SOURCES}")
-target_link_options(ycxx_ycxx INTERFACE ${_ycxx_table_link_options})
 # Linux: Clang takes the C runtime startup files and libgcc (the unwinder libycxx's ABI runtime
 # uses) from a GCC installation, by default the newest one in the system's standard places, which
 # can be older than GCC 16. Clang consumers get --gcc-install-dir=<GCC 16's>, as with
@@ -441,21 +455,173 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT DEFINED YCXX_GCC_INSTALL_DIR)
   set(YCXX_GCC_INSTALL_DIR "${_ycxx_gcc_dir}" CACHE PATH
       "GCC installation whose crt files and libgcc Clang consumers of ycxx::ycxx use (--gcc-install-dir; empty: Clang's choice)")
 endif()
-if(YCXX_GCC_INSTALL_DIR)
-  # The build tree's ycxx::ycxx (add_subdirectory, FetchContent); libycxxConfig.cmake adds the
-  # same to the installed one, where the directory can be overridden by the consumer.
-  target_compile_options(ycxx_ycxx INTERFACE
-    $<BUILD_INTERFACE:$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
-  target_link_options(ycxx_ycxx INTERFACE
-    $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+
+# ---- Shared mode (YCXX_SHARED, DECISIONS §20): libycxx.so.0.<minor> (Mach-O:
+# libycxx.0.<minor>.dylib), the library and the ABI runtime, exporting std::__y1, __ycxx, the
+# runtime's entry points under its own names (__ycxx_abi_*) and the allocation table; and
+# libycxx_nonshared.a, each image's hidden part ----
+if(YCXX_SHARED)
+  if(NOT YCXX_PAL STREQUAL "posix")
+    message(FATAL_ERROR "libycxx: YCXX_SHARED needs YCXX_PAL=posix: a shared library cannot use hosted-layer "
+                        "providers that live in the program (DECISIONS §20.2)")
+  endif()
+  set(_ycxx_abi_version ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+  # libycxx_nonshared.a: the per-image sources, and the platform layer's forwarders to the shared
+  # library (src/nonshared/pal.c, tools/gen_pal_forwarders.py).
+  add_library(ycxx_nonshared STATIC ${YCXX_PER_IMAGE_SOURCES} src/nonshared/pal.c)
+  set_target_properties(ycxx_nonshared PROPERTIES OUTPUT_NAME ycxx_nonshared EXPORT_NAME nonshared
+                        POSITION_INDEPENDENT_CODE ON)
+  # The library's sources less the per-image ones, the shared marker and the exported platform layer.
+  set(_ycxx_so_sources ${YCXX_LIBRARY_SOURCES} ${YCXX_ABI_SOURCES})
+  list(REMOVE_ITEM _ycxx_so_sources ${YCXX_PER_IMAGE_SOURCES})
+  add_library(ycxx_so SHARED ${_ycxx_so_sources} src/runtime/linkage/shared.cpp src/pal/export.c)
+  # libycxx.so.0.1.0, soname libycxx.so.0.1 (ELF); libycxx.0.1.0.dylib, install name
+  # @rpath/libycxx.0.1.dylib, compatibility version 0.1 (Mach-O). DECISIONS §20.7.
+  set_target_properties(ycxx_so PROPERTIES OUTPUT_NAME ycxx EXPORT_NAME shared_library
+                        VERSION ${PROJECT_VERSION} SOVERSION ${_ycxx_abi_version}
+                        MACOSX_RPATH ON INSTALL_NAME_DIR "@rpath")
+  foreach(_t ycxx_so ycxx_nonshared)
+    target_link_libraries(${_t} PRIVATE ycxx_headers)
+    target_compile_definitions(${_t} PRIVATE YCXX_SHARED)
+    target_compile_options(${_t} PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
+      $<$<COMPILE_LANGUAGE:C>:${_ycxx_warnings}>)
+    target_include_directories(${_t} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+  endforeach()
+  # The export list (DECISIONS §20.3), from src/export.txt: a version script on ELF (every export
+  # gets the version YCXX_<major>.<minor>), an exported-symbols list on Mach-O. The visibility
+  # attributes decide what is exported; the list is the safety net that keeps every other name
+  # local (GCC's predeclared __cxa_* functions; on Darwin, libgcc's emulated-TLS entry points,
+  # which -static-libgcc puts in the dylib as weak definitions, DECISIONS §20.12).
+  file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/src/export.txt _ycxx_export_lines ENCODING UTF-8 REGEX "^[^#]")
+  set(_ycxx_exports "")
+  foreach(_l IN LISTS _ycxx_export_lines)
+    string(STRIP "${_l}" _l)
+    if(_l)
+      list(APPEND _ycxx_exports "${_l}")
+    endif()
+  endforeach()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/export.txt)
+  if(APPLE)
+    set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.exports)
+    set(_text "")
+    foreach(_p IN LISTS _ycxx_exports)
+      if(_p MATCHES "^[*]")
+        string(APPEND _text "${_p}\n")
+      else()
+        string(APPEND _text "_${_p}\n")
+      endif()
+    endforeach()
+    file(WRITE ${_ycxx_list} "${_text}")
+    target_link_options(ycxx_so PRIVATE LINKER:-exported_symbols_list,${_ycxx_list})
+  else()
+    set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.map)
+    list(JOIN _ycxx_exports ";\n    " _text)
+    file(WRITE ${_ycxx_list} "YCXX_${_ycxx_abi_version} {\n  global:\n    ${_text};\n  local: *;\n};\n")
+    # -Bsymbolic-functions: the library's own calls bind to its own definitions (its replaceable
+    # functions are hidden anyway); --no-undefined: everything is resolved now, not at load time.
+    target_link_options(ycxx_so PRIVATE LINKER:--version-script=${_ycxx_list} LINKER:-Bsymbolic-functions
+                        LINKER:--no-undefined)
+  endif()
+  set_property(TARGET ycxx_so APPEND PROPERTY LINK_DEPENDS ${_ycxx_list})
+  # The library is itself an image that links libycxx: its per-image part, and the allocation
+  # table's anchor (the table is exported, and the program's, when it has one, wins).
+  target_link_libraries(ycxx_so PRIVATE ycxx_nonshared)
+  # Only the table's anchor: in a shared library GNU ld's --export-dynamic-symbol acts as a dynamic
+  # list, which binds every other symbol locally (the program's copy of std::cout would then not
+  # be the library's); the export list exports the table.
+  set(_ycxx_so_table_options ${_ycxx_table_link_options})
+  list(FILTER _ycxx_so_table_options EXCLUDE REGEX "export-dynamic-symbol")
+  target_link_options(ycxx_so PRIVATE $<$<LINK_LANGUAGE:CXX>:-nostdlib++> ${_ycxx_so_table_options})
+  if(APPLE)
+    # GCC on Darwin: libgcc linked statically, as into programs (tools/ycxx-cxx).
+    target_link_options(ycxx_so PRIVATE $<$<CXX_COMPILER_ID:GNU>:-static-libgcc>)
+  else()
+    target_link_libraries(ycxx_so PRIVATE m)
+    target_link_options(ycxx_so PRIVATE -shared-libgcc)
+    if(YCXX_GCC_INSTALL_DIR)
+      target_link_options(ycxx_so PRIVATE $<$<CXX_COMPILER_ID:Clang>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>)
+    endif()
+  endif()
+  message(STATUS "libycxx: shared library libycxx ${PROJECT_VERSION} (ABI ${_ycxx_abi_version}), export list ${_ycxx_list}")
 endif()
+
+# <ycxx/generated/linkage.hpp>: in a shared-only build, translation units are compiled in shared mode
+# unless they say otherwise (YCXX_SHARED, ycxx/config.hpp).
+if(YCXX_STATIC)
+  file(REMOVE ${YCXX_GENERATED_INCLUDE}/ycxx/generated/linkage.hpp)
+else()
+  file(WRITE ${YCXX_GENERATED_INCLUDE}/ycxx/generated/linkage.hpp
+       "// Generated by CMakeLists.txt: this libycxx has its shared library only (DECISIONS §20.3).\n#pragma once\n#define _YCXX_DEFAULT_SHARED 1\n")
+endif()
+
+# ---- ycxx::static, ycxx::shared, ycxx::ycxx: what applications link ----
+# ycxx::static links the archives, ycxx::shared the shared library and libycxx_nonshared.a (and
+# compiles in shared mode, YCXX_SHARED); ycxx::ycxx is the default kind's. Each records its kind in
+# the interface property YCXX_LINKAGE, which must agree across an image's dependencies: CMake stops
+# a target that links both (COMPATIBLE_INTERFACE_STRING).
+function(_ycxx_consumer_target target linkage)
+  add_library(${target} INTERFACE)
+  set_target_properties(${target} PROPERTIES EXPORT_NAME ${linkage} INTERFACE_YCXX_LINKAGE ${linkage}
+                        COMPATIBLE_INTERFACE_STRING YCXX_LINKAGE)
+  if(linkage STREQUAL "static")
+    target_link_libraries(${target} INTERFACE ycxx_headers ycxx)
+  else()
+    target_link_libraries(${target} INTERFACE ycxx_headers ycxx_so ycxx_nonshared)
+    target_compile_definitions(${target} INTERFACE YCXX_SHARED)
+  endif()
+  # <cmath> calls the C library's math functions at run time; libm is separate from libc on
+  # glibc and musl (on Darwin it is part of libSystem).
+  if(NOT APPLE AND _ycxx_clib)
+    target_link_libraries(${target} INTERFACE m)
+  endif()
+  # -shared-libgcc: one unwinder per process. glibc's pthread_exit/pthread_cancel unwind through
+  # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
+  target_link_options(${target} INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
+                      $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
+  # An instrumented libycxx needs its sanitizers' runtimes in the program.
+  if(YCXX_SANITIZE)
+    target_link_options(${target} INTERFACE -fsanitize=${YCXX_SANITIZE})
+    # Clang links ThreadSanitizer's C++ part whole: strong global allocation functions that would
+    # bypass libycxx's (and clash with a program's replacement); malloc stays intercepted
+    # (tools/ycxx-cxx does the same). GCC's libtsan.so defines them too; the link options of
+    # cmake/ycxx-link.cmake link libycxx's ahead of it.
+    if(YCXX_SANITIZE MATCHES "thread")
+      target_link_options(${target} INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fno-sanitize-link-c++-runtime>)
+    endif()
+  endif()
+  target_link_options(${target} INTERFACE ${_ycxx_table_link_options})
+  if(YCXX_GCC_INSTALL_DIR)
+    # The build tree's targets (add_subdirectory, FetchContent); libycxxConfig.cmake adds the
+    # same to the installed ones, where the directory can be overridden by the consumer.
+    target_compile_options(${target} INTERFACE
+      $<BUILD_INTERFACE:$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+    target_link_options(${target} INTERFACE
+      $<BUILD_INTERFACE:$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${YCXX_GCC_INSTALL_DIR}>>)
+  endif()
+endfunction()
+set(_ycxx_consumer_targets "")
+if(YCXX_STATIC)
+  _ycxx_consumer_target(ycxx_static static)
+  list(APPEND _ycxx_consumer_targets ycxx_static)
+  add_library(ycxx::static ALIAS ycxx_static)
+endif()
+if(YCXX_SHARED)
+  _ycxx_consumer_target(ycxx_shared shared)
+  list(APPEND _ycxx_consumer_targets ycxx_shared)
+  add_library(ycxx::shared ALIAS ycxx_shared)
+endif()
+add_library(ycxx_ycxx INTERFACE)
+set_target_properties(ycxx_ycxx PROPERTIES EXPORT_NAME ycxx)
+target_link_libraries(ycxx_ycxx INTERFACE ycxx_${YCXX_DEFAULT_LINKAGE})
+message(STATUS "libycxx: kinds built: ${_ycxx_consumer_targets}; ycxx::ycxx is ycxx::${YCXX_DEFAULT_LINKAGE}")
 
 # ---- For projects that know nothing about libycxx (docs/BUILDING_PROJECTS.md) ----
 # bin/ycxx-c++ and bin/ycxx-cc (the compilers), toolchain.cmake, libycxx.pc (pkg-config) and
 # meson-native.ini, in the build tree and installed (cmake/ycxx-consumer.cmake).
 include(GNUInstallDirs)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-consumer.cmake)
-if(YCXX_PAL STREQUAL "posix")
+if(YCXX_PAL STREQUAL "posix" AND YCXX_STATIC)
   ycxx_consumer_files("${_ycxx_table_link_options}")
 endif()
 
@@ -475,7 +641,7 @@ if(YCXX_FREESTANDING_RUNTIME)
   file(GLOB YCXX_FREESTANDING_SOURCES CONFIGURE_DEPENDS
        src/runtime/new/*.cpp src/freestanding/new/*.cpp src/freestanding/contracts/*.cpp src/freestanding/pal/*.cpp)
   add_library(ycxx_freestanding STATIC
-    ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
+    ${YCXX_FREESTANDING_SOURCES} src/runtime/linkage/static.cpp ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
     ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
   set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
                         POSITION_INDEPENDENT_CODE ON)
@@ -516,17 +682,19 @@ else()
 endif()
 option(YCXX_MODULES "Build the standard library modules std and std.compat (ycxx::modules; Ninja generators)"
        ${_ycxx_modules_default})
-if(YCXX_MODULES)
-  add_library(ycxx_modules STATIC)
-  target_sources(ycxx_modules PUBLIC FILE_SET CXX_MODULES BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/modules
+# Built per kind (DECISIONS §20.4): the BMIs and the initializers carry the mode's visibility.
+# ycxx::modules is the default kind's; with both kinds built, ycxx::shared_modules is the shared one's.
+function(_ycxx_modules_target target output export linkage)
+  add_library(${target} STATIC)
+  target_sources(${target} PUBLIC FILE_SET CXX_MODULES BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/modules
                  FILES modules/std.cppm modules/std.compat.cppm)
-  set_target_properties(ycxx_modules PROPERTIES OUTPUT_NAME ycxx-modules EXPORT_NAME modules
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME ${output} EXPORT_NAME ${export}
                         CXX_SCAN_FOR_MODULES ON POSITION_INDEPENDENT_CODE ON)
   # CMake scans and builds modules only for targets that require C++20 or later; the consumers of
   # the module need it too (cxx_std_23: CMake 3.28 does not know C++26 for these compilers);
   # ycxx::headers' own -std=c++26 comes later on the command line and wins.
-  target_compile_features(ycxx_modules PUBLIC cxx_std_23)
-  target_link_libraries(ycxx_modules PUBLIC ycxx_ycxx)
+  target_compile_features(${target} PUBLIC cxx_std_23)
+  target_link_libraries(${target} PUBLIC ycxx_${linkage})
   # The installed package's consumers compile the interface units with the flags CMake exports
   # from this target's own properties (IMPORTED_CXX_MODULES_*); CMake 3.28 does not add those of
   # its link dependencies (ycxx::headers) there, so the headers' flags are repeated here. The
@@ -534,17 +702,36 @@ if(YCXX_MODULES)
   # implementation ([module.unit]/1), which libycxx is.
   # -isystem as an option: CMake 3.28 would export include directories without SYSTEM. The
   # installed package's libycxxConfig.cmake adds the installed directory the same way.
-  target_compile_options(ycxx_modules PRIVATE "$<BUILD_INTERFACE:SHELL:-isystem ${YCXX_INCLUDE}>"
+  target_compile_options(${target} PRIVATE "$<BUILD_INTERFACE:SHELL:-isystem ${YCXX_INCLUDE}>"
                          -nostdinc++ ${YCXX_CXX_STANDARD_FLAG}
                          $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
                          $<$<CXX_COMPILER_ID:Clang>:-Wno-reserved-module-identifier>
                          $<BUILD_INTERFACE:${_ycxx_warnings}>)
+  if(linkage STREQUAL "shared")
+    target_compile_definitions(${target} PRIVATE YCXX_SHARED)
+  endif()
+endfunction()
+set(_ycxx_modules_targets "")
+if(YCXX_MODULES)
+  _ycxx_modules_target(ycxx_modules ycxx-modules modules ${YCXX_DEFAULT_LINKAGE})
+  list(APPEND _ycxx_modules_targets ycxx_modules)
   add_library(ycxx::modules ALIAS ycxx_modules)
+  if(YCXX_STATIC AND YCXX_SHARED)
+    _ycxx_modules_target(ycxx_shared_modules ycxx-modules-shared shared_modules shared)
+    list(APPEND _ycxx_modules_targets ycxx_shared_modules)
+    add_library(ycxx::shared_modules ALIAS ycxx_shared_modules)
+  endif()
 endif()
 
 add_library(ycxx::headers ALIAS ycxx_headers)
-add_library(ycxx::core ALIAS ycxx)
-add_library(ycxx::abi ALIAS ycxx_abi)
+if(YCXX_STATIC)
+  add_library(ycxx::core ALIAS ycxx)
+  add_library(ycxx::abi ALIAS ycxx_abi)
+endif()
+if(YCXX_SHARED)
+  add_library(ycxx::shared_library ALIAS ycxx_so)
+  add_library(ycxx::nonshared ALIAS ycxx_nonshared)
+endif()
 add_library(ycxx::ycxx ALIAS ycxx_ycxx)
 
 # ---- install and package ----
@@ -553,19 +740,41 @@ if(YCXX_INSTALL)
   set(YCXX_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/libycxx)
   install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/libycxx)
   install(DIRECTORY include/ ${YCXX_GENERATED_INCLUDE}/ DESTINATION ${YCXX_INSTALL_INCLUDEDIR})
-  set(_ycxx_installed ycxx_headers ycxx ycxx_abi ycxx_ycxx)
+  set(_ycxx_installed ycxx_headers ycxx_ycxx ${_ycxx_consumer_targets})
+  if(YCXX_STATIC)
+    list(APPEND _ycxx_installed ycxx ycxx_abi)
+  endif()
+  if(YCXX_SHARED)
+    list(APPEND _ycxx_installed ycxx_nonshared)
+  endif()
   if(YCXX_FREESTANDING_RUNTIME)
     list(APPEND _ycxx_installed ycxx_freestanding)
   endif()
   install(TARGETS ${_ycxx_installed} EXPORT libycxxTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  if(YCXX_SHARED)
+    # ELF: libycxx.so is a linker script naming the shared library and the per-image archive, so
+    # that -lycxx links both (as glibc's libc.so does); Mach-O has no linker scripts, and its
+    # consumers name the pair (DECISIONS §20.2).
+    if(APPLE)
+      install(TARGETS ycxx_so EXPORT libycxxTargets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    else()
+      install(TARGETS ycxx_so EXPORT libycxxTargets LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} NAMELINK_SKIP)
+      set(_ycxx_script ${CMAKE_CURRENT_BINARY_DIR}/consumer/libycxx.so)
+      file(WRITE ${_ycxx_script} "/* libycxx (DECISIONS §20.2): the shared library and each image's part of it. */\n"
+           "GROUP ( libycxx.so.${_ycxx_abi_version} libycxx_nonshared.a )\n")
+      install(FILES ${_ycxx_script} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+  endif()
   if(YCXX_MODULES)
     # The interface units are installed as sources: an importing project builds its own BMIs.
-    install(TARGETS ycxx_modules EXPORT libycxxTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    install(TARGETS ${_ycxx_modules_targets} EXPORT libycxxTargets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             FILE_SET CXX_MODULES DESTINATION ${CMAKE_INSTALL_DATADIR}/libycxx/modules)
   endif()
   install(EXPORT libycxxTargets NAMESPACE ycxx:: DESTINATION ${YCXX_CMAKE_DIR}
           CXX_MODULES_DIRECTORY cxx-modules)
   list(JOIN _ycxx_layers ";" YCXX_SELECTED_HOSTED_LAYERS)
+  set(YCXX_BUILT_STATIC ${YCXX_STATIC})
+  set(YCXX_BUILT_SHARED ${YCXX_SHARED})
   configure_package_config_file(cmake/libycxxConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake INSTALL_DESTINATION ${YCXX_CMAKE_DIR})
   write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/libycxxConfigVersion.cmake

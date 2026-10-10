@@ -260,6 +260,8 @@ for stage in $stages; do
       # matches the probe results; no include cycle through them (DECISIONS §19).
       step "transitive includes" policy-transitive-includes uv run --no-project --python ">=3.11" python tools/gen_transitive_includes.py --check || :
       step "hidden visibility of the library namespaces" policy-visibility uv run --no-project --python ">=3.11" python tools/check_visibility.py || :
+      # The shared mode's platform-layer forwarders match include/ycxx/pal.h (DECISIONS §20.6).
+      step "platform-layer forwarders up to date" policy-pal-forwarders uv run --no-project --python ">=3.11" python tools/gen_pal_forwarders.py --check || :
       step "shell portability (bash 3.2, dash)" policy-shell uv run --no-project --python ">=3.11" python tools/check_shell.py || :
       # [macro.names]: the headers spell no name a program may #define (DECISIONS §2).
       step "reserved names only in the headers" policy-names uv run --no-project --python ">=3.11" python tools/uglify.py --check || :

@@ -1,6 +1,6 @@
 // libycxx ABI runtime: pure/deleted virtual calls, the helpers compilers call to throw
 // (bad_cast, bad_typeid, bad_array_new_length), thread_local destructor registration, the new
-// handler, and std::nothrow. (The static-local guards are guard.cpp's.)
+// handler. (The static-local guards are guard.cpp's; std::nothrow is nothrow.cpp's.)
 #include <exception>
 #include <new>
 #include <typeinfo>
@@ -32,10 +32,6 @@ int __ycxx_abi_thread_atexit(void (*dtor)(void*), void* __obj, void* __dso) noex
 }
 
 } // extern "C"
-
-namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
-const nothrow_t nothrow{};
-} // namespace std
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 

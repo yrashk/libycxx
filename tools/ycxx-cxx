@@ -1,8 +1,11 @@
 #!/bin/sh
 # Compile and link against libycxx.
-#   ycxx-cxx gcc|clang [--libdir=DIR] [--std-modules[=DIR]] [compiler args...]
+#   ycxx-cxx gcc|clang [--shared] [--libdir=DIR] [--std-modules[=DIR]] [compiler args...]
 # Links build/<compiler>/libycxx.a and libycxx's own ABI runtime (build/<compiler>/libycxx-abi.a);
 # stack unwinding comes from the toolchain's libgcc_s.
+# --shared (or $YCXX_LINKAGE=shared): shared mode (DECISIONS §20): compiles with -DYCXX_SHARED and
+# links the shared library and libycxx_nonshared.a of build/<compiler>-shared (a build configured
+# with -DYCXX_SHARED=ON), with a run path to it.
 # --libdir=DIR: the build of libycxx to use instead (its archives, generated headers and link
 # options), e.g. an instrumented one, build/<compiler>-tsan (DECISIONS §6.8); $YCXX_LIBDIR
 # does the same.
@@ -21,16 +24,23 @@ case $which in
   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
 esac
 # --std-modules[=DIR]: the flags tools/ycxx-modules recorded, and its archive when linking.
-modules= libdir=${YCXX_LIBDIR:-$here/build/$which}
+modules= libdir= linkage=${YCXX_LINKAGE:-static}
 for a in "$@"; do
   shift
   case $a in
+    --shared) linkage=shared ;;
+    --static) linkage=static ;;
     --libdir=*) libdir=${a#--libdir=} ;;
     --std-modules) modules=$here/build/$which/modules ;;
     --std-modules=*) modules=${a#--std-modules=} ;;
     *) set -- "$@" "$a" ;;
   esac
 done
+case $linkage in
+  static) libdir=${libdir:-${YCXX_LIBDIR:-$here/build/$which}} mode_flags= ;;
+  shared) libdir=${libdir:-${YCXX_LIBDIR:-$here/build/$which-shared}} mode_flags=-DYCXX_SHARED ;;
+  *) echo "ycxx-cxx: YCXX_LINKAGE must be static or shared, not '$linkage'" >&2; exit 2 ;;
+esac
 modules_flags= modules_lib=
 if [ -n "$modules" ]; then
   if [ ! -f "$modules/flags" ]; then
@@ -39,6 +49,7 @@ if [ -n "$modules" ]; then
   fi
   modules_flags=$(cat "$modules/flags")
   modules_lib=$modules/libycxx-modules.a
+  [ $linkage = shared ] && modules_lib=$modules/libycxx-modules-shared.a
 fi
 extra=
 # Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member
@@ -95,10 +106,19 @@ if [ $link = 1 ]; then
       case $a in -fsanitize=*thread*) table_opts="$table_opts -fno-sanitize-link-c++-runtime"; break ;; esac
     done
   fi
-  set -- $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@" \
-    -nostdlib++ $table_opts $modules_lib $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
+  if [ $linkage = shared ]; then
+    # The shared library through its development name (a symbolic link to the soname's file) and
+    # the per-image archive, with a run path to the build.
+    so=$libdir/libycxx.so
+    [ "$(uname -s)" = Darwin ] && so=$libdir/libycxx.dylib
+    libs="$so $libdir/libycxx_nonshared.a -Wl,-rpath,$libdir"
+  else
+    libs="$group_begin $libdir/libycxx.a $abi $group_end"
+  fi
+  set -- $cxx $extra -std=c++26 -nostdinc++ $mode_flags -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@" \
+    -nostdlib++ $table_opts $modules_lib $libs -lm $static_libgcc
 else
-  set -- $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@"
+  set -- $cxx $extra -std=c++26 -nostdinc++ $mode_flags -isystem "$here/include" -isystem "$libdir/generated/include" $modules_flags "$@"
 fi
 if [ -n "${YCXX_CXX_LOG:-}" ]; then
   log=$(mktemp "$YCXX_CXX_LOG/cmd.XXXXXXXX") || exit 1

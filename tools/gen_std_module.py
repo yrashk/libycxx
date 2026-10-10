@@ -400,12 +400,14 @@ def gcc_probe(headers, workdir):
     exe, obj = work / "probe", work / "probe.o"
     # Constant evaluation of the whole walk: lift GCC's operation and loop limits. The program
     # needs only the C library (fputs), so it is linked without libycxx: the generator runs before
-    # the library is built (tools/test's policy stage).
+    # the library is built (tools/test's policy stage). Only the static mode's link-time marker,
+    # which every translation unit refers to (ycxx/config.hpp, DECISIONS §20.2), is defined here.
     r = subprocess.run([str(HERE / "ycxx-cxx"), "gcc", "-freflection", "-fconstexpr-ops-limit=2147483647",
                         "-fconstexpr-loop-limit=2147483647", "-include", str(work / "all.hpp"),
                         "-c", str(work / "probe.cpp"), "-o", str(obj)], capture_output=True, text=True)
     if r.returncode == 0:
-        r = subprocess.run([os.environ.get("YCXX_GCC", "gcc-16"), str(obj), "-o", str(exe)],
+        (work / "marker.c").write_text("const char __ycxx_linkage_static_v1 = 0;\n")
+        r = subprocess.run([os.environ.get("YCXX_GCC", "gcc-16"), str(obj), str(work / "marker.c"), "-o", str(exe)],
                            capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit("gen_std_module: the GCC reflection probe failed to build:\n" + r.stderr[-4000:])

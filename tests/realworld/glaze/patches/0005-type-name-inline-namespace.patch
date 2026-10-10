@@ -1,0 +1,39 @@
+Category: implementation-specific. "tagged_variant_schema_tests" and "shared_ptr variant schema"
+expect the schema's title to be the reflected name of std::variant as GCC prints it with
+libstdc++ (std::variant<...>), or unqualified as Bloomberg's Clang prints it. GCC's
+display_string_of names an inline namespace, and libycxx's is std::__y1 (DECISIONS §20.4):
+std::__y1::variant<put_action, delete_action>. With a library other than libstdc++ and libc++
+the test leaves the inline namespace out of the names before comparing.
+
+diff --git a/tests/json_test/json_variant_support_test.cpp b/tests/json_test/json_variant_support_test.cpp
+index 09b9252..99ff702 100644
+--- a/tests/json_test/json_variant_support_test.cpp
++++ b/tests/json_test/json_variant_support_test.cpp
+@@ -164,6 +164,12 @@ suite tagged_variant_tests = [] {
+ #if !defined(_MSC_VER)
+    "tagged_variant_schema_tests"_test = [] {
+       auto s = glz::write_json_schema<tagged_variant>().value_or("error");
++#if !defined(_MSC_VER) && !defined(__GLIBCXX__) && !defined(_LIBCPP_VERSION)
++      // Another C++ library: GCC's names spell its inline namespace (std::__y1::variant)
++      for (auto p = s.find("std::__"); p != std::string::npos; p = s.find("std::__", p + 5)) {
++         if (auto e = s.find("::", p + 5); e != std::string::npos) s.erase(p + 5, e + 2 - (p + 5));
++      }
++#endif
+       // P2996 reflection: Bloomberg Clang returns unqualified names, GCC returns qualified names
+       // Accept both forms for the title
+       auto expected_qualified =
+@@ -207,7 +213,13 @@ suite tagged_variant_tests = [] {
+ 
+ #if !defined(_MSC_VER)
+    "shared_ptr variant schema"_test = [] {
+-      const auto schema = glz::write_json_schema<std::shared_ptr<tagged_variant2>>().value_or("error");
++      auto schema = glz::write_json_schema<std::shared_ptr<tagged_variant2>>().value_or("error");
++#if !defined(_MSC_VER) && !defined(__GLIBCXX__) && !defined(_LIBCPP_VERSION)
++      // Another C++ library: GCC's names spell its inline namespace (std::__y1::variant)
++      for (auto p = schema.find("std::__"); p != std::string::npos; p = schema.find("std::__", p + 5)) {
++         if (auto e = schema.find("::", p + 5); e != std::string::npos) schema.erase(p + 5, e + 2 - (p + 5));
++      }
++#endif
+       // P2996 reflection: Bloomberg Clang returns unqualified names, GCC returns qualified names
+       // Accept both forms for the title
+       auto expected_qualified =

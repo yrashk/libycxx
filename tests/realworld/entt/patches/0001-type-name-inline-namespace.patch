@@ -1,0 +1,18 @@
+Category: implementation-specific. TypeName.Functionalities expects the compiler's name of
+std::integral_constant<int, 3> as libstdc++ (std::integral_constant<int, 3>), libc++
+(std::__1::integral_constant<int, 3>) or MSVC's library spells it. GCC's __PRETTY_FUNCTION__ also
+names an inline namespace, and libycxx's is std::__y1 (DECISIONS §20.4), so its spelling is added
+next to libc++'s.
+
+diff --git a/test/entt/core/type_info.cpp b/test/entt/core/type_info.cpp
+index ff5eedf..a967b61 100644
+--- a/test/entt/core/type_info.cpp
++++ b/test/entt/core/type_info.cpp
+@@ -33,6 +33,7 @@ TEST(TypeName, Functionalities) {
+ 
+     ASSERT_TRUE((entt::type_name<entt::integral_constant<3>>::value() == std::string_view{"std::integral_constant<int, 3>"})
+                 || (entt::type_name<entt::integral_constant<3>>::value() == std::string_view{"std::__1::integral_constant<int, 3>"})
++                || (entt::type_name<entt::integral_constant<3>>::value() == std::string_view{"std::__y1::integral_constant<int, 3>"})
+                 || (entt::type_name<entt::integral_constant<3>>::value() == std::string_view{"struct std::integral_constant<int,3>"}));
+ 
+     ASSERT_TRUE(((entt::type_name<entt::type_list<entt::type_list<int, char>, double>>::value()) == std::string_view{"entt::type_list<entt::type_list<int, char>, double>"})

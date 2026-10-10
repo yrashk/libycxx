@@ -5,5 +5,7 @@ ref = v3.12.0
 commit = 55f93686c01528224f448c19128836e7df245f72
 exercises = containers, strings, iostreams, locale, exceptions, templates
 # The test data (nlohmann/json_test_data) is downloaded by the project's own CMake.
-configure = -DJSON_BuildTests=ON
+# Its vendored doctest declares std::tuple and the iostreams templates in namespace std unless it
+# finds libc++; DOCTEST_CONFIG_USE_STD_HEADERS includes the headers instead (tests/realworld/doctest).
+configure = -DJSON_BuildTests=ON -DCMAKE_CXX_FLAGS=-DDOCTEST_CONFIG_USE_STD_HEADERS
 timeout = 900

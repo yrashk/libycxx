@@ -35,7 +35,11 @@ Optional directives:
                                           (its diagnostics, not the command line) must match
                                           every such regex (re.search, multi-line), or the test
                                           fails and names the regexes that did not match: the
-                                          test fails to compile for the reason it is about
+                                          test fails to compile for the reason it is about. The
+                                          patterns name the standard library's entities as the
+                                          standard does (std::span): a diagnostic that spells
+                                          libycxx's inline ABI namespace (GCC: std::__y1::span,
+                                          DECISIONS §20.4) is matched with it left out too
   // EXPECT-ERROR-GCC: <regex>, // EXPECT-ERROR-CLANG: <regex>   the same, for one compiler only
                                           (where the wording differs: GCC's "use of deleted
                                           function" is Clang's "call to deleted ...")
@@ -80,6 +84,8 @@ ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
 XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)(?:-(linux|darwin))?\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
+# libycxx's inline ABI namespace as GCC's diagnostics spell it (std::__y1::span).
+ABI_NAMESPACE = re.compile(r'(?<=\bstd::)__y1::')
 EXPECT_ERROR = re.compile(r'^//[ \t]*EXPECT-ERROR(?:-(GCC|CLANG))?(?:\[([^\]\n]*)\])?:[ \t]*(.*?)[ \t\r]*$', re.M)
 REQUIRES = re.compile(r'^//\s*REQUIRES:(.*)$', re.M)
 MODULES = re.compile(r'^//\s*MODULES:(.*)$', re.M)
@@ -170,10 +176,12 @@ class YcxxFormat(lit.formats.FileBasedTest):
             return lit.Test.Result(lit.Test.FAIL, 'EXPECT-ERROR: an empty pattern cannot identify '
                                    'the intended diagnostic\n' + out)
         diagnostics = out.split('\n', 2)[2] if out.count('\n') >= 2 else ''
+        # GCC prints the inline ABI namespace (std::__y1::span, DECISIONS §20.4); Clang does not.
+        plain = ABI_NAMESPACE.sub('', diagnostics)
         missed = []
         for rx in expected:
             try:
-                if not re.search(rx, diagnostics, re.M):
+                if not re.search(rx, diagnostics, re.M) and not re.search(rx, plain, re.M):
                     missed.append(rx)
             except re.error as e:
                 return lit.Test.Result(lit.Test.FAIL, f'EXPECT-ERROR: invalid regex {rx!r}: {e}\n' + out)

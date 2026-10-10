@@ -84,8 +84,8 @@ tooling.
 
 - Standard entities are declared in the inline ABI namespace `std::__y1`, except the few that the
   compilers or the platform name in plain `std` (`align_val_t`, `byte`, `initializer_list`,
-  `terminate`, ...; §20.4-20.5). One mangling for the static archives and the planned shared
-  library, and names no other C++ library uses. No ABI compatibility with libstdc++ or libc++ is
+  `terminate`, ...; §20.4-20.5). One mangling for the static archives and the shared library
+  (§20), and names no other C++ library uses. No ABI compatibility with libstdc++ or libc++ is
   attempted.
 - Implementation details live in `ycxx::detail` with `snake_case` names. Detail namespaces
   avoid generic names that ADL could pick up (`swap`, `begin`, `get`); CPOs live in their own
@@ -98,7 +98,9 @@ tooling.
   never picked up. Trait structs (`iterator_traits`, `pointer_traits`, `common_reference`) may
   still derive from `ycxx::detail` helpers, because they are never function arguments.
 - **libycxx's symbols have hidden visibility: a program or shared object exports none of them**
-  (one table excepted, below).
+  (one table excepted, below). This is the static mode; in shared mode `libycxx.so` exports
+  `std::__y1` and `__ycxx`, names no other library uses, and every name another C++ runtime defines
+  stays hidden in every image (§20.3, §20.5, §20.6).
   Another C++ library in the same process must neither take over libycxx's definitions nor be
   taken over by them. On Darwin, libSystem loads Apple's libc++ and libc++abi into every process,
   and dyld coalesces each exported weak definition with a non-weak one of the same name in any
@@ -112,8 +114,8 @@ tooling.
   - **Headers.** Every file-scope opening of `std` and `ycxx` is
     `namespace [[gnu::visibility("hidden")]] std {`, spelled
     `namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {` since
-    §20: `_YCXX_VISIBILITY` is `"hidden"` in static mode (all there is so far) and `"default"` in
-    the shared mode §20 plans; the plain-std blocks and `__cxxabiv1` keep the literal
+    §20: `_YCXX_VISIBILITY` is `"hidden"` in static mode and `"default"` in shared mode; the
+    plain-std blocks and `__cxxabiv1` keep the literal
     `"hidden"`. The attribute is written on each block:
     it applies to that block only (both compilers export what a reopening without it declares),
     and a nested namespace definition cannot carry attributes, so `namespace std::ranges {` is
@@ -2013,16 +2015,18 @@ pays most of it once.
 
 ## 20. Shared library and the inline ABI namespace
 
-**Status (2026-10-08): approved; steps 1-3 of the plan (20.10) are implemented, steps 4-10 are
-pending.** The library is still static only, but every standard entity is already in the inline
-ABI namespace `std::__y1` (one mangling for both modes, 20.4), the plain-std entities are split
-off (20.5), the mode switch exists (20.3), and the ABI runtime implements its entry points under
-its own names with the Itanium names as forwarders (20.6). The shared library itself (steps 4-10)
-follows once the macOS probe run is complete (20.12). The design answers "can the library itself
+**Status (2026-10-10): decided and implemented (steps 1-10 of 20.10).** libycxx builds static
+archives, a shared library, or both (20.2): every standard entity is in the inline ABI namespace
+`std::__y1` (one mangling for both modes, 20.4), the plain-std entities are split off (20.5), the
+mode switch is `YCXX_SHARED` (20.3), and in shared mode `libycxx.so.0.<minor>` holds the library and
+the one ABI runtime of the process while each image links its hidden part, `libycxx_nonshared.a`
+(20.6). What is shipped and what is not yet: 20.13. The design answers "can the library itself
 also be a shared library?". It was written with feasibility probes that build the whole library
 both ways from rewritten copies of the pre-§20 sources; they live on the branch
 `shared-lib-design` (`docs/design/shared-probes/`, re-runnable there: `run-linux.sh`,
-`run-macos.sh`). Results are in 20.11; the decisions taken and the macOS results in 20.12.
+`run-macos.sh`). Results are in 20.11; the decisions taken and the macOS results in 20.12. The
+sections below describe the design; where the implementation differs, an "As implemented" note in
+20.10 says so.
 
 ### 20.1 The decisions in brief
 
@@ -2454,8 +2458,16 @@ program's static copy and `libycxx.so`'s. They behave as two static images do to
     Clang, best of 3).
 - **Shared mode at run time.**
   - Calls into the library go through the PLT/GOT, the normal cost of a shared library.
-    `libycxx.so` is linked with `-Bsymbolic-functions`: its replaceable functions are hidden
-    anyway, and its internal calls then bind locally.
+    `libycxx.so` is not linked with `-Bsymbolic-functions`, as first planned: a replaceable
+    function must resolve to the program's definition wherever it is called
+    ([replacement.functions]), and `std::is_debugger_present` ([debugging.utility]) is one that the
+    library itself calls (`breakpoint_if_debugging`) and exports; bound locally, the library kept
+    calling its own default (the own suite's `debugging/replace_is_debugger_present` failed in
+    shared mode). The replaceable allocation functions are hidden and per image anyway (20.6), and
+    the contract-violation handler is called by the compiled code of each image. The cost: the
+    library's own calls to its exported functions go through the PLT instead of binding directly,
+    which step 10's measurements (20.10) include: throw/catch and `dynamic_cast` within about 10%
+    of static mode with it.
   - Throw, catch and personality calls take one forwarder hop each.
   - Type_info classification in the runtime takes the by-name path for every image's types
     until the registration of step 10 exists: `dynamic_cast` is 3 times slower and throw/catch
@@ -2581,35 +2593,84 @@ mechanical).
    0.73-0.88 µs, `dynamic_cast` 40-49 ns, as before); the `__cxxabiv1` vtables and the fundamental
    type_info objects are `src/abi/rtti_classes.cpp`'s; the `src/`-private blocks are step 4's
    (above).
-4. **(M) CMake shared build.** `YCXX_STATIC`/`YCXX_SHARED`, `libycxx.so.0.1` with soname, the
-   version script and exported-symbols list from `src/export.txt`, `-Bsymbolic-functions`, and
+4. **(M) CMake shared build. Done.** `YCXX_STATIC`/`YCXX_SHARED`, `libycxx.so.0.1` with soname, the
+   version script and exported-symbols list from `src/export.txt`, `-Bsymbolic-functions` (dropped,
+   20.8), and
    `libycxx_nonshared.a`. The ELF linker script, the Mach-O install name and versions, targets
    `ycxx::static`/`ycxx::shared` with `COMPATIBLE_INTERFACE_STRING`, install rules and
    `libycxxConfig.cmake`. The `PAL=posix` and no-sanitizer checks. GCC on Darwin: libgcc's
    emulated-TLS entry points (`___emutls_get_address`, `___emutls_register_common`), which
    `-static-libgcc` puts in the dylib as weak exports, are left out of the exported-symbols list,
    so each image keeps its own emulated TLS (20.12). Test: `tests/cmake/run.sh`
-   (both kinds), the export-list test, and the own suite in shared mode (Linux).
-5. **(M) The consumers.**
+   (both kinds), the export-list test, and the own suite in shared mode (Linux). As implemented:
+   - `libycxx_nonshared.a` holds `src/abi/entry/`, `rtti_classes.cpp`, `rtti_float16.cpp`,
+     `nothrow.cpp` (std::nothrow, split off `support.cpp`), the allocation functions and the
+     table, `src/hosted/cxa_demangle_entry.cpp` and the platform layer's forwarders
+     (`src/nonshared/pal.c`), and `libycxx.so` links it too: it is an image like the others.
+   - The platform layer's forwarders cover every function of `pal.h` but the 'files' layer (which
+     `YCXX_PAL=posix` lacks), not only those the headers call: `tools/gen_pal_forwarders.py`
+     generates both sides (`src/pal/export.c` exports `__ycxx_abi_pal_<name>` from the library)
+     from `pal.h`, and the policy stage checks them. `ycxx_pal_single_threaded`, data, is defined
+     per image as `src/pal/posix/pal.c` defines it.
+   - The export list's patterns are `*St4__y1*`, `*6__ycxx*`, `__ycxx_abi_*`, the table and the
+     shared marker (`src/export.txt`), not one pattern per mangling form: whatever names
+     `std::__y1` or `__ycxx` is libycxx's, and the attributes decide the rest.
+   - No `-Bsymbolic-functions` (20.8: replaceable functions must resolve to the program's).
+   - The table's `--export-dynamic-symbol` is not passed to the library's own link: GNU ld treats
+     it as a dynamic list in a shared library and binds every other symbol locally, so a program's
+     copy-relocated `std::cout` was never the one the library constructed.
+   - The `src/`-private `__ycxx` blocks keep `_YCXX_VISIBILITY` and are exported too (they are
+     `__ycxx` names, which nothing else uses; hiding them is an optimization left for later).
+   - The link-time guard: `config.hpp` defines, in every translation unit, a used internal
+     pointer to `__ycxx_linkage_static_v1` or `__ycxx_linkage_shared_v1`
+     (`src/runtime/linkage/`).
+5. **(M) The consumers. Done.**
    - `ycxx-c++` (`YCXX_LINKAGE`), the pkg-config files and the Meson native files;
    - `tools/ycxx-cxx --shared`, `tools/ycxx-modules` per mode, and `tools/ycxx-check-binary`,
      which accepts `NEEDED libycxx.so.0.*`;
    - `docs/BUILDING_PROJECTS.md` ("Static and shared libycxx" rewritten, "Shared libraries"
      split by mode).
 
-   Test: `tests/integration/run.sh` in both modes.
-6. **(M) Tests and CI.** The shared lit configuration for all three suites, the linkage
+   Test: `tests/integration/run.sh` in both modes. As implemented: `ycxx-c++` (and the pkg-config
+   files of the build tree and of Mach-O) name the library's soname file and
+   `libycxx_nonshared.a` rather than `-lycxx`, so they do not depend on the linker script;
+   `activate.sh --use DIR --shared` (and `--use gcc --shared` for `build/gcc-shared`) exports
+   `YCXX_LINKAGE=shared`.
+6. **(M) Tests and CI. Done.** The shared lit configuration for all three suites, the linkage
    features and tests, the `tests/cmake/visibility` matrix, `tools/realworld --linkage=shared`,
-   and the CI jobs of 20.9. Test: CI green on Linux and macOS.
-7. **(S) STATUS and DECISIONS.** STATUS's known limitations split by mode. §2 and this section
+   and the CI jobs of 20.9. Test: CI green on Linux and macOS. As implemented: `tools/test
+   --shared` (the build stage also builds `build/<cc>-shared`, the suites and real-world
+   projects link it; `YCXX_LINKAGE=shared` for `tools/run-conformance`), `tests/cmake/run.sh`'s
+   section 14, `tests/quickstart/run.sh --shared`, and `tools/check-shared-macos.sh`, the Mac's
+   check of the real shared build (it runs on Linux too).
+7. **(S) STATUS and DECISIONS. Done.** STATUS's known limitations split by mode. §2 and this section
    are rewritten from "draft" to "decision".
 8. **(S) The allocation table's ABI version check** (20.6). Test: a version-skewed plugin in
-   `tests/cmake/visibility`.
-9. **(S) `tools/check_abi.py`** in report-only mode with checked-in `.abilist` files (20.7).
+   `tests/cmake/visibility`. Done: the table's first member is the ABI version
+   (`__cfg::__abi_version`, which CMakeLists.txt checks against the project's version), at that
+   offset in every version, and `allocation_table.cpp`'s initializer compares the process's table
+   with its own and aborts naming both. The test is a C host whose own table says "0.0-skewed"
+   (`tests/cmake/visibility/skew.c`), loading a static-mode and a shared-mode plugin.
+9. **(S) `tools/check_abi.py`** in report-only mode with checked-in `.abilist` files (20.7). Done,
+   stricter than planned: any difference from `abi/<os>-<arch>-<compiler>.abilist` (a symbol
+   added, removed, or changed in kind or data size) fails, in the policy stage and after the
+   shared build of `tools/test --shared`, so every change to the exports comes with its baseline
+   in the same commit (`--update`); during 0.x such changes are allowed, never unnoticed. Every
+   export must also be libycxx's own. A baseline made with another compiler version, or a platform
+   without one (macOS until a Mac writes it), is reported and not compared.
 10. **(S) The registered `__cxxabiv1` vtables** (20.6), so that cross-image classification
     avoids string comparisons. 20.11's numbers ask for it (`dynamic_cast` 3 times slower in
     shared mode without it). It belongs with step 4: the shared mode does not ship before
-    `rtti_bench` is within 10% of static mode.
+    `rtti_bench` is within 10% of static mode. Done: each image's `rtti_classes.cpp` registers
+    the addresses of its nine ABI classes' type_info objects (`__ycxx_abi_rtti_register`, from an
+    initializer; withdrawn by a destructor when the image is unloaded) in an open-addressing
+    table the runtime reads without a lock, and `__kind_of` consults it inline after the
+    runtime's own classes; the names remain the fallback. Measured with `bench/run --libs
+    ycxx,ycxx-shared --only runtime --runs 3` (Release builds, -O2, the 3 throw/catch and 5
+    `dynamic_cast` benchmarks; shared/static, geometric mean and worst): without the registry
+    GCC 2.29 (4.14), Clang 1.84 (3.05); with it GCC 1.10 (1.25), Clang 1.00 (1.31), where single
+    benchmarks move by about 15% between runs on the shared test machine. The remaining cost is a
+    call through the PLT and the forwarder per `__dynamic_cast` and handler search.
 
 Steps 1-3 are useful without the shared library: they give one mangling everywhere. Steps 4-6
 and 10 deliver it. Steps 7-9 are follow-ups.
@@ -2778,4 +2839,27 @@ directory, same machine and toolchains): **97 passed, 0 failed.**
   `std::__y1`. The probes keep counting them as INFO.
 
 Not covered by the script: `ld-prime`'s handling of wildcard `-exported_symbols_list` patterns.
-Step 4 checks that when it adds the list.
+Step 4 checks that when it adds the list (`tools/check-shared-macos.sh`, "exports").
+
+### 20.13 What is shipped, and what is not yet
+
+Shipped (2026-10-10, steps 1-10):
+- `-DYCXX_SHARED=ON` builds `libycxx.so.0.1` / `libycxx.0.1.dylib` with `libycxx_nonshared.a`, next
+  to the archives or alone (`-DYCXX_STATIC=OFF`); every consumer chooses per image (20.2,
+  BUILDING_PROJECTS "Static and shared libycxx"); the link-time guard stops mixed modes in one
+  image; the allocation table stops images of different ABI versions in one process.
+- Instrumented shared libraries (`YCXX_SANITIZE` with `YCXX_SHARED`): the "deferred" of 20.12 (8)
+  turned out to need only the library's link without `--no-undefined`; tested with Clang's
+  ASan+UBSan and TSan.
+- Tests: the three suites, the real-world projects and the CMake package in both modes
+  (`tools/test --shared`, `tests/cmake/run.sh` 14.), the export baselines (`tools/check_abi.py`),
+  CI jobs on Linux and macOS (ci.yml, full.yml), and `tools/check-shared-macos.sh`.
+
+Not yet:
+- macOS: the real shared build has been checked by `tools/check-shared-macos.sh` only where the
+  user ran it (STATUS, macOS), and has no `.abilist` baseline until a Mac writes one
+  (`tools/check_abi.py --update` on the Mac, committed).
+- The `src/`-private `__ycxx` blocks are exported in shared mode (step 4's note); hiding them would
+  shrink the export list.
+- A libabigail check of inline layouts (20.7, for 1.0).
+- Sanitizer builds with GCC's shared ThreadSanitizer runtime and the shared library: not run.

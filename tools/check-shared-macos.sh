@@ -118,14 +118,17 @@ for c in $compilers; do
   foreign=$(printf '%s\n' "$all" | grep -vE 'St4__y1|6__ycxx|^__ycxx_abi_|^__ycxx_allocation_functions$|^__ycxx_linkage_shared_v1$|^YCXX_' || :)
   weak=$(weak_exports "$so")
   weak_foreign=$(printf '%s\n' "$weak" | grep -vE '^$|St4__y1|6__ycxx|^__ycxx_allocation_functions$' || :)
-  emutls=$(printf '%s\n' "$all" | grep -i emutls || :)
+  emutls=$(printf '%s\n' "$all" | grep -E '__emutls_|__gcc_nested' || :)
   n=$(printf '%s\n' "$all" | grep -c . || :)
   nw=$(printf '%s\n' "$weak" | grep -c . || :)
   if [ "$n" -gt 0 ] && [ -z "$foreign" ]; then ok "[$c] exports: $n symbols, all std::__y1, __ycxx, __ycxx_abi_*, the table or the marker"
   else printf 'not libycxx'"'"'s own:\n%s\n' "$foreign" >>"$log"; bad "[$c] exports: other names exported (see $log)"; fi
   if [ -z "$weak_foreign" ]; then ok "[$c] exports: $nw weak exports, all std::__y1, __ycxx or the table"
   else printf 'weak, not libycxx'"'"'s own:\n%s\n' "$weak_foreign" >>"$log"; bad "[$c] exports: other weak exports (see $log)"; fi
-  if [ -z "$emutls" ]; then ok "[$c] exports: none of libgcc's emulated-TLS entry points"
+  # GCC on Darwin uses libgcc's emulated TLS (and heap trampolines), linked into the dylib; on ELF
+  # TLS is native and there is nothing to check (a PASS there proved nothing about the Mac).
+  if [ $darwin = 0 ]; then info "[$c] exports: emulated TLS: not used on ELF (checked on macOS only)"
+  elif [ -z "$emutls" ]; then ok "[$c] exports: none of libgcc's emulated-TLS or heap-trampoline entry points"
   else bad "[$c] exports: $emutls"; fi
 
   # coexist

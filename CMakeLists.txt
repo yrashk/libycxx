@@ -496,8 +496,7 @@ if(YCXX_SHARED)
   # The export list (DECISIONS §20.3), from src/export.txt: a version script on ELF (every export
   # gets the version YCXX_<major>.<minor>), an exported-symbols list on Mach-O. The visibility
   # attributes decide what is exported; the list is the safety net that keeps every other name
-  # local (GCC's predeclared __cxa_* functions; on Darwin, libgcc's emulated-TLS entry points,
-  # which -static-libgcc puts in the dylib as weak definitions, DECISIONS §20.12).
+  # local (GCC's predeclared __cxa_* functions). GCC on Darwin: below.
   file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/src/export.txt _ycxx_export_lines ENCODING UTF-8 REGEX "^[^#]")
   set(_ycxx_exports "")
   foreach(_l IN LISTS _ycxx_export_lines)
@@ -507,7 +506,18 @@ if(YCXX_SHARED)
     endif()
   endforeach()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/export.txt)
-  if(APPLE)
+  if(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # GCC on Darwin links libgcc's emulated TLS (libemutls_w.a: ___emutls_get_address,
+    # ___emutls_register_common) and heap trampolines (libheapt_w.a: ___gcc_nested_func_ptr_*) into
+    # the dylib with default visibility, and an exported-symbols list did not make them local
+    # there (the Mac run of 2026-10-11) where -unexported_symbol does (DECISIONS §20.12). ld64 takes
+    # one kind of list, so this dylib names them in an unexported-symbols list: each image keeps
+    # its own (§20.12, 6). The visibility attributes decide the rest, which tools/check_abi.py
+    # checks.
+    set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.unexports)
+    file(WRITE ${_ycxx_list} "___emutls_*\n___gcc_*\n")
+    target_link_options(ycxx_so PRIVATE LINKER:-unexported_symbols_list,${_ycxx_list})
+  elseif(APPLE)
     set(_ycxx_list ${CMAKE_CURRENT_BINARY_DIR}/libycxx.exports)
     set(_text "")
     foreach(_p IN LISTS _ycxx_exports)

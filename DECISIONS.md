@@ -2468,6 +2468,19 @@ program's static copy and `libycxx.so`'s. They behave as two static images do to
     library's own calls to its exported functions go through the PLT instead of binding directly,
     which step 10's measurements (20.10) include: throw/catch and `dynamic_cast` within about 10%
     of static mode with it.
+    On Mach-O that is not enough (the Mac run of 2026-10-11: `replace_is_debugger_present` failed
+    with both compilers): with the two-level namespace, ld64 binds a dylib's call to its own
+    exported, non-weak function directly when the dylib is linked, and dyld never interposes it.
+    What dyld does resolve at load time is a weak definition: ld64 calls a weak function through a
+    stub with a weak binding, records in a program that links the dylib any non-weak definition
+    of the same name as overriding it (weak-binding info with the non-weak-definition flag), and
+    dyld binds every image's weak references to that definition first. This is how a program's
+    `operator new` replaces libc++abi's on Darwin. So libycxx's default `std::is_debugger_present`
+    is a weak definition (`src/runtime/debugging/is_debugger_present.cpp`), on every target: on ELF
+    it is interposed either way, in the archives its member is linked only without a program
+    definition. The program's definition is exported because, in shared mode, the header declares
+    it in a default-visibility block of `std::__y1`; executables export their global symbols on
+    Darwin. The baseline records it as weak (`W`).
   - Throw, catch and personality calls take one forwarder hop each.
   - Type_info classification in the runtime takes the by-name path for every image's types
     until the registration of step 10 exists: `dynamic_cast` is 3 times slower and throw/catch
@@ -2616,6 +2629,13 @@ mechanical).
      shared marker (`src/export.txt`), not one pattern per mangling form: whatever names
      `std::__y1` or `__ycxx` is libycxx's, and the attributes decide the rest.
    - No `-Bsymbolic-functions` (20.8: replaceable functions must resolve to the program's).
+   - GCC on Darwin: the dylib is linked with an unexported-symbols list (`___emutls_*`,
+     `___gcc_*`) instead of the exported-symbols list. libgcc's emulated TLS and heap trampolines
+     (`libemutls_w.a`, `libheapt_w.a`), which GCC links into the dylib with default visibility,
+     stayed exported with the exported-symbols list (the Mac run of 2026-10-11), while
+     `-unexported_symbol` made them local in 20.12's probe; ld64 accepts one kind of list. The
+     attributes decide the rest, and `tools/check_abi.py` fails on any export that is not
+     libycxx's own.
    - The table's `--export-dynamic-symbol` is not passed to the library's own link: GNU ld treats
      it as a dynamic list in a shared library and binds every other symbol locally, so a program's
      copy-relocated `std::cout` was never the one the library constructed.
@@ -2856,9 +2876,13 @@ Shipped (2026-10-10, steps 1-10):
   CI jobs on Linux and macOS (ci.yml, full.yml), and `tools/check-shared-macos.sh`.
 
 Not yet:
-- macOS: the real shared build has been checked by `tools/check-shared-macos.sh` only where the
-  user ran it (STATUS, macOS), and has no `.abilist` baseline until a Mac writes one
-  (`tools/check_abi.py --update` on the Mac, committed).
+- macOS: the first Mac run of the shared mode (2026-10-11, `tools/test --shared` at b181d2d6) found
+  three problems, fixed since: GCC's dylib exported libgcc's emulated-TLS and heap-trampoline
+  entry points (an exported-symbols list did not hide them; GCC's dylib now uses an
+  unexported-symbols list, step 4's note), a program's `std::is_debugger_present` did not
+  replace the library's (above, 20.8), and an XFAIL that holds in static mode only
+  (`linkage/odr_inline_entities`, now `XFAIL[!shared-linkage]`). The Mac has no `.abilist`
+  baseline until it writes one (`tools/check_abi.py --update` on the Mac, committed).
 - The `src/`-private `__ycxx` blocks are exported in shared mode (step 4's note); hiding them would
   shrink the export list.
 - A libabigail check of inline layouts (20.7, for 1.0).

@@ -23,7 +23,9 @@ Optional directives:
                                           XPASS (a failure of the run) once it passes.
                                           (XFAIL-COMPILER: gcc|clang is the older spelling.) A
                                           suffix -linux or -darwin (`clang-darwin`) limits it to
-                                          that OS (the OS feature of REQUIRES)
+                                          that OS (the OS feature of REQUIRES); XFAIL[<features>]:
+                                          to the runs where that expression of lit features holds,
+                                          as REQUIRES's (`XFAIL[!shared-linkage]: clang-darwin`)
   // COUNTERPART: libcxx:<path> libstdcxx:<path> [...]   the external tests, skipped there as
                                           tied to that library's internals, extensions or modes,
                                           whose standard subject this test covers (paths relative
@@ -82,7 +84,7 @@ FLAGS = re.compile(r'^//\s*FLAGS:(.*)$', re.M)
 FILES = re.compile(r'^//\s*FILES:(.*)$', re.M)
 ARCHIVE = re.compile(r'^//\s*ARCHIVE:(.*)$', re.M)
 SHARED = re.compile(r'^//\s*SHARED:(.*)$', re.M)
-XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?:\s*(gcc|clang|any)(?:-(linux|darwin))?\b(.*)$', re.M)
+XFAIL = re.compile(r'^//\s*XFAIL(?:-COMPILER)?(?:\[([^\]\n]*)\])?:\s*(gcc|clang|any)(?:-(linux|darwin))?\b(.*)$', re.M)
 UNSUPPORTED_SAN = re.compile(r'^//\s*UNSUPPORTED-SANITIZER:\s*([\w,]+)(.*)$', re.M)
 # libycxx's inline ABI namespace as GCC's diagnostics spell it (std::__y1::span).
 ABI_NAMESPACE = re.compile(r'(?<=\bstd::)__y1::')
@@ -139,10 +141,20 @@ class YcxxFormat(lit.formats.FileBasedTest):
                 return lit.Test.Result(lit.Test.UNSUPPORTED, f'REQUIRES:{m.group(1)} (features of this run: '
                                        f'{", ".join(sorted(self.features))})')
         result = self.run(test)
-        xf = [m for m in XFAIL.finditer(src)
-              if m.group(1) in (self.compiler, 'any') and m.group(2) in (None, *self.features)]
+        xf = []
+        for m in XFAIL.finditer(src):
+            if m.group(2) not in (self.compiler, 'any') or m.group(3) not in (None, *self.features):
+                continue
+            if m.group(1) is not None:
+                try:
+                    expr = ' && '.join(f'({e.strip()})' for e in m.group(1).split(','))
+                    if not m.group(1).strip() or not BooleanExpression.evaluate(expr, self.features):
+                        continue
+                except ValueError as e:
+                    return lit.Test.Result(lit.Test.FAIL, f'XFAIL[{m.group(1)}]: {e}')
+            xf.append(m)
         if xf:
-            why = '; '.join(m.group(3).strip() for m in xf)
+            why = '; '.join(m.group(4).strip() for m in xf)
             if result.code == lit.Test.PASS:
                 result.code = lit.Test.XPASS
                 result.output = (result.output or '') + f'\nexpected to fail ({why}), but passed\n'

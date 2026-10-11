@@ -21,6 +21,14 @@ Meson), `libycxx-shared.pc`, `activate.sh --use DIR --shared`, `tools/ycxx-cxx -
 - Cost: throw/catch and `dynamic_cast` within about 10% of static mode once each image registers
   its RTTI classes (DECISIONS §20.10, step 10); allocations and the platform layer's calls take a
   forwarder hop (`new`/`delete` about 1.2 times static mode's time in `bench/runtime`).
+- Tested on Linux x86_64 (2026-10-10, GCC 16.2 and Clang 23.1) against the shared library: the own
+  suite (GCC 2888 passed, 16 XFAIL, 70 unsupported; Clang 2859, 41, 74; Clang with ASan+UBSan 2845
+  and with TSan 2856 passed, 0 failed), the libc++ and libstdc++ CI samples with language.support,
+  utilities, diagnostics, thread and localization (as many passed as against the archives), the
+  19 real-world projects with both compilers (0 failed; doctest's DLL tests, glaze's `lib_test` and
+  GoogleTest's `gtest_dll_test_`, skipped in static mode for its per-image runtime, pass),
+  `tests/cmake/run.sh`'s section 14, the quickstart with its shared option, and
+  `tools/check-shared-macos.sh` (49 checks).
 - Not yet: a Mac's ABI baseline, the hiding of the `src/`-private `__ycxx` names, a libabigail
   check (DECISIONS §20.13).
 

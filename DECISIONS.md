@@ -2670,7 +2670,17 @@ mechanical).
    (`__cfg::__abi_version`, which CMakeLists.txt checks against the project's version), at that
    offset in every version, and `allocation_table.cpp`'s initializer compares the process's table
    with its own and aborts naming both. The test is a C host whose own table says "0.0-skewed"
-   (`tests/cmake/visibility/skew.c`), loading a static-mode and a shared-mode plugin.
+   (`tests/cmake/visibility/skew.c`), loading a static-mode and a shared-mode plugin. On Darwin
+   (the Mac run of `tools/check-shared-macos.sh` at b181d2d6: both plugins printed "loaded") that
+   host's table must be a weak definition, as every libycxx image's is: the images bind to the
+   process's table there by dyld's coalescing of weak definitions, in which only images that
+   define weak symbols take part (and a non-weak definition only where ld64 recorded it as
+   overriding one, when it linked the image against a dylib defining the weak symbol). A plugin's
+   reference to its own weak table was therefore never bound to the host's strong one, and its
+   check compared its table with itself. Between libycxx images, whose tables are all weak, the
+   coalescing is what the linkage tests on macOS (`linkage/shared_library_*`) rely on, so the
+   check sees the first image's table there; the C host now defines it weak too. On ELF the
+   program's exported definition wins either way.
 9. **(S) `tools/check_abi.py`** in report-only mode with checked-in `.abilist` files (20.7). Done,
    stricter than planned: any difference from `abi/<os>-<arch>-<compiler>.abilist` (a symbol
    added, removed, or changed in kind or data size) fails, in the policy stage and after the

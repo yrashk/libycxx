@@ -1,4 +1,5 @@
-// A program built with libycxx exports none of the library's definitions (DECISIONS §2): not
+// A program built with libycxx exports none of the library's definitions (DECISIONS §2) in static
+// mode, and in shared mode none but its instantiations of std::__y1 and __ycxx (§20.12): not
 // those the headers emit in the program (inline functions, template instantiations, type_info
 // objects and vtables, inline variables), not those of the archives (the runtime, the ABI
 // runtime). Another C++ library in the process (Apple's libc++/libc++abi, which every Darwin
@@ -99,6 +100,14 @@ void* operator new(std::size_t n) {
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 
+// Compiled with -DYCXX_SHARED when the test links libycxx's shared library (lit's shared
+// configuration, tools/ycxx-cxx --shared).
+#if defined(YCXX_SHARED) && YCXX_SHARED
+constexpr bool shared_mode = true;
+#else
+constexpr bool shared_mode = false;
+#endif
+
 int main(int, char** argv) {
   CHECK(own::run() == 7);
   CHECK(own::replaced_new_calls > 0);
@@ -127,7 +136,14 @@ int main(int, char** argv) {
     // The test's own replacements (size_t is m or j).
     bool own_replacement = name == "_Znwm" || name == "_Znwj" || name == "_ZdlPv" || name == "_ZdlPvm" ||
                            name == "_ZdlPvj";
-    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement) ||
+    // Shared mode (DECISIONS §20.12): the program exports what it instantiated of std::__y1 and
+    // __ycxx, which the dynamic linker unifies with libycxx.so's (one definition per process);
+    // those names are libycxx's alone, so no other C++ library can meet them. Every other name
+    // stays hidden, as in static mode.
+    bool shared_mode_export = shared_mode && (name.find("St4__y1") != std::string::npos ||
+                                              name.find("6__ycxx") != std::string::npos);
+    bool library = (name.rfind("_Z", 0) == 0 && name.find("3own") == std::string::npos && !own_replacement &&
+                    !shared_mode_export) ||
                    name.find("__cxa_") != std::string::npos || name.find("__gxx_personality") != std::string::npos ||
                    name.find("ycxx_pal_") != std::string::npos || name.find("__ycxx_abi_") != std::string::npos ||
                    name.find("__dynamic_cast") != std::string::npos;

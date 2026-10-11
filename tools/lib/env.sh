@@ -59,12 +59,12 @@ ycxx_suite_dirs() {
   else ycxx_libstdcxx_tests=$ycxx__cache/libstdcxx-testsuite; fi
 }
 
-# ycxx_run_config: the configuration of a suite run, from SANITIZER, YCXX_HARDENED=1 and
-# YCXX_CXXFLAGS / YCXX_CONFIG_NAME (the last three: own suite only). Sets ycxx_config_name (the
-# name of the extra flags: $YCXX_CONFIG_NAME, else made from the flags, "-fno-exceptions -O2" ->
-# "fno-exceptions-O2") and ycxx_run_suffix, what run names, logs and baseline files carry after
-# the compiler: [-<sanitizers>][-hardened][-<config name>]. Returns 1, with a message, on a name
-# that cannot be part of a file name.
+# ycxx_run_config: the configuration of a suite run, from YCXX_LINKAGE=shared, SANITIZER,
+# YCXX_HARDENED=1 and YCXX_CXXFLAGS / YCXX_CONFIG_NAME (the last three: own suite only). Sets
+# ycxx_config_name (the name of the extra flags: $YCXX_CONFIG_NAME, else made from the flags,
+# "-fno-exceptions -O2" -> "fno-exceptions-O2") and ycxx_run_suffix, what run names, logs and
+# baseline files carry after the compiler: [-shared][-<sanitizers>][-hardened][-<config name>].
+# Returns 1, with a message, on a name that cannot be part of a file name or an unknown linkage.
 ycxx_run_config() {
   ycxx_config_name=${YCXX_CONFIG_NAME:-}
   if [ -z "${ycxx_config_name}" ] && [ -n "${YCXX_CXXFLAGS:-}" ]; then
@@ -75,7 +75,13 @@ ycxx_run_config() {
       echo "error: configuration name '${ycxx_config_name}': use letters, digits, '.', '_', '=' and '-'" >&2
       return 1 ;;
   esac
-  ycxx_run_suffix=${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
+  case ${YCXX_LINKAGE:-static} in
+    static|shared) ;;
+    *) echo "error: YCXX_LINKAGE='${YCXX_LINKAGE}': static or shared" >&2; return 1 ;;
+  esac
+  ycxx_run_suffix=
+  [ "${YCXX_LINKAGE:-static}" = shared ] && ycxx_run_suffix=-shared
+  ycxx_run_suffix=${ycxx_run_suffix}${SANITIZER:+-$(echo "$SANITIZER" | tr , -)}
   [ "${YCXX_HARDENED:-0}" = 1 ] && ycxx_run_suffix=${ycxx_run_suffix}-hardened
   ycxx_run_suffix=${ycxx_run_suffix}${ycxx_config_name:+-${ycxx_config_name}}
   return 0

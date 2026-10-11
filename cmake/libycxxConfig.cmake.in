@@ -1,8 +1,15 @@
 # libycxx package configuration: find_package(libycxx CONFIG) provides
-#   ycxx::ycxx     link this into every C++ target (headers, libycxx, its ABI runtime)
+#   ycxx::ycxx     link this into every C++ target (headers, libycxx, its ABI runtime): the
+#                  installation's default kind, ycxx::static when the static archives are built
+#   ycxx::static   the static archives (libycxx_BUILT_STATIC)
+#   ycxx::shared   the shared library and libycxx_nonshared.a, compiling in shared mode
+#                  (YCXX_SHARED; libycxx_BUILT_SHARED). DECISIONS §20.2. One image links one kind:
+#                  CMake stops a target whose dependencies link both (the YCXX_LINKAGE property)
 #   ycxx::headers  the headers only (-nostdinc++ and C++26 included)
-#   ycxx::core     libycxx.a
-#   ycxx::abi      libycxx-abi.a, the Itanium C++ ABI runtime
+#   ycxx::core     libycxx.a; ycxx::abi: libycxx-abi.a, the Itanium C++ ABI runtime (static)
+#   ycxx::shared_library, ycxx::nonshared   libycxx.so.0.<minor> and libycxx_nonshared.a (shared)
+#   ycxx::modules  the std and std.compat modules for ycxx::ycxx; ycxx::shared_modules for
+#                  ycxx::shared when both kinds are built
 @PACKAGE_INIT@
 
 set(libycxx_BUILT_WITH_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@")
@@ -25,6 +32,8 @@ if(_ycxx_bad)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/libycxxTargets.cmake")
+set(libycxx_BUILT_STATIC @YCXX_BUILT_STATIC@)
+set(libycxx_BUILT_SHARED @YCXX_BUILT_SHARED@)
 
 # The hosted layers this build has (DECISIONS §18) and ycxx_add_hosted_layer, which attaches the
 # program's providers of a YCXX_PAL=none build to ycxx::ycxx.
@@ -45,26 +54,35 @@ if(DEFINED YCXX_GCC_INSTALL_DIR)
 elseif(DEFINED ENV{YCXX_GCC_INSTALL_DIR})
   set(_ycxx_gcc_dir "$ENV{YCXX_GCC_INSTALL_DIR}")
 endif()
-get_target_property(_ycxx_opts ycxx::ycxx INTERFACE_LINK_OPTIONS) # once, if found again
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
-   _ycxx_gcc_dir AND IS_DIRECTORY "${_ycxx_gcc_dir}" AND NOT CMAKE_CXX_FLAGS MATCHES "--gcc-install-dir=" AND
-   NOT "${_ycxx_opts}" MATCHES "--gcc-install-dir=")
-  set_property(TARGET ycxx::ycxx APPEND PROPERTY INTERFACE_COMPILE_OPTIONS
-               "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${_ycxx_gcc_dir}>")
-  set_property(TARGET ycxx::ycxx APPEND PROPERTY INTERFACE_LINK_OPTIONS
-               "$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${_ycxx_gcc_dir}>")
-endif()
+foreach(_ycxx_t ycxx::static ycxx::shared)
+  if(NOT TARGET ${_ycxx_t})
+    continue()
+  endif()
+  get_target_property(_ycxx_opts ${_ycxx_t} INTERFACE_LINK_OPTIONS) # once, if found again
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+     _ycxx_gcc_dir AND IS_DIRECTORY "${_ycxx_gcc_dir}" AND NOT CMAKE_CXX_FLAGS MATCHES "--gcc-install-dir=" AND
+     NOT "${_ycxx_opts}" MATCHES "--gcc-install-dir=")
+    set_property(TARGET ${_ycxx_t} APPEND PROPERTY INTERFACE_COMPILE_OPTIONS
+                 "$<$<COMPILE_LANG_AND_ID:CXX,Clang>:--gcc-install-dir=${_ycxx_gcc_dir}>")
+    set_property(TARGET ${_ycxx_t} APPEND PROPERTY INTERFACE_LINK_OPTIONS
+                 "$<$<AND:$<LINK_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:--gcc-install-dir=${_ycxx_gcc_dir}>")
+  endif()
+endforeach()
+unset(_ycxx_t)
 unset(_ycxx_gcc_dir)
 unset(_ycxx_opts)
 
 # ycxx::modules: the importing project compiles the interface units of std and std.compat with
 # the options exported for them, which lack the headers' directory (CMakeLists.txt, YCXX_MODULES).
-if(TARGET ycxx::modules)
-  get_target_property(_ycxx_opts ycxx::modules IMPORTED_CXX_MODULES_COMPILE_OPTIONS)
-  if(NOT "${_ycxx_opts}" MATCHES "-isystem")
-    set_property(TARGET ycxx::modules APPEND PROPERTY IMPORTED_CXX_MODULES_COMPILE_OPTIONS
-                 "SHELL:-isystem ${PACKAGE_PREFIX_DIR}/@YCXX_INSTALL_INCLUDEDIR@")
+foreach(_ycxx_t ycxx::modules ycxx::shared_modules)
+  if(TARGET ${_ycxx_t})
+    get_target_property(_ycxx_opts ${_ycxx_t} IMPORTED_CXX_MODULES_COMPILE_OPTIONS)
+    if(NOT "${_ycxx_opts}" MATCHES "-isystem")
+      set_property(TARGET ${_ycxx_t} APPEND PROPERTY IMPORTED_CXX_MODULES_COMPILE_OPTIONS
+                   "SHELL:-isystem ${PACKAGE_PREFIX_DIR}/@YCXX_INSTALL_INCLUDEDIR@")
+    endif()
+    unset(_ycxx_opts)
   endif()
-  unset(_ycxx_opts)
-endif()
+endforeach()
+unset(_ycxx_t)
 check_required_components(libycxx)

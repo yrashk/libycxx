@@ -49,6 +49,9 @@ from source into the cache, once, which takes about an hour on 4 cores (as
 - `-DYCXX_PROVISION=OFF`: never download or build a compiler; stop with a message instead.
 - `YCXX_TOOLCHAINS=<dir>` (environment): another toolchain cache.
 - `-DFETCHCONTENT_SOURCE_DIR_LIBYCXX=<checkout>`: use a libycxx checkout instead of cloning it.
+- `-DYCXX_SHARED=ON -DYCXX_STATIC=OFF`: link libycxx's shared library (`libycxx.so.0.<minor>`,
+  on macOS `libycxx.0.<minor>.dylib`) instead of its static archives; `hello` then needs it at run
+  time, and finds it in the build directory through its run path.
 - `GIT_TAG`: `main` until libycxx has a release; pin a commit for reproducible builds.
 
 Other ways to use libycxx (an installation with `find_package`, a project that knows nothing

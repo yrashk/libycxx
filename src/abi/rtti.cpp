@@ -1,6 +1,7 @@
 // libycxx ABI runtime: std::type_info's key function, the classification of type_info objects by
 // their ABI class, and exception handler matching ([except.handle]/3).
 #include "internal.hpp"
+#include "entry.hpp"
 #include "rtti.hpp"
 
 // Defining std::type_info's key function emits its vtable and type_info here
@@ -16,12 +17,30 @@ namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi
 
 using namespace __cxxabiv1;
 
+__kind_slot __registered_kinds[__kind_slots];
+
+namespace {
+// Registrations are rare (an image's load or unload): one at a time. At most this many keys are
+// ever inserted, so that a lookup always meets an empty slot; beyond it, images go unregistered
+// and their objects are classified by name.
+constexpr unsigned __max_registered_keys = __kind_slots * 3 / 4;
+unsigned __registered_keys;
+bool __registry_lock;
+const std::type_info* const __kind_removed = reinterpret_cast<const std::type_info*>(1);
+
+void __lock() noexcept {
+  while (__atomic_exchange_n(&__registry_lock, true, __ATOMIC_ACQUIRE))
+    ;
+}
+} // namespace
+
 __rtti_kind __kind_of_any(const std::type_info& t) noexcept {
   // The dynamic type of a type_info object is one of the ABI classes. Their type_info objects
   // are normally this runtime's, so addresses are compared first. Every image linking libycxx
-  // has its own hidden copy of the runtime (DECISIONS §2), so a type_info object emitted in
-  // another such image (an exception thrown there) is an instance of that copy's classes: then
-  // the names are compared.
+  // has its own hidden copy of the classes (DECISIONS §2, §20.6), so a type_info object emitted
+  // in another image (an exception thrown there, every type of a program in shared mode) is an
+  // instance of that copy's classes: then the addresses that image registered are compared, and
+  // last the names (an image of another runtime copy, or one that could not register).
   const std::type_info* d = &typeid(t);
   struct __kind_entry {
     const std::type_info* type;
@@ -41,11 +60,48 @@ __rtti_kind __kind_of_any(const std::type_info& t) noexcept {
   for (const auto& k : __kinds)
     if (d == k.type)
       return k.kind;
+  if (__rtti_kind k = __registered_kind(d); k != __rtti_kind::unknown)
+    return k;
   for (const auto& k : __kinds)
     if (*d == *k.type)
       return k.kind;
   return __rtti_kind::unknown;
 }
+
+}} // namespace __ycxx::__abi
+
+extern "C" {
+
+void __ycxx_abi_rtti_register(const std::type_info* const* __types) noexcept {
+  using namespace __ycxx::__abi;
+  __lock();
+  for (int k = 0; k < __rtti_class_count; ++k) {
+    const std::type_info* d = __types[k];
+    if (__registered_kind(d) != __rtti_kind::unknown || __registered_keys == __max_registered_keys)
+      continue;
+    unsigned i = static_cast<unsigned>(reinterpret_cast<__UINTPTR_TYPE__>(d) >> 4) & (__kind_slots - 1);
+    while (__registered_kinds[i].__key != nullptr)
+      i = (i + 1) & (__kind_slots - 1);
+    __registered_kinds[i].__kind = __rtti_class_kinds[k];
+    __atomic_store_n(&__registered_kinds[i].__key, d, __ATOMIC_RELEASE);
+    ++__registered_keys;
+  }
+  __atomic_store_n(&__registry_lock, false, __ATOMIC_RELEASE);
+}
+
+void __ycxx_abi_rtti_unregister(const std::type_info* const* __types) noexcept {
+  using namespace __ycxx::__abi;
+  __lock();
+  for (int k = 0; k < __rtti_class_count; ++k)
+    for (unsigned i = 0; i < __kind_slots; ++i)
+      if (__registered_kinds[i].__key == __types[k])
+        __atomic_store_n(&__registered_kinds[i].__key, __kind_removed, __ATOMIC_RELEASE);
+  __atomic_store_n(&__registry_lock, false, __ATOMIC_RELEASE);
+}
+
+} // extern "C"
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
 
 __base_search __find_bases(const __subobject& __root, const __class_type_info& target) {
   __base_search r;

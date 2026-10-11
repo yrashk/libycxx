@@ -15,10 +15,13 @@ sanitizer = lit_config.params.get('sanitizer', '')
 # The libycxx build to link (tools/ycxx-cxx --libdir); a sanitizer run's is instrumented with the
 # same sanitizers (tools/run-conformance; DECISIONS §6.8).
 libdir = lit_config.params.get('libdir', '')
+# linkage=shared: every test compiled and linked in shared mode (tools/ycxx-cxx --shared, DECISIONS §20).
+linkage = lit_config.params.get('linkage', 'static')
 
 config.name = f'libycxx-libcxx-{compiler}'
 config.test_source_root = os.path.join(tests_root, 'std')
-config.test_exec_root = os.path.join(repo, 'build', f'lit-libcxx-{compiler}' + (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
+config.test_exec_root = os.path.join(repo, 'build', f'lit-libcxx-{compiler}' + ('-shared' if linkage == 'shared' else '') +
+                                     (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
 config.suffixes = ['.cpp']
 config.excludes = ['Inputs', 'gen.py']
 
@@ -92,6 +95,8 @@ sanitizer_list = sanitizers.parse(sanitizer)
 base_flags += sanitizers.compile_flags(sanitizer_list)
 if libdir:
     base_flags = ['--libdir=' + libdir] + base_flags
+if linkage == 'shared':
+    base_flags = ['--shared'] + base_flags
 
 import sys
 sys.path.insert(0, os.path.join(repo, 'tests'))

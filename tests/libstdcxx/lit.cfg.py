@@ -9,10 +9,13 @@ sanitizer = lit_config.params.get('sanitizer', '')
 # The libycxx build to link (tools/ycxx-cxx --libdir); a sanitizer run's is instrumented with the
 # same sanitizers (tools/run-conformance; DECISIONS §6.8).
 libdir = lit_config.params.get('libdir', '')
+# linkage=shared: every test compiled and linked in shared mode (tools/ycxx-cxx --shared, DECISIONS §20).
+linkage = lit_config.params.get('linkage', 'static')
 
 config.name = f'libycxx-libstdcxx-{compiler}'
 config.test_source_root = tests_root
-config.test_exec_root = os.path.join(repo, 'build', f'lit-libstdcxx-{compiler}' + (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
+config.test_exec_root = os.path.join(repo, 'build', f'lit-libstdcxx-{compiler}' + ('-shared' if linkage == 'shared' else '') +
+                                     (f'-{sanitizer.replace(",", "-")}' if sanitizer else ''))
 config.suffixes = ['.cc']
 # Directories that test GNU extensions, TS's, ABI or tooling rather than the standard.
 config.excludes = ['ext', 'tr1', 'tr2', 'backward', 'experimental', 'decimal', 'abi', 'util', 'data',
@@ -34,6 +37,8 @@ sanitizer_list = sanitizers.parse(sanitizer)
 flags += sanitizers.compile_flags(sanitizer_list)
 if libdir:
     flags = ['--libdir=' + libdir] + flags
+if linkage == 'shared':
+    flags = ['--shared'] + flags
 wrapper = os.path.join(repo, 'tools', 'ycxx-cxx')
 # The testsuite's support library (DejaGnu's libtestc++.a): the helpers' out-of-line definitions.
 support_lib = build_support_lib(wrapper, compiler, flags, tests_root, repo, config.test_exec_root)

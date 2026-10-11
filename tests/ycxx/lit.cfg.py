@@ -12,6 +12,8 @@
 #   libdir=<dir>       the libycxx build to link (tools/ycxx-cxx --libdir): for a sanitizer run,
 #                      tools/run-conformance passes the build instrumented with the same
 #                      sanitizers, build/<compiler>-<sanitizers> (DECISIONS §6.8)
+#   linkage=shared     compile and link every test in shared mode (tools/ycxx-cxx --shared,
+#                      DECISIONS §20; lit feature shared-linkage, else static-linkage)
 import os, platform, shlex, subprocess, sys
 
 repo = lit_config.params['repo']
@@ -19,6 +21,9 @@ compiler = lit_config.params.get('compiler', 'clang')
 sanitizer = lit_config.params.get('sanitizer', '')
 libdir = lit_config.params.get('libdir', '')
 stdlib = lit_config.params.get('stdlib', 'ycxx')
+linkage = lit_config.params.get('linkage', 'static')
+if linkage not in ('static', 'shared'):
+    lit_config.fatal(f'unknown linkage {linkage!r}')
 hardened = lit_config.params.get('hardened', '0') not in ('', '0', 'false', 'no', 'off')
 cxxflags = shlex.split(lit_config.params.get('cxxflags', ''))
 config_name = lit_config.params.get('config', '')
@@ -31,6 +36,7 @@ reference = stdlib == 'libstdcxx'
 config.name = (f'libstdcxx-ref-{compiler}' if reference else f'libycxx-own-{compiler}')
 config.test_source_root = os.path.join(repo, 'tests', 'ycxx')
 config.test_exec_root = os.path.join(repo, 'build', ('lit-ref-libstdcxx-' if reference else 'lit-ycxx-') + compiler +
+                                     ('-shared' if linkage == 'shared' else '') +
                                      (f'-{sanitizer.replace(",", "-")}' if sanitizer else '') +
                                      ('-hardened' if hardened else '') + (f'-{config_name}' if config_name else ''))
 config.suffixes = ['.cpp']
@@ -44,6 +50,8 @@ from ycxxlit import sanitizers
 flags += sanitizers.compile_flags(sanitizers.parse(sanitizer))
 if libdir:
     flags = ['--libdir=' + libdir] + flags
+if linkage == 'shared':
+    flags = ['--shared'] + flags
 if hardened:
     flags += ['-DYCXX_HARDENED=1']
 flags += cxxflags
@@ -54,7 +62,7 @@ def enabled(on, off):
     last = [f for f in cxxflags if f in (on, off)]
     return not last or last[-1] == on
 
-features = {compiler, platform.system().lower()} | set(sanitizer.split(',') if sanitizer else ())
+features = {compiler, platform.system().lower(), f'{linkage}-linkage'} | set(sanitizer.split(',') if sanitizer else ())
 if hardened:
     features.add('hardened')
 if enabled('-fexceptions', '-fno-exceptions'):

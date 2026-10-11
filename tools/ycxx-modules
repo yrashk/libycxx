@@ -1,7 +1,8 @@
 #!/bin/sh
 # Build libycxx's standard library modules std and std.compat ([std.modules]) for one compiler.
-#   ycxx-modules gcc|clang [-o DIR] [compiler flags...]
-# DIR (default build/<compiler>/modules) receives
+#   ycxx-modules gcc|clang [--shared] [-o DIR] [compiler flags...]
+# DIR (default build/<compiler>/modules; with --shared or $YCXX_LINKAGE=shared, shared mode's
+# build/<compiler>-shared/modules: a module is built for one mode, DECISIONS §20.4) receives
 #   clang: std.pcm, std.compat.pcm      the built module interfaces (BMIs)
 #   gcc:   std.gcm, std.compat.gcm      the compiled module interfaces (CMIs), and module.map, the
 #                                       -fmodule-mapper file naming them
@@ -19,7 +20,10 @@ case $which in
   gcc|clang) shift ;;
   *) echo "usage: ycxx-modules gcc|clang [-o DIR] [compiler flags...]" >&2; exit 2 ;;
 esac
+linkage=${YCXX_LINKAGE:-static}
+if [ "${1:-}" = --shared ]; then linkage=shared; shift; fi
 dir=$here/build/$which/modules
+[ $linkage = shared ] && dir=$here/build/$which-shared/modules
 if [ "${1:-}" = -o ]; then
   [ $# -ge 2 ] || { echo "ycxx-modules: -o needs a directory" >&2; exit 2; }
   dir=$2
@@ -28,7 +32,7 @@ fi
 mkdir -p "$dir" || exit 1
 dir=$(cd "$dir" && pwd)
 src=$here/modules
-cxx="$here/tools/ycxx-cxx $which"
+cxx="$here/tools/ycxx-cxx $which --$linkage"
 set -e
 if [ "$which" = clang ]; then
   # `std` is a module name reserved to the implementation, which libycxx is.

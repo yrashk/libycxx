@@ -1,5 +1,5 @@
 // DECISIONS §2 with modules: a program that imports std exports none of the library's
-// definitions, the modules' own (the module initializers _ZGIW3std, _ZGIW3std6compat) included:
+// definitions (in shared mode none but its instantiations of std::__y1 and __ycxx, §20.12), the modules' own (the module initializers _ZGIW3std, _ZGIW3std6compat) included:
 // what the importer instantiates is declared hidden by the headers in the modules' global module
 // fragment, as through #include (linkage/no_exported_library_symbols.pass.cpp).
 // The test lists the symbols its executable exports (ELF: `nm -D --defined-only`, which
@@ -44,6 +44,14 @@ int run() {
 }
 } // namespace own
 
+// Compiled with -DYCXX_SHARED when the test links libycxx's shared library (lit's shared
+// configuration, tools/ycxx-cxx --shared).
+#if defined(YCXX_SHARED) && YCXX_SHARED
+constexpr bool shared_mode = true;
+#else
+constexpr bool shared_mode = false;
+#endif
+
 int main(int, char** argv) {
   CHECK(own::run() == 4);
   // popen is POSIX, not exported by std.compat: the output goes through a file next to the program.
@@ -66,7 +74,11 @@ int main(int, char** argv) {
     if (name.starts_with("__Z"))
       name.erase(0, 1); // Mach-O's C prefix
     bool fundamental_type_info = (name.starts_with("_ZTI") || name.starts_with("_ZTS")) && name.size() <= 8;
-    bool library = (name.starts_with("_Z") && !name.contains("3own")) || name.contains("__cxa_") ||
+    // Shared mode (DECISIONS §20.12): the program exports what it instantiated of std::__y1 and
+    // __ycxx, which the dynamic linker unifies with libycxx.so's (one definition per process);
+    // those names are libycxx's alone. Every other name stays hidden, as in static mode.
+    bool shared_mode_export = shared_mode && (name.contains("St4__y1") || name.contains("6__ycxx"));
+    bool library = (name.starts_with("_Z") && !name.contains("3own") && !shared_mode_export) || name.contains("__cxa_") ||
                    name.contains("__gxx_personality") || name.contains("ycxx_pal_");
     if (library && os == "Darwin" && fundamental_type_info)
       continue; // default visibility on Darwin with GCC only (DECISIONS §2)

@@ -54,12 +54,14 @@ run() { # compiler-command target-label C-compiler linker [skip-link-reason]
 }
 # libycxx-freestanding.a for one target: the allocation-function defaults, std::nothrow and
 # floating-point <charconv>, the <atomic> lock and wait tables, <debugging> and the default PAL
-# wait and debugger hooks. Hidden visibility, as the hosted archives (DECISIONS §2).
+# wait and debugger hooks, and the static mode's link-time marker (DECISIONS §20.2). Hidden
+# visibility, as the hosted archives (DECISIONS §2).
 build_fsrt() {
   rm -rf "$out/fsrt.$2" && mkdir -p "$out/fsrt.$2"
   for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp "$repo"/src/runtime/charconv/*.cpp \
            "$repo"/src/runtime/atomic/*.cpp "$repo"/src/runtime/debugging/*.cpp \
-           "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
+           "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp \
+           "$repo"/src/runtime/linkage/static.cpp; do
     # One function per file; GCC: no zero fill of the charconv work buffers (CMakeLists.txt).
     case "$2" in gcc*) nw="-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized" ;; *) nw= ;; esac
     $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1

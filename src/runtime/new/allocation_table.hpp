@@ -20,9 +20,14 @@
 
 #include <cstddef>
 
+// The table also carries the ABI version of the libycxx that built its image (__abi, first, and
+// at that offset in every version): each image checks, from an initializer, that the process's
+// table has its own version, and aborts naming both otherwise (allocation_table.cpp; DECISIONS
+// §20.6). Images of different libycxx versions disagree on layouts, so they must not share objects.
 // News take (size, alignment); the alignment of the forms without one is ignored. Deletes take
 // (pointer, size, alignment); the size or alignment of the forms without them is ignored.
 struct __ycxx_allocation_functions_t {
+  const char* __abi;
   void* (*__new_)(std::size_t, std::size_t);
   void* (*__new_align)(std::size_t, std::size_t);
   void* (*__new_nothrow)(std::size_t, std::size_t) noexcept;

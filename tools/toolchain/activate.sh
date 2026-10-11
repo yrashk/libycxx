@@ -1,6 +1,6 @@
 # Load libycxx's toolchains into the current bash or zsh session:
 #
-#   source tools/toolchain/activate.sh [--provision] [--use gcc|clang|DIR]
+#   source tools/toolchain/activate.sh [--provision] [--use gcc|clang|DIR] [--shared]
 #
 # Reads <toolchains>/toolchains.env written by tools/toolchain/provision (running it in
 # --detect-only mode first if the file is missing; with --provision it may also download and
@@ -19,6 +19,10 @@
 #   PKG_CONFIG_PATH           DIR's pkgconfig directory prepended (libycxx.pc)
 #   YCXX_USE                  DIR
 #   PATH                      DIR/bin prepended too
+# --shared (with --use): the shared library instead of the archives (DECISIONS §20.2): gcc or clang
+# then names build/<compiler>-shared (configured with -DYCXX_SHARED=ON), and YCXX_LINKAGE=shared
+# is exported, which ycxx-c++ (and so the toolchain file and the Meson file) follows; pkg-config
+# users take libycxx-shared.pc.
 # and defines `ycxx-unload`, which restores everything it changed and removes itself.
 # (The fish version is activate.fish.)
 
@@ -30,20 +34,21 @@ fi
 _ycxx_root=$(cd "$_ycxx_here/../.." && pwd)
 _ycxx_conf=${YCXX_TOOLCHAINS:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/toolchains}/toolchains.env
 
-_ycxx_provision= _ycxx_use=
+_ycxx_provision= _ycxx_use= _ycxx_shared=
 while [ $# -gt 0 ]; do
   case $1 in
     --provision) _ycxx_provision=1 ;;
     --use) _ycxx_use=${2:-}; [ $# -gt 1 ] && shift ;;
     --use=*) _ycxx_use=${1#--use=} ;;
-    *) echo "activate: unknown argument '$1' (--provision, --use gcc|clang|DIR)" >&2; return 2 ;;
+    --shared) _ycxx_shared=1 ;;
+    *) echo "activate: unknown argument '$1' (--provision, --use gcc|clang|DIR, --shared)" >&2; return 2 ;;
   esac
   shift
 done
 # --use: the libycxx build or installation, with its compiler wrapper.
 _ycxx_use_tc= _ycxx_use_pc=
 if [ -n "$_ycxx_use" ]; then
-  case $_ycxx_use in gcc|clang) _ycxx_use=$_ycxx_root/build/$_ycxx_use ;; esac
+  case $_ycxx_use in gcc|clang) _ycxx_use=$_ycxx_root/build/$_ycxx_use${_ycxx_shared:+-shared} ;; esac
   if [ ! -x "$_ycxx_use/bin/ycxx-c++" ]; then
     echo "activate: --use: no bin/ycxx-c++ in $_ycxx_use (a libycxx build tree, or the prefix of 'cmake --install')" >&2
     return 1
@@ -72,7 +77,7 @@ if [ -f "$_ycxx_conf" ]; then
 
   # Remember what we change; ycxx-unload puts it back (set or unset).
   _ycxx_saved_vars="PATH SDKROOT YCXX_SDKROOT YCXX_ROOT YCXX_GCC_BIN YCXX_GCC YCXX_GXX YCXX_GCC_INSTALL_DIR YCXX_CLANG_BIN YCXX_CLANG YCXX_CLANGXX YCXX_LLD YCXX_LLVM_AR"
-  [ -n "$_ycxx_use" ] && _ycxx_saved_vars="$_ycxx_saved_vars CXX CC CMAKE_TOOLCHAIN_FILE PKG_CONFIG_PATH YCXX_USE"
+  [ -n "$_ycxx_use" ] && _ycxx_saved_vars="$_ycxx_saved_vars CXX CC CMAKE_TOOLCHAIN_FILE PKG_CONFIG_PATH YCXX_USE YCXX_LINKAGE"
   for _ycxx_v in $(echo "$_ycxx_saved_vars"); do
     if eval "[ -n \"\${$_ycxx_v+x}\" ]"; then
       eval "_YCXX_OLD_$_ycxx_v=\${$_ycxx_v}"
@@ -98,6 +103,7 @@ if [ -f "$_ycxx_conf" ]; then
     export YCXX_USE="$_ycxx_use" CXX="$_ycxx_use/bin/ycxx-c++" CC="$_ycxx_use/bin/ycxx-cc"
     [ -n "$_ycxx_use_tc" ] && export CMAKE_TOOLCHAIN_FILE="$_ycxx_use_tc"
     [ -n "$_ycxx_use_pc" ] && export PKG_CONFIG_PATH="$_ycxx_use_pc${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    if [ -n "$_ycxx_shared" ]; then export YCXX_LINKAGE=shared; else unset YCXX_LINKAGE; fi
   fi
 
   ycxx-unload() {
@@ -118,7 +124,7 @@ if [ -f "$_ycxx_conf" ]; then
 
   hash -r 2>/dev/null || rehash 2>/dev/null || true
   echo "libycxx toolchains loaded (GCC: ${YCXX_GXX:-none}, Clang: ${YCXX_CLANGXX:-none}); 'ycxx-unload' restores the environment" >&2
-  [ -n "$_ycxx_use" ] && echo "building against libycxx: CXX=$CXX, CC=$CC${_ycxx_use_tc:+, CMAKE_TOOLCHAIN_FILE=$_ycxx_use_tc}" >&2
+  [ -n "$_ycxx_use" ] && echo "building against libycxx${_ycxx_shared:+ (shared library)}: CXX=$CXX, CC=$CC${_ycxx_use_tc:+, CMAKE_TOOLCHAIN_FILE=$_ycxx_use_tc}" >&2
 fi
 
-unset _ycxx_here _ycxx_root _ycxx_conf _ycxx_v _ycxx_k _ycxx_val _ycxx_path _ycxx_provision _ycxx_use _ycxx_use_tc _ycxx_use_pc
+unset _ycxx_here _ycxx_root _ycxx_conf _ycxx_v _ycxx_k _ycxx_val _ycxx_path _ycxx_provision _ycxx_use _ycxx_use_tc _ycxx_use_pc _ycxx_shared

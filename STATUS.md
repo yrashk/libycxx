@@ -1,5 +1,37 @@
 # libycxx status
 
+## Shared library (2026-10-10)
+
+libycxx builds a shared library on request (DECISIONS §20, all ten steps): `-DYCXX_SHARED=ON` adds
+`libycxx.so.0.1` (macOS `libycxx.0.1.dylib`) and `libycxx_nonshared.a` to the static archives,
+`-DYCXX_STATIC=OFF` leaves the archives out. Static linkage stays the default. A program or library
+chooses per image: `ycxx::shared` (CMake), `YCXX_LINKAGE=shared` (`ycxx-c++`, the toolchain file,
+Meson), `libycxx-shared.pc`, `activate.sh --use DIR --shared`, `tools/ycxx-cxx --shared`
+(docs/BUILDING_PROJECTS.md, "Static and shared libycxx").
+- In shared mode the library and the ABI runtime are one per process: handlers,
+  `current_exception`, `uncaught_exceptions`, the error categories, the streams and the memory
+  resources are shared by every shared-mode image, and GCC's hiding of functions whose
+  signatures name library types does not apply (Known limitations: those are static mode's).
+- What another C++ runtime defines stays hidden in every image; the library exports `std::__y1`,
+  `__ycxx`, `__ycxx_abi_*` and the allocation table only (1558 symbols with GCC, 1640 with Clang
+  on Linux x86_64, `abi/*.abilist`, checked by `tools/check_abi.py`).
+- A translation unit compiled in one mode does not link in the other (the marker
+  `__ycxx_linkage_static_v1` / `__ycxx_linkage_shared_v1` is named in the error), and an image of
+  another libycxx version stops the process at load, naming both versions.
+- Cost: throw/catch and `dynamic_cast` within about 10% of static mode once each image registers
+  its RTTI classes (DECISIONS §20.10, step 10); allocations and the platform layer's calls take a
+  forwarder hop (`new`/`delete` about 1.2 times static mode's time in `bench/runtime`).
+- Tested on Linux x86_64 (2026-10-10, GCC 16.2 and Clang 23.1) against the shared library: the own
+  suite (GCC 2888 passed, 16 XFAIL, 70 unsupported; Clang 2859, 41, 74; Clang with ASan+UBSan 2845
+  and with TSan 2856 passed, 0 failed), the libc++ and libstdc++ CI samples with language.support,
+  utilities, diagnostics, thread and localization (as many passed as against the archives), the
+  19 real-world projects with both compilers (0 failed; doctest's DLL tests, glaze's `lib_test` and
+  GoogleTest's `gtest_dll_test_`, skipped in static mode for its per-image runtime, pass),
+  `tests/cmake/run.sh`'s section 14, the quickstart with its shared option, and
+  `tools/check-shared-macos.sh` (49 checks).
+- Not yet: a Mac's ABI baseline, the hiding of the `src/`-private `__ycxx` names, a libabigail
+  check (DECISIONS §20.13).
+
 ## ABI change: the inline namespace std::__y1 (2026-10-08)
 
 Every standard entity is now declared in the inline namespace `std::__y1` (DECISIONS §20.4),
@@ -10,8 +42,8 @@ now `NSt4__y112out_of_rangeE`), and the ABI runtime's entry points are implement
 `__ycxx_abi_*` names with the Itanium names as forwarders (§20.6). **Rebuild everything built
 against an older libycxx; libycxx 0.x has no ABI promise.** Objects built against the old names fail to link
 ("undefined reference"), they do not misbehave. Debuggers, `nm -C`, the terminate handler and
-`<stacktrace>` show `std::__y1::`, and GCC's diagnostics name it too. This prepares the shared
-library (§20, steps 4-10, pending).
+`<stacktrace>` show `std::__y1::`, and GCC's diagnostics name it too. The shared library above
+builds on it.
 
 ## Toolchain
 | Compiler | Version | Notes |
@@ -870,7 +902,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   {2, 4} with strides {6, 9}, the slice `extent_slice{0, 2, 3}, full_extent` of {4, 4} with
   {2, 9}, is unique and fails it). libycxx constructs submdspan results without that check (the
   other preconditions are still checked in hardened builds); a draft defect to report.
-- Hidden visibility (DECISIONS §2): a program or shared library exports none of libycxx's
+- Hidden visibility (DECISIONS §2), static mode (shared mode: "Shared library" above, where
+  the warning, the hiding of functions and the per-image runtime state below do not apply between
+  shared-mode images): a program or shared library exports none of libycxx's
   symbols; its images share their default allocation functions through the allocation table
   `ycxx_allocation_functions` (DECISIONS §2), kept in a program by link options the CMake
   package and `tools/ycxx-cxx` add (`-u`, and `--export-dynamic-symbol` on ELF); other build

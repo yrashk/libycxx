@@ -63,6 +63,13 @@ __ycxx_abi_personality(int __version, _Unwind_Action __actions, std::uint64_t __
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] int __ycxx_abi_thread_atexit(void (*__dtor)(void*), void* __obj,
                                                                          void* __dso) noexcept;
 
+// The registration of an image's copy of the RTTI classes (rtti_classes.cpp, rtti.cpp; DECISIONS
+// §20.6): `__types` lists the type_info objects of the image's nine concrete ABI classes, in the
+// order of __ycxx::__abi::__rtti_class_kinds (rtti.hpp); unregistered, with the same list, when
+// the image is unloaded. A full registry leaves the image's objects to be classified by name.
+[[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_rtti_register(const std::type_info* const* __types) noexcept;
+[[__gnu__::__visibility__(_YCXX_VISIBILITY)]] void __ycxx_abi_rtti_unregister(const std::type_info* const* __types) noexcept;
+
 // The demangler (src/hosted/cxa_demangle.cpp; 3.4).
 [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] char* __ycxx_abi_demangle(const char* __mangled_name,
                                                                       char* __output_buffer,

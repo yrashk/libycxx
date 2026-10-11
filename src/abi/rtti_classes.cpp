@@ -5,6 +5,7 @@
 // (DECISIONS §20.6), which is why they are in a file of their own. The runtime classifies a
 // type_info object whose ABI class is another image's by that class's name (rtti.cpp).
 #include "internal.hpp"
+#include "entry.hpp"
 #include "rtti.hpp"
 #include <abi/fundamental_type_infos.hpp>
 
@@ -53,3 +54,28 @@ consteval __ycxx::__abi::__asm_text hide_fundamental_type_infos() {
 }
 } // namespace
 asm((hide_fundamental_type_infos()));
+
+// Shared mode (DECISIONS §20.6, §20.10 step 10): this image's copy of the classes is registered
+// with the runtime in libycxx.so when the image is loaded, and withdrawn when it is unloaded, so
+// that the runtime recognizes the type_info objects of this image's types by address rather than
+// by comparing names (a dynamic_cast or a handler search classifies every type it meets). In static
+// mode the runtime is this image's own and compares its own addresses.
+namespace {
+using namespace __cxxabiv1;
+[[__gnu__::__used__]] constexpr const std::type_info* __types[] = {
+    &typeid(__si_class_type_info),  &typeid(__vmi_class_type_info),          &typeid(__class_type_info),
+    &typeid(__pointer_type_info),   &typeid(__fundamental_type_info),        &typeid(__pointer_to_member_type_info),
+    &typeid(__enum_type_info),      &typeid(__function_type_info),           &typeid(__array_type_info),
+};
+static_assert(sizeof __types / sizeof __types[0] == __ycxx::__abi::__rtti_class_count);
+
+[[__gnu__::__constructor__]] void __register_rtti_classes() noexcept {
+  if constexpr (__ycxx::__detail::__cfg::__shared)
+    __ycxx_abi_rtti_register(__types);
+}
+
+[[__gnu__::__destructor__]] void __unregister_rtti_classes() noexcept {
+  if constexpr (__ycxx::__detail::__cfg::__shared)
+    __ycxx_abi_rtti_unregister(__types);
+}
+} // namespace

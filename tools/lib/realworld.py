@@ -113,8 +113,8 @@ def cmd_plan(repo, names):
 
 
 def conditions():
-    """The configuration's conditions: the compiler, the platform, the sanitizers
-    ($YCXX_RW_CONDITIONS, set by tools/realworld: "gcc linux asan")."""
+    """The configuration's conditions: the compiler, the platform, the sanitizers, shared
+    ($YCXX_RW_CONDITIONS, set by tools/realworld: "gcc linux asan", "clang linux shared")."""
     return set(os.environ.get('YCXX_RW_CONDITIONS', '').split())
 
 
@@ -150,8 +150,9 @@ CATEGORIES = {'libycxx-limitation', 'extension', 'implementation-specific', 'tra
 def read_list(path):
     """skip.txt / xfail.txt / build-skip.txt: "<name regex> | <category> | <reason> [| <conditions>]"
     per line. The regex must match the whole name (a CTest test, or a build output); the entry
-    applies only where every condition holds (gcc, clang, linux, darwin, asan, ubsan, tsan, and
-    no-ipv6 where the host cannot open an IPv6 socket), and none of the ones written !name."""
+    applies only where every condition holds (gcc, clang, linux, darwin, asan, ubsan, tsan, shared
+    for a run against libycxx's shared library, and no-ipv6 where the host cannot open an IPv6
+    socket), and none of the ones written !name."""
     out = []
     if not os.path.isfile(path):
         return out

@@ -1,6 +1,6 @@
 # Load libycxx's toolchains into the current fish session:
 #
-#   source tools/toolchain/activate.fish [--provision] [--use gcc|clang|DIR]
+#   source tools/toolchain/activate.fish [--provision] [--use gcc|clang|DIR] [--shared]
 #
 # The fish counterpart of activate.sh (see there for the variables it exports, and --use). Defines
 # `ycxx-unload`, which restores everything it changed and removes itself.
@@ -15,6 +15,7 @@ test -n "$YCXX_TOOLCHAINS"; and set _ycxx_conf $YCXX_TOOLCHAINS/toolchains.env
 
 set -l _ycxx_provision
 set -l _ycxx_use
+set -l _ycxx_shared
 set -l _ycxx_i 1
 while test $_ycxx_i -le (count $argv)
     switch $argv[$_ycxx_i]
@@ -25,8 +26,10 @@ while test $_ycxx_i -le (count $argv)
             set _ycxx_use $argv[$_ycxx_i]
         case '--use=*'
             set _ycxx_use (string replace -- --use= '' $argv[$_ycxx_i])
+        case --shared
+            set _ycxx_shared 1
         case '*'
-            echo "activate: unknown argument '$argv[$_ycxx_i]' (--provision, --use gcc|clang|DIR)" >&2
+            echo "activate: unknown argument '$argv[$_ycxx_i]' (--provision, --use gcc|clang|DIR, --shared)" >&2
             return 2
     end
     set _ycxx_i (math $_ycxx_i + 1)
@@ -35,7 +38,10 @@ end
 set -l _ycxx_use_tc
 set -l _ycxx_use_pc
 if test -n "$_ycxx_use"
-    contains -- $_ycxx_use gcc clang; and set _ycxx_use $_ycxx_root/build/$_ycxx_use
+    if contains -- $_ycxx_use gcc clang
+        set _ycxx_use $_ycxx_root/build/$_ycxx_use
+        test -n "$_ycxx_shared"; and set _ycxx_use $_ycxx_use-shared
+    end
     if not test -x $_ycxx_use/bin/ycxx-c++
         echo "activate: --use: no bin/ycxx-c++ in $_ycxx_use (a libycxx build tree, or the prefix of 'cmake --install')" >&2
         return 1
@@ -71,7 +77,7 @@ if test -f $_ycxx_conf
 
     set -g _ycxx_saved_vars PATH SDKROOT YCXX_SDKROOT YCXX_ROOT YCXX_GCC_BIN YCXX_GCC YCXX_GXX YCXX_GCC_INSTALL_DIR \
         YCXX_CLANG_BIN YCXX_CLANG YCXX_CLANGXX YCXX_LLD YCXX_LLVM_AR
-    test -n "$_ycxx_use"; and set -a _ycxx_saved_vars CXX CC CMAKE_TOOLCHAIN_FILE PKG_CONFIG_PATH YCXX_USE
+    test -n "$_ycxx_use"; and set -a _ycxx_saved_vars CXX CC CMAKE_TOOLCHAIN_FILE PKG_CONFIG_PATH YCXX_USE YCXX_LINKAGE
     for v in $_ycxx_saved_vars
         if set -q $v
             set -g _YCXX_OLD_$v $$v
@@ -100,6 +106,11 @@ if test -f $_ycxx_conf
         set -gx CC $_ycxx_use/bin/ycxx-cc
         test -n "$_ycxx_use_tc"; and set -gx CMAKE_TOOLCHAIN_FILE $_ycxx_use_tc
         test -n "$_ycxx_use_pc"; and set -gx PKG_CONFIG_PATH $_ycxx_use_pc $PKG_CONFIG_PATH
+        if test -n "$_ycxx_shared"
+            set -gx YCXX_LINKAGE shared
+        else
+            set -e YCXX_LINKAGE
+        end
     end
 
     function ycxx-unload --description 'Restore the environment from before activating libycxx toolchains'

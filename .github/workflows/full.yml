@@ -2,8 +2,9 @@ name: full
 
 # The long runs, nightly and on demand (Actions > full > Run workflow): libc++'s and libstdc++'s
 # whole suites on both compilers, on Linux and macOS, the own suite under ASan+UBSan and under
-# ThreadSanitizer (each with libycxx instrumented too), and the own suite hardened, with
-# -fno-exceptions, with -O2 and without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES);
+# ThreadSanitizer (each with libycxx instrumented too; under ThreadSanitizer also with the
+# instrumented shared library), and the own suite hardened, with -fno-exceptions, with -O2 and
+# without transitive includes (-DYCXX_NO_TRANSITIVE_INCLUDES);
 # the benchmarks against their baseline (bench/check); the external suites and the real-world
 # projects linked against libycxx's shared library (DECISIONS §20; tools/test --shared); and the
 # quickstart's commands on bare runners, with Clang downloaded (tests/quickstart/run.sh --provision).
@@ -73,7 +74,9 @@ jobs:
             build/test-logs/*.log
 
   # ThreadSanitizer: the own suite and libc++'s and libstdc++'s whole suites, with both compilers,
-  # each linked with a libycxx instrumented with TSan too (build/<cc>-tsan; DECISIONS §6.8). On
+  # each linked with a libycxx instrumented with TSan too (build/<cc>-tsan; DECISIONS §6.8), and
+  # the own suite against the instrumented shared library (build/<cc>-shared-tsan; DECISIONS §20.13:
+  # tools/test --shared, the tests compiled in shared mode). On
   # the bare runner, with toolchains provisioned for it (.github/actions/setup-linux-tsan): TSan
   # needs vm.mmap_rnd_bits <= 28, which a container cannot set, and GCC's libtsan, which a GCC
   # configured without libsanitizer lacks; tools/toolchain/provision --with-sanitizers builds GCC
@@ -112,6 +115,7 @@ jobs:
           - { name: libcxx-1, stage: libcxx, dirs: 'algorithms containers input.output iterators language.support library localization ranges', others: false }
           - { name: libcxx-2, stage: libcxx, dirs: 'algorithms containers input.output iterators language.support library localization ranges', others: true }
           - { name: libstdcxx, stage: libstdcxx, dirs: '', others: false }
+          - { name: ycxx-shared, stage: ycxx, dirs: '', others: false, linkage: shared }
     env:
       YCXX_LONG_TESTS: '1'   # libc++'s long_tests feature
     steps:
@@ -137,7 +141,9 @@ jobs:
           fi
           filters=
           for d in "$@"; do filters="$filters -f $d"; done
-          tools/test -j4 -q -c ${{ matrix.compiler }} -s tsan $filters build ${{ matrix.part.stage }}
+          linkage=
+          [ "${{ matrix.part.linkage }}" = shared ] && linkage=--shared
+          tools/test -j4 -q -c ${{ matrix.compiler }} -s tsan $linkage $filters build ${{ matrix.part.stage }}
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4

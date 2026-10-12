@@ -122,7 +122,7 @@ public:
 
 } // namespace __cxxabiv1
 
-namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 // Which ABI class a type_info object is (its dynamic type, read through typeid).
 enum class __rtti_kind : unsigned char {

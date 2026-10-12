@@ -1188,8 +1188,9 @@ symbolized symbolize(std::uintptr_t __pc, bool want_function, bool want_line) {
 
 } // namespace
 
-std::size_t __ycxx::__detail::__stacktrace_capture(const void* __ra, std::size_t __skip, std::uintptr_t* __buf,
-                                             std::size_t n) noexcept {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
+
+std::size_t __stacktrace_capture(const void* __ra, std::size_t __skip, std::uintptr_t* __buf, std::size_t n) noexcept {
   if (n == 0)
     return 0;
   capture_state __st{reinterpret_cast<std::uintptr_t>(__ra), false, __skip, __buf, n, 0};
@@ -1197,13 +1198,15 @@ std::size_t __ycxx::__detail::__stacktrace_capture(const void* __ra, std::size_t
   return __st.count;
 }
 
-std::string __ycxx::__detail::__stacktrace_describe(std::uintptr_t __pc, __stacktrace_query what) {
+std::string __stacktrace_describe(std::uintptr_t __pc, __stacktrace_query what) {
   if (what == __stacktrace_query::description)
     return symbolize(__pc, true, false).function;
   return symbolize(__pc, false, true).__file;
 }
 
-std::uint_least32_t __ycxx::__detail::__stacktrace_line(std::uintptr_t __pc) { return symbolize(__pc, false, true).line; }
+std::uint_least32_t __stacktrace_line(std::uintptr_t __pc) { return symbolize(__pc, false, true).line; }
+
+}} // namespace __ycxx::__detail
 
 std::string std::to_string(const stacktrace_entry& __f) {
   if (!__f)

@@ -11,6 +11,9 @@ never unnoticed.
 
 Every export must also be libycxx's own: std::__y1, __ycxx, the runtime's entry points
 (__ycxx_abi_*), the allocation table and the shared marker (src/export.txt); anything else fails.
+And an exported __ycxx entity must be one that include/ declares (or a member, instantiation or
+local entity of one): header code may refer to those, while what only src/ uses is hidden (src/'s
+"hidden" __ycxx blocks, DECISIONS §20.3), and an export of such a name fails.
 
     tools/check_abi.py [--check] [gcc] [clang]   compare build/<compiler>-shared's library with its
                                                  baseline (tools/test's policy stage; the build
@@ -33,10 +36,16 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DARWIN = sys.platform == 'darwin'
 OWN = re.compile(r'St4__y1|6__ycxx|^__ycxx_abi_|^__ycxx_allocation_functions$|^__ycxx_linkage_shared_v1$')
+# What c++filt prefixes to the name of a vtable, type_info object, guard variable, ...
+SPECIAL = re.compile(r'^(?:(?:vtable|VTT|typeinfo(?: name)?|construction vtable|guard variable|reference temporary #\d+|'
+                     r'TLS (?:init|wrapper) function|(?:non-)?virtual thunk|covariant return thunk) for |'
+                     r'construction vtable for .*?-in-)+')
+OPERATOR = re.compile(r'operator(?:\(\)|\[\]|<=>|<<=|>>=|<<|>>|<=|>=|->\*|->|new\[\]|delete\[\]|[-+*/%^&|~!=<>,]+|\s[^()]*?(?=\())')
 
 
-def run(argv):
-    return subprocess.run(argv, capture_output=True, text=True, errors='replace', check=True).stdout
+def run(argv, lines=None):
+    return subprocess.run(argv, input='\n'.join(lines) + '\n' if lines else None, capture_output=True, text=True,
+                          errors='replace', check=True).stdout
 
 
 def library_of(build):
@@ -117,6 +126,51 @@ def read_baseline(path):
     return entries, version
 
 
+def entity(demangled):
+    """The qualified name of the entity a demangled symbol names, without template arguments or
+    parameters ('__ycxx::__detail::f' for 'int __ycxx::__detail::f<char>(char)::x')."""
+    text = OPERATOR.sub('operator@', SPECIAL.sub('', demangled))
+    depth, end = 0, len(text)
+    for i, ch in enumerate(text):
+        if ch in '<([':
+            if ch == '(' and depth == 0:
+                end = i
+                break
+            depth += 1
+        elif ch in '>)]':
+            depth -= 1
+    # The declarator: the last top-level word before the parameters (a return type precedes it).
+    name, depth = '', 0
+    for ch in text[:end]:
+        if ch == '<':
+            depth += 1
+        elif ch == '>':
+            depth -= 1
+        elif depth == 0:
+            name = '' if ch == ' ' else name + ch
+    return name
+
+
+def private_exports(syms):
+    """The exported __ycxx entities that include/ does not declare (DECISIONS §20.3)."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import check_visibility
+    public = set()
+    for root, _, files in os.walk(os.path.join(REPO, 'include')):
+        for f in files:
+            with open(os.path.join(root, f), encoding='utf-8') as fh:
+                for _, _, body in check_visibility.ycxx_blocks(fh.read()):
+                    public |= check_visibility.ycxx_declarations(body)
+    names = sorted(n for n in syms if '6__ycxx' in n)
+    out = run(['c++filt', '-n'], names).splitlines() if names else []
+    private = []
+    for mangled, demangled in zip(names, out):
+        path = tuple(entity(demangled).split('::'))
+        if path[:1] == ('__ycxx',) and not any(path[:i] in public for i in range(2, len(path) + 1)):
+            private.append(f'{mangled} ({demangled})')
+    return private
+
+
 def check_one(compiler, lib, update):
     """0 ok, 1 failed, 2 skipped (with a notice)."""
     syms = exports(lib)
@@ -124,6 +178,13 @@ def check_one(compiler, lib, update):
     if foreign:
         print(f'check_abi: {compiler}: {lib} exports {len(foreign)} names that are not libycxx\'s own, e.g. '
               + ', '.join(foreign[:5]))
+        return 1
+    private = private_exports(syms)
+    if private:
+        print(f'check_abi: {compiler}: {lib} exports {len(private)} __ycxx names that include/ does not declare, '
+              'which only src/ uses: declare and define them in "hidden" __ycxx blocks (DECISIONS §20.3)')
+        for p in private[:40]:
+            print(f'  {p}')
         return 1
     version = f'{compiler} {compiler_version(compiler)}'
     path = baseline_path(compiler)

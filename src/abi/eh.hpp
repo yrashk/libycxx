@@ -12,7 +12,7 @@
 
 #include "entry.hpp" // the runtime's entry points, used across its translation units
 
-namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 // "XXXXC++\0" ([ABI-EH] 2.4.3), with the vendor string "YCXX". The last byte distinguishes a
 // dependent exception (a rethrown exception_ptr, which refers to a primary exception's object).

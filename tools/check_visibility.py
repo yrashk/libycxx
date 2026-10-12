@@ -99,6 +99,15 @@ def scan_braces(text):
             i += 1
 
 
+def separator(text, i):
+    """Whether the ' at text[i] is a digit separator (1'000) rather than a character literal (an
+    encoding prefix, L'x', is an identifier character before it too)."""
+    j = i
+    while j and (text[j - 1].isalnum() or text[j - 1] in "_'"):
+        j -= 1
+    return j < i and text[j:i] not in PREFIXES and text[j].isdigit()
+
+
 def strip_code(text):
     """The text with comments, string and character literals blanked."""
     out, i, n = [], 0, len(text)
@@ -110,7 +119,7 @@ def strip_code(text):
         elif text.startswith("/*", i):
             j = text.index("*/", i + 2) + 2
             out.append(re.sub(r"[^\n]", " ", text[i:j])); i = j
-        elif text[i] in "\"'" and not (i and (text[i - 1].isalnum() or text[i - 1] == "_") and text[i] == "'"):
+        elif text[i] in "\"'" and not (text[i] == "'" and separator(text, i)):
             q, j = text[i], i + 1
             while text[j] != q:
                 j += 2 if text[j] == "\\" else 1
@@ -130,9 +139,8 @@ KEYWORDS = {"if", "for", "while", "switch", "return", "sizeof", "alignof", "alig
             "signed", "unsigned", "float", "double"}
 
 
-def declared_names(block):
-    """The names a namespace block declares at its own level (a conservative approximation)."""
-    code = strip_code(block)
+def top_level(code):
+    """code (stripped) with the contents of its brace pairs blanked; the outermost braces kept."""
     flat, depth = [], 0
     for ch in code:
         if ch == "{":
@@ -145,7 +153,11 @@ def declared_names(block):
             flat.append("\n")
         else:
             flat.append(ch if depth == 0 else " ")
-    top = "".join(flat)
+    return "".join(flat)
+
+
+def names_in(top):
+    """The names that the top level of a namespace body declares (a conservative approximation)."""
     top = re.sub(r"\[\[.*?\]\]", " ", top)
     top = re.sub(r"<[^<>;{}]*>", " ", top)  # template argument and parameter lists, one level
     top = re.sub(r"<[^<>;{}]*>", " ", top)
@@ -158,11 +170,106 @@ def declared_names(block):
         names.add(m.group(1))
     if re.search(r"\boperator\b", top):
         names.add("operator")
-    for m in re.finditer(r"\b(\w+)\s*(?:\(|\{|;|=)", top):
+    for m in re.finditer(r"\b(\w+)\s*(?:\(|\{|;|=|\[)", top):
         w = m.group(1)
         if w not in KEYWORDS and not w.isdigit():
             names.add(w)
     return names
+
+
+def declared_names(block):
+    """The names a namespace block declares at its own level (a conservative approximation)."""
+    return names_in(top_level(strip_code(block)))
+
+
+NS_OPEN = re.compile(r"\b(?:inline\s+)?namespace\s+(?:\[\[.*?\]\]\s*)?((?:\w+::)*\w+)?\s*\{")
+
+
+def namespace_levels(code, prefix=()):
+    """Yields (namespace, top-level text) for code, a namespace body (stripped), and for each named
+    namespace nested in it; the namespace is a tuple of names. Unnamed namespaces are left out:
+    what they declare has internal linkage."""
+    top = top_level(code)
+    yield prefix, top
+    for m in NS_OPEN.finditer(top):
+        start = m.end() - 1
+        depth, end = 0, start
+        while end < len(code):
+            depth += {"{": 1, "}": -1}.get(code[end], 0)
+            if depth == 0:
+                break
+            end += 1
+        if m.group(1):
+            yield from namespace_levels(code[start + 1:end], prefix + tuple(m.group(1).split("::")))
+
+
+def ycxx_blocks(text):
+    """Yields (line number, attribute, body) for each file-scope __ycxx block of a file; the body is
+    stripped of comments and literals."""
+    stripped = strip_code(text)
+    starts, pos = {}, 0
+    for n, line in enumerate(text.splitlines(keepends=True), 1):
+        m = OPEN.match(line.rstrip("\n"))
+        if m and m.group("name") == "__ycxx":
+            starts[pos + line.index("{", m.end("nested"))] = (n, m.group("vis"))
+        pos += len(line)
+    stack = []
+    for off, c in scan_braces(text):
+        if c == "{":
+            stack.append(off)
+            continue
+        o = stack.pop()
+        if o in starts:
+            yield starts[o][0], starts[o][1], stripped[o + 1:off]
+
+
+def ycxx_declarations(body):
+    """The qualified names (tuples from __ycxx) that a __ycxx block's body declares at namespace
+    scope, its namespaces left out."""
+    out = set()
+    for ns, top in namespace_levels(body, ("__ycxx",)):
+        nested = {n for m in NS_OPEN.finditer(top) if m.group(1) for n in m.group(1).split("::")}
+        out |= {ns + (n,) for n in names_in(top) - nested}
+    return out
+
+
+# A namespace member defined by a qualified name: `R __ycxx::__detail::f(...) {`, `T __detail::x = ...;`
+# (statement text after the qualified id: a parameter list, an array bound or an initializer).
+QUALIFIED_DEFINITION = re.compile(r"(?<![\w:])((?:::)?(?:\w+::)+)(~?\w+)\s*(?:\(|\[|=|$)")
+
+
+def qualified_definitions(text, namespaces):
+    """(line number, qualified name) of each namespace-scope definition in text by a name qualified
+    with one of __ycxx's namespaces (namespaces: the set of namespace names that may follow
+    __ycxx)."""
+    code = strip_code(text)
+    found = []
+    for ns, top in namespace_levels(code):
+        if ns and ns[0] != "__ycxx":
+            continue
+        # The positions in `top` are those of `code`, except within nested levels, whose text is
+        # their own; line numbers come from searching the statement in the file.
+        top = re.sub(r"(?m)^[ \t]*#.*$", "", top)  # preprocessor directives
+        for stmt in re.split(r"[;{}]", top):
+            s = stmt.strip()
+            if not s or re.match(r"(?:using|namespace|typedef|friend|static_assert|template\s*<\s*>|"
+                                 r"class|struct|union|enum)\b", s):
+                continue
+            m = QUALIFIED_DEFINITION.search(s)
+            if not m:
+                continue
+            first = min((i for i in (s.find("("), s.find("=")) if i >= 0), default=len(s))
+            if m.start() > first:
+                continue  # in an initializer or a parameter list: a use, not the declarator
+            parts = [p for p in m.group(1).split("::") if p]
+            if parts[0] in ("std", "__cxxabiv1"):
+                continue
+            qualifier = (ns + tuple(parts)) if parts[0] != "__ycxx" else tuple(parts)
+            if qualifier[:1] != ("__ycxx",) or qualifier[-1] not in namespaces:
+                continue  # a class member, or outside __ycxx
+            line = code[:code.find(s)].count("\n") + 1 if code.find(s) >= 0 else 0
+            found.append((line, "::".join(parts + [m.group(2)])))
+    return found
 
 
 def per_image(rel, data):
@@ -215,6 +322,8 @@ def process(text, rel, data, apply):
             continue
         if current == attr and not nested and (has_inline == inline):
             continue
+        if name == "__ycxx" and rel.startswith("src/") and current == HIDDEN and not nested:
+            continue  # src/-private names (main checks that it declares nothing include/ declares)
         if not apply:
             want = f"namespace {attr} {name} {{" + (f" inline namespace {ABI_NS} {{" if inline else "")
             errors.append(f"{rel}:{n}: namespace opening must read `{want}` (tools/check_visibility.py --fix)")
@@ -247,6 +356,63 @@ def fix(text, rel="include/generated"):
     return new, errors
 
 
+def quoted_includes(path):
+    """The files a source includes with `#include "..."`, relative to its directory."""
+    return [(path.parent / m.group(1)).resolve()
+            for m in re.finditer(r'^\s*#\s*include\s+"([^"]+)"', path.read_text(), re.M)]
+
+
+def check_private(paths, data):
+    """The rules of src/'s hidden __ycxx blocks, which hold the names only src/ uses (DECISIONS
+    §20.3): such a block declares nothing that include/ declares in __ycxx, since header code may
+    refer to it; and a source that sees one (itself or through its quoted includes) defines no
+    __ycxx namespace member by a qualified name. Clang gives such a definition the visibility of the
+    block that last reopened the qualifying namespace in the translation unit, and GCC that of the
+    first declaration, so after a hidden reopening a definition that include/ declares would be
+    hidden with Clang; it is written unqualified in a block with the attribute it needs."""
+    texts = {p.resolve(): p.read_text() for p in paths}
+    namespaces = {"__ycxx"}
+    for text in texts.values():
+        namespaces.update(re.findall(r"\bnamespace\s+(?:\[\[.*?\]\]\s*)?(\w+)", text))
+        namespaces.update(n for m in re.findall(r"\bnamespace\s+((?:\w+::)+\w+)", text) for n in m.split("::"))
+    public = set()
+    for p, text in texts.items():
+        if p.is_relative_to(ROOTS[0]):
+            for _, _, body in ycxx_blocks(text):
+                public |= ycxx_declarations(body)
+    errors, hidden = [], set()
+    for p, text in sorted(texts.items()):
+        rel = p.relative_to(REPO).as_posix()
+        if not rel.startswith("src/"):
+            continue
+        for n, vis, body in ycxx_blocks(text):
+            if vis != '"hidden"':
+                continue
+            hidden.add(p)
+            if per_image(rel, data):
+                continue
+            both = sorted("::".join(q) for q in ycxx_declarations(body) & public)
+            if both:
+                errors.append(f"{rel}:{n}: a hidden __ycxx block declares what include/ declares: "
+                              f"{', '.join(both)} (DECISIONS §20.3)")
+    sees = {}
+
+    def sees_hidden(p, seen=()):
+        if p not in sees:
+            sees[p] = p in hidden or any(q in texts and q not in seen and sees_hidden(q, seen + (p,))
+                                         for q in quoted_includes(p))
+        return sees[p]
+
+    for p, text in sorted(texts.items()):
+        rel = p.relative_to(REPO).as_posix()
+        if rel.startswith("src/") and sees_hidden(p):
+            for n, name in qualified_definitions(text, namespaces):
+                errors.append(f"{rel}:{n}: {name} is defined by a qualified name in a source that sees a "
+                              "hidden __ycxx block; define it unqualified in its namespace's block "
+                              "(DECISIONS §20.3)")
+    return errors
+
+
 def main():
     apply = "--fix" in sys.argv[1:]
     data = load_data()
@@ -261,6 +427,7 @@ def main():
         if apply and new != text:
             path.write_text(new)
             print(f"{rel}: namespace openings rewritten")
+    errors += check_private(paths, data)
     for e in errors:
         print(e, file=sys.stderr)
     return 1 if errors else 0

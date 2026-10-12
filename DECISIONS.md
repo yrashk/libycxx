@@ -2156,7 +2156,7 @@ Every namespace opening then reads
     thunks, the allocation table's own-entries object and the anchor;
   - the runtime's private helpers, meaning `__ycxx` declarations that live only in `src/`.
     `tools/check_visibility.py` checks that a hidden `src/` block redeclares nothing that
-    `include/` declares.
+    `include/` declares (step 4's note in 20.10 says how they are written and checked).
 - *The export list.* The attributes decide what is exported. The list is a safety net that the
   build generates from one pattern file, `src/export.txt`:
   - on ELF, a version script: `YCXX_0.1 { global: _ZNSt4__y1*; _ZNKSt4__y1*; _ZT[VISTC]NSt4__y1*;
@@ -2581,8 +2581,9 @@ mechanical).
    `tests/ycxx/conformance/abi_namespace/` (each construct, the `std::byte` aliasing run at -O2,
    the mangled names of the plain-std and `__y1` types, and with GCC's reflection the namespace
    of each entity); `src/` blocks take `_YCXX_VISIBILITY` like the headers' except the
-   `[per-image]` sources, which keep `"hidden"`; which `src/`-private `__ycxx` blocks stay hidden
-   in shared mode is decided with step 4 (in static mode both spellings mean hidden).
+   `[per-image]` sources, which keep `"hidden"`, and the `src/`-private `__ycxx` blocks, which
+   carry `"hidden"` since the follow-up to step 4 (its note; in static mode both spellings mean
+   hidden).
 3. **(M) The ABI runtime's exported names. Done.** `src/abi` defines `__ycxx_abi_*`, and the
    `__cxa_*`, `__gxx_personality_v0`, `__dynamic_cast` and `std::terminate` entry points
    become hidden aliases (static) or forwarders (`src/abi/entry/`, built into
@@ -2639,8 +2640,43 @@ mechanical).
    - The table's `--export-dynamic-symbol` is not passed to the library's own link: GNU ld treats
      it as a dynamic list in a shared library and binds every other symbol locally, so a program's
      copy-relocated `std::cout` was never the one the library constructed.
-   - The `src/`-private `__ycxx` blocks keep `_YCXX_VISIBILITY` and are exported too (they are
-     `__ycxx` names, which nothing else uses; hiding them is an optimization left for later).
+   - The `src/`-private `__ycxx` names are hidden (a follow-up, 2026-10-12). At first they kept
+     `_YCXX_VISIBILITY` and were exported: 31 of GCC's 1558 exports on Linux, 50 of Clang's 1640.
+     Which names header code can reach was decided from both ends. From the sources: an entity
+     is needed outside `libycxx.so` only if a `__ycxx` block of `include/` declares it (or the
+     class, template or function it belongs to), since templates and inline functions may call
+     anything the headers declare; `libycxx_nonshared.a` refers to no `__ycxx` name of the
+     library (`nm -u`), only to `__ycxx_abi_*`. From the exports: every exported `__ycxx` entity
+     was demangled and looked up in that set. The 31 and 50 not in it are the ABI runtime's
+     helpers (`eh.hpp`, `rtti.hpp`, `internal.hpp`: the exception header's reference counting,
+     `__globals`, handler matching, the base-class walk, the registered ABI classes), the
+     demangler, the locale-name helpers shared by `locale.cpp`, `locale_named.cpp` and
+     `text_encoding.cpp`, the atomic wait table's entry for the timed wait, and the
+     floating-point conversion's tables and templates (`fp_common.hpp`). Their declarations and
+     definitions are now in `__ycxx` blocks with the literal `"hidden"` (`tools/check_visibility.py`
+     accepts the form in `src/`): GCC 1527 exports, Clang 1590, and the 31 and 50 removed are
+     exactly those (no other export changed). In shared mode the own suite, `tests/cmake`,
+     the quickstart and 18 of the 19 real-world projects pass with both compilers (glaze was not
+     run: its build tree did not fit the test machine's free disk).
+     - *Why blocks, not entity attributes or the export list.* Blocks are the form the rest of the
+       library uses, and they cover what the private headers will declare later, inline functions
+       and templates included. A narrower export list cannot express "everything in `__ycxx` but
+       these" on Mach-O, where Clang's link uses an exported-symbols list; and it would leave the
+       objects' default visibility (and GCC's `-Wattributes` model) as it was.
+     - *The rule that blocks need.* Clang gives a function or variable defined by a qualified name
+       (`R __ycxx::__detail::f(...) {`, at file scope or in another block) the visibility of the
+       block that last reopened the qualifying namespace in the translation unit; GCC takes that of
+       the first declaration (probed, GCC 16.2 and Clang 23.1). After a hidden reopening, a
+       qualified definition of a name `include/` declares would thus be hidden with Clang. So
+       `tools/check_visibility.py` also rejects, in a source that sees a hidden `__ycxx` block
+       (its own, or through its quoted includes), any `__ycxx` namespace member defined by a
+       qualified name: it is defined unqualified in a block with the attribute it needs
+       (`stacktrace.cpp`, `fp_from_chars.cpp`, `fp_to_chars.cpp` and `demangle.cpp` were changed
+       so).
+     - *The guard.* `tools/check_abi.py` fails, in `--check` and `--update` alike, on an exported
+       `__ycxx` entity that `include/` does not declare, naming it: a new `src/`-only name cannot
+       become exported without the policy stage saying so. Run against the earlier baselines it
+       reports exactly the 31 and 50 names, on Linux and on macOS.
    - The link-time guard: `config.hpp` defines, in every translation unit, a used internal
      pointer to `__ycxx_linkage_static_v1` or `__ycxx_linkage_shared_v1`
      (`src/runtime/linkage/`).
@@ -2885,15 +2921,27 @@ Shipped (2026-10-10, steps 1-10):
   (`tools/test --shared`, `tests/cmake/run.sh` 14.), the export baselines (`tools/check_abi.py`),
   CI jobs on Linux and macOS (ci.yml, full.yml), and `tools/check-shared-macos.sh`.
 
-Not yet:
+Since then (2026-10-11 to 2026-10-12):
 - macOS: the first Mac run of the shared mode (2026-10-11, `tools/test --shared` at b181d2d6) found
   three problems, fixed since: GCC's dylib exported libgcc's emulated-TLS and heap-trampoline
   entry points (an exported-symbols list did not hide them; GCC's dylib now uses an
   unexported-symbols list, step 4's note), a program's `std::is_debugger_present` did not
   replace the library's (above, 20.8), and an XFAIL that holds in static mode only
-  (`linkage/odr_inline_entities`, now `XFAIL[!shared-linkage]`). The Mac has no `.abilist`
-  baseline until it writes one (`tools/check_abi.py --update` on the Mac, committed).
-- The `src/`-private `__ycxx` blocks are exported in shared mode (step 4's note); hiding them would
-  shrink the export list.
-- A libabigail check of inline layouts (20.7, for 1.0).
-- Sanitizer builds with GCC's shared ThreadSanitizer runtime and the shared library: not run.
+  (`linkage/odr_inline_entities`, now `XFAIL[!shared-linkage]`). The Mac runs at 5c0806b5 passed:
+  `tools/test -j3 --shared build ycxx` 5948 of 5948, `tools/check-shared-macos.sh` 49 of 49. The
+  Mac's `.abilist` baselines were written there and committed (eac2b8b4).
+- The `src/`-private `__ycxx` names are hidden in shared mode (step 4's note), guarded by
+  `tools/check_abi.py`.
+- ThreadSanitizer with the shared library: the nightly `linux-tsan` job runs the own suite against
+  the instrumented shared library (`tools/test -s tsan --shared`, `build/<cc>-shared-tsan`) with
+  both compilers, GCC's with libtsan from `tools/toolchain/provision --with-sanitizers`. Added
+  2026-10-12; the job's first run is its first GCC result (the development container's GCC has no
+  libtsan), while Clang's was run locally before (above).
+
+Not yet:
+- The macOS baselines after the `src/`-private names were hidden: written by the next Mac run
+  (`tools/check_abi.py --update gcc clang`); until then the Mac's ABI check reports the 31 and 50
+  removed exports.
+- Deferred to 1.0: a libabigail check of inline layouts (20.7). During 0.x the soname changes with
+  each minor release and the allocation table stops images of different versions, so a layout
+  change needs no finer check until the ABI is promised.

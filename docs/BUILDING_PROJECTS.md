@@ -31,9 +31,10 @@ macOS code paths are those of `tools/ycxx-cxx`, which CI exercises there.
    the checkout: `CXX=<prefix>/bin/ycxx-c++ CC=<prefix>/bin/ycxx-cc` for make, autotools and most
    build systems, `--native-file <prefix>/share/libycxx/meson-native.ini` for Meson, and
    `pkg-config libycxx` for a plain compiler.
-4. **Anything else.** Check the result with `ycxx-check-binary`; know that shared libraries built
-   with GCC export only what they mark for export, that each image has its own runtime state, and
-   that libycxx has no stable ABI yet. Sections [4](#4-anything-else) and
+4. **Anything else.** Check the result with `ycxx-check-binary`; know that with the static
+   libycxx (the default) shared libraries built with GCC export only what they mark for export and
+   each image has its own runtime state (the shared libycxx shares it, [Shared
+   libraries](#shared-libraries)), and that libycxx has no stable ABI yet. Sections [4](#4-anything-else) and
    [Common errors](#common-errors-and-their-fixes) cover modules, IDEs, ccache, sanitizers and the
    errors met in real projects.
 
@@ -789,11 +790,11 @@ and the projects built for this guide:
 | `invalid use of incomplete type 'struct std::char_traits<unsigned char>'` | a libstdc++/libc++ extension (`basic_string<unsigned char>`, `<std::byte>`) | `std::vector<unsigned char>`, `std::basic_string<char>` with casts, or traits of your own |
 | `... is deprecated` under `-Werror` | Annex D features (`std::iterator`, `is_pod`, `unsigned char` stream insertion) | fix, or `-Wno-error=deprecated-declarations` |
 | a test of `std::optional` printing or formatting fails | `std::optional` is a range in C++26 (P3168): range formatting is chosen | adapt the expectation |
-| `undefined reference to 'f(std::string ...)'` when linking a shared library's user, GCC only | GCC hides functions whose signature names a libycxx type | `[[gnu::visibility("default")]]` (or the project's export macro), a static library, or Clang |
+| `undefined reference to 'f(std::string ...)'` when linking a shared library's user, GCC only | GCC hides functions whose signature names a libycxx type (static libycxx) | `[[gnu::visibility("default")]]` (or the project's export macro), a static library, Clang, or the shared libycxx |
 | `undefined reference to 'g(std::__cxx11::basic_string...)'` or to `std::__throw_...`, `__cxa_...@CXXABI` | a dependency built against libstdc++ (a system package, an ExternalProject without the toolchain) | build it against libycxx; `ycxx-check-binary` names it |
 | `libycxx requires C++26` | a compile that did not go through the wrapper or `ycxx::ycxx`'s flag order (an IDE, a hand-written rule with `-std=c++17` after `pkg-config --cflags`) | the wrapper, or put `-std=c++26` last |
 | CMake: "requires the language dialect CXX26 ... CMake does not know the flags" | `CMAKE_CXX_STANDARD 26` with CMake < 3.30 | 23 or lower (raised), or CMake 3.30+ |
-| a terminate or new handler set in the program is not called by a shared library | per-image runtime state | set it in the image that calls it |
+| a terminate or new handler set in the program is not called by a shared library | per-image runtime state (static libycxx) | set it in the image that calls it, or use the shared libycxx |
 | `catch (const std::exception&)` does not catch an exception from a library | the library was built against another standard library | catch `...`, or build it against libycxx |
 | type names in output differ (`std::__cxx11::basic_string<char>` expected) | tests that compare the library's spelled type names | adapt the expectation |
 | `GTEST_HAS_CXXABI_H_` / demangled names missing | GoogleTest recognises `<cxxabi.h>` by library | `-DGTEST_HAS_CXXABI_H_=1` |

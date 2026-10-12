@@ -24,6 +24,10 @@ jobs:
       - name: Own suite against the shared library (tools/test --shared)
         run: tools/test -j4 --shared build ycxx
 
+      # The quickstart's command for the shared library, as its README and the website show it.
+      - name: Quickstart commands with the shared library (tests/quickstart/run.sh --shared)
+        run: CMAKE_BUILD_PARALLEL_LEVEL=4 tests/quickstart/run.sh --shared
+
       - name: Fetch conformance suites (run only; tools/fetch-suites)
         run: tools/fetch-suites
 

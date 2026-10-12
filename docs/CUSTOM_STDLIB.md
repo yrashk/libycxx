@@ -10,7 +10,9 @@ Sources were read on 2026-10-05; each claim about another project cites its sour
 configuration were read, never the source or headers of another standard library or C++ runtime.
 Every command and claim about libycxx was checked in a worktree on Linux (x86_64, GCC 16.2,
 Clang 23.1) the same day; [Validation](#validation-record) records what was run. Nothing here was
-run on macOS.
+run on macOS. The statements about libycxx's shared library, which it has built on request since
+2026-10-10, were added on 2026-10-12 (DECISIONS §20); the survey of the other projects is
+unchanged.
 
 ## 1. Purpose and audience
 
@@ -30,7 +32,9 @@ rather than against itself. It assumes familiarity with `README.md`, `DECISIONS.
    including the default allocation functions; let the images that link the library share those
    through a table under a name of the library's own, so that one replacement (the program's, or
    a sanitizer's) serves every such image and objects can change owner between them, while
-   another C++ runtime in the process keeps its own.
+   another C++ runtime in the process keeps its own. Add a shared library when images must share
+   one runtime (plugins, libraries that pass exceptions and handlers between them), exporting
+   only names no other library uses ([Archives versus shared libraries](#archives-versus-shared-libraries)).
    **Discover target facts, do not write them down**: what the C library declares, which
    type_info objects the compiler emits, and the like are tested by the preprocessor where it can
    see them (`#ifndef`, `__has_include_next`) and otherwise probed against the real toolchain
@@ -122,8 +126,11 @@ one is far less work but ties the library to that runtime's exported symbols.
 
 ### Archives versus shared libraries
 
-libycxx builds static archives only, position-independent so they can go into shared objects
-(`CMakeLists.txt`). The two archives refer to each other; CMake links the pair repeatedly
+libycxx builds static archives, position-independent so they can go into shared objects
+(`CMakeLists.txt`), by default. With `-DYCXX_SHARED=ON` it also builds a shared library,
+`libycxx.so.0.<minor>` (`libycxx.0.<minor>.dylib`), and a small per-image archive,
+`libycxx_nonshared.a`, which every image linking the shared library links too (DECISIONS §20.2,
+§20.6); each program or library chooses one kind. The two static archives refer to each other; CMake links the pair repeatedly
 (`LINK_INTERFACE_MULTIPLICITY 3`), and `tools/ycxx-cxx` wraps them in
 `-Wl,--start-group ... --end-group` on ELF.
 
@@ -136,9 +143,14 @@ and has `LIBCXX_ABI_VERSION`/`LIBCXX_ABI_NAMESPACE` [libcxx-vendor]. Android shi
 `libc++_shared.so` and `libc++_static.a` and allows the static one only when an app has exactly
 one shared library [android-cpp].
 
-Recommendation: while the library has no stable ABI, ship static archives only, with every
-symbol hidden (below). A shared library is worth its cost (a versioned export list, a symbol
-baseline check, an inline ABI namespace) only once ABI stability is promised.
+Recommendation: make static archives with every symbol hidden (below) the default. A shared
+library is worth its cost (a versioned export list, a symbol baseline check, an inline ABI
+namespace) when images must share one runtime: a program that loads plugins, or libraries that
+throw exceptions and install handlers across each other, which static archives cannot serve
+(section 5). It does not need ABI stability first: libycxx changes the soname with every 0.x
+minor release, compares the exports with a baseline on every change (`tools/check_abi.py`,
+`abi/*.abilist`), and stops a process whose images were built against different versions, naming
+both (DECISIONS §20.7, §20.10 step 8).
 
 ### Visibility
 
@@ -338,8 +350,9 @@ libc++ and Chromium separate their names with an ABI namespace instead: `LIBCXX_
 `-fvisibility-global-new-delete=force-hidden` on Apple platforms [chromium-libcxx-gn]. libstdc++'s
 inline `__cxx11` namespace serves its dual ABI, not coexistence [libstdcxx-abi].
 
-libycxx's model (DECISIONS §2) is hidden visibility for everything, including the ABI runtime, so
-each image that links libycxx has its own runtime, bound inside it, and exports nothing. Exceptions
+libycxx's static mode (DECISIONS §2) is hidden visibility for everything, including the ABI
+runtime, so each image that links libycxx's archives has its own runtime, bound inside it, and
+exports nothing. Exceptions
 still cross between libycxx images (type_info compared by name, the uncaught count kept by the
 runtime that added the exception), and libycxx and libstdc++ or libc++ coexist with separate
 runtimes. What is not shared is documented: each image has its own `uncaught_exceptions()` count,
@@ -354,7 +367,12 @@ Compared with the alternatives: an ABI namespace alone keeps names apart but sti
 scripts protect only images whose link line remembers them; Android's rule forbids the case.
 Hiding at the declaration, as libycxx does, protects every image by default. Its costs are real
 and documented: GCC's `-Wattributes` warning, nothing shareable by plugins, and per-image
-singletons.
+singletons. libycxx's shared mode (DECISIONS §20) combines the two remedies to remove them: an ABI
+namespace (`std::__y1`) for everything the library exports, so its exported names meet no other
+library's, and hidden visibility, in every image, for the names other C++ runtimes also define
+(the plain-`std` names the compilers require, the `__cxa_*` entry points, the default allocation
+functions). The images that link `libycxx.so` then share one runtime, while static-mode images
+and other runtimes keep their own.
 
 ### Replacement allocation functions and sanitizers
 
@@ -719,8 +737,8 @@ script compiles each with `-DLIBCPP_OSS_FUZZ` and the fuzzing engine, using
 | Build system | CMake; library built with itself | CMake `runtimes` build, CMake caches per configuration [libcxx-vendor, libcxx-caches] | GCC's configure/make, built with GCC [libstdcxx-configure] | CMake presets [msvc-readme] |
 | Freestanding | core layer, one build; separate runtime archive (CMake option, installed) | feature switches [libcxx-vendor] | `--disable-hosted-libstdcxx` [libstdcxx-configure] | not confirmed |
 | ABI runtime | own (Itanium), unwinder from the toolchain | selectable: libc++abi, libcxxrt, libsupc++, ... [libcxx-vendor] | libsupc++ | not confirmed |
-| Artifacts | static archives, PIC | shared and static [libcxx-vendor] | shared, versioned [libstdcxx-abi]; static not confirmed | not confirmed |
-| Symbol policy | everything hidden, per-image runtime | exported ABI with visibility macros, inline ABI namespace; hermetic static option [libcxx-visibility, libcxx-vendor] | version script, `check-abi` baseline [libstdcxx-abi] | not confirmed |
+| Artifacts | static archives, PIC; on request a shared library with a per-image archive | shared and static [libcxx-vendor] | shared, versioned [libstdcxx-abi]; static not confirmed | not confirmed |
+| Symbol policy | static: everything hidden, per-image runtime; shared: `std::__y1` and `__ycxx` exported (version script, baseline), one runtime per process | exported ABI with visibility macros, inline ABI namespace; hermetic static option [libcxx-visibility, libcxx-vendor] | version script, `check-abi` baseline [libstdcxx-abi] | not confirmed |
 | Selection | `-nostdinc++ -isystem`, `-nostdlib++`; wrapper; CMake package; toolchain file | `-stdlib=libc++` or the same generic flags [libcxx-user, libcxx-vendor] | default for GCC | `INCLUDE`/`LIB` via `set_environment.bat` [msvc-readme] |
 | Own tests | spec-only author; `.pass`/`.compile.pass`/`.compile.fail`, diagnostic regexes, death tests | rich kinds incl. `.verify.cpp`, `.sh.cpp`, `.gen.cpp` [libcxx-testing] | DejaGnu `dg-*` with message matching [libstdcxx-test] | `tests/std`, `tests/tr1` [msvc-readme] |
 | External suites | libc++'s and libstdc++'s, run only, fetched and pinned | can run against libstdc++ [libcxx-stdlib-libstdcxx-cfg] | not confirmed | libc++'s, from its llvm-project checkout [msvc-readme] |
@@ -833,9 +851,11 @@ says what was done.
     GCC rejects it, and `-nostdinc++ -isystem` already places libycxx's directory first on both
     compilers. It would help only if libycxx had to coexist with a `-stdlib=` choice, which it does
     not.
-14. **Symbol version scripts: not applicable** while libycxx ships no shared library and exports
-    nothing; `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` already check
-    the export set. Revisit with a shared library (`check-abi`-style baseline [libstdcxx-abi]).
+14. **Symbol version scripts: adopted with the shared library.** `libycxx.so` has one version
+    node, `YCXX_0.1`, generated with the Mach-O export list from `src/export.txt`, and
+    `tools/check_abi.py` compares its exports with a `check-abi`-style baseline [libstdcxx-abi]
+    (`abi/*.abilist`; DECISIONS §20.3, §20.7). The static archives still export nothing, which
+    `tests/ycxx/linkage/no_exported_library_symbols` and `tests/cmake/run.sh` check.
 
 ## Validation record
 

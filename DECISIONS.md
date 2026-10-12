@@ -2929,7 +2929,9 @@ Since then (2026-10-11 to 2026-10-12):
   replace the library's (above, 20.8), and an XFAIL that holds in static mode only
   (`linkage/odr_inline_entities`, now `XFAIL[!shared-linkage]`). The Mac runs at 5c0806b5 passed:
   `tools/test -j3 --shared build ycxx` 5948 of 5948, `tools/check-shared-macos.sh` 49 of 49. The
-  Mac's `.abilist` baselines were written there and committed (eac2b8b4).
+  Mac's `.abilist` baselines were written there and committed (eac2b8b4). After the `src/`-private
+  names were hidden, the Mac run at d97a456b passed again (5948 of 5948, 49 of 49) and rewrote the
+  baselines without the 31 (GCC) and 50 (Clang) names (72614bbb).
 - The `src/`-private `__ycxx` names are hidden in shared mode (step 4's note), guarded by
   `tools/check_abi.py`.
 - ThreadSanitizer with the shared library: the nightly `linux-tsan` job runs the own suite against
@@ -2939,9 +2941,6 @@ Since then (2026-10-11 to 2026-10-12):
   libtsan), while Clang's was run locally before (above).
 
 Not yet:
-- The macOS baselines after the `src/`-private names were hidden: written by the next Mac run
-  (`tools/check_abi.py --update gcc clang`); until then the Mac's ABI check reports the 31 and 50
-  removed exports.
 - Deferred to 1.0: a libabigail check of inline layouts (20.7). During 0.x the soname changes with
   each minor release and the allocation table stops images of different versions, so a layout
   change needs no finer check until the ABI is promised.

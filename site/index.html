@@ -434,6 +434,15 @@ Clang downloaded into an empty cache every night (the <code>quickstart</code> jo
 Without one, it builds GCC from source into the cache, once, which takes about an hour on four
 cores; on macOS, <code>brew install gcc</code> first is quicker.</p>
 </details>
+<h3>Static or shared</h3>
+<p>By default libycxx is linked statically: every program and shared library gets its own copy,
+runtime included. Its shared library, <code>libycxx.so.0.&lt;minor&gt;</code>
+(<code>libycxx.0.&lt;minor&gt;.dylib</code> on macOS), gives them one runtime instead. Choose it
+for a program that loads plugins, or one made of several libraries that throw exceptions and
+install handlers across each other.</p>
+<figure class="code"><figcaption>shell</figcaption><!-- snippet: examples/quickstart/README.md#3 --><pre><code class="lang-sh"><span class="t-f">cmake</span> <span class="t-a">-B</span> build <span class="t-a">-G</span> Ninja <span class="t-a">-DYCXX_SHARED=ON</span> <span class="t-a">-DYCXX_STATIC=OFF</span></code></pre></figure>
+<p>With an installation built with <code>-DYCXX_SHARED=ON</code>, link <code>ycxx::shared</code>
+instead of <code>ycxx::ycxx</code>.</p>
 <h3>Existing projects</h3>
 <p>Use an installed libycxx through CMake’s <code>find_package</code>, its toolchain file, or compiler wrappers. <a href="https://github.com/yrashk/libycxx/blob/HEAD/docs/BUILDING_PROJECTS.md">Building projects</a> covers CMake, Meson, make, autotools, Bazel, Conan, and vcpkg.</p>
 <p>Build every C++ dependency from source against the same libycxx installation: prebuilt libstdc++ or libc++ dependencies have a different ABI. C libraries are fine.</p>
@@ -442,7 +451,7 @@ cores; on macOS, <code>brew install gcc</code> first is quicker.</p>
 <div class="sec-head"><span class="no">07</span><h2>Status and limitations</h2></div>
 
 <p class="lead">Every C++26 header is in place. Version 0.1.0 is still early: the ABI and implementation continue to evolve.</p>
-<ul class="limits"><li><h4>Young, without a stable ABI</h4><p>No stable ABI: rebuild your program and C++ dependencies when libycxx changes. Keep an installation per compiler.</p></li><li><h4>C++26 only</h4><p>Older language modes are raised to C++26. Removed facilities and compiler-library extensions are not supported.</p></li><li><h4>One runtime per image</h4><p>Shared libraries have separate runtime state. Exception state, terminate handlers, and new handlers do not cross their boundaries.</p></li><li><h4>Compiler gaps</h4><p>Reflection and contracts need GCC support. GCC cannot mix standard header includes and <code>import std;</code> in one translation unit.</p></li><li><h4>macOS is newer</h4><p>Darwin-specific facilities are less exercised. Stacktrace symbolization reads ELF/DWARF; modules are tested on Linux only.</p></li><li><h4>Open work</h4><p>External-suite failures, missing hosted-layer primitives, and performance gaps are recorded in the status report.</p></li></ul>
+<ul class="limits"><li><h4>Young, without a stable ABI</h4><p>No stable ABI yet: rebuild your program and C++ dependencies when libycxx changes, and keep an installation per compiler. The shared library is versioned, <code>libycxx.so.0.&lt;minor&gt;</code>; images built against different versions stop in one process with a message naming both, instead of misbehaving.</p></li><li><h4>C++26 only</h4><p>Older language modes are raised to C++26. Removed facilities and compiler-library extensions are not supported.</p></li><li><h4>Static: one runtime per image</h4><p>With the static archives, each program and shared library has its own runtime state: exception state, terminate handlers, and new handlers do not cross their boundaries. The shared library gives them one.</p></li><li><h4>Compiler gaps</h4><p>Reflection and contracts need GCC support. GCC cannot mix standard header includes and <code>import std;</code> in one translation unit.</p></li><li><h4>macOS is newer</h4><p>Darwin-specific facilities are less exercised. Stacktrace symbolization reads ELF/DWARF; modules are tested on Linux only.</p></li><li><h4>Open work</h4><p>External-suite failures, missing hosted-layer primitives, and performance gaps are recorded in the status report.</p></li></ul>
 <p><a href="https://github.com/yrashk/libycxx/blob/HEAD/STATUS.md">STATUS.md</a> is the full record: per-area results, known compiler gaps, the draft
 defects noticed along the way, and what comes next.</p>
 

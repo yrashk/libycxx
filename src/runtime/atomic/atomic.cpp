@@ -94,7 +94,11 @@ void __atomic_notify(const volatile void* __addr) noexcept {
   ::ycxx_pal_wake_all(&e.version);
 }
 
-// For the hosted timed wait (src/hosted/thread.cpp), which shares the slot table.
+}} // namespace __ycxx::__detail
+
+// For the hosted timed wait (src/hosted/thread.cpp), which shares the slot table (wait_table.hpp).
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
 std::uint32_t* __atomic_wait_entry(const volatile void* __addr, std::uint32_t*& __waiters) noexcept {
   wait_entry& e = waits[slot_of(__addr)];
   __waiters = &e.__waiters;

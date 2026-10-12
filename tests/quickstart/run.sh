@@ -5,9 +5,10 @@
 #
 #   tests/quickstart/run.sh [gcc] [clang]        (default: both) the compiler already installed
 #   tests/quickstart/run.sh --provision          Clang downloaded into an empty toolchain cache
-#   tests/quickstart/run.sh --shared [gcc] [clang]  with the README's option for libycxx's shared
-#                                                library, -DYCXX_SHARED=ON -DYCXX_STATIC=OFF: hello
-#                                                must then need libycxx.so.0.<minor>
+#   tests/quickstart/run.sh --shared [gcc] [clang]  with the README's command for libycxx's shared
+#                                                library, cmake -B build -G Ninja -DYCXX_SHARED=ON
+#                                                -DYCXX_STATIC=OFF: hello must then need
+#                                                libycxx.so.0.<minor>
 #
 # Three substitutions point the commands at this checkout instead of GitHub; each must apply:
 #   - the files are downloaded from this checkout (file://) instead of raw.githubusercontent.com;
@@ -41,8 +42,8 @@ for a in "$@"; do
   esac
 done
 shared_option='-DYCXX_SHARED=ON -DYCXX_STATIC=OFF'
-if [ $shared = 1 ] && ! grep -qF -- "$shared_option" "$readme"; then
-  ui_fail "$readme no longer documents '$shared_option'; update tests/quickstart/run.sh"; exit 1
+if [ $shared = 1 ] && ! grep -qxF -- "$configure $shared_option" "$readme"; then
+  ui_fail "$readme no longer documents '$configure $shared_option'; update tests/quickstart/run.sh"; exit 1
 fi
 if [ $provision = 1 ]; then
   [ -z "$compilers" ] || [ "$compilers" = " clang" ] || { echo "--provision: Clang only" >&2; exit 2; }

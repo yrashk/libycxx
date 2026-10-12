@@ -1098,6 +1098,11 @@ void __check_locale_name(const char* name, const char* what) {
       bad_name(what, __parts.part[c].c_str());
 }
 
+}} // namespace __ycxx::__detail
+
+// locale_named.hpp's, for the runtime's sources only.
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
 const char* __classic_locale_name(const char* name) noexcept {
   if (std::strcmp(name, "C") == 0 || std::strcmp(name, "POSIX") == 0)
     return "C";

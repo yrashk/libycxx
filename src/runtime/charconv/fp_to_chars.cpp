@@ -835,8 +835,9 @@ std::to_chars_result to_chars_impl(char* first, char* last, __fp_raw bits, int _
 } // namespace
 }} // namespace __ycxx::__detail::__fpconv
 
-std::to_chars_result __ycxx::__detail::__fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw bits, int __fmt,
-                                               int precision) noexcept {
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
+
+std::to_chars_result __fp_to_chars(char* first, char* last, __fp_kind kind, __fp_raw bits, int __fmt, int precision) noexcept {
   using enum __ycxx::__detail::__fp_kind;
   switch (kind) {
   case __binary16:
@@ -854,3 +855,5 @@ std::to_chars_result __ycxx::__detail::__fp_to_chars(char* first, char* last, __
   }
   __builtin_unreachable();
 }
+
+}} // namespace __ycxx::__detail

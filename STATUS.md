@@ -13,8 +13,9 @@ Meson), `libycxx-shared.pc`, `activate.sh --use DIR --shared`, `tools/ycxx-cxx -
   resources are shared by every shared-mode image, and GCC's hiding of functions whose
   signatures name library types does not apply (Known limitations: those are static mode's).
 - What another C++ runtime defines stays hidden in every image; the library exports `std::__y1`,
-  `__ycxx`, `__ycxx_abi_*` and the allocation table only (1558 symbols with GCC, 1640 with Clang
-  on Linux x86_64, `abi/*.abilist`, checked by `tools/check_abi.py`).
+  `__ycxx`, `__ycxx_abi_*` and the allocation table only (1527 symbols with GCC, 1590 with Clang
+  on Linux x86_64, `abi/*.abilist`, checked by `tools/check_abi.py`), and of `__ycxx` only what
+  the headers declare: the names only `src/` uses are hidden (DECISIONS §20.10, step 4's note).
 - A translation unit compiled in one mode does not link in the other (the marker
   `__ycxx_linkage_static_v1` / `__ycxx_linkage_shared_v1` is named in the error), and an image of
   another libycxx version stops the process at load, naming both versions.
@@ -29,8 +30,11 @@ Meson), `libycxx-shared.pc`, `activate.sh --use DIR --shared`, `tools/ycxx-cxx -
   GoogleTest's `gtest_dll_test_`, skipped in static mode for its per-image runtime, pass),
   `tests/cmake/run.sh`'s section 14, the quickstart with its shared option, and
   `tools/check-shared-macos.sh` (49 checks).
-- Not yet: a Mac's ABI baseline, the hiding of the `src/`-private `__ycxx` names, a libabigail
-  check (DECISIONS §20.13).
+- macOS arm64 (5c0806b5): `tools/test -j3 --shared build ycxx` 5948 of 5948 passed,
+  `tools/check-shared-macos.sh` 49 of 49; the Mac's ABI baselines are committed.
+- Not yet: the Mac's baselines without the `src/`-private names (the next Mac run writes them),
+  GCC's ThreadSanitizer run against the shared library (in the nightly job, not yet run), and a
+  libabigail check, deferred to 1.0 (DECISIONS §20.13).
 
 ## ABI change: the inline namespace std::__y1 (2026-10-08)
 

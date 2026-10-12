@@ -7,7 +7,7 @@
 #include <new>
 #include <ycxx/pal.h>
 
-namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 namespace {
 
 // ---- Layout ----

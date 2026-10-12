@@ -44,14 +44,26 @@ uses GCC 16.2 (`g++-16`, `g++` of that version, Homebrew's `gcc`). Without one, 
 from source into the cache, once, which takes about an hour on 4 cores (as
 `tools/toolchain/provision --gcc-only` does); on macOS, `brew install gcc` first is quicker.
 
+## The shared library
+
+```sh
+cmake -B build -G Ninja -DYCXX_SHARED=ON -DYCXX_STATIC=OFF
+```
+
+links libycxx's shared library (`libycxx.so.0.<minor>`, on macOS `libycxx.0.<minor>.dylib`)
+instead of its static archives; `hello` then needs it at run time, and finds it in the build
+directory through its run path. With the static archives, each program and shared library has its
+own copy of libycxx's runtime; with the shared library they share one, so handlers, the current
+exception and the standard streams are the same in all of them. Choose it for a program that loads
+plugins, or one made of several libraries that throw exceptions and install handlers across each
+other. An installation built with `-DYCXX_SHARED=ON` offers the same choice: link `ycxx::shared`
+instead of `ycxx::ycxx`.
+
 ## Options
 
 - `-DYCXX_PROVISION=OFF`: never download or build a compiler; stop with a message instead.
 - `YCXX_TOOLCHAINS=<dir>` (environment): another toolchain cache.
 - `-DFETCHCONTENT_SOURCE_DIR_LIBYCXX=<checkout>`: use a libycxx checkout instead of cloning it.
-- `-DYCXX_SHARED=ON -DYCXX_STATIC=OFF`: link libycxx's shared library (`libycxx.so.0.<minor>`,
-  on macOS `libycxx.0.<minor>.dylib`) instead of its static archives; `hello` then needs it at run
-  time, and finds it in the build directory through its run path.
 - `GIT_TAG`: `main` until libycxx has a release; pin a commit for reproducible builds.
 
 Other ways to use libycxx (an installation with `find_package`, a project that knows nothing
@@ -62,5 +74,7 @@ about libycxx, builds without CMake) are in the [README](../../README.md) and
 
 `tests/quickstart/run.sh` runs the commands above literally, from an empty directory, against
 the checkout it belongs to, and checks the output: with the compilers already installed in the
-`cmake` stage of `tools/test` (both compilers, every CI run), and with Clang downloaded into an
-empty cache (`--provision`) in the nightly workflow, on Linux and macOS.
+`cmake` stage of `tools/test` (both compilers, every CI run), with the shared library's option
+(`--shared`, which also checks that `hello` needs the shared library; every CI run on Linux), and
+with Clang downloaded into an empty cache (`--provision`) in the nightly workflow, on Linux and
+macOS.

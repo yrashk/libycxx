@@ -13,7 +13,7 @@ std::type_info::~type_info() {}
 // are rtti_classes.cpp's.
 
 
-namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 using namespace __cxxabiv1;
 
@@ -101,7 +101,7 @@ void __ycxx_abi_rtti_unregister(const std::type_info* const* __types) noexcept {
 
 } // extern "C"
 
-namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __abi {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
 
 __base_search __find_bases(const __subobject& __root, const __class_type_info& target) {
   __base_search r;

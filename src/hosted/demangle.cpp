@@ -1664,7 +1664,9 @@ private:
 
 } // namespace
 
-bool __ycxx::__detail::__demangle_type(const char* __mangled, std::string& out) {
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
+bool __demangle_type(const char* __mangled, std::string& out) {
   if (__mangled == nullptr || *__mangled == '\0')
     return false;
   parser __ps(__mangled, __mangled + std::strlen(__mangled));
@@ -1675,7 +1677,7 @@ bool __ycxx::__detail::__demangle_type(const char* __mangled, std::string& out) 
   return true;
 }
 
-bool __ycxx::__detail::__demangle(const char* __mangled, std::string& out) {
+bool __demangle(const char* __mangled, std::string& out) {
   if (__mangled == nullptr || std::strncmp(__mangled, "_Z", 2) != 0)
     return false;
   parser __ps(__mangled, __mangled + std::strlen(__mangled));
@@ -1685,3 +1687,5 @@ bool __ycxx::__detail::__demangle(const char* __mangled, std::string& out) {
   out = static_cast<std::string&&>(s);
   return true;
 }
+
+}} // namespace __ycxx::__detail

@@ -940,6 +940,11 @@ std::size_t __named_strftime(const __named_locale* h, wchar_t* __buf, std::size_
   return put_time(h->__loc, __buf, __cap, t, format, __modifier);
 }
 
+}} // namespace __ycxx::__detail
+
+// locale_named.hpp's, for the runtime's sources only.
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
 bool __named_exists(const char* name, int c) {
   const locale_t __l = ::newlocale(c_masks[c], name, static_cast<locale_t>(0));
   if (__l == static_cast<locale_t>(0))

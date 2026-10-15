@@ -154,6 +154,11 @@ sanitizers, failure categories, and CI.
 
 ## Documentation
 
+libycxx also provides [callable-storage extensions](docs/FUNCTION_STORAGE.md):
+`ycxx::uses_inline_storage_v` checks an owning wrapper's storage policy, and
+`ycxx::inplace_function` provides configurable inline capacity with no wrapper heap allocation.
+Include `<ycxx/functional.hpp>`; these APIs are listed in the generated API reference too.
+
 | I want to… | Read |
 | --- | --- |
 | Try my first program | [Quick start](examples/quickstart/README.md) |

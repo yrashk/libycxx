@@ -358,6 +358,9 @@ def resolve(pages, draft, public, users):
 
 def facts(pg, cpp, draft):
     rows = []
+    if pg.q == 'ycxx' or pg.q.startswith('ycxx::'):
+        rows.append(('Status', 'libycxx extension; include its header (not exported by <code>import std;</code>)'))
+        rows.append(('Guide', '<a href="https://github.com/yrashk/libycxx/blob/main/docs/FUNCTION_STORAGE.md">Callable storage and allocation guarantees</a>'))
     if pg.header:
         more = ''
         if len(pg.headers) > 1:
@@ -503,7 +506,7 @@ def public_pages(pages, exported):
         if q in memo:
             return memo[q]
         parts = q.split('::')
-        if not q.startswith('std'):
+        if q not in ('std', 'ycxx') and not q.startswith(('std::', 'ycxx::')):
             r = True                     # the global allocation functions, the C library's types
         elif any(_RESERVED_PART.match(x) for x in parts):
             r = False
@@ -718,7 +721,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
     def at_namespace_scope(pg):
         parent = canonical.get(pg.q.rsplit('::', 1)[0]) if '::' in pg.q else None
         return parent is not None and parent.kind == 'namespace'
-    top = [pg for pg in canonical.values() if pg.kind != 'namespace' and pg.q.startswith('std::') and at_namespace_scope(pg)]
+    top = [pg for pg in canonical.values() if pg.kind != 'namespace' and pg.q.startswith(('std::', 'ycxx::')) and at_namespace_scope(pg)]
     namespaces = sorted([pg for pg in canonical.values() if pg.kind == 'namespace' and pg.q], key=lambda p: p.q)
 
     std_page = next((pg for pg in pages if pg.q == 'std' and pg.kind == 'namespace'), pages[0])
@@ -733,12 +736,20 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
     for h in sorted(public):
         items = by_header.get(h, [])
         sec = syn.get(h, '')
+        extension = h.startswith('ycxx/')
+        depth = 1 + h.count('/')
+        include = f'<code>#include &lt;{h}&gt;</code>'
+        if not extension:
+            include += ' or <code>import std;</code>'
         body = ['<article class="ref ref-header">',
                 '<nav class="crumbs" aria-label="Breadcrumbs"><ol><li><a href="<!--ycxx:root-->api/index.html">Reference</a></li>'
                 f'<li aria-current="page">&lt;{h}&gt;</li></ol></nav>',
                 f'<header class="ref-head"><p class="label">header</p><h1 class="ref-name"><span class="ref-leaf">&lt;{h}&gt;</span></h1>',
                 '<dl class="facts ref-facts">',
-                f'<div><dt>Include</dt><dd><code>#include &lt;{h}&gt;</code> or <code>import std;</code></dd></div>']
+                f'<div><dt>Include</dt><dd>{include}</dd></div>']
+        if extension:
+            body.append('<div><dt>Status</dt><dd>libycxx extension; not part of the C++ standard</dd></div>'
+                        '<div><dt>Guide</dt><dd><a href="https://github.com/yrashk/libycxx/blob/main/docs/FUNCTION_STORAGE.md">Callable storage and allocation guarantees</a></dd></div>')
         if sec:
             body.append(f'<div><dt>Draft</dt><dd><a href="https://eel.is/c++draft/{sec}" rel="noopener">[{sec}]</a></dd></div>')
         hp = cppref.header_page(h) if cppref is not None else None
@@ -746,10 +757,12 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
             body.append(f'<div><dt>cppreference</dt><dd><a class="cppref-link" href="https://en.cppreference.com/w/{hp["p"]}" target="_blank" rel="noopener" '
                         f'data-cppref="{hp["p"]}" data-hosted="{1 if hp.get("h") else 0}" data-exact="1" data-title="&lt;{h}&gt;">&lt;{h}&gt; <span aria-hidden="true">↗</span></a></dd></div>')
         body.append(f'<div><dt>Entities</dt><dd>{len(items)} at namespace scope</dd></div></dl></header>')
-        body.append(entity_list(items, 1) if items else '<p class="note">This header declares macros only, or only what other headers declare as well.</p>')
+        body.append(entity_list(items, depth) if items else '<p class="note">This header declares macros only, or only what other headers declare as well.</p>')
         body.append('</article>')
         text = set_title(head, f'<{h}>') + '\n'.join(body) + tail
-        (out / 'headers' / f'{h}.html').write_text(clean_visible(fill(text, 1, h)), encoding='utf-8')
+        path = out / 'headers' / f'{h}.html'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(clean_visible(fill(text, depth, h)), encoding='utf-8')
 
     # The index: headers grouped as the draft's clauses group them, and the namespaces.
     groups = collections.OrderedDict()
@@ -758,7 +771,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
         groups.setdefault(h[0] if not syn.get(h) else clause, []).append(h)
     body = ['<article class="ref ref-index">',
             '<header class="ref-head"><p class="label">API reference · libycxx</p><h1 class="ref-name"><span class="ref-leaf">The C++26 standard library, as libycxx declares it</span></h1>',
-            '<p class="lede">Every entity the <code>std</code> module exports, with its synopsis as libycxx declares it. '
+            '<p class="lede">Every entity the <code>std</code> module exports, plus the public <code>ycxx</code> extensions, with its synopsis as libycxx declares it. '
             'Each page names the header, the section of the working draft '
             'and the cppreference page; the specification itself is the draft.</p>',
             f'<dl class="facts ref-facts"><div><dt>Headers</dt><dd>{len(public)}</dd></div>'
@@ -790,7 +803,7 @@ def render(work, out, draft, cppref, cppref_out, headers, repo=None, exported=No
     nav['namespaces'] = [[pg.q, pg.rel] for pg in namespaces]
     (out / 'nav.json').write_text(json.dumps(nav, separators=(',', ':')), encoding='utf-8')
     search = [[display_q(pg.q), pg.label, pg.rel, pg.header or ''] for pg in sorted(canonical.values(), key=lambda p: (p.q.count('::'), len(p.q), p.q))
-              if pg.q and pg.rel != 'index.html' and '<' not in pg.q]
+              if pg.q and pg.rel != 'index.html' and ('<' not in pg.q or pg.q.startswith('ycxx::'))]
     (out / 'search.json').write_text(json.dumps(search, separators=(',', ':')), encoding='utf-8')
     if cpp_map:
         (out / 'cppref-map.json').write_text(json.dumps({display_q(q): v for q, v in cpp_map.items()}, separators=(',', ':'), sort_keys=True), encoding='utf-8')

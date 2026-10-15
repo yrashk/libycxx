@@ -22,6 +22,16 @@
 {{#unless (eq symbol.kind "namespace")}}
 {{> ycxx/synopsis symbol }}
 {{/unless}}
+{{#if symbol.specializations}}
+<section class="ref-sec" aria-labelledby="sec-specializations">
+<h2 id="sec-specializations">Specializations</h2>
+<ul class="entity-list">
+{{#each (transform symbol.specializations @root.mrdocs.corpus.get)}}
+<li><a href="{{{relativize (@root.mrdocs.corpus.getUrl this)}}}"><code>{{> symbol/qualified-name-text . }}</code></a></li>
+{{/each}}
+</ul>
+</section>
+{{/if}}
 {{#if (eq symbol.kind "record")}}
 {{#with symbol.interface}}
 {{> ycxx/members tranche=public label="" scope="record"}}
@@ -52,10 +62,26 @@
 </ul>
 </section>
 {{/if}}
-{{#if symbol.doc.description}}
+{{#if symbol.doc.document}}
 <section class="ref-sec ref-doc">
 <h2>Description</h2>
-{{> doc/block/document symbol.doc.description }}
+{{> doc/block/document symbol.doc.document }}
 </section>
+{{/if}}
+{{#if symbol.doc.tparams}}
+<section class="ref-sec ref-doc"><h2>Template parameters</h2>
+<dl class="facts">
+{{#each symbol.doc.tparams}}
+<div><dt><code>{{name}}</code></dt><dd>{{#each children}}{{> doc/inline . }}{{/each}}</dd></div>
+{{/each}}
+</dl></section>
+{{/if}}
+{{#if symbol.doc.exceptions}}
+<section class="ref-sec ref-doc"><h2>Exceptions</h2>
+<dl class="facts">
+{{#each symbol.doc.exceptions}}
+<div><dt><code>{{> doc/inline exception }}</code></dt><dd>{{#each children}}{{> doc/inline . }}{{/each}}</dd></div>
+{{/each}}
+</dl></section>
 {{/if}}
 </article>

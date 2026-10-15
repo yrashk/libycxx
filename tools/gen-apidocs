@@ -5,7 +5,8 @@
                       [--headers H,...] [-j N]
     tools/gen-apidocs --refresh-draft     rewrite tools/apidocs/draft-map.json from the draft
 
-One translation unit includes every public header (the ones modules/std.cppm imports), with
+One translation unit includes every public header (the ones modules/std.cppm imports and the
+extension headers listed in EXTENSION_API), with
 -nostdinc++ and libycxx's include paths only. MrDocs (https://www.mrdocs.com) parses it with its
 own Clang and renders one page per entity of the std module's export list through libycxx's
 Handlebars templates (tools/apidocs/addons, layered over MrDocs's stock ones); internal names
@@ -42,6 +43,12 @@ CPPREF_URL = f'https://github.com/PeterFeicht/cppreference-doc/releases/download
 CPPREF_SHA256 = 'ac50671a1f52d7f0ab0911d14450eb35e8c2f812edd0e426b2cd1e3d9db91d6f'
 
 BUILD = REPO / 'build' / 'apidocs'
+
+# Public extensions have no std-module export or working-draft entry. List their top-level API;
+# MrDocs extracts the declarations, members and documentation from the headers.
+EXTENSION_API = {
+    'ycxx/functional.hpp': ['ycxx::inplace_function', 'ycxx::uses_inline_storage', 'ycxx::uses_inline_storage_v'],
+}
 
 # MrDocs 2026.9.29's Clang (LLVM 23.0.0git, built with assertions) stops on one of libycxx's
 # constructs that Clang 23.1 compiles. The translation unit sees a copy of the header with the
@@ -165,7 +172,7 @@ def prepare(work, mrdocs, headers, exported, a, skip=()):
     gen = work / 'generated' / 'ycxx' / 'generated'
     gen.mkdir(parents=True)
     (gen / 'c_library.hpp').write_text(C_LIBRARY)
-    (work / 'all.cpp').write_text('// Every public header of libycxx (the ones modules/std.cppm includes).\n' +
+    (work / 'all.cpp').write_text('// Standard and extension public headers of libycxx.\n' +
                                  ''.join(f'#include <{h}>\n' for h in headers))
     arch = multiarch()
     args = ['clang++', '-std=c++26', '-nostdinc++',
@@ -185,6 +192,10 @@ def prepare(work, mrdocs, headers, exported, a, skip=()):
     cpo_scopes = sorted({n.split('::__cpo::')[0] + '::*' for n in exported if '::__cpo::' in n})
     glob = lambda n: n.replace('[', '\\[').replace(']', '\\]')     # operator new[]: not a glob class
     include = ''.join(f"  - '{glob(n)}'\n" for n in exported) + ''.join(f"  - '{n}'\n" for n in cpo_scopes)
+    # Partial specializations require a namespace pattern in MrDocs. The render pass still
+    # restricts this to the listed public API and its members, excluding reserved names.
+    if any(n.startswith('ycxx::') for n in exported):
+        include += "  - 'ycxx::**'\n"
     cfg = (cfg.replace('@SOURCE_ROOT@', str(REPO / 'include'))
               .replace('@COMPILATION_DATABASE@', str(work / 'compile_commands.json'))
               .replace('@ADDONS@', str(APIDOCS / 'addons'))
@@ -303,8 +314,10 @@ def main():
 
     mrdocs = find_mrdocs(a)
     headers, exported = std_module()
+    headers += list(EXTENSION_API)
     if a.headers:
         headers = [h for h in headers if h in a.headers.split(',')]
+    exported += [n for h in headers for n in EXTENSION_API.get(h, [])]
     if a.check_workarounds:
         for rel, _, _ in WORKAROUNDS:
             work = prepare(BUILD / 'check', mrdocs, headers, exported, a, skip=(rel,))

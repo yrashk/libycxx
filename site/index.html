@@ -153,6 +153,9 @@ a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-of
 <div class="sec-head"><span class="no">02</span><h2>What is implemented</h2></div>
 
 <p class="lead">Every C++26 library header is provided, including the deprecated facilities the draft still specifies. Compiler-dependent features have known gaps.</p>
+<p>For callbacks with explicit storage limits, <a href="api/headers/ycxx/functional.hpp.html"><code>&lt;ycxx/functional.hpp&gt;</code></a>
+provides <code>ycxx::inplace_function</code> and a compile-time query of function-wrapper inline storage.
+These are libycxx extensions; their API pages document capacity, alignment and allocation guarantees.</p>
 <ul class="areas"><li><h4>Language support &amp; utilities</h4><p>Type traits, vocabulary types, function wrappers, and constexpr exceptions on GCC.</p></li><li><h4>Containers &amp; ranges</h4><p>All containers, ranges, and algorithms, including <code>&lt;hive&gt;</code>, <code>&lt;inplace_vector&gt;</code>, and <code>&lt;mdspan&gt;</code>.</p></li><li><h4>Text</h4><p>Formatting, printing, character conversion, regex, and text encodings.</p></li><li><h4>Numerics</h4><p>Random engines and distributions, SIMD, linear algebra, and math facilities.</p></li><li><h4>Time</h4><p>Calendars, utc/tai/gps clocks, leap seconds, and the system’s time zone database.</p></li><li><h4>Concurrency</h4><p>Threads, atomics, synchronization, RCU, hazard pointers, and senders and receivers.</p></li><li><h4>I/O &amp; locales</h4><p>Streams, filesystem, standard locale facets, and named locales from the C library.</p></li><li><h4>Diagnostics</h4><p>Stack traces, debugging, contracts, and reflection where the compiler supports them.</p></li></ul>
 <details class="more"><summary>Freestanding builds, modules, and spec audits</summary>
 <h3>Freestanding, hosted and modules</h3>

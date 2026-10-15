@@ -64,6 +64,9 @@ jobs:
       - name: Generate the API reference
         run: uv run --no-project python tools/gen-apidocs --install -j 4
 
+      - name: Check extension API documentation and links
+        run: uv run --no-project python tools/apidocs/check_extensions.py
+
       # The similarity analysis: pinned sources and JPlag, cached by the pins.
       - uses: actions/setup-java@v4
         with:

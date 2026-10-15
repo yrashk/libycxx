@@ -16,8 +16,9 @@ stdlib-includes:
   - @NO_STDLIB@
 use-system-libc: true
 
-# The public API is what the std module exports (modules/std.cppm), with the members of what
-# it exports; nothing in libycxx's own namespaces. A namespace that holds customization point
+# The public API is what the std module exports (modules/std.cppm), plus EXTENSION_API in
+# tools/gen-apidocs, with their public members. Nothing in the internal __ycxx namespace.
+# A namespace that holds customization point
 # objects in an inline namespace (std::ranges::__cpo) is included whole, since MrDocs (2026.9.29)
 # matches no literal pattern to its members; tools/apidocs/render.py then drops whatever
 # the module does not export and every member with a reserved name.

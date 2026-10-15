@@ -5,8 +5,8 @@ using W = ycxx::inplace_function<int(int), 32, 16>;
 struct Good { int operator()(int x) { return x; } };
 struct Large { char data[33]; int operator()(int); };
 struct alignas(32) Overaligned { int operator()(int); };
-struct Throwing { Throwing(Throwing&&) noexcept(false); Throwing(const Throwing&); int operator()(int); };
-struct MoveOnly { MoveOnly(MoveOnly&&) noexcept; int operator()(int); };
+struct Throwing { Throwing() = default; Throwing(Throwing&&) noexcept(false); Throwing(const Throwing&); int operator()(int); };
+struct MoveOnly { MoveOnly() = default; MoveOnly(MoveOnly&&) noexcept; int operator()(int); };
 struct BadSignature { void operator()(); };
 struct Incomplete;
 struct RefTemporary { int operator()(); };
@@ -36,3 +36,23 @@ static_assert(ycxx::uses_inline_storage_v<std::function<void()>, void()>);
 static_assert(ycxx::uses_inline_storage_v<std::move_only_function<int(int) noexcept>, Good>);
 static_assert(ycxx::uses_inline_storage_v<std::copyable_function<int(int) const>, Good>);
 static_assert(!ycxx::uses_inline_storage_v<int, Good>);
+
+// Capturing lambdas must obey the same constructor and assignment constraints.
+using SmallClosure = decltype([value = 1](int x) { return value + x; });
+using LargeClosure = decltype([value = Large{}](int x) mutable { return value(x); });
+using OveralignedClosure = decltype([value = Overaligned{}](int x) mutable { return value(x); });
+using ThrowingClosure = decltype([value = Throwing{}](int x) mutable { return value(x); });
+using MoveOnlyClosure = decltype([value = MoveOnly{}](int x) mutable { return value(x); });
+using BadSignatureClosure = decltype([value = 1] { return value; });
+using DanglingResultClosure = decltype([value = 1] { return value; });
+
+template <class T>
+constexpr bool rejects = !std::is_constructible_v<W, T> && !std::is_constructible_v<W, T&> &&
+                         !std::is_assignable_v<W&, T> && !std::is_assignable_v<W&, T&>;
+static_assert(std::is_constructible_v<W, SmallClosure> && std::is_assignable_v<W&, SmallClosure>);
+static_assert(rejects<LargeClosure>);
+static_assert(rejects<OveralignedClosure>);
+static_assert(rejects<ThrowingClosure>);
+static_assert(rejects<MoveOnlyClosure>);
+static_assert(rejects<BadSignatureClosure>);
+static_assert(!std::is_constructible_v<ycxx::inplace_function<const int&()>, DanglingResultClosure>);

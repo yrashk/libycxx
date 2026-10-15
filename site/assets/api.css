@@ -97,6 +97,10 @@ pre.cpp a:hover,code.cpp a:hover{color:var(--accent);text-decoration-color:curre
 i.expo{font-style:italic;color:var(--code-v);cursor:help}
 .t-n{color:var(--code-s)}
 
+/* Documentation examples: inline code's nowrap rule must not collapse source lines. */
+.ref-doc pre{margin:16px 0;padding:14px 18px;overflow-x:auto;font:14.5px/1.6 var(--mono);color:var(--code-f);tab-size:4;background:var(--code-bg);border:1px solid var(--rule);border-radius:10px}
+.ref-doc pre code{font:inherit;background:none;border:0;padding:0;white-space:pre}
+
 /* members */
 table.members{table-layout:fixed}
 table.members th:first-child{width:34%}
@@ -184,7 +188,7 @@ body.pane-open .api main,body.pane-open main{max-width:none}
   .ref-facts div{grid-template-columns:88px minmax(0,1fr)}
   .ref-sec{padding-top:32px}
   .ref-sec>h2{font-size:19px}
-  .syn-code pre,.ovl pre{font-size:12.5px;padding:12px 14px}
+  .syn-code pre,.ovl pre,.ref-doc pre{font-size:12.5px;padding:12px 14px}
   .ovl-n{padding:14px 12px 0 4px}
   table.members,table.members tbody,table.members tr,table.members td{display:block;width:auto}
   table.members thead{display:none}

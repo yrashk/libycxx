@@ -69,6 +69,7 @@ void inline_lifecycle(const T& target, int result) {
 
 int main() {
   using W = std::function<int()>;
+  using I = ycxx::inplace_function<int()>;
   static_assert(ycxx::uses_inline_storage_v<W, Payload<4>>);
   static_assert(!ycxx::uses_inline_storage_v<W, Payload<5>>);
   static_assert(ycxx::uses_inline_storage_v<W, Aligned>);
@@ -82,11 +83,36 @@ int main() {
   auto p = std::make_shared<int>(1), q = std::make_shared<int>(2);
   auto pair = [p, q] { return *p + *q; };
   static_assert(ycxx::uses_inline_storage_v<W, decltype(pair)>);
+  static_assert(ycxx::uses_inline_storage_v<I, decltype(pair)>);
   inline_lifecycle<W>(pair, 3);
+  inline_lifecycle<I>(pair, 3);
   CHECK(p.use_count() == 2 && q.use_count() == 2);
   auto text = [s = std::string("hello")] { return static_cast<int>(s.size()); };
   static_assert(ycxx::uses_inline_storage_v<W, decltype(text)>);
+  static_assert(ycxx::uses_inline_storage_v<I, decltype(text)>);
   inline_lifecycle<W>(text, 5);
+  inline_lifecycle<I>(text, 5);
+
+  int a = 1, b = 2, c = 3, d = 4;
+  auto pointers = [p = &a, q = &b, r = &c, s = &d] { return *p + *q + *r + *s; };
+  static_assert(ycxx::uses_inline_storage_v<W, decltype(pointers)>);
+  static_assert(ycxx::uses_inline_storage_v<I, decltype(pointers)>);
+  inline_lifecycle<W>(pointers, 10);
+  inline_lifecycle<I>(pointers, 10);
+
+  auto aligned = [value = Aligned{}] { return value(); };
+  static_assert(ycxx::uses_inline_storage_v<W, decltype(aligned)>);
+  static_assert(ycxx::uses_inline_storage_v<I, decltype(aligned)>);
+  inline_lifecycle<W>(aligned, 9);
+  inline_lifecycle<I>(aligned, 9);
+
+  // A real closure can exceed the standard buffer but fit a selected extension capacity.
+  auto large = [value = Payload<8>{}] { return value(); };
+  using LargeInline = ycxx::inplace_function<int(), sizeof(decltype(large))>;
+  static_assert(!ycxx::uses_inline_storage_v<W, decltype(large)>);
+  static_assert(!std::is_constructible_v<I, decltype(large)>);
+  static_assert(ycxx::uses_inline_storage_v<LargeInline, decltype(large)>);
+  inline_lifecycle<LargeInline>(large, 8);
 
   auto fallback = []<class T>(T target) {
     int before = allocations;
@@ -101,6 +127,7 @@ int main() {
   fallback(Payload<5>{});
   fallback(Overaligned{});
   fallback(ThrowingMove{});
+  fallback(large);
 
   // A larger user-selected inline buffer still uses neither global allocation path.
   inline_lifecycle<ycxx::inplace_function<int(), sizeof(Payload<8>)>>(Payload<8>{}, 8);

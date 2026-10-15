@@ -1,5 +1,50 @@
 # Benchmark results: libycxx vs libstdc++ and libc++
 
+## Function-wrapper SBO (2026-10-15)
+
+`bench/function_storage.cpp` compares closure construction and callback collections across
+the inline-storage boundary. The default changed from three pointer widths aligned as a pointer
+to four pointer widths aligned as `max_align_t`: 24 -> 32 target bytes and 40 -> 48 wrapper
+bytes on this x86-64 host. Small targets still require nothrow move construction.
+
+The same benchmark source was compiled with Clang 23.1.2, `-O2 -DNDEBUG`, against the same
+Release runtime archives. The baseline used only `function_wrappers.hpp` from
+`30a41b08731f8642d046d631310380901affbca3` as an include-path overlay; the candidate used the
+updated header. Three runs per executable alternated before/after order, pinned to CPU 0,
+with nine samples per measurement. These are local microbenchmarks, not a cross-platform
+performance guarantee. Each value is the median across the three runs, in ns/operation.
+
+| Measurement | Before | After | After / before |
+| --- | ---: | ---: | ---: |
+| Construct 1 word | 1.252 | 1.340 | 1.07 |
+| Construct 3 words | 1.653 | 1.656 | 1.00 |
+| Construct 4 words | 19.193 | 1.552 | 0.08 |
+| Construct 6 words (heap in both) | 19.384 | 19.295 | 1.00 |
+| Construct 16-byte-aligned target | 19.279 | 1.883 | 0.10 |
+| Construct 2 shared_ptr captures | 25.031 | 7.495 | 0.30 |
+| Construct short string capture | 21.573 | 3.207 | 0.15 |
+| Construct long string capture | 43.873 | 24.221 | 0.55 |
+| Vector build, 1-word targets | 2.921 | 2.589 | 0.89 |
+| Vector copy, 1-word targets | 3.788 | 3.544 | 0.94 |
+| Vector call, 1-word targets | 1.972 | 1.808 | 0.92 |
+| Vector build, 4-word targets | 46.200 | 3.162 | 0.07 |
+| Vector copy, 4-word targets | 40.788 | 3.394 | 0.08 |
+| Vector call, 4-word targets | 2.171 | 1.884 | 0.87 |
+| Move 4-word target (round trip, per move) | 3.850 | 3.905 | 1.01 |
+
+The newly admitted targets avoid the wrapper's allocation. The string benchmarks still include
+any allocations needed by the string itself. The larger wrapper's 20% footprint increase is
+unconditional; the small-target collection timings here do not establish that larger arrays
+or other workloads have no cache cost. An initial unpinned small-vector-copy slowdown did not
+repeat in the interleaved measurements. Global-allocation-count tests separately verify the
+new inline cases, oversized/overaligned/throwing-move fallback, and the configurable extension.
+
+Run the benchmark on another host with:
+
+```sh
+bench/run --cc clang --only function_storage --libs ycxx --runs 3 --samples 9 --md
+```
+
 ## Short-string copy heap-layout sensitivity
 
 Full CI run [38020064399](https://github.com/yrashk/libycxx/actions/runs/38020064399)

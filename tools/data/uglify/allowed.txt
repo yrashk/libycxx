@@ -105,6 +105,7 @@ limits                          # a slip in the draft's markup: "max()numeric.li
 
 [user]
 # libycxx's documented user-facing names (README, DECISIONS §1, §4, §19).
+ycxx inplace_function uses_inline_storage uses_inline_storage_v             # <ycxx/functional.hpp>
 YCXX_HARDENED                                                              # -DYCXX_HARDENED=1
 YCXX_NO_TRANSITIVE_INCLUDES                                                # strict includes (DECISIONS §19)
 YCXX_SHARED                                                                # shared mode (DECISIONS §20)

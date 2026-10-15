@@ -337,6 +337,19 @@ tooling.
   live in place, and larger ones use the replaceable `operator new`, which a freestanding program
   may define (the default reports `bad_alloc`). Keeping them in core avoids a preprocessor-
   selected include in `<functional>`.
+- **Function targets have four pointer widths of inline storage, aligned as `max_align_t`.**
+  The shared owning-wrapper implementation stores targets inline when they fit both limits
+  and are nothrow move constructible; trivial copying is not required. On usual 64-bit targets
+  this is 32 bytes of target storage in a 48-byte wrapper, up from 24 in 40. This admits two
+  shared pointers, one string, and small targets with fundamental alignment. The footprint is
+  a deliberate tradeoff: allocation-heavy construction benefits while dense arrays of already
+  small targets can cost more. `bench/function_storage.cpp` measures both sides.
+  `<ycxx/functional.hpp>` exposes the policy through `ycxx::uses_inline_storage`/`_v` and provides
+  `ycxx::inplace_function<Signature, Capacity, Alignment>` with compile-time rejection rather
+  than heap fallback. These are explicit opt-in public extensions (namespace `ycxx`, inline ABI
+  namespace `__y1`), documented in `docs/FUNCTION_STORAGE.md` and generated API pages. They are
+  not added to standard headers or `import std;`. Their tests are under `tests/ycxx/extensions`,
+  outside the standard's pure conformance claims, and are disabled for reference-library runs.
 - **`<string>` is core; its C-library parts live in the hosted runtime.** `basic_string` needs
   only an allocator, so it is defined in core (`ycxx/core/basic_string.hpp`), constexpr, with
   the integral `to_string`/`to_wstring`. The functions that need the C library (`sto*` through

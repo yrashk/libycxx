@@ -12,7 +12,7 @@ freestanding).
 """
 import pathlib, re, sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from headers import CORE, HOSTED, ABI, FREESTANDING_SUBSET
+from headers import CORE, CORE_EXTENSIONS, HOSTED, ABI, FREESTANDING_SUBSET
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "include"
 INC = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]')
@@ -49,12 +49,12 @@ GENERATED_CONFIG = {"ycxx/generated/c_library.hpp", "ycxx/generated/hosted_layer
                     "ycxx/generated/linkage.hpp"}
 
 def allowed(name):
-    return (name in CORE or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"
+    return (name in CORE or name in CORE_EXTENSIONS or name in ABI or name in FREESTANDING_SUBSET or name == "ycxx/config.hpp"
             or name == "ycxx/pal.h" or name.startswith("ycxx/core/")
             or name in GENERATED_CONFIG)
 
 errors = []
-for top in CORE + FREESTANDING_SUBSET:
+for top in CORE + CORE_EXTENSIONS + FREESTANDING_SUBSET:
     seen, stack = set(), [(top, [top])]
     while stack:
         name, chain = stack.pop()
@@ -74,5 +74,5 @@ for top in CORE + FREESTANDING_SUBSET:
             stack.append((inc, chain + [inc]))
 for e in errors:
     print(e)
-print(f"include-graph check: {len(CORE) + len(FREESTANDING_SUBSET)} core/freestanding-subset headers, {len(errors)} violations")
+print(f"include-graph check: {len(CORE) + len(CORE_EXTENSIONS) + len(FREESTANDING_SUBSET)} core/extension/freestanding-subset headers, {len(errors)} violations")
 sys.exit(1 if errors else 0)

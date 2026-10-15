@@ -1,6 +1,9 @@
 """Header manifest: the layer of every public header. Single source of truth for the
 include-graph check, the freestanding check and STATUS.md."""
 
+# Opt-in public extensions: checked as core, but excluded from the std module's header list.
+CORE_EXTENSIONS = ["ycxx/functional.hpp"]
+
 CORE = [
     "array", "bit", "cassert", "charconv", "stdfloat", "functional", "iterator", "tuple", "cfloat", "climits", "compare", "concepts", "coroutine", "cstddef", "cstdint",
     "initializer_list", "limits", "memory", "new", "optional", "source_location", "variant", "expected", "span", "string_view", "bitset", "type_traits", "utility",

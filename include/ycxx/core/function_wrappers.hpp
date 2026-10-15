@@ -1,11 +1,11 @@
 // libycxx core: polymorphic function wrappers ([func.wrap]): bad_function_call, function,
 // move_only_function, copyable_function and function_ref.
 //
-// The owning wrappers share one implementation, __ycxx::__adl_free::__fn_base: a three-pointer
+// The owning wrappers share one implementation, __ycxx::__adl_free::__fn_base: a four-pointer
 // small buffer, a call thunk and a pointer to a per-type operations table (relocate, destroy,
 // copy, type identity). Targets that fit and are nothrow-move-constructible live in the buffer;
 // others are allocated with a plain new-expression (honouring a class-specific operator new, as
-// std::any does). Function pointers, reference_wrappers and small lambdas never allocate. An
+// std::any does). The buffer has max_align_t alignment. Eligible small lambdas never allocate. An
 // empty wrapper holds a thunk that throws bad_function_call (function) or reports the violated
 // precondition (the others), so a call is one indirect jump with no emptiness test.
 //
@@ -16,6 +16,7 @@
 // spilled to memory to cross the type-erasure boundary.
 #pragma once
 
+#include <cstddef>
 #include <initializer_list>
 #include <ycxx/core/constant_wrapper.hpp>
 #include <ycxx/core/error.hpp>
@@ -112,16 +113,26 @@ consteval bool __invocable_r() {
 template <class _Ap>
 using __param_t = std::conditional_t<std::is_scalar_v<_Ap>, _Ap, _Ap&&>;
 
-inline constexpr std::size_t __small_size = 3 * sizeof(void*);
+inline constexpr std::size_t __small_size = 4 * sizeof(void*);
 // fn_base's move assignment relies on no wrapper fitting in the buffer.
 union __storage {
   void* p;
-  alignas(void*) unsigned char __buf[__small_size];
+  alignas(std::max_align_t) unsigned char __buf[__small_size];
 };
 
+// Also used by the extension's storage-policy query. Reject incomplete types before asking
+// construction traits about them; the decayed type is what a forwarding constructor stores.
+template <class _Tp, std::size_t _Capacity, std::size_t _Alignment>
+inline constexpr bool __fits_inline = [] {
+  using _VT = std::decay_t<_Tp>;
+  if constexpr (requires { sizeof(_VT); alignof(_VT); })
+    return sizeof(_VT) <= _Capacity && alignof(_VT) <= _Alignment && std::is_nothrow_move_constructible_v<_VT>;
+  else
+    return false;
+}();
+
 template <class _VT>
-inline constexpr bool __is_small =
-    sizeof(_VT) <= __small_size && alignof(_VT) <= alignof(__storage) && std::is_nothrow_move_constructible_v<_VT>;
+inline constexpr bool __is_small = __fits_inline<_VT, __small_size, alignof(__storage)>;
 
 template <class _VT>
 [[__gnu__::__always_inline__]] inline _VT* target(__storage& s) noexcept {
@@ -569,7 +580,7 @@ public:
 
   // "Equivalent to: W(std::move(f)).swap(*this)": the old target is destroyed only after the
   // source's has been taken, since the source may live inside it. The old target is first moved
-  // aside; one that can contain a wrapper (at least 40 bytes) is never in the 24-byte buffer, so
+  // aside; one that can contain a wrapper is necessarily larger than its inline buffer, so
   // that move leaves it, and the source inside it, where they are. The source's target is
   // relocated once.
   __fn_base& operator=(__fn_base&& __o) noexcept {

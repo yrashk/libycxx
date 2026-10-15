@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Enforce the visibility attributes and the inline ABI namespace (DECISIONS.md §2, §20).
 
-Every namespace-scope opening of `std`, `__ycxx` or `__cxxabiv1` in include/ and in the C++ sources
+Every namespace-scope opening of `std`, `ycxx`, `__ycxx` or `__cxxabiv1` in include/ and in the C++ sources
 of src/ must be one of these forms (the attributes' reserved spellings: the program may define
 `gnu`, `visibility` and `hidden` as macros, DECISIONS §2):
 
   namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
       every standard entity, in the inline ABI namespace (§20.4); closed by `}}`
+  namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] ycxx { inline namespace __y1 {
+      the public extensions, with the same ABI namespace and visibility; closed by `}}`
   namespace [[__gnu__::__visibility__("hidden")]] std { // plain std (DECISIONS §20.5)
       the entities the compilers or the platform name in plain std, hidden in every mode. Such a
       block may declare only the names of tools/data/visibility.txt's [plain-std] section
@@ -43,7 +45,7 @@ ABI_NS = "__y1"
 PLAIN_MARK = "// plain std (DECISIONS §20.5)"
 # Any file-scope opening of the three namespaces, with or without an attribute.
 OPEN = re.compile(r'^namespace (?:\[\[__gnu__::__visibility__\((?P<vis>"hidden"|_YCXX_VISIBILITY)\)\]\] )?'
-                  r'(?P<name>std|__ycxx|__cxxabiv1)\b(?P<nested>(?:::\w+)*) \{(?P<rest>.*)$')
+    r'(?P<name>std|ycxx|__ycxx|__cxxabiv1)\b(?P<nested>(?:::\w+)*) \{(?P<rest>.*)$')
 PREFIXES = ("u8R", "uR", "UR", "LR", "R", "u8", "u", "U", "L")
 
 
@@ -280,7 +282,7 @@ def wanted(name, nested, plain, rel, data):
     """The opening a block of `name` must have, as (attribute, inline namespace?)."""
     if name == "__cxxabiv1":
         return HIDDEN, False
-    if name == "std":
+    if name in ("std", "ycxx"):
         return (HIDDEN, False) if plain else (MODE, True)
     return (HIDDEN if per_image(rel, data) else MODE), False
 

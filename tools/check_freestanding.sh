@@ -18,8 +18,8 @@ mkdir -p "$out"
 # Table 27 (some of which, such as <exception> and <typeinfo>, need the ABI runtime only when used
 # with exceptions or RTTI).
 cores=$(python3 -c "import sys; sys.path.insert(0,'$repo/tools')
-from headers import CORE, FREESTANDING_SUBSET, FREESTANDING_REQUIRED
-print(' '.join(dict.fromkeys(CORE + FREESTANDING_SUBSET + FREESTANDING_REQUIRED)))")
+from headers import CORE, CORE_EXTENSIONS, FREESTANDING_SUBSET, FREESTANDING_REQUIRED
+print(' '.join(dict.fromkeys(CORE + CORE_EXTENSIONS + FREESTANDING_SUBSET + FREESTANDING_REQUIRED)))")
 base_flags="-std=c++26 -ffreestanding -nostdinc -nostdinc++ -isystem $repo/include -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Werror"
 fail=0
 run() { # compiler-command target-label C-compiler linker [skip-link-reason]
@@ -30,9 +30,10 @@ run() { # compiler-command target-label C-compiler linker [skip-link-reason]
   ui_cmd $cc $flags -c "<each header>"
   nbad=0
   for h in $cores; do
-    printf '#include <%s>\nint ycxx_header_check_%s;\n' "$h" "$(echo $h | tr -c 'a-z0-9\n' '_')" > "$out/h_$h.cpp"
-    if ! $cc $flags -c "$out/h_$h.cpp" -o "$out/h_$h.$label.o" 2> "$out/h_$h.$label.log"; then
-      ui_fail "[${label}] <$h>"; sed 's/^/    /' "$out/h_$h.$label.log" | head -10; fail=1; nbad=$((nbad + 1))
+    stem=$(echo "$h" | tr -c 'a-z0-9\n' '_')
+    printf '#include <%s>\nint ycxx_header_check_%s;\n' "$h" "$stem" > "$out/h_$stem.cpp"
+    if ! $cc $flags -c "$out/h_$stem.cpp" -o "$out/h_$stem.$label.o" 2> "$out/h_$stem.$label.log"; then
+      ui_fail "[${label}] <$h>"; sed 's/^/    /' "$out/h_$stem.$label.log" | head -10; fail=1; nbad=$((nbad + 1))
     fi
   done
   [ $nbad = 0 ] && ui_ok "[${label}] all $(echo $cores | wc -w | tr -d ' ') core and freestanding headers compile"

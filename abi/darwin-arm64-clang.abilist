@@ -1,7 +1,7 @@
-# libycxx ABI export list (tools/check_abi.py --update; DECISIONS §20.7): Darwin arm64, clang 23.1.2, build/clang-shared (RelWithDebInfo).
+# libycxx ABI export list (tools/check_abi.py --update; DECISIONS §20.7): Darwin arm64, clang 23.1.5, build/clang-shared (RelWithDebInfo).
 # One line per exported symbol: name, kind (F function, O object, T thread-local, W weak
 # function, V weak object) and, for data, the size in bytes.
-# compiler: clang 23.1.2
+# compiler: clang 23.1.5
 _ZN6__ycxx5__abi21__exception_object_asEPvRKNSt4__y19type_infoE F
 _ZN6__ycxx5__abi22__exception_ptr_retainEPv F
 _ZN6__ycxx5__abi23__exception_ptr_releaseEPv F

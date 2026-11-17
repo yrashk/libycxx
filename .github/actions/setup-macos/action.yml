@@ -10,6 +10,6 @@ runs:
     - uses: actions/cache@v4
       with:
         path: ~/.local/share/ycxx/toolchains
-        key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.2
+        key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.5
     - shell: bash
       run: tools/toolchain/provision

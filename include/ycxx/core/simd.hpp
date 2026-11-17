@@ -249,6 +249,62 @@ constexpr _Sp __simd_shift(const _Sp& a, __simd_size_t n) noexcept {
   }
 }
 
+// + - * and unary -: the scalar operation on a signed type narrower than int is done in int and
+// converted back (modulo 2^N), so it cannot overflow, but the same operation on a vector of 8- or
+// 16-bit signed lanes can, which is undefined. Such chunks are computed as the unsigned lanes of
+// the same width, which wrap the same way.
+template <class _Sp>
+inline constexpr bool __simd_narrow_signed =
+    _Sp::__is_vector && std::is_integral_v<typename _Sp::element_type> && std::is_signed_v<typename _Sp::element_type> &&
+    sizeof(typename _Sp::element_type) < sizeof(int);
+template <class _Sp>
+using __simd_unsigned_chunk = __simd_vector<std::make_unsigned_t<typename _Sp::element_type>, _Sp::__lanes>;
+template <class _Sp, class _Fp>
+constexpr _Sp __simd_wrapping_map(const _Sp& a, _Fp __f) noexcept {
+  if constexpr (__simd_narrow_signed<_Sp>) {
+    using _Up = __simd_unsigned_chunk<_Sp>;
+    using _Cp = typename _Sp::__chunk_type;
+    return _Sp::map(a, [__f](_Cp __x) { return __builtin_bit_cast(_Cp, static_cast<_Up>(__f(__builtin_bit_cast(_Up, __x)))); });
+  } else {
+    return _Sp::map(a, __f);
+  }
+}
+template <class _Sp, class _Fp>
+constexpr _Sp __simd_wrapping_map2(const _Sp& a, const _Sp& b, _Fp __f) noexcept {
+  if constexpr (__simd_narrow_signed<_Sp>) {
+    using _Up = __simd_unsigned_chunk<_Sp>;
+    using _Cp = typename _Sp::__chunk_type;
+    return _Sp::__map2(a, b, [__f](_Cp __x, _Cp y) {
+      return __builtin_bit_cast(_Cp, static_cast<_Up>(__f(__builtin_bit_cast(_Up, __x), __builtin_bit_cast(_Up, y))));
+    });
+  } else {
+    return _Sp::__map2(a, b, __f);
+  }
+}
+// / and %: in int lanes for the same reason (the most negative value divided by -1 is its
+// negation, converted back); no target divides vectors of integers, so nothing is lost.
+template <bool _Rem, class _Sp>
+constexpr _Sp __simd_divide(const _Sp& a, const _Sp& b) noexcept {
+  if constexpr (__simd_narrow_signed<_Sp>) {
+    using _Wp = __simd_vector<int, _Sp::__lanes>;
+    using _Cp = typename _Sp::__chunk_type;
+    return _Sp::__map2(a, b, [](_Cp __x, _Cp y) {
+      _Wp __wx = __builtin_convertvector(__x, _Wp), __wy = __builtin_convertvector(y, _Wp);
+      if constexpr (_Rem)
+        return __builtin_convertvector(__wx % __wy, _Cp);
+      else
+        return __builtin_convertvector(__wx / __wy, _Cp);
+    });
+  } else {
+    return _Sp::__map2(a, b, [](auto __x, auto y) {
+      if constexpr (_Rem)
+        return __x % y;
+      else
+        return __x / y;
+    });
+  }
+}
+
 // The mask reductions work on the object representation as unsigned words: every element is all
 // ones or all zeros, so counting set bits counts elements (little-endian targets; elsewhere the
 // elements are visited one by one).
@@ -610,7 +666,7 @@ public:
   constexpr basic_vec& operator++() noexcept
     requires requires(value_type a) { ++a; }
   {
-    __data_ = __storage::map(__data_, [](auto __x) { return __x + _Tp(1); });
+    __data_ = __ycxx::__detail::__simd_wrapping_map2(__data_, __storage::__broadcast(_Tp(1)), [](auto __x, auto y) { return __x + y; });
     return *this;
   }
   constexpr basic_vec operator++(int) noexcept
@@ -623,7 +679,7 @@ public:
   constexpr basic_vec& operator--() noexcept
     requires requires(value_type a) { --a; }
   {
-    __data_ = __storage::map(__data_, [](auto __x) { return __x - _Tp(1); });
+    __data_ = __ycxx::__detail::__simd_wrapping_map2(__data_, __storage::__broadcast(_Tp(1)), [](auto __x, auto y) { return __x - y; });
     return *this;
   }
   constexpr basic_vec operator--(int) noexcept
@@ -652,34 +708,34 @@ public:
   constexpr basic_vec operator-() const noexcept
     requires requires(const value_type a) { -a; }
   {
-    return __make(__storage::map(__data_, [](auto __x) { return -__x; }));
+    return __make(__ycxx::__detail::__simd_wrapping_map(__data_, [](auto __x) { return -__x; }));
   }
 
   // [simd.binary]
   friend constexpr basic_vec operator+(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x + y; }
   {
-    return __make(__storage::__map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x + y; }));
+    return __make(__ycxx::__detail::__simd_wrapping_map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x + y; }));
   }
   friend constexpr basic_vec operator-(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x - y; }
   {
-    return __make(__storage::__map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x - y; }));
+    return __make(__ycxx::__detail::__simd_wrapping_map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x - y; }));
   }
   friend constexpr basic_vec operator*(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x * y; }
   {
-    return __make(__storage::__map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x * y; }));
+    return __make(__ycxx::__detail::__simd_wrapping_map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x * y; }));
   }
   friend constexpr basic_vec operator/(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x / y; }
   {
-    return __make(__storage::__map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x / y; }));
+    return __make(__ycxx::__detail::__simd_divide<false>(a.__data_, b.__data_));
   }
   friend constexpr basic_vec operator%(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x % y; }
   {
-    return __make(__storage::__map2(a.__data_, b.__data_, [](auto __x, auto y) { return __x % y; }));
+    return __make(__ycxx::__detail::__simd_divide<true>(a.__data_, b.__data_));
   }
   friend constexpr basic_vec operator&(const basic_vec& a, const basic_vec& b) noexcept
     requires requires(value_type __x, value_type y) { __x & y; }
@@ -1071,13 +1127,27 @@ constexpr typename _Vp::value_type __simd_reduce_tree(const _Vp& __x, const _Op_
                        std::remove_cvref_t<decltype(__simd_access::data(std::declval<_Vp&>()))>::__is_vector) {
     // The std function objects on vector chunks: fold the chunks, then the lanes of the result.
     const auto& s = __simd_access::data(__x);
-    auto __acc = s.c[0];
-    for (int k = 1; k < s.__chunks; ++k)
-      __acc = op(__acc, s.c[k]);
-    _Tp r = __acc[0];
-    for (int i = 1; i < s.__lanes; ++i)
-      r = static_cast<_Tp>(op(r, static_cast<_Tp>(__acc[i])));
-    return r;
+    using _Sp = std::remove_cvref_t<decltype(s)>;
+    if constexpr (std::is_integral_v<_Tp> && sizeof(_Tp) < sizeof(int)) {
+      // The 8- and 16-bit integers as their unsigned lanes, then the lanes in unsigned int: the
+      // scalar operation's result modulo 2^N (see __simd_wrapping_map2), without overflow.
+      using _Up = __simd_unsigned_chunk<_Sp>;
+      _Up __acc = __builtin_bit_cast(_Up, s.c[0]);
+      for (int k = 1; k < s.__chunks; ++k)
+        __acc = op(__acc, __builtin_bit_cast(_Up, s.c[k]));
+      unsigned r = __acc[0];
+      for (int i = 1; i < s.__lanes; ++i)
+        r = op(r, static_cast<unsigned>(__acc[i]));
+      return static_cast<_Tp>(r);
+    } else {
+      auto __acc = s.c[0];
+      for (int k = 1; k < s.__chunks; ++k)
+        __acc = op(__acc, s.c[k]);
+      _Tp r = __acc[0];
+      for (int i = 1; i < s.__lanes; ++i)
+        r = static_cast<_Tp>(op(r, static_cast<_Tp>(__acc[i])));
+      return r;
+    }
   } else if constexpr (n % 2 == 0) {
     auto __parts = std::simd::chunk<n / 2>(__x);
     return __ycxx::__detail::__simd_reduce_tree(op(__parts[0], __parts[1]), op);

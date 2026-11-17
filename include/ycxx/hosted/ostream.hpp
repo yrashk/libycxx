@@ -238,10 +238,28 @@ basic_ostream<__charT, __traits>& basic_ostream<__charT, __traits>::operator<<(b
         *this,
         [&] {
           basic_streambuf<__charT, __traits>* out = this->rdbuf();
+          using __area = __ycxx::__detail::__streambuf_get_area;
           for (;;) {
+            // The characters in sb's get area go out with one sputn and are then extracted (as
+            // many as were inserted); not when sb is the stream's own buffer, whose output could
+            // move its get area.
+            __charT* const __g = __area::__next(*__sb);
+            __charT* const e = __area::__end(*__sb);
+            if (__g < e && __sb != out) {
+              const streamsize __put = out->sputn(__g, static_cast<streamsize>(e - __g));
+              __area::__advance_to(*__sb, __g + (__put > 0 ? __put : 0));
+              if (__put > 0)
+                n += __put;
+              if (__put != e - __g)
+                return; // insertion failed
+              continue;
+            }
+            // An empty get area: sgetc may fill it (then the run above), or sb may have none.
             const int_type c = __source([&] { return __sb->sgetc(); });
             if (__traits::eq_int_type(c, __traits::eof()))
               return;
+            if (__sb != out && __area::__next(*__sb) < __area::__end(*__sb))
+              continue;
             if (__traits::eq_int_type(out->sputc(__traits::to_char_type(c)), __traits::eof()))
               return;
             ++n;

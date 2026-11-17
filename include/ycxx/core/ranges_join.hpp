@@ -706,8 +706,6 @@ class lazy_split_view : public view_interface<lazy_split_view<_Vp, _Pattern>> {
           ++cur;
           if (cur == end)
             __trailing_empty_ = true;
-          else if constexpr (!forward_range<_Vp>)
-            __trailing_empty_ = true;
         }
       } else {
         do {

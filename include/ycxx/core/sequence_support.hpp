@@ -86,36 +86,48 @@ struct __plain_temp {
   constexpr explicit __plain_temp(_Tp&& __x) : __v(static_cast<_Tp&&>(__x)) {}
 };
 
-// Rotates [f, l) left so that *m becomes the first element, with move assignments and one
-// temporary per cycle (Temp(ctx..., T&&), holding the element in .v). No unqualified calls.
-// It is a pointer or a random-access iterator into the container's own elements.
+// Rotates [f, l) left so that *m becomes the first element, with move assignments through one
+// temporary (Temp(ctx..., T&&), holding the element in .v). No unqualified calls. It is a
+// pointer or a random-access iterator into the container's own elements, but is only
+// incremented, decremented and compared, so the elements are visited in order (a deque
+// iterator then never divides) rather than with the stride of a cycle-following rotation: a
+// single element on either side is carried across while the others shift by one (one move
+// each), otherwise three reversals (three moves per element).
 template <class _Temp, class _It, class... _Ctx>
 constexpr void __rotate_elements(_It __f, _It m, _It __l, _Ctx&... __ctx) {
   using _Tp = std::remove_reference_t<decltype(*__f)>;
-  const std::ptrdiff_t n = __l - __f;
-  const std::ptrdiff_t k = m - __f;
-  if (k == 0 || k == n)
+  if (__f == m || m == __l)
     return;
-  std::ptrdiff_t __cycles = n;
-  for (std::ptrdiff_t b = k; b != 0;) { // gcd(n, k) cycles
-    const std::ptrdiff_t r = __cycles % b;
-    __cycles = b;
-    b = r;
+  _It __next = __f;
+  if (++__next == m) { // [f, l) = x, rest: shift the rest left
+    _Temp __tmp(__ctx..., static_cast<_Tp&&>(*__f));
+    for (; __next != __l; ++__f, ++__next)
+      *__f = static_cast<_Tp&&>(*__next);
+    *__f = static_cast<_Tp&&>(__tmp.__v);
+    return;
   }
-  for (std::ptrdiff_t i = 0; i != __cycles; ++i) {
-    _Temp __tmp(__ctx..., static_cast<_Tp&&>(__f[i]));
-    std::ptrdiff_t __j = i;
-    for (;;) {
-      std::ptrdiff_t next = __j + k;
-      if (next >= n)
-        next -= n;
-      if (next == i)
-        break;
-      __f[__j] = static_cast<_Tp&&>(__f[next]);
-      __j = next;
+  _It __prev = __l;
+  if (--__prev == m) { // [f, l) = rest, x: shift the rest right
+    _Temp __tmp(__ctx..., static_cast<_Tp&&>(*__prev));
+    for (_It __q = __prev; __prev != __f; __prev = __q)
+      *__prev = static_cast<_Tp&&>(*--__q);
+    *__f = static_cast<_Tp&&>(__tmp.__v);
+    return;
+  }
+  // The temporary is scratch space for the swaps: it starts out holding *f, which goes back.
+  _Temp __tmp(__ctx..., static_cast<_Tp&&>(*__f));
+  *__f = static_cast<_Tp&&>(__tmp.__v);
+  const auto __reverse = [&__tmp](_It __lo, _It __hi) {
+    while (__lo != __hi && __lo != --__hi) {
+      __tmp.__v = static_cast<_Tp&&>(*__lo);
+      *__lo = static_cast<_Tp&&>(*__hi);
+      *__hi = static_cast<_Tp&&>(__tmp.__v);
+      ++__lo;
     }
-    __f[__j] = static_cast<_Tp&&>(__tmp.__v);
-  }
+  };
+  __reverse(__f, m);
+  __reverse(m, __l);
+  __reverse(__f, __l);
 }
 
 // ---- node-based containers and adaptors ----

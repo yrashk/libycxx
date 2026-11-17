@@ -303,13 +303,14 @@ protected:
   template <class _It, class _Sent>
   constexpr void __insert_elems(_It first, _Sent last) {
     const size_type __old = size();
-    auto __g = __guard();
     constexpr bool __vectors = ::__ycxx::__detail::__is_std_vector<_KC> && ::__ycxx::__detail::__is_std_vector<_MC>;
+    // Before the guard: a reserve that throws has changed no element, so the map is kept.
     if constexpr (__vectors && std::forward_iterator<_It> && std::sized_sentinel_for<_Sent, _It>) {
       const auto n = static_cast<size_type>(last - first);
       __c_.keys.reserve(__old + n);
       __c_.values.reserve(__old + n);
     }
+    auto __g = __guard();
     for (; first != last; ++first) {
       value_type value = *first;
       if constexpr (__vectors) {

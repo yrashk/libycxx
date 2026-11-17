@@ -7,10 +7,12 @@
 //   spherical ones normalised at every step, so they neither overflow nor underflow early);
 // - Carlson's symmetric integrals R_F, R_D, R_J (duplication algorithm) for the elliptic
 //   integrals, with phi reduced modulo pi;
-// - for the Bessel functions, the continued fraction for J'/J (or I'/I) with downward
-//   recurrence, Temme's series (x < 2) or Steed's complex continued fraction (x >= 2) for the
-//   order mu in [-1/2, 1/2], normalised by the Wronskian; Hankel's asymptotic expansions for
-//   x > 1000 when x also exceeds nu^2 / 2; reflection formulas for negative orders;
+// - for the Bessel functions: for x < 2 the ascending power series of J and I (leading term
+//   (x/2)^nu / Gamma(nu + 1), through logarithms where it would over- or underflow) and Temme's
+//   series for Y and K of the order mu in [-1/2, 1/2], recurred up to nu; for x >= 2 the
+//   continued fraction for J'/J (or I'/I) with downward recurrence and Steed's complex continued
+//   fraction at mu, normalised by the Wronskian; Hankel's asymptotic expansions for x > 1000
+//   when x also exceeds nu^2 / 2; reflection formulas for negative orders;
 // - the power series / continued fraction / asymptotic series of Ei; Euler-Maclaurin summation
 //   and the functional equation for zeta; Gamma through lgamma/tgamma of the working type.
 // A domain error ([sf.cmath.general]) is reported the way the C library reports one: the
@@ -113,6 +115,8 @@ template <class _Wp>
 inline constexpr _Wp pi = __ycxx::__detail::__math_constant_value<_Wp>(__math_constant::pi);
 template <class _Wp>
 inline constexpr _Wp egamma = __ycxx::__detail::__math_constant_value<_Wp>(__math_constant::egamma);
+template <class _Wp>
+inline constexpr _Wp ln2 = __ycxx::__detail::__math_constant_value<_Wp>(__math_constant::ln2);
 template <class _Wp>
 inline constexpr _Wp __eps = _Wp(1) / __ycxx::__detail::__fpm::__fp_scale(_Wp(1), __ycxx::__detail::__fp_format<_Wp>.digits - 1);
 template <class _Wp>
@@ -460,6 +464,36 @@ _Wp __hankel_term(_Wp __nu, int k) noexcept { // a_k(nu) / x^k numerator factor 
   return (4 * __nu * __nu - _Wp(2 * k - 1) * _Wp(2 * k - 1)) / _Wp(8 * k);
 }
 
+// The ascending series of J (alternating) and I: sum_k (-+1)^k (x/2)^2k / (k! (nu + 1)_k), nu >= 0.
+// Used for x < 2, where the terms are below 1/k!, so J's alternation costs at most about two bits
+// (J_0(2) = 0.22 from 1 - 1 + 1/4 - ...).
+template <class _Wp>
+_Wp __bessel_series_sum(_Wp __nu, _Wp __x, bool __alternating) noexcept {
+  const _Wp __eps = __ycxx::__detail::__sf::__w::__eps<_Wp>;
+  const _Wp __x2 = __x / 2;
+  const _Wp __z = __alternating ? -__x2 * __x2 : __x2 * __x2;
+  _Wp __term = 1, sum = 1;
+  for (int k = 1; k < 1000; ++k) {
+    __term *= __z / (_Wp(k) * (__nu + k));
+    sum += __term;
+    if (__ycxx::__detail::__sf::__w::abs(__term) < __eps * __ycxx::__detail::__sf::__w::abs(sum)) break;
+  }
+  return sum;
+}
+// (x/2)^nu / Gamma(nu + 1), the leading term of the series: directly while the power is a normal
+// number and the Gamma is finite (Gamma(nu + 1) >= 0.885, so the quotient is then representable),
+// else through the logarithms (a result far down in the subnormals, or 0 or beyond nu = 170, where
+// Gamma overflows but (x/2)^nu may still bring the quotient back into range).
+template <class _Wp>
+_Wp __bessel_series_lead(_Wp __nu, _Wp __x) noexcept {
+  const _Wp __x2 = __x / 2;
+  const _Wp p = __ycxx::__detail::__sf::__w::pow(__x2, __nu), __g = __ycxx::__detail::__sf::__w::tgamma(__nu + 1);
+  if (p >= __ycxx::__detail::__sf::__w::__tiny<_Wp> && __builtin_isfinite(p) && __builtin_isfinite(__g)) return p / __g;
+  // log(x) - ln 2, not log(x/2): x/2 of a subnormal x has lost bits (or is 0)
+  return __ycxx::__detail::__sf::__w::exp(__nu * (__ycxx::__detail::__sf::__w::log(__x) - __ycxx::__detail::__sf::__w::ln2<_Wp>) -
+                                          __ycxx::__detail::__sf::__w::lgamma(__nu + 1));
+}
+
 // J_nu(x), Y_nu(x) for nu >= 0, x > 0.
 template <class _Wp>
 void __bessel_jy(_Wp __nu, _Wp __x, _Wp& _Jp, _Wp& _Yp) noexcept {
@@ -489,8 +523,60 @@ void __bessel_jy(_Wp __nu, _Wp __x, _Wp& _Jp, _Wp& _Yp) noexcept {
     _Yp = __amp * (_Pp * __sw + _Qp * cw);
     return;
   }
-  const int __nl = __x < _Wp(2) ? static_cast<int>(__nu + _Wp(0.5)) : (__nu - __x + _Wp(1.5) > _Wp(0) ? static_cast<int>(__nu - __x + _Wp(1.5)) : 0);
-  const _Wp __mu = __nu - __nl, __mu2 = __mu * __mu, __xi = 1 / __x, __xi2 = 2 * __xi, __wr = __xi2 / pi;
+  const _Wp __xi = 1 / __x, __xi2 = 2 * __xi, __wr = __xi2 / pi;
+  if (__x < _Wp(2)) {
+    // J by its ascending series. (Normalising the continued fraction by the Wronskian,
+    // J_mu = W / (Y'_mu - (J'_mu/J_mu) Y_mu), loses about log10(1/x) digits when mu < 0: both terms
+    // are then about |mu|/x Y_mu and their difference, Y_(mu+1), is smaller by x^2|mu|; and the
+    // intermediates overflow for tiny x.) Y_mu, Y_(mu+1) by Temme's series, then the recurrence.
+    _Jp = __ycxx::__detail::__sf::__bessel_series_lead(__nu, __x) * __ycxx::__detail::__sf::__bessel_series_sum(__nu, __x, true);
+    const int __nl = static_cast<int>(__nu + _Wp(0.5));
+    const _Wp __mu = __nu - __nl, __mu2 = __mu * __mu;
+    const _Wp __x2 = __x / 2, __pimu = pi * __mu;
+    const _Wp __fct = __ycxx::__detail::__sf::__w::abs(__pimu) < __eps ? _Wp(1) : __pimu / __ycxx::__detail::__sf::__w::sin(__pimu);
+    _Wp __dd = __x >= __fpmin ? -__ycxx::__detail::__sf::__w::log(__x2) : __ycxx::__detail::__sf::__w::ln2<_Wp> - __ycxx::__detail::__sf::__w::log(__x); // ln(2/x)
+    _Wp e = __mu * __dd;
+    const _Wp __fct2 = __ycxx::__detail::__sf::__w::abs(e) < __eps ? _Wp(1) : __ycxx::__detail::__sf::__w::sinh(e) / e;
+    _Wp __gam1, __gam2, __gpl, __gmi;
+    __ycxx::__detail::__sf::__temme_gammas(__mu, __gam1, __gam2, __gpl, __gmi);
+    _Wp __ff = 2 / pi * __fct * (__gam1 * __ycxx::__detail::__sf::__w::cosh(e) + __gam2 * __fct2 * __dd);
+    e = __ycxx::__detail::__sf::__w::exp(e);
+    _Wp p = e / (__gpl * pi);   // (x/2)^-mu Gamma(1 + mu) / pi
+    _Wp __q = 1 / (e * pi * __gmi); // (x/2)^mu Gamma(1 - mu) / pi
+    const _Wp __pimu2 = __pimu / 2;
+    const _Wp __fct3 = __ycxx::__detail::__sf::__w::abs(__pimu2) < __eps ? _Wp(1) : __ycxx::__detail::__sf::__w::sin(__pimu2) / __pimu2;
+    const _Wp r = pi * __pimu2 * __fct3 * __fct3;
+    _Wp __cc = 1;
+    __dd = -__x2 * __x2;
+    _Wp sum = __ff + r * __q, __sum1 = p;
+    for (int i = 1; i < 100000; ++i) {
+      __ff = (i * __ff + p + __q) / (_Wp(i) * _Wp(i) - __mu2);
+      __cc *= __dd / i;
+      p /= _Wp(i) - __mu;
+      __q /= _Wp(i) + __mu;
+      const _Wp __del = __cc * (__ff + r * __q);
+      sum += __del;
+      __sum1 += __cc * p - i * __del;
+      if (__ycxx::__detail::__sf::__w::abs(__del) < (1 + __ycxx::__detail::__sf::__w::abs(sum)) * __eps) break;
+    }
+    _Wp __rymu = -sum, __ry1 = -2 * (__sum1 / __x); // not sum1 * (2/x): 2/x overflows for subnormal x while Y_(mu+1) may not
+    for (int i = 1; i <= __nl; ++i) {
+      if (__builtin_isinf(__ry1)) { // Y_nu overflows with Y_(mu+i) (the next step would be inf - inf)
+        __rymu = __ry1;
+        break;
+      }
+      const _Wp t = (__mu + i) * __xi2 * __ry1 - __rymu;
+      __rymu = __ry1;
+      __ry1 = t;
+    }
+    _Yp = __rymu;
+    return;
+  }
+  // x >= 2: the continued fraction for J'_nu / J_nu, the recurrence down to mu in [-1/2, 1/2] (nl
+  // steps, unnormalised), Steed's continued fraction at mu and the Wronskian to normalise J; then
+  // the recurrence up from Y_mu.
+  const int __nl = __nu - __x + _Wp(1.5) > _Wp(0) ? static_cast<int>(__nu - __x + _Wp(1.5)) : 0;
+  const _Wp __mu = __nu - __nl, __mu2 = __mu * __mu;
   // CF1: h = J'_nu / J_nu (modified Lentz); isign tracks the sign of J_nu relative to the start.
   int __isign = 1;
   _Wp h = __nu * __xi;
@@ -520,82 +606,50 @@ void __bessel_jy(_Wp __nu, _Wp __x, _Wp& _Jp, _Wp& _Yp) noexcept {
   }
   if (__rjl == _Wp(0)) __rjl = __eps;
   const _Wp __f = __rjpl / __rjl;
-  _Wp __rjmu, __rymu, __ry1;
-  if (__x < _Wp(2)) {
-    // Temme's series for Y_mu and Y_(mu+1).
-    const _Wp __x2 = __x / 2, __pimu = pi * __mu;
-    const _Wp __fct = __ycxx::__detail::__sf::__w::abs(__pimu) < __eps ? _Wp(1) : __pimu / __ycxx::__detail::__sf::__w::sin(__pimu);
-    _Wp __dd = -__ycxx::__detail::__sf::__w::log(__x2);
-    _Wp e = __mu * __dd;
-    const _Wp __fct2 = __ycxx::__detail::__sf::__w::abs(e) < __eps ? _Wp(1) : __ycxx::__detail::__sf::__w::sinh(e) / e;
-    _Wp __gam1, __gam2, __gpl, __gmi;
-    __ycxx::__detail::__sf::__temme_gammas(__mu, __gam1, __gam2, __gpl, __gmi);
-    _Wp __ff = 2 / pi * __fct * (__gam1 * __ycxx::__detail::__sf::__w::cosh(e) + __gam2 * __fct2 * __dd);
-    e = __ycxx::__detail::__sf::__w::exp(e);
-    _Wp p = e / (__gpl * pi);   // (x/2)^-mu Gamma(1 + mu) / pi
-    _Wp __q = 1 / (e * pi * __gmi); // (x/2)^mu Gamma(1 - mu) / pi
-    const _Wp __pimu2 = __pimu / 2;
-    const _Wp __fct3 = __ycxx::__detail::__sf::__w::abs(__pimu2) < __eps ? _Wp(1) : __ycxx::__detail::__sf::__w::sin(__pimu2) / __pimu2;
-    const _Wp r = pi * __pimu2 * __fct3 * __fct3;
-    _Wp __cc = 1;
-    __dd = -__x2 * __x2;
-    _Wp sum = __ff + r * __q, __sum1 = p;
-    for (int i = 1; i < 100000; ++i) {
-      __ff = (i * __ff + p + __q) / (_Wp(i) * _Wp(i) - __mu2);
-      __cc *= __dd / i;
-      p /= _Wp(i) - __mu;
-      __q /= _Wp(i) + __mu;
-      const _Wp __del = __cc * (__ff + r * __q);
-      sum += __del;
-      __sum1 += __cc * p - i * __del;
-      if (__ycxx::__detail::__sf::__w::abs(__del) < (1 + __ycxx::__detail::__sf::__w::abs(sum)) * __eps) break;
-    }
-    __rymu = -sum;
-    __ry1 = -__sum1 * __xi2;
-    const _Wp __rymup = __mu * __xi * __rymu - __ry1;
-    __rjmu = __wr / (__rymup - __f * __rymu);
-  } else {
-    // Steed's complex continued fraction p + iq = (J' + iY') / (J + iY).
-    _Wp a = _Wp(0.25) - __mu2, p = -__xi / 2, __q = 1;
-    const _Wp __br = 2 * __x;
-    _Wp __bi = 2;
-    _Wp __fct = a * __xi / (p * p + __q * __q);
-    _Wp __cr = __br + __q * __fct, __ci = __bi + p * __fct;
-    _Wp den = __br * __br + __bi * __bi;
-    _Wp __dr = __br / den, __di = -__bi / den;
-    _Wp __dlr = __cr * __dr - __ci * __di, __dli = __cr * __di + __ci * __dr;
-    _Wp t = p * __dlr - __q * __dli;
+  // Steed's complex continued fraction p + iq = (J' + iY') / (J + iY).
+  _Wp a = _Wp(0.25) - __mu2, p = -__xi / 2, __q = 1;
+  const _Wp __br = 2 * __x;
+  _Wp __bi = 2;
+  _Wp __fct = a * __xi / (p * p + __q * __q);
+  _Wp __cr = __br + __q * __fct, __ci = __bi + p * __fct;
+  _Wp den = __br * __br + __bi * __bi;
+  _Wp __dr = __br / den, __di = -__bi / den;
+  _Wp __dlr = __cr * __dr - __ci * __di, __dli = __cr * __di + __ci * __dr;
+  _Wp t = p * __dlr - __q * __dli;
+  __q = p * __dli + __q * __dlr;
+  p = t;
+  for (int i = 2; i < 100000; ++i) {
+    a += 2 * (i - 1);
+    __bi += 2;
+    __dr = a * __dr + __br;
+    __di = a * __di + __bi;
+    if (__ycxx::__detail::__sf::__w::abs(__dr) + __ycxx::__detail::__sf::__w::abs(__di) < __fpmin) __dr = __fpmin;
+    __fct = a / (__cr * __cr + __ci * __ci);
+    __cr = __br + __cr * __fct;
+    __ci = __bi - __ci * __fct;
+    if (__ycxx::__detail::__sf::__w::abs(__cr) + __ycxx::__detail::__sf::__w::abs(__ci) < __fpmin) __cr = __fpmin;
+    den = __dr * __dr + __di * __di;
+    __dr /= den;
+    __di /= -den;
+    __dlr = __cr * __dr - __ci * __di;
+    __dli = __cr * __di + __ci * __dr;
+    t = p * __dlr - __q * __dli;
     __q = p * __dli + __q * __dlr;
     p = t;
-    for (int i = 2; i < 100000; ++i) {
-      a += 2 * (i - 1);
-      __bi += 2;
-      __dr = a * __dr + __br;
-      __di = a * __di + __bi;
-      if (__ycxx::__detail::__sf::__w::abs(__dr) + __ycxx::__detail::__sf::__w::abs(__di) < __fpmin) __dr = __fpmin;
-      __fct = a / (__cr * __cr + __ci * __ci);
-      __cr = __br + __cr * __fct;
-      __ci = __bi - __ci * __fct;
-      if (__ycxx::__detail::__sf::__w::abs(__cr) + __ycxx::__detail::__sf::__w::abs(__ci) < __fpmin) __cr = __fpmin;
-      den = __dr * __dr + __di * __di;
-      __dr /= den;
-      __di /= -den;
-      __dlr = __cr * __dr - __ci * __di;
-      __dli = __cr * __di + __ci * __dr;
-      t = p * __dlr - __q * __dli;
-      __q = p * __dli + __q * __dlr;
-      p = t;
-      if (__ycxx::__detail::__sf::__w::abs(__dlr - 1) + __ycxx::__detail::__sf::__w::abs(__dli) < __eps) break;
-    }
-    const _Wp __gam = (p - __f) / __q;
-    __rjmu = __ycxx::__detail::__sf::__w::sqrt(__wr / ((p - __f) * __gam + __q));
-    if (__rjl < _Wp(0)) __rjmu = -__rjmu;
-    __rymu = __rjmu * __gam;
-    const _Wp __rymup = __rymu * (p + __q / __gam);
-    __ry1 = __mu * __xi * __rymu - __rymup;
+    if (__ycxx::__detail::__sf::__w::abs(__dlr - 1) + __ycxx::__detail::__sf::__w::abs(__dli) < __eps) break;
   }
+  const _Wp __gam = (p - __f) / __q;
+  _Wp __rjmu = __ycxx::__detail::__sf::__w::sqrt(__wr / ((p - __f) * __gam + __q));
+  if (__rjl < _Wp(0)) __rjmu = -__rjmu;
+  _Wp __rymu = __rjmu * __gam;
+  const _Wp __rymup = __rymu * (p + __q / __gam);
+  _Wp __ry1 = __mu * __xi * __rymu - __rymup;
   _Jp = __rjl1 * (__rjmu / __rjl);
   for (int i = 1; i <= __nl; ++i) {
+    if (__builtin_isinf(__ry1)) { // Y_nu overflows with Y_(mu+i)
+      __rymu = __ry1;
+      break;
+    }
     const _Wp t = (__mu + i) * __xi2 * __ry1 - __rymu;
     __rymu = __ry1;
     __ry1 = t;
@@ -626,33 +680,14 @@ void __bessel_ik(_Wp __nu, _Wp __x, _Wp& _Ip, _Wp& _Kp) noexcept {
   }
   const int __nl = static_cast<int>(__nu + _Wp(0.5));
   const _Wp __mu = __nu - __nl, __mu2 = __mu * __mu, __xi = 1 / __x, __xi2 = 2 * __xi;
-  // CF1: h = I'_nu / I_nu
-  _Wp h = __nu * __xi;
-  if (h < __fpmin) h = __fpmin;
-  _Wp b = __xi2 * __nu, d = 0, c = h;
-  for (long i = 1; i < 2000000; ++i) {
-    b += __xi2;
-    d = 1 / (b + d);
-    c = b + 1 / c;
-    const _Wp __del = c * d;
-    h *= __del;
-    if (__ycxx::__detail::__sf::__w::abs(__del - 1) < __eps) break;
-  }
-  _Wp __ril = __fpmin, __ripl = h * __ril;
-  const _Wp __ril1 = __ril;
-  _Wp __fact = __nu * __xi;
-  for (int __l = __nl; __l >= 1; --__l) {
-    const _Wp t = __fact * __ril + __ripl;
-    __fact -= __xi;
-    __ripl = __fact * t + __ril;
-    __ril = t;
-  }
-  const _Wp __f = __ripl / __ril;
   _Wp __rkmu, __rk1;
   if (__x < _Wp(2)) {
+    // I by its ascending series (the Wronskian normalisation would lose about log10(1/x) digits
+    // for mu < 0 and overflow for tiny x, as for J); K_mu, K_(mu+1) by Temme's series.
+    _Ip = __ycxx::__detail::__sf::__bessel_series_lead(__nu, __x) * __ycxx::__detail::__sf::__bessel_series_sum(__nu, __x, false);
     const _Wp __x2 = __x / 2, __pimu = pi * __mu;
     const _Wp __fct = __ycxx::__detail::__sf::__w::abs(__pimu) < __eps ? _Wp(1) : __pimu / __ycxx::__detail::__sf::__w::sin(__pimu);
-    _Wp __dd = -__ycxx::__detail::__sf::__w::log(__x2);
+    _Wp __dd = __x >= __fpmin ? -__ycxx::__detail::__sf::__w::log(__x2) : __ycxx::__detail::__sf::__w::ln2<_Wp> - __ycxx::__detail::__sf::__w::log(__x); // ln(2/x)
     _Wp e = __mu * __dd;
     const _Wp __fct2 = __ycxx::__detail::__sf::__w::abs(e) < __eps ? _Wp(1) : __ycxx::__detail::__sf::__w::sinh(e) / e;
     _Wp __gam1, __gam2, __gpl, __gmi;
@@ -676,8 +711,31 @@ void __bessel_ik(_Wp __nu, _Wp __x, _Wp& _Ip, _Wp& _Kp) noexcept {
       if (__ycxx::__detail::__sf::__w::abs(__del) < __ycxx::__detail::__sf::__w::abs(sum) * __eps) break;
     }
     __rkmu = sum;
-    __rk1 = __sum1 * __xi2;
+    __rk1 = 2 * (__sum1 / __x); // as for Y_(mu+1)
   } else {
+    // CF1: h = I'_nu / I_nu
+    _Wp h = __nu * __xi;
+    if (h < __fpmin) h = __fpmin;
+    _Wp b = __xi2 * __nu, d = 0, c = h;
+    for (long i = 1; i < 2000000; ++i) {
+      b += __xi2;
+      d = 1 / (b + d);
+      c = b + 1 / c;
+      const _Wp __del = c * d;
+      h *= __del;
+      if (__ycxx::__detail::__sf::__w::abs(__del - 1) < __eps) break;
+    }
+    // Downward recurrence from nu to mu, unnormalised.
+    _Wp __ril = __fpmin, __ripl = h * __ril;
+    const _Wp __ril1 = __ril;
+    _Wp __fact = __nu * __xi;
+    for (int __l = __nl; __l >= 1; --__l) {
+      const _Wp t = __fact * __ril + __ripl;
+      __fact -= __xi;
+      __ripl = __fact * t + __ril;
+      __ril = t;
+    }
+    const _Wp __f = __ripl / __ril;
     // Steed's continued fraction for K (Thompson and Barnett).
     _Wp __bb = 2 * (1 + __x), __dd = 1 / __bb, __hh = __dd, __delh = __dd;
     _Wp __q1 = 0, __q2 = 1;
@@ -702,10 +760,11 @@ void __bessel_ik(_Wp __nu, _Wp __x, _Wp& _Ip, _Wp& _Kp) noexcept {
     __hh = __a1 * __hh;
     __rkmu = __ycxx::__detail::__sf::__w::sqrt(pi / (2 * __x)) * __ycxx::__detail::__sf::__w::exp(-__x) / s;
     __rk1 = __rkmu * (__mu + __x + _Wp(0.5) - __hh) * __xi;
+    // The Wronskian I_mu K'_mu - I'_mu K_mu = -1/x normalises I.
+    const _Wp __rkmup = __mu * __xi * __rkmu - __rk1;
+    const _Wp __rimu = __xi / (__f * __rkmu - __rkmup);
+    _Ip = __rimu * __ril1 / __ril;
   }
-  const _Wp __rkmup = __mu * __xi * __rkmu - __rk1;
-  const _Wp __rimu = __xi / (__f * __rkmu - __rkmup);
-  _Ip = __rimu * __ril1 / __ril;
   for (int i = 1; i <= __nl; ++i) {
     const _Wp t = (__mu + i) * __xi2 * __rk1 + __rkmu;
     __rkmu = __rk1;
@@ -784,6 +843,20 @@ _Tp __sph_bessel_impl(bool __neumann, unsigned n, _Tp __x) noexcept {
   }
   if (__builtin_isinf(__x)) return _Tp(0);
   const _Wp __wx = __x;
+  if (!__neumann && __wx < _Wp(2)) {
+    // j_n(x) = x^n / (2n + 1)!! sum_k (-x^2/2)^k / (k! (2n + 3)(2n + 5)...(2n + 2k + 1)), the series
+    // of J_(n+1/2) with sqrt(pi / 2x) folded into its leading term: j_n(x) is representable where
+    // J_(n+1/2)(x) is not (j_1(1e-300) = 3.3e-301). The leading term directly while x^n is a normal
+    // number and the double factorial is finite, else through the logarithms (as __bessel_series_lead).
+    _Wp __lead = __ycxx::__detail::__sf::__w::pow(__wx, _Wp(n)), __dfact = 1;
+    for (unsigned i = 1; i <= n && __builtin_isfinite(__dfact); ++i) __dfact *= _Wp(2 * i + 1);
+    if (__lead >= __ycxx::__detail::__sf::__w::__tiny<_Wp> && __builtin_isfinite(__lead) && __builtin_isfinite(__dfact))
+      __lead /= __dfact;
+    else // (2n + 1)!! = Gamma(n + 3/2) 2^(n+1) / sqrt(pi)
+      __lead = __ycxx::__detail::__sf::__w::exp(_Wp(n) * __ycxx::__detail::__sf::__w::log(__wx) - __ycxx::__detail::__sf::__w::lgamma(_Wp(n) + _Wp(1.5)) +
+                                               __ycxx::__detail::__sf::__w::log(__ycxx::__detail::__sf::__w::pi<_Wp>) / 2 - _Wp(n + 1) * __ycxx::__detail::__sf::__w::ln2<_Wp>);
+    return static_cast<_Tp>(__lead * __ycxx::__detail::__sf::__bessel_series_sum(_Wp(n) + _Wp(0.5), __wx, true));
+  }
   _Wp __j, y;
   __ycxx::__detail::__sf::__bessel_jy(_Wp(n) + _Wp(0.5), __wx, __j, y);
   const _Wp __f = __ycxx::__detail::__sf::__w::sqrt(__ycxx::__detail::__sf::__w::pi<_Wp> / (2 * __wx));

@@ -255,8 +255,11 @@ class chunk_view<_Vp> : public view_interface<chunk_view<_Vp>> {
       requires random_access_range<_Base>
     {
       if (__x > 0) {
-        ::__ycxx::__detail::__precondition(ranges::distance(__current_, __end_) > __n_ * (__x - 1),
-                                     "chunk_view: advance past the end");
+        // Checked only where the distance to the end is O(1): an unbounded base (an unreachable
+        // end) or one without a sized sentinel would make the check loop forever or cost O(n).
+        if constexpr (sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>)
+          ::__ycxx::__detail::__precondition(__end_ - __current_ > __n_ * (__x - 1),
+                                       "chunk_view: advance past the end");
         ranges::advance(__current_, __n_ * (__x - 1));
         __missing_ = ranges::advance(__current_, __n_, __end_);
       } else if (__x < 0) {
@@ -881,8 +884,10 @@ class stride_view : public view_interface<stride_view<_Vp>> {
       requires random_access_range<_Base>
     {
       if (n > 0) {
-        ::__ycxx::__detail::__precondition(ranges::distance(__current_, __end_) > __stride_ * (n - 1),
-                                     "stride_view: advance past the end");
+        // Checked only where the distance to the end is O(1), as in chunk_view.
+        if constexpr (sized_sentinel_for<sentinel_t<_Base>, iterator_t<_Base>>)
+          ::__ycxx::__detail::__precondition(__end_ - __current_ > __stride_ * (n - 1),
+                                       "stride_view: advance past the end");
         ranges::advance(__current_, __stride_ * (n - 1));
         __missing_ = ranges::advance(__current_, __stride_, __end_);
       } else if (n < 0) {

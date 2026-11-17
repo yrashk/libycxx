@@ -82,6 +82,10 @@ else
   group_begin=-Wl,--start-group group_end=-Wl,--end-group libgcc='@YCXX_W_LIBGCC@'
 fi
 
+# No UBSan vptr check: it cannot run against libycxx's type_info vtables (DECISIONS §6.8).
+for a in "$@"; do
+  case $a in -fsanitize=*) set -- "$@" -fno-sanitize=vptr; break ;; esac
+done
 link=1
 for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM|--precompile) link=0 ;; esac; done
 if [ $link = 1 ] && [ $linkage = shared ]; then

@@ -66,15 +66,13 @@ void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
 
 bool __file_close(void* __f) noexcept { return ::ycxx_pal_file_close(handle(__f)) == 0; }
 
+// One read: what the provider has (a device or a pipe may have fewer than n bytes ready, and
+// waiting for more would stall a reader that needs only those); 0 at end of file or on an error.
 std::size_t __file_read(void* __f, char* __buf, std::size_t n) noexcept {
-  std::size_t done = 0;
-  while (done < n) {
-    ycxx_pal_size __got = 0;
-    if (::ycxx_pal_file_read(handle(__f), __buf + done, n - done, &__got) != 0 || __got == 0)
-      break;
-    done += __got;
-  }
-  return done;
+  ycxx_pal_size __got = 0;
+  if (::ycxx_pal_file_read(handle(__f), __buf, n, &__got) != 0)
+    return 0;
+  return static_cast<std::size_t>(__got);
 }
 
 bool __file_write(void* __f, const char* __buf, std::size_t n) noexcept {

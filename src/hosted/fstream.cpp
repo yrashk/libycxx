@@ -1,8 +1,14 @@
 // libycxx hosted runtime: the file operations of basic_filebuf ([filebuf.members]), declared in
 // ycxx/hosted/fstream.hpp. A file is a C stdio FILE with stdio's own buffering turned off (the
-// filebuf buffers); offsets are bytes.
+// filebuf buffers); offsets are bytes. fopen maps the open modes (Table 146) and fclose closes;
+// reads and seeks go to the FILE's descriptor, since fread on an unbuffered FILE waits until the
+// whole request is filled or the file ends, and a read from a pipe, terminal or socket must return
+// what is available ([filebuf.virtuals]/14: underflow gets "some" characters). stdio holds no data
+// of its own for the FILE, so the descriptor's position is the file's.
 #include <ios>
 #include <cstdio>
+#include <errno.h>
+#include <unistd.h>
 
 namespace {
 
@@ -61,11 +67,17 @@ void* __file_open(const char* name, std::ios_base::openmode __mode) noexcept {
 
 bool __file_close(void* __f) noexcept { return std::fclose(__file(__f)) == 0; }
 
-// The end-of-file indicator is cleared first, so that a file (or a terminal) that has grown can
-// be read further.
+// One read(2): up to n bytes, fewer when fewer are available; 0 at end of file (a file or a
+// terminal that has grown can be read further) or on an error. An interrupted read is retried.
 std::size_t __file_read(void* __f, char* __buf, std::size_t n) noexcept {
-  std::clearerr(__file(__f));
-  return std::fread(__buf, 1, n, __file(__f));
+  const int fd = ::fileno(__file(__f));
+  for (;;) {
+    const ssize_t __got = ::read(fd, __buf, n);
+    if (__got >= 0)
+      return static_cast<std::size_t>(__got);
+    if (errno != EINTR)
+      return 0;
+  }
 }
 
 bool __file_write(void* __f, const char* __buf, std::size_t n) noexcept {
@@ -73,10 +85,10 @@ bool __file_write(void* __f, const char* __buf, std::size_t n) noexcept {
 }
 
 long long __file_seek(void* __f, long long __off, int __whence) noexcept {
+  // lseek, not fseeko/ftello: stdio may cache the offset, and reads bypass it
   const int __w = __whence == 0 ? SEEK_SET : __whence == 1 ? SEEK_CUR : SEEK_END;
-  if (::fseeko(__file(__f), static_cast<off_t>(__off), __w) != 0)
-    return -1;
-  return static_cast<long long>(::ftello(__file(__f)));
+  const off_t r = ::lseek(::fileno(__file(__f)), static_cast<off_t>(__off), __w);
+  return r < 0 ? -1 : static_cast<long long>(r);
 }
 
 bool __file_flush(void* __f) noexcept { return std::fflush(__file(__f)) == 0; }

@@ -16,7 +16,8 @@ struct __streambuf_tag_access {
     __sb.__is_syncbuf_ = true;
   }
 };
-// The get area, for extractors that consume a run of buffered characters at once.
+// The get area, for extractors that consume a run of buffered characters at once, and the room
+// in a put area that such a run is copied to.
 struct __streambuf_get_area {
   template <class __charT, class __traits>
   static __charT* __next(const std::basic_streambuf<__charT, __traits>& __sb) noexcept {
@@ -30,6 +31,12 @@ struct __streambuf_get_area {
   template <class __charT, class __traits>
   static void __advance_to(std::basic_streambuf<__charT, __traits>& __sb, __charT* p) noexcept {
     __sb.__gnext_ = p;
+  }
+  // The room left in the put area (characters sputn stores without calling overflow); -1 when
+  // there is no put area (every character is an overflow).
+  template <class __charT, class __traits>
+  static std::ptrdiff_t __put_room(const std::basic_streambuf<__charT, __traits>& __sb) noexcept {
+    return __sb.__pbeg_ == nullptr ? -1 : __sb.__pend_ - __sb.__pnext_;
   }
 };
 }} // namespace __ycxx::__detail

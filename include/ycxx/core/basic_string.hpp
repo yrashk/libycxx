@@ -174,6 +174,13 @@ private:
   // Copies n <= sso_cap characters into buf_. At run time with the standard traits: two
   // fixed-size, possibly overlapping copies of the first and last bytes (a word, a half-word or
   // single bytes), instead of a variable-length memcpy; only [s, s + n) is read.
+  // -Warray-bounds: GCC (seen with -fsanitize=address, which weakens its range analysis) inlines
+  // this with s one of a few short literals and n = strlen(s) unknown, and then warns about the
+  // word-sized copies in the branches that the guards on n keep from running for those literals
+  // (string r = cond ? "/" : "", in filesystem.cpp). A false positive; with -Werror it stopped the
+  // instrumented build.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
   constexpr void __copy_to_buf(const __charT* s, size_type n) noexcept {
     if constexpr (is_same_v<__traits, char_traits<__charT>>) {
       if !consteval {
@@ -196,6 +203,7 @@ private:
     }
     __traits::copy(__buf_, s, n);
   }
+#pragma GCC diagnostic pop
   // The allocating part, out of line: callers keep their short path free of the call's
   // register saves.
   [[__gnu__::__noinline__]] constexpr void __init_copy_long(const __charT* s, size_type n) {
@@ -607,27 +615,63 @@ public:
     using _Rp = decltype(static_cast<_Operation&&>(op)(declval<__charT*>(), declval<size_type>()));
     static_assert(__ycxx::__detail::__integer_like<_Rp>,
                   "std::basic_string::resize_and_overwrite: the operation must return an integer-like type");
-    if (n > __cap()) {
-      __check_length(n, "std::basic_string::resize_and_overwrite: n > max_size()");
-      __reallocate(n);
-    }
-    __charT* const p = __ptr_;
     const size_type m = n;
+    const auto __check = [m](const _Rp& r) {
+      if constexpr (is_signed_v<_Rp>)
+        __ycxx::__detail::__precondition(r >= 0, "std::basic_string::resize_and_overwrite: negative result");
+      __ycxx::__detail::__precondition(static_cast<make_unsigned_t<_Rp>>(r) <= m,
+                                 "std::basic_string::resize_and_overwrite: result greater than n");
+    };
     // [string.capacity]/7 calls p and m "values": they are passed as prvalues, so the operation
     // may take them by value or by rvalue reference.
+    if (n > __cap()) {
+      __check_length(n, "std::basic_string::resize_and_overwrite: n > max_size()");
+      // Geometric growth, as for append: the idiom s.resize_and_overwrite(s.size() + k, ...)
+      // appends in amortized O(k). The operation writes into the new block, which replaces the
+      // old one only once it returns, so a throwing operation leaves the string unchanged.
+      block b = __allocate_block(__alloc_, __grow_cap(n));
+      struct __block_guard {
+        _Allocator& __a;
+        block& __b;
+        bool __active = true;
+        constexpr ~__block_guard() {
+          if (__active)
+            __deallocate_block(__a, __b.p, __b.__cap);
+        }
+      } __guard{__alloc_, b};
+      __traits::copy(b.p, __ptr_, __size_);
+      const _Rp r = static_cast<_Operation&&>(op)(static_cast<__charT*>(b.p), static_cast<size_type>(m));
+      __check(r);
+      __guard.__active = false;
+      __free_storage();
+      __set_long(b.p, b.__cap);
+      __size_ = static_cast<size_type>(r);
+      __traits::assign(b.p[__size_], __charT());
+      return;
+    }
+    // In place: if the operation throws, the size is unchanged and the terminator restored
+    // (characters it wrote stay written).
+    struct __terminator_guard {
+      basic_string& __s;
+      bool __active = true;
+      constexpr ~__terminator_guard() {
+        if (__active)
+          __traits::assign(__s.__ptr_[__s.__size_], __charT());
+      }
+    } __guard{*this};
+    __charT* const p = __ptr_;
     const _Rp r = static_cast<_Operation&&>(op)(static_cast<__charT*>(p), static_cast<size_type>(m));
-    if constexpr (is_signed_v<_Rp>)
-      __ycxx::__detail::__precondition(r >= 0, "std::basic_string::resize_and_overwrite: negative result");
-    __ycxx::__detail::__precondition(static_cast<make_unsigned_t<_Rp>>(r) <= m,
-                               "std::basic_string::resize_and_overwrite: result greater than n");
+    __check(r);
+    __guard.__active = false;
     __size_ = static_cast<size_type>(r);
     __traits::assign(p[__size_], __charT());
   }
   constexpr size_type capacity() const noexcept { return __cap(); }
   constexpr void reserve(size_type __res_arg) {
     __check_length(__res_arg, "std::basic_string::reserve: argument exceeds max_size()");
+    // Geometric growth, as for append: reserve(size() + k) before each append stays amortized.
     if (__res_arg > __cap())
-      __reallocate(__res_arg);
+      __reallocate(__grow_cap(__res_arg));
   }
   constexpr void shrink_to_fit() {
     if (!__is_long())

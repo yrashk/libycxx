@@ -532,8 +532,9 @@ std::to_chars_result general_precision(char* first, char* last, const __decoded&
 
 // ---- %a ----------------------------------------------------------------------------------------
 
-// One hexadecimal digit before the point (1 for normal numbers, 0 for subnormal ones and zero),
-// the fraction bits padded to whole digits, and the binary exponent of that leading digit.
+// One hexadecimal digit before the point (1 for normal numbers, 0 for subnormal ones with a
+// precision and zero, 1 for subnormal ones without), the fraction bits padded to whole digits,
+// and the binary exponent of that leading digit.
 // x87 subnormal numbers follow the C library instead: the 64-bit significand read as one digit
 // and fifteen, with exponent emin - 3 (0x0.000000000000001p-16385 is the smallest).
 template <kind _Kp>
@@ -544,6 +545,7 @@ std::to_chars_result hex(char* first, char* last, const __decoded& __v, int prec
   const int digits_all = (__fbits + 3) / 4;
   __u128 __lead = 0, __frac = 0;
   int exponent = 0;
+  int __frac_width = __fbits; // the significant bits in frac, below the leading digit
   if (nibble_subnormal) {
     __lead = __v.m >> __fbits;
     __frac = __v.m & __ycxx::__detail::__fpconv::__low_mask(__fbits);
@@ -553,12 +555,22 @@ std::to_chars_result hex(char* first, char* last, const __decoded& __v, int prec
       __lead = 1;
       __frac = __v.m & __ycxx::__detail::__fpconv::__low_mask(__fbits);
       exponent = __v.e + __f.p - 1;
+    } else if (precision < 0) {
+      // Without a precision the result has the fewest characters ([charconv.to.chars]/3):
+      // a subnormal number normalized to a leading 1, 1p-1074 rather than 0.0000000000001p-1022.
+      int __h = __f.p - 2;
+      while ((__v.m >> __h) == 0)
+        --__h;
+      __lead = 1;
+      __frac = __v.m & __ycxx::__detail::__fpconv::__low_mask(__h);
+      __frac_width = __h;
+      exponent = __f.__emin - (__f.p - 1) + __h;
     } else {
       __frac = __v.m;
       exponent = __f.__emin;
     }
   }
-  __frac <<= 4 * digits_all - __fbits;
+  __frac <<= 4 * digits_all - __frac_width;
   int __nd = digits_all;
   if (precision < 0) {
     while (__nd > 0 && (__frac & 0xf) == 0) {

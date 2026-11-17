@@ -138,7 +138,9 @@ struct __rand_binomial_setup {
     if (__inversion) {
       s = __pp / __q;
       a = (n + 1) * s;
-      __r0 = std::pow(__q, n);
+      // P(X = 0) = q^n, through log1p: for p below about 1e-16, 1 - p rounds to 1 and pow(q, n)
+      // would be 1 for every n, so every draw would be 0.
+      __r0 = std::exp(n * std::log1p(-__pp));
     } else {
       const double __spq = std::sqrt(n * __pp * __q);
       b = 1.15 + 2.53 * __spq;

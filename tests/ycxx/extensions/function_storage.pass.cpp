@@ -11,14 +11,17 @@
 #include <utility>
 #include "check.hpp"
 
-static int allocations = 0;
+// volatile: GCC assumes by default (-fassume-sane-operators-new-delete) that the replaceable
+// global allocation functions neither read nor change what their callers see, and at -O2 folds
+// reads of a plain counter across the calls; volatile accesses are made as written.
+static volatile int allocations = 0;
 void* operator new(std::size_t n) {
-  ++allocations;
+  allocations = allocations + 1;
   if (void* p = std::malloc(n ? n : 1)) return p;
   throw std::bad_alloc();
 }
 void* operator new(std::size_t n, std::align_val_t a) {
-  ++allocations;
+  allocations = allocations + 1;
   auto alignment = static_cast<std::size_t>(a);
   auto bytes = (n + alignment - 1) / alignment * alignment;
   if (void* p = std::aligned_alloc(alignment, bytes ? bytes : alignment)) return p;

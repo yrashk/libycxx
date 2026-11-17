@@ -564,30 +564,34 @@ public:
         this->__alloc.emplace(get_allocator(get_env(__rcvr)));
       else
         this->__alloc.emplace();
+      if constexpr (!same_as<stop_token_type, __rcvr_token_t>)
+        __make_source();
       handle.resume();
     }
 
+    // The task's own stop source ([task.state]/5.2), made in start: the promise's environment
+    // (its get_stop_token query) can reach any thread the awaited operations run on, so the
+    // source is not made lazily on the first query.
+    void __make_source() noexcept {
+      auto __tok = get_stop_token(get_env(__rcvr));
+      // /5.2: the source's stop_possible() is the receiver token's. A source type with a
+      // no-state constructor (stop_source) can have it false; inplace_stop_source cannot.
+      if constexpr (is_constructible_v<stop_source_type, nostopstate_t>) {
+        if (!__tok.stop_possible()) {
+          __source.emplace(nostopstate);
+          return;
+        }
+      }
+      __source.emplace();
+      if constexpr (!unstoppable_token<__rcvr_token_t>)
+        __source_link.emplace(__tok, __ycxx::__detail::__exec::__task_stop_forward<stop_source_type>{&*__source});
+    }
     // get-stop-token ([task.state]/5)
     stop_token_type __ycxx_stop_token() noexcept override {
-      if constexpr (same_as<stop_token_type, __rcvr_token_t>) {
+      if constexpr (same_as<stop_token_type, __rcvr_token_t>)
         return get_stop_token(get_env(__rcvr));
-      } else {
-        if (!__source.has_value()) {
-          auto __tok = get_stop_token(get_env(__rcvr));
-          // /5.2: the source's stop_possible() is the receiver token's. A source type with a
-          // no-state constructor (stop_source) can have it false; inplace_stop_source cannot.
-          if constexpr (is_constructible_v<stop_source_type, nostopstate_t>) {
-            if (!__tok.stop_possible()) {
-              __source.emplace(nostopstate);
-              return __source->get_token();
-            }
-          }
-          __source.emplace();
-          if constexpr (!unstoppable_token<__rcvr_token_t>)
-            __source_link.emplace(__tok, __ycxx::__detail::__exec::__task_stop_forward<stop_source_type>{&*__source});
-        }
+      else
         return __source->get_token();
-      }
     }
     // [task.promise]/3
     void __ycxx_complete() noexcept override {

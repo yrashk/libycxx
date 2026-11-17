@@ -190,6 +190,63 @@ protected:
     }
     return __traits::not_eof(c);
   }
+  // [streambuf.virt.put]/1-2: as by repeated sputc, but a run that the put area cannot hold (all
+  // of it when unbuffered) goes to the file in one write after the put area, not one overflow per
+  // character. A conversion converts the whole run (__write_converted, from the same state).
+  streamsize xsputn(const char_type* s, streamsize n) override {
+    if (n <= 0 || __file_ == nullptr || !(__mode_ & (ios_base::out | ios_base::app)))
+      return base::xsputn(s, n);
+    const bool __direct =
+        __unbuffered_ ||
+        (__always_noconv_ && n > this->epptr() - this->pptr() && static_cast<size_t>(n) >= __ibuf_size_);
+    if (!__direct)
+      return base::xsputn(s, n);
+    if (__io_ == __io::__reading && !__leave_reading())
+      return 0;
+    __io_ = __io::__writing;
+    __last_was_overflow_ = true;
+    if (this->pbase() != nullptr && !__write_out(this->pbase(), this->pptr()))
+      return 0;
+    if (!__unbuffered_)
+      this->setp(__ibuf_, __ibuf_ + __ibuf_size_);
+    return __write_out(s, s + n) ? n : 0;
+  }
+  // [streambuf.virt.get]/7-8: as by repeated sbumpc, but without a conversion the characters
+  // beyond the get area that would fill at least a whole buffer (unbuffered: any) are read into
+  // s directly, in as few reads as the file gives them. The last one stays the putback position.
+  streamsize xsgetn(char_type* s, streamsize n) override {
+    if constexpr (is_same_v<__charT, char>) {
+      if (n > 0 && __always_noconv_ && __file_ != nullptr && (__mode_ & ios_base::in)) {
+        streamsize done = 0;
+        if (this->gptr() < this->egptr()) {
+          const streamsize __avail = this->egptr() - this->gptr();
+          done = __avail < n ? __avail : n;
+          __traits::copy(s, this->gptr(), static_cast<size_t>(done));
+          this->setg(this->eback(), this->gptr() + done, this->egptr());
+        }
+        if (done == n || static_cast<size_t>(n - done) < __ibuf_size_)
+          return done == n ? done : done + base::xsgetn(s + done, n - done);
+        if (__io_ == __io::__writing && (!__finish_output_mode() || !__ycxx::__detail::__file_flush(__file_)))
+          return done;
+        __io_ = __io::__reading;
+        __last_was_overflow_ = false;
+        const streamsize __from_area = done;
+        while (done < n) {
+          const size_t __got = __ycxx::__detail::__file_read(__file_, s + done, static_cast<size_t>(n - done));
+          if (__got == 0)
+            break;
+          done += static_cast<streamsize>(__got);
+        }
+        if (done != __from_area) {
+          __ibuf_[0] = s[done - 1];
+          this->setg(__ibuf_, __ibuf_ + 1, __ibuf_ + 1);
+          __xnext_ = __xend_ = 0;
+        }
+        return done;
+      }
+    }
+    return base::xsgetn(s, n);
+  }
   basic_streambuf<__charT, __traits>* setbuf(char_type* s, streamsize n) override {
     if (__io_ != __io::none)
       return this; // only before any I/O

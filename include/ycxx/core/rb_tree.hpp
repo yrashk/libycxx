@@ -830,6 +830,10 @@ protected:
   // node, whose element is destroyed afterwards without being compared again. During constant
   // evaluation a copyable key is copied instead.
   constexpr void __move_from(__rb_tree& __o) {
+    // The keys left behind are moved-from and need no longer be ordered: o must still meet
+    // the container's invariants (a valid state, [lib.types.movedfrom]), so it is emptied,
+    // also when building an element throws part of the way through.
+    ::__ycxx::__detail::__rollback __empty_source{[&__o]() noexcept { __o.clear(); }};
     __clone_from(__o, [this](_Vp& __v) -> __node_base* {
       if constexpr (_IsMap) {
         using _Mp = typename _Vp::second_type;
@@ -843,9 +847,6 @@ protected:
         return __make_node(static_cast<_Vp&&>(__v));
       }
     });
-    // The keys left behind are moved-from and need no longer be ordered: o must still meet
-    // the container's invariants (a valid state, [lib.types.movedfrom]), so it is emptied.
-    __o.clear();
   }
 
   // ---- construction and assignment ----

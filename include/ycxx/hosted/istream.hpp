@@ -242,24 +242,52 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::operator>>(b
   if (sentry ok{*this, true}) {
     __ycxx::__detail::__guarded_io(*this, [&] {
       basic_streambuf<__charT, __traits>* in = this->rdbuf();
-      for (int_type c = in->sgetc();; c = in->snextc()) {
+      using __area = __ycxx::__detail::__streambuf_get_area;
+      // an exception from the output sequence is caught (14.3)
+      auto __caught = [](auto __op, auto __on_throw) {
+        if constexpr (__ycxx::__detail::__cfg::exceptions) {
+          try {
+            return __op();
+          } catch (...) {
+            return __on_throw;
+          }
+        } else {
+          return __op();
+        }
+      };
+      for (;;) {
+        // A run of buffered characters goes into the room of sb's put area with one sputn (no
+        // overflow, so how many were inserted is known), and that many are extracted; to a
+        // buffer without a put area, the whole run with one sputn (if that throws, the run is not
+        // extracted, though some of it may have been inserted). Not when sb is the stream's own
+        // buffer, whose put area may overlap its get area.
+        __charT* const __g = __area::__next(*in);
+        __charT* const e = __area::__end(*in);
+        const streamsize __room = __area::__put_room(*__sb);
+        if (__g < e && __room != 0 && in != __sb) {
+          const streamsize k = __room < 0 || e - __g < __room ? e - __g : __room;
+          const streamsize __put = __caught([&] { return __sb->sputn(__g, k); }, streamsize(0));
+          if (__put > 0) {
+            __area::__advance_to(*in, __g + __put);
+            n += __put;
+          }
+          if (__put != k)
+            break;
+          continue;
+        }
+        // Otherwise one character, through sputc: its overflow makes room in sb's put area, and
+        // sgetc may fill the get area.
+        const int_type c = in->sgetc();
         if (__traits::eq_int_type(c, __traits::eof())) {
           __err |= ios_base::eofbit;
           break;
         }
-        // an exception from the output sequence is caught (14.3)
-        bool inserted = false;
-        if constexpr (__ycxx::__detail::__cfg::exceptions) {
-          try {
-            inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
-          } catch (...) {
-          }
-        } else {
-          inserted = !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof());
-        }
-        if (!inserted)
+        if (__room != 0 && in != __sb && __area::__next(*in) < __area::__end(*in))
+          continue; // the get area was filled: the run above
+        if (!__caught([&] { return !__traits::eq_int_type(__sb->sputc(__traits::to_char_type(c)), __traits::eof()); }, false))
           break;
         ++n;
+        in->sbumpc();
       }
     });
   }
@@ -399,8 +427,40 @@ basic_istream<__charT, __traits>& basic_istream<__charT, __traits>::ignore(strea
   if (sentry ok{*this, true}) {
     __ycxx::__detail::__guarded_io(*this, [&] {
       basic_streambuf<__charT, __traits>* __sb = this->rdbuf();
+      using __area = __ycxx::__detail::__streambuf_get_area;
       const bool __unlimited = n == numeric_limits<streamsize>::max();
+      // delim as a character: none matches it when no character's to_int_type equals it (eof)
+      const __charT __d = __traits::to_char_type(__delim);
+      const bool __d_is_char = __traits::eq_int_type(__traits::to_int_type(__d), __delim);
       while (__unlimited || count < n) {
+        __charT* const __g = __area::__next(*__sb);
+        __charT* const e = __area::__end(*__sb);
+        if (__g < e) {
+          // A run of buffered characters, up to the limit, is skipped at once, up to and
+          // including the delimiter (found with traits::find, memchr for char).
+          size_t k = static_cast<size_t>(e - __g);
+          if (!__unlimited && static_cast<size_t>(n - count) < k)
+            k = static_cast<size_t>(n - count);
+          const __charT* __found = nullptr;
+          if (__d_is_char) {
+            if constexpr (is_same_v<__traits, char_traits<__charT>>) {
+              __found = __traits::find(__g, k, __d);
+            } else {
+              for (const __charT* p = __g; p != __g + k; ++p)
+                if (__traits::eq_int_type(__traits::to_int_type(*p), __delim)) {
+                  __found = p;
+                  break;
+                }
+            }
+          }
+          const size_t __taken = __found ? static_cast<size_t>(__found - __g) + 1 : k;
+          __area::__advance_to(*__sb, __g + __taken);
+          const streamsize __max = numeric_limits<streamsize>::max();
+          count = static_cast<size_t>(__max - count) < __taken ? __max : count + static_cast<streamsize>(__taken);
+          if (__found)
+            break;
+          continue;
+        }
         const int_type c = __sb->sbumpc();
         if (__traits::eq_int_type(c, __traits::eof())) {
           __err |= ios_base::eofbit;

@@ -7,7 +7,10 @@
 // state is a word holding the "stop requested" bit and a lock bit for its intrusive list of
 // registered callbacks. request_stop runs the callbacks one at a time with the lock released;
 // a callback deregistered while it runs on another thread is waited for (an atomic wait on the
-// callback's own completion flag), one deregistered from inside its own invocation is not.
+// callback's own completion flag), one deregistered from inside its own invocation is not. A
+// callback may also destroy the stop state itself (an operation state that owns the source and
+// completes from inside the callback, as when_all's or task's children can make it do): the
+// destructor tells the running request_stop, which then touches nothing of the state.
 #pragma once
 
 #include <ycxx/config.hpp>
@@ -36,6 +39,7 @@ class __stop_state {
   ycxx_pal_u32 __bits_ = 0;
   __stop_callback_node* __head_ = nullptr;
   ycxx_pal_handle __requester_ = 0; // the thread running request_stop's callbacks
+  bool* __destroyed_ = nullptr;      // set by request_stop while a callback runs; the destructor marks it
 
   // Takes the list lock; returns the bits seen (with the lock bit clear).
   ycxx_pal_u32 lock() noexcept {
@@ -55,6 +59,10 @@ class __stop_state {
 
 public:
   constexpr __stop_state() noexcept = default;
+  constexpr ~__stop_state() {
+    if (__destroyed_)
+      *__destroyed_ = true; // destroyed from inside a callback: request_stop is running
+  }
   __stop_state(const __stop_state&) = delete;
   __stop_state& operator=(const __stop_state&) = delete;
 
@@ -74,8 +82,9 @@ public:
       if (__head_)
         __head_->prev = &__head_;
       n->prev = nullptr;
-      bool __removed = false;
+      bool __removed = false, __destroyed = false;
       n->__removed = &__removed;
+      __destroyed_ = &__destroyed;
       unlock(b);
       n->invoke(n);
       if (!__removed) {
@@ -83,8 +92,13 @@ public:
         __atomic_store_n(&n->done, 1, __ATOMIC_RELEASE);
         ::__ycxx::__detail::__atomic_notify(&n->done);
       }
+      // The callback destroyed this state (with every callback still registered, which it had to
+      // deregister first): nothing of *this may be touched any more.
+      if (__destroyed)
+        return true;
       b = lock();
     }
+    __destroyed_ = nullptr;
     unlock(b);
     return true;
   }

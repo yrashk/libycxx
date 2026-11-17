@@ -215,6 +215,13 @@ struct __bit_algos<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>> {
     }
   }
 };
+
+// It is a vector<bool> iterator over Word words: insertion and assignment copy its bits a word
+// at a time.
+template <class _It, class _Word>
+inline constexpr bool __is_bit_iter_of = false;
+template <class _Word, class _Diff, bool _Const>
+inline constexpr bool __is_bit_iter_of<__ycxx::__adl_free::__bit_iter<_Word, _Diff, _Const>, _Word> = true;
 }} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
@@ -278,6 +285,94 @@ private:
       __w[i / bits] |= m;
     else
       __w[i / bits] &= ~m;
+  }
+
+  // ---- bit ranges a word at a time ----
+  // The n bits at [pos, pos + n) of w as the low bits of a word, 0 < n <= bits; reads the second
+  // word only when the bits extend into it.
+  static constexpr __word __load_bits(const __word* __w, size_type __pos, size_type n) noexcept {
+    const __word* const p = __w + __pos / bits;
+    const size_type __o = __pos % bits;
+    __word __v = *p >> __o;
+    if (__o != 0 && __o + n > bits)
+      __v |= p[1] << (bits - __o);
+    return n == bits ? __v : static_cast<__word>(__v & ((__word(1) << n) - 1));
+  }
+  // Stores the low n bits of v at [pos, pos + n) of w, within one word (pos % bits + n <= bits).
+  static constexpr void __store_bits(__word* __w, size_type __pos, __word __v, size_type n) noexcept {
+    __word& __d = __w[__pos / bits];
+    if (n == bits) {
+      __d = __v;
+      return;
+    }
+    const size_type __o = __pos % bits;
+    const __word m = static_cast<__word>(((__word(1) << n) - 1) << __o);
+    __d = static_cast<__word>((__d & ~m) | ((__v << __o) & m));
+  }
+  // The bits of [pos, pos + n) in the word of bit pos.
+  static constexpr size_type __chunk(size_type __pos, size_type n) noexcept {
+    const size_type __room = bits - __pos % bits;
+    return n < __room ? n : __room;
+  }
+  // Copies the n bits at [sp, sp + n) of s to [dp, dp + n) of d, as memmove: the two may be the
+  // same storage, in which case backward must be true when dp > sp. Each chunk (the bits of one
+  // destination word) is loaded before it is stored, and the bits still to be read lie outside
+  // the chunks already stored.
+  static constexpr void __move_bits(__word* __d, size_type __dp, const __word* __s, size_type __sp, size_type n,
+                                    bool __backward) noexcept {
+    if (!__backward) {
+      while (n != 0) {
+        const size_type k = __chunk(__dp, n);
+        __store_bits(__d, __dp, __load_bits(__s, __sp, k), k);
+        __dp += k;
+        __sp += k;
+        n -= k;
+      }
+    } else {
+      while (n != 0) {
+        const size_type __e = (__dp + n) % bits; // bits of the last chunk, unless it is a full word
+        const size_type k = __e == 0 ? (n < bits ? n : bits) : (n < __e ? n : __e);
+        n -= k;
+        __store_bits(__d, __dp + n, __load_bits(__s, __sp + n, k), k);
+      }
+    }
+  }
+  // Sets the n bits at [pos, pos + n) of w to v.
+  static constexpr void __fill_bits(__word* __w, size_type __pos, size_type n, bool __v) noexcept {
+    const __word __all = __v ? static_cast<__word>(~__word(0)) : __word(0);
+    if (n != 0 && __pos % bits != 0) {
+      const size_type k = __chunk(__pos, n);
+      __store_bits(__w, __pos, __all, k);
+      __pos += k;
+      n -= k;
+    }
+    __word* p = __w + __pos / bits;
+    for (; n >= bits; n -= bits)
+      *p++ = __all;
+    if (n != 0)
+      __store_bits(p, 0, __all, n);
+  }
+  // Stores the n bits of [first, ...) at [pos, pos + n) of w: a vector<bool> iterator's a word at
+  // a time (front to back, so in the same storage its bits must end by pos or start at or after
+  // it), any other iterator's packed into a word before each store.
+  template <class _It>
+  static constexpr void __put_bits(__word* __w, size_type __pos, _It first, size_type n) {
+    if constexpr (__ycxx::__detail::__is_bit_iter_of<_It, __word>) {
+      __move_bits(__w, __pos, first.__w_, first.__b_, n, false);
+    } else {
+      while (n != 0) {
+        const size_type k = __chunk(__pos, n);
+        __word __v = 0;
+        for (size_type i = 0; i != k; ++i) {
+          if (static_cast<bool>(*first))
+            __v |= __word(1) << i;
+          ++first;
+        }
+        __store_bits(__w, __pos, __v, k);
+        __pos += k;
+        n -= k;
+      }
+    }
   }
 
   // ---- storage ----
@@ -362,22 +457,15 @@ private:
       const block b = __allocate_words(__words_for(__grow_to(n)));
       for (size_type i = 0, e = __words_for(__pos); i != e; ++i)
         b.p[i] = __words_[i];
-      for (size_type i = __pos; i != __old; ++i)
-        set(b.p, i + n, get(__words_, i));
+      __move_bits(b.p, __pos + n, __words_, __pos, __old - __pos, false);
       __free_storage();
       __adopt(b);
     } else {
-      for (size_type i = __old; i != __pos;) {
-        --i;
-        set(__words_, i + n, get(__words_, i));
-      }
+      __move_bits(__words_, __pos + n, __words_, __pos, __old - __pos, true);
     }
     __size_ = __old + n;
   }
-  constexpr void fill(size_type __pos, size_type n, bool __v) noexcept {
-    for (size_type i = __pos; i != __pos + n; ++i)
-      set(__words_, i, __v);
-  }
+  constexpr void fill(size_type __pos, size_type n, bool __v) noexcept { __fill_bits(__words_, __pos, n, __v); }
   constexpr size_type __index_of(const_iterator p) const noexcept { return static_cast<size_type>(p - cbegin()); }
 
   // Inserts the n bits of [first, last) at pos.
@@ -385,10 +473,7 @@ private:
   constexpr iterator __insert_counted(size_type __pos, _It first, _Sent last, size_type n) {
     __open_gap(__pos, n);
     (void)last;
-    for (size_type i = __pos; i != __pos + n; ++i) {
-      set(__words_, i, static_cast<bool>(*first));
-      ++first;
-    }
+    __put_bits(__words_, __pos, static_cast<_It&&>(first), n);
     return begin() + static_cast<difference_type>(__pos);
   }
   // Single pass: collect the bits first.
@@ -404,17 +489,12 @@ private:
     __check_size(n);
     if (n > capacity()) {
       __block_guard __g{__alloc_, __allocate_words(__words_for(n))};
-      for (size_type i = 0; i != n; ++i) {
-        set(__g.b.p, i, static_cast<bool>(*first));
-        ++first;
-      }
+      __put_bits(__g.b.p, 0, static_cast<_It&&>(first), n);
       __free_storage();
       __adopt(__g.release());
     } else {
-      for (size_type i = 0; i != n; ++i) {
-        set(__words_, i, static_cast<bool>(*first));
-        ++first;
-      }
+      // Bits of *this, if first refers to them, are at or after bit 0: put_bits copies forward.
+      __put_bits(__words_, 0, static_cast<_It&&>(first), n);
     }
     (void)last;
     __size_ = n;
@@ -702,11 +782,7 @@ public:
         __block_guard __g{__alloc_, __allocate_words(__words_for(__grow_to(n)))};
         for (size_type i = 0, e = __words_for(__size_); i != e; ++i)
           __g.b.p[i] = __words_[i];
-        auto __it = ranges::begin(__rg);
-        for (size_type i = __size_; i != __size_ + n; ++i) {
-          set(__g.b.p, i, static_cast<bool>(*__it));
-          ++__it;
-        }
+        __put_bits(__g.b.p, __size_, ranges::begin(__rg), n);
         __free_storage();
         __adopt(__g.release());
         __size_ += n;
@@ -764,8 +840,7 @@ public:
     const size_type p = __index_of(first);
     const size_type __q = __index_of(last);
     if (p != __q) {
-      for (size_type i = __q; i != __size_; ++i)
-        set(__words_, p + (i - __q), get(__words_, i));
+      __move_bits(__words_, p, __words_, __q, __size_ - __q, false);
       __size_ -= __q - p;
     }
     return begin() + static_cast<difference_type>(p);

@@ -333,14 +333,87 @@ private:
     }
   }
 
+  // Assigns the n elements of [first, ...) to [d, d + n), each through a temporary constructed
+  // from *first ([sequence.reqmts] constructs the inserted elements from *i; T need only be
+  // move-assignable), or by memcpy. Returns the advanced iterator.
+  template <class _It, class _Sent>
+  constexpr _It __assign_from(_Tp* __d, _It first, size_type n) {
+    if constexpr (__bitwise_source<_It, _Sent>() && __memmove_assign) {
+      if !consteval {
+        if (n != 0)
+          __builtin_memcpy(static_cast<void*>(__d), static_cast<const void*>(__ycxx::__detail::__plain_address(first)),
+                           n * sizeof(_Tp));
+        first += static_cast<iter_difference_t<_It>>(n);
+        return first;
+      }
+    }
+    for (size_type i = 0; i != n; ++i) {
+      {
+        __ycxx::__detail::__alloc_temp<_Tp, _Allocator> __tmp(__alloc_, *first);
+        __d[i] = static_cast<_Tp&&>(__tmp.__v);
+      }
+      ++first;
+    }
+    return first;
+  }
+  // Moves [f, l) to end at d_last (d_last > l: the ranges may overlap), back to front.
+  constexpr void __move_backward(_Tp* __f, _Tp* __l, _Tp* __d_last) {
+    if constexpr (__memmove_assign) {
+      if !consteval {
+        __builtin_memmove(static_cast<void*>(__d_last - (__l - __f)), static_cast<const void*>(__f),
+                          static_cast<size_t>(__l - __f) * sizeof(_Tp));
+        return;
+      }
+    }
+    while (__l != __f)
+      *--__d_last = static_cast<_Tp&&>(*--__l);
+  }
   // Inserts the n elements of [first, last) at index off.
   template <class _It, class _Sent>
   constexpr iterator __insert_counted(size_type __off, _It first, _Sent last, size_type n) {
     if (n != 0) {
-      if (n <= __spare()) {
+      if (__first_ + __off == __last_) {
+        __append_counted(static_cast<_It&&>(first), static_cast<_Sent&&>(last), n);
+      } else if (n <= __spare()) {
+        // In place, as insert(position, n, x): the elements after the position move back by n
+        // (the last of them into the spare storage), then the new ones are assigned into the
+        // gap in order. [first, last) is not in *this ([sequence.reqmts] insert, insert_range).
+        _Tp* const p = __first_ + __off;
         _Tp* const __old_last = __last_;
-        __last_ = __construct_from(__last_, static_cast<_It&&>(first), static_cast<_Sent&&>(last), n);
-        __ycxx::__detail::__rotate_elements<__ycxx::__detail::__alloc_temp<_Tp, _Allocator>>(__first_ + __off, __old_last, __last_, __alloc_);
+        const size_type __after = static_cast<size_type>(__old_last - p);
+        if (__after > n) {
+          __destroy_guard __g{__alloc_, __old_last, __old_last};
+          for (_Tp* s = __old_last - n; s != __old_last; ++s) {
+            __alloc_traits::construct(__alloc_, __g.last, static_cast<_Tp&&>(*s));
+            ++__g.last;
+          }
+          __g.first = __g.last;
+          __last_ = __g.last;
+          __move_backward(p, __old_last - n, __old_last);
+          __assign_from<_It, _Sent>(p, static_cast<_It&&>(first), n);
+        } else if constexpr (__ycxx::__detail::__multipass_iterator<_It>) {
+          // The gap reaches past the old end: the last n - after new elements are constructed
+          // there, then the old elements after them, then the first after are assigned.
+          _It m = first;
+          if constexpr (__ycxx::__detail::__subtractable_iterator<_It> && requires { m += iter_difference_t<_It>(); })
+            m += static_cast<iter_difference_t<_It>>(__after);
+          else
+            for (size_type i = 0; i != __after; ++i)
+              ++m;
+          __last_ = __construct_from(__old_last, m, static_cast<_Sent&&>(last), n - __after);
+          __destroy_guard __g{__alloc_, __last_, __last_};
+          for (_Tp* s = p; s != __old_last; ++s) {
+            __alloc_traits::construct(__alloc_, __g.last, static_cast<_Tp&&>(*s));
+            ++__g.last;
+          }
+          __g.first = __g.last;
+          __last_ = __g.last;
+          __assign_from<_It, _Sent>(p, static_cast<_It&&>(first), __after);
+        } else {
+          // A sized single-pass range cannot be split: construct it at the end and rotate.
+          __last_ = __construct_from(__old_last, static_cast<_It&&>(first), static_cast<_Sent&&>(last), n);
+          __ycxx::__detail::__rotate_elements<__ycxx::__detail::__alloc_temp<_Tp, _Allocator>>(p, __old_last, __last_, __alloc_);
+        }
       } else {
         __realloc_insert(__off, n, __grow_to(n),
                        [&](_Tp* d) { __construct_from(d, static_cast<_It&&>(first), static_cast<_Sent&&>(last), n); });

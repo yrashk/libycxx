@@ -1178,8 +1178,10 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `format("{}", v)`, P2587).
 - `<string>` deviations by design: the string-view-like constraint also excludes classes derived
   from `basic_string` (so a derived rvalue is moved, not copied through a `string_view`);
-  `resize_and_overwrite` passes `p` and `m` as prvalues and leaves the string unchanged if the
-  (precondition-violating) operation throws; the libstdc++ tests checking
+  `resize_and_overwrite` passes `p` and `m` as prvalues; if the (precondition-violating)
+  operation throws, the string is unchanged when it had to grow, and otherwise keeps its size
+  and null terminator (characters the operation wrote stay written); `resize_and_overwrite`
+  and `reserve` grow the capacity geometrically, like `append`; the libstdc++ tests checking
   `__cpp_lib_constexpr_string == 201907` see 202511 (constexpr integral `to_string`).
 - Floating-point `to_string`/`to_wstring` are the plain `to_chars` output (`format("{}", v)`,
   [string.conversions]): shortest round trip, fixed notation only in [1e-4, 10^U)

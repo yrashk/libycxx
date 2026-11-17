@@ -429,7 +429,9 @@ and change `VCPKG_TARGET_ARCHITECTURE`/`VCPKG_CMAKE_SYSTEM_NAME`.
 
 **Sanitizers.** A program compiled with `-fsanitize=...` links against an uninstrumented libycxx
 fine for AddressSanitizer and UBSan (the sanitizer sees the program's code; libycxx's allocation
-functions give way to the sanitizer's, CUSTOM_STDLIB §5). For ThreadSanitizer, and to see inside
+functions give way to the sanitizer's, CUSTOM_STDLIB §5). UBSan's vptr check is the exception:
+it needs the sanitizer runtime's own C++ runtime, so the wrappers and `ycxx::ycxx` pass
+`-fno-sanitize=vptr` (DECISIONS §6.8). For ThreadSanitizer, and to see inside
 the library, build an instrumented libycxx and use *its* wrapper or toolchain file:
 
 ```sh

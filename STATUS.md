@@ -881,6 +881,11 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- UBSan's vptr check (`-fsanitize=vptr`, part of GCC's `-fsanitize=undefined`) is not available:
+  its runtime inspects type_info objects through the `__dynamic_cast` of the C++ runtime it was
+  built against (libstdc++ or libc++abi), which libycxx's ABI runtime cannot serve. The
+  wrappers, `ycxx::ycxx` and the instrumented builds turn it off (`-fno-sanitize=vptr`); every
+  other UBSan check runs (DECISIONS §6.8).
 - Reserved names (DECISIONS §2): the headers spell every name of their own as a reserved
   identifier, so a program may `#define` any name the standard library does not declare
   (`tests/ycxx/conformance/nasty_macros*`, 5874 such macros; `tools/uglify.py --check` in the

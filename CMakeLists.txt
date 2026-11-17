@@ -395,6 +395,10 @@ if(YCXX_SANITIZE)
     endif()
   endforeach()
   set(_ycxx_sanitize_flags -fsanitize=${YCXX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  # UBSan's vptr check cannot run against libycxx's type_info vtables (DECISIONS §6.8).
+  if(YCXX_SANITIZE MATCHES "undefined")
+    list(APPEND _ycxx_sanitize_flags -fno-sanitize=vptr)
+  endif()
   # GCC warns (-Wtsan) that ThreadSanitizer does not model atomic_thread_fence. The library's
   # seq_cst fences (the atomic wait/notify protocol, hazard pointers, rcu) order a store before a
   # later load (Dekker); no plain data relies on them for happens-before, which comes from the
@@ -610,6 +614,12 @@ function(_ycxx_consumer_target target linkage)
   # An instrumented libycxx needs its sanitizers' runtimes in the program.
   if(YCXX_SANITIZE)
     target_link_options(${target} INTERFACE -fsanitize=${YCXX_SANITIZE})
+    # UBSan's vptr check cannot run against libycxx's type_info vtables (DECISIONS §6.8): off,
+    # for the program's compilations and its link.
+    if(YCXX_SANITIZE MATCHES "undefined")
+      target_compile_options(${target} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-fno-sanitize=vptr>)
+      target_link_options(${target} INTERFACE -fno-sanitize=vptr)
+    endif()
     # Clang links ThreadSanitizer's C++ part whole: strong global allocation functions that would
     # bypass libycxx's (and clash with a program's replacement); malloc stays intercepted
     # (tools/ycxx-cxx does the same). GCC's libtsan.so defines them too; the link options of

@@ -895,7 +895,19 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
      `__clang_call_terminate`, which binds to libycxx's within the program's own link); GCC's
      `libtsan.so` needs `libc`, `libm` and `libgcc_s` only (`readelf -d`). All refer to
      `__cxa_demangle` weakly, which libycxx does not define: it stays null and the runtimes
-     demangle with their own. No system C++ runtime enters the process.
+     demangle with their own. The exception is UBSan's vptr check (`-fsanitize=vptr`, in GCC's
+     `undefined` group; not in Clang 23's on Darwin): the runtime classifies an object's type_info
+     with `dynamic_cast`, through the `__dynamic_cast` of the C++ runtime it was linked against
+     (GCC's `libubsan` binds it and the `__cxxabiv1` type_infos to libstdc++, Clang's Darwin
+     `libclang_rt.ubsan` to libc++abi), and that `__dynamic_cast` calls virtual functions of its
+     own type_info classes through the object's vtable. The Itanium ABI fixes the type_info
+     classes' data, not those functions (§2.9.4); libycxx's vtables have none of them, so the call
+     jumped into data (SIGBUS in `__ubsan::checkDynamicType` on the first polymorphic call; GCC
+     16, Darwin, 2026-11). The two runtimes' protocols are private and incompatible with each
+     other, so libycxx cannot serve them: `tools/ycxx-cxx`, `ycxx-c++`, `ycxx::ycxx` and the
+     instrumented library builds add `-fno-sanitize=vptr` whenever a sanitizer is requested, and
+     every other UBSan check runs (`tests/ycxx/linkage/sanitizer_vptr_check`). Otherwise no
+     system C++ runtime enters the process.
    - What a runtime defines itself wins over libycxx's archive members, which are then never
      pulled in. ASan's global allocation functions are weak, so a program's replacement still
      wins; the tests of libycxx's own (new_handler loops, forwarding) are `UNSUPPORTED-SANITIZER:

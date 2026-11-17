@@ -174,6 +174,13 @@ private:
   // Copies n <= sso_cap characters into buf_. At run time with the standard traits: two
   // fixed-size, possibly overlapping copies of the first and last bytes (a word, a half-word or
   // single bytes), instead of a variable-length memcpy; only [s, s + n) is read.
+  // -Warray-bounds: GCC (seen with -fsanitize=address, which weakens its range analysis) inlines
+  // this with s one of a few short literals and n = strlen(s) unknown, and then warns about the
+  // word-sized copies in the branches that the guards on n keep from running for those literals
+  // (string r = cond ? "/" : "", in filesystem.cpp). A false positive; with -Werror it stopped the
+  // instrumented build.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
   constexpr void __copy_to_buf(const __charT* s, size_type n) noexcept {
     if constexpr (is_same_v<__traits, char_traits<__charT>>) {
       if !consteval {
@@ -196,6 +203,7 @@ private:
     }
     __traits::copy(__buf_, s, n);
   }
+#pragma GCC diagnostic pop
   // The allocating part, out of line: callers keep their short path free of the call's
   // register saves.
   [[__gnu__::__noinline__]] constexpr void __init_copy_long(const __charT* s, size_type n) {

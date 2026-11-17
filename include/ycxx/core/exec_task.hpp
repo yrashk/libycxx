@@ -352,6 +352,17 @@ struct __task_types {
   using error_types = typename decltype(__errors())::type;
 };
 
+// The one of Es that Ep converts to (co_yield with_error(e), [task.promise]/5), when there is
+// one. Not an alias in __task_error_args: with no Es the index is not dependent, and Es...[0] of
+// an empty pack is ill-formed where it is declared, not where it is used.
+template <class _Ep, class... _Es>
+struct __task_error_target {};
+template <class _Ep, class... _Es>
+  requires(__first_true<std::is_convertible_v<_Ep, _Es>...> < sizeof...(_Es))
+struct __task_error_target<_Ep, _Es...> {
+  using type = _Es...[__first_true<std::is_convertible_v<_Ep, _Es>...>];
+};
+
 template <class _CS>
 struct __task_error_args {
   static constexpr bool valid = false;
@@ -363,7 +374,7 @@ struct __task_error_args<std::execution::completion_signatures<set_error_t(_Es).
   template <class _Ep>
   static constexpr std::size_t __convertible_count = (std::size_t{0} + ... + std::size_t{std::is_convertible_v<_Ep, _Es>});
   template <class _Ep>
-  using target = _Es...[__first_true<std::is_convertible_v<_Ep, _Es>...>];
+  using target = typename __task_error_target<_Ep, _Es...>::type;
 };
 
 // A unit of the frame allocation ([task.promise]/14): __STDCPP_DEFAULT_NEW_ALIGNMENT__ in size and
@@ -581,10 +592,16 @@ public:
     // [task.promise]/3
     void __ycxx_complete() noexcept override {
       __ycxx_destroy_frame();
-      if (this->error) {
-        if constexpr (requires { set_error(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<exception_ptr&&>(this->error)); })
+      // error is set only when error_types has set_error_t(exception_ptr) ([task.promise]/7): the
+      // receiver's completion is then one the task's signatures declare (a receiver's set_error
+      // template accepting any argument says nothing of that).
+      if constexpr (__ycxx::__detail::__exec::__csigs_contain<set_error_t(exception_ptr), error_types>) {
+        if (this->error) {
           set_error(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<exception_ptr&&>(this->error));
-      } else if constexpr (is_void_v<_Tp>) {
+          return;
+        }
+      }
+      if constexpr (is_void_v<_Tp>) {
         set_value(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr));
       } else if constexpr (is_reference_v<_Tp>) {
         set_value(static_cast<remove_cvref_t<_Rcvr>&&>(__rcvr), static_cast<_Tp>(this->result->get()));

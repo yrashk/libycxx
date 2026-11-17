@@ -1092,7 +1092,10 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   pass, and fail without the per-TU object.
 - **filebuf** works on a C stdio `FILE` with stdio buffering off (the filebuf buffers); the
   open-mode table maps to `fopen` modes including `"x"` for `noreplace`; `native_handle_type` is
-  the POSIX file descriptor. `<fstream>` also includes `<cstdio>`.
+  the POSIX file descriptor. Reads and seeks go to that descriptor (`read`, `lseek`): `fread`
+  waits until the whole request is read or the file ends, so a `getline` on a pipe, FIFO,
+  terminal or socket would stall until the writer closed; one `read` returns what is available.
+  Writes stay `fwrite` (unbuffered, so straight through). `<fstream>` also includes `<cstdio>`.
 - **syncbuf** keeps its output in a `basic_string` with its allocator; `emit()` takes a lock that
   belongs to the wrapped buffer alone (a slot table keyed by address, on the PAL's wait/wake), so
   no `<mutex>` dependency and no false sharing of locks between buffers.

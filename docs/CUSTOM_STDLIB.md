@@ -474,7 +474,7 @@ in part: there is no `UNSUPPORTED:`/`XFAIL:` on features yet, and the older `XFA
 ### External suites: run only, never vendored
 
 `tools/fetch-suites` downloads libc++'s `libcxx/test/std` and `libcxx/test/support` from LLVM
-23.1.2 (sparse, shallow clone) and libstdc++'s `testsuite` from the GCC 16.2.0 tarball (only that
+23.1.5 (sparse, shallow clone) and libstdc++'s `testsuite` from the GCC 16.2.0 tarball (only that
 directory is extracted) into `~/.local/share/ycxx/suites`; `tools/test` fetches on demand. The
 suites are interpreted by libycxx's own lit formats (`tests/ycxxlit/libcxx_format.py`,
 `libstdcxx_format.py`), which implement the subset that matters for conformance: for libc++ the

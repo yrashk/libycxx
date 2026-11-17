@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fetches the external conformance suites libycxx is run against (run only; their tests are
 # never copied into this repository):
-#   libc++'s tests    llvm-project at llvmorg-$YCXX_LLVM_VERSION (default 23.1.2): libcxx/test/std
+#   libc++'s tests    llvm-project at llvmorg-$YCXX_LLVM_VERSION (default 23.1.5): libcxx/test/std
 #                     and libcxx/test/support only (a sparse, shallow git checkout)
 #   libstdc++'s tests gcc-$YCXX_GCC_VERSION (default 16.2.0): libstdc++-v3/testsuite only, taken
 #                     out of the release tarball as it streams in; no library source is unpacked
@@ -14,7 +14,7 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 . "$repo/tools/lib/ui.sh"
 . "$repo/tools/lib/env.sh"
 
-llvm=${YCXX_LLVM_VERSION:-23.1.2}
+llvm=${YCXX_LLVM_VERSION:-23.1.5}
 gcc=${YCXX_GCC_VERSION:-16.2.0}
 cache=$(ycxx_suites_cache)
 want_libcxx=1 want_libstdcxx=1 force=0

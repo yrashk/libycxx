@@ -33,7 +33,7 @@ ycxx_lit_cmd() {
   if [ -n "${YCXX_LIT:-}" ]; then
     ycxx_lit=$YCXX_LIT
   elif command -v uvx >/dev/null 2>&1; then
-    ycxx_lit="uvx --quiet --from lit==${YCXX_LIT_VERSION:-23.1.2} lit"
+    ycxx_lit="uvx --quiet --from lit==${YCXX_LIT_VERSION:-23.1.5} lit"
   elif command -v lit >/dev/null 2>&1; then
     ycxx_lit=lit
   else

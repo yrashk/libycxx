@@ -53,9 +53,9 @@ builds on it.
 | Compiler | Version | Notes |
 |---|---|---|
 | GCC | 16.2.0 (built from source, `/opt/gcc-16`) | latest release |
-| Clang | 23.1.2 (apt.llvm.org) | latest release |
+| Clang | 23.1.5 (`tools/toolchain/provision`, macOS CI); latest 23.x from apt.llvm.org on Linux CI (23.1.6 as of 2026-11-17) | 23.1.6 is the latest release; it has no macOS build yet |
 
-Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.2`
+Conformance oracles (run only, never edited): libc++ tests from `llvmorg-23.1.5`
 (`libcxx/test/std`), the libstdc++ testsuite from GCC 16.2.0, and our own spec-only suite
 `tests/ycxx`.
 

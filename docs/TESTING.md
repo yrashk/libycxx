@@ -65,7 +65,7 @@ tools/run-conformance libstdcxx gcc <dirs>  # libstdc++'s testsuite (run only)
 
 The libc++ and libstdc++ suites are run only, never copied into this repository.
 `tools/fetch-suites` downloads the pinned versions into `~/.local/share/ycxx/suites`
-(`$YCXX_SUITES`). It takes `libcxx/test/std` and `libcxx/test/support` from LLVM 23.1.2 (a
+(`$YCXX_SUITES`). It takes `libcxx/test/std` and `libcxx/test/support` from LLVM 23.1.5 (a
 sparse, shallow clone), and `libstdc++-v3/testsuite` from the GCC 16.2.0 release tarball,
 unpacking nothing else. `tools/test` runs it on demand when a suite stage finds its suite
 missing; `--no-fetch` turns that off. `LIBCXX_TESTS` and `LIBSTDCXX_TESTS` point at other

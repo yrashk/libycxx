@@ -7,7 +7,9 @@
 //   (only a lookahead runs as a nested call, so the depth is bounded by the pattern).
 //   Programs without back-references whose loops cannot repeat an empty iteration remember the
 //   (pc, position) pairs from which matching already failed, which bounds the work by
-//   (program size) x (input length) per search; others count their steps and throw
+//   (program size) x (input length) per search (a single-character loop also remembers the run
+//   it scanned and whether every exit from it failed, so that a search is not retried from each
+//   position of a run its leading `.*` already covered); others count their steps and throw
 //   regex_error(error_complexity) beyond a limit, and every program throws error_stack when the
 //   backtracking stack grows beyond a limit.
 // - re_nfa finds the leftmost-longest match of a POSIX program by simulating its Thompson NFA
@@ -99,6 +101,15 @@ class __re_backtracker {
     _It start{};
     std::ptrdiff_t __start_idx = -1;
   };
+  // A single-character loop's last scan (memo only): entered at lo, it took the run [lo, hi);
+  // done once every exit it tried, at hi down to lo + min, failed. Entering it again anywhere
+  // in [lo, hi] scans the same run to hi, and the exits then open are among those.
+  struct __rep_scan {
+    std::ptrdiff_t __lo = 0, __hi = -1;
+    _It __hi_it{};
+    bool __done = false;
+    bool __off = false; // this loop keeps no scan
+  };
   enum kind : unsigned char { __k_choice, __k_slot, __k_loop, __k_greedy, __k_lazy };
   struct __frame {
     kind k;
@@ -120,6 +131,7 @@ class __re_backtracker {
   std::ptrdiff_t __start_idx_ = 0, __max_idx_ = 0;
   std::vector<__slot> __caps_;
   std::vector<__loop_state> __ls_;
+  std::vector<__rep_scan> __scans_; // per loop; empty when the memo is off
   std::vector<__frame> __stack_;
   std::vector<unsigned long long> __memo_;
   std::size_t __memo_wpp_ = 0;
@@ -237,19 +249,28 @@ class __re_backtracker {
         __stack_.pop_back();
         return true;
       case __k_greedy: { // give back one character
-        const __re_loop& __lp = _P_.__loops[static_cast<std::size_t>(_P_.code[static_cast<std::size_t>(__f.a)].a)];
+        const int __l = _P_.code[static_cast<std::size_t>(__f.a)].a;
+        const __re_loop& __lp = _P_.__loops[static_cast<std::size_t>(__l)];
+        if (__f.n <= __lp.min) { // every exit, down to the shortest, failed
+          if (!__scans_.empty()) {
+            __rep_scan& __sc = __scans_[static_cast<std::size_t>(__l)];
+            if (!__sc.__off && __sc.__lo == __f.__idx - __f.n && __sc.__hi >= __f.__idx)
+              __sc.__done = true;
+          }
+          __stack_.pop_back();
+          break;
+        }
         --__f.__it;
         --__f.__idx;
         --__f.n;
         __pc = __lp.__exit_pc;
         cur = __f.__it;
         __idx = __f.__idx;
-        if (__f.n <= __lp.min)
-          __stack_.pop_back();
         return true;
       }
       case __k_lazy: { // take one more character
-        const __re_loop& __lp = _P_.__loops[static_cast<std::size_t>(_P_.code[static_cast<std::size_t>(__f.a)].a)];
+        const int __l = _P_.code[static_cast<std::size_t>(__f.a)].a;
+        const __re_loop& __lp = _P_.__loops[static_cast<std::size_t>(__l)];
         if ((__lp.max < 0 || __f.n < __lp.max) && __f.__it != __last_ && _P_.single(__tr_, __f.a + 1, *__f.__it)) {
           ++__f.__it;
           ++__f.__idx;
@@ -261,6 +282,8 @@ class __re_backtracker {
             __stack_.pop_back();
           return true;
         }
+        if (__lp.max < 0 && !__scans_.empty() && !__scans_[static_cast<std::size_t>(__l)].__off) // the run ends here
+          __scans_[static_cast<std::size_t>(__l)] = __rep_scan{__f.__idx - __f.n, __f.__idx, __f.__it, true, false};
         __stack_.pop_back();
         break;
       }
@@ -410,12 +433,27 @@ class __re_backtracker {
         }
         case __re_op::rep: {
           const __re_loop& __lp = _P_.__loops[static_cast<std::size_t>(in.a)];
+          __rep_scan* __sc = nullptr;
+          if (__lp.max < 0 && !__scans_.empty() && !__scans_[static_cast<std::size_t>(in.a)].__off) {
+            __sc = &__scans_[static_cast<std::size_t>(in.a)];
+            if (__sc->__lo <= __idx && __idx <= __sc->__hi && __sc->__done)
+              goto fail;
+          }
           std::ptrdiff_t n = 0;
           if (__lp.__greedy) {
-            while ((__lp.max < 0 || n < __lp.max) && cur != __last_ && _P_.single(__tr_, __pc + 1, *cur)) {
-              ++cur;
-              ++__idx;
-              ++n;
+            if (__sc != nullptr && __sc->__lo <= __idx && __idx <= __sc->__hi) { // the same run
+              n = __sc->__hi - __idx;
+              cur = __sc->__hi_it;
+              __idx = __sc->__hi;
+            } else {
+              const std::ptrdiff_t __from = __idx;
+              while ((__lp.max < 0 || n < __lp.max) && cur != __last_ && _P_.single(__tr_, __pc + 1, *cur)) {
+                ++cur;
+                ++__idx;
+                ++n;
+              }
+              if (__sc != nullptr)
+                *__sc = __rep_scan{__from, __idx, cur, n < __lp.min, false};
             }
             if (n < __lp.min)
               goto fail;
@@ -474,6 +512,19 @@ public:
     __memo_wpp_ = ((static_cast<std::size_t>(_P_.__memo_points) << _P_.__memo_loops.size()) + 63) / 64;
     const bool __continuous = __whole || (__flags_ & std::regex_constants::match_continuous) != 0;
     __ls_.assign(_P_.__loops.size(), __loop_state{});
+    // The scans are shared between start positions like the memo, and under the same condition
+    // (what follows a loop's exit depends on the position alone); a loop inside a nullable-body
+    // loop's iteration has the refined memo key instead, and keeps none.
+    __scans_.clear();
+    if (__memo_on_) {
+      __scans_.assign(_P_.__loops.size(), __rep_scan{});
+      for (int __k : _P_.__memo_loops) {
+        const __re_loop& __outer = _P_.__loops[static_cast<std::size_t>(__k)];
+        for (std::size_t __l = 0; __l < _P_.__loops.size(); ++__l)
+          if (_P_.__loops[__l].__exit_pc > __outer.__iter_pc && _P_.__loops[__l].__exit_pc < __outer.__exit_pc)
+            __scans_[__l].__off = true;
+      }
+    }
     _It start = __first_;
     for (__start_idx_ = 0;; ++__start_idx_) {
       __caps_.assign(2 * static_cast<std::size_t>(_P_.__groups) + 2, __slot{});

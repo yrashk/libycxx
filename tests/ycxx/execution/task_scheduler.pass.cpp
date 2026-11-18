@@ -1,7 +1,12 @@
 // [exec.task.scheduler]: task_scheduler is a type-erased scheduler.
 //   /1: it models scheduler; get_forward_progress_guarantee(s) is that of SCHED(s).
 //   /2-3, /5: the constructor (explicit) takes any infallible scheduler and an allocator; it
-//     allocates its backend with allocate_shared and a copy of the allocator.
+//     allocates its backend with allocate_shared and a copy of the allocator: a scheduler with
+//     256 bytes of state goes through the given allocator.
+//   /4 (Recommended practice: avoid dynamically allocated memory for small scheduler objects):
+//     libycxx follows it, so a run_loop's scheduler with a counting allocator allocates nothing.
+//     That check is an implementation-quality check, not a conformance requirement
+//     (task_scheduler_small_buffer.pass.cpp has more).
 //   /6-7: s == sch is false if SCHED(s) is not of sch's type, else SCHED(s) == sch; s1 == s2 is
 //     s1 == SCHED(s2).
 //   /13.1: the completion scheduler of schedule()'s sender is *this; /13.4: its completion
@@ -16,6 +21,7 @@
 #include <stop_token>
 #include <thread>
 #include <type_traits>
+#include <utility>
 #include "check.hpp"
 #include "exec_support.hpp"
 
@@ -37,6 +43,39 @@ struct CountingAlloc {
   template <class U>
   bool operator==(const CountingAlloc<U>&) const noexcept { return true; }
 };
+
+// A scheduler with 256 bytes of state whose operations complete inline.
+struct big_sched {
+  using scheduler_concept = ex::scheduler_tag;
+  unsigned char state[256] = {};
+  struct sender {
+    using sender_concept = ex::sender_tag;
+    template <class Self, class... Env>
+    static consteval auto get_completion_signatures() {
+      return ex::completion_signatures<ex::set_value_t()>();
+    }
+    struct attrs {
+      big_sched query(ex::get_completion_scheduler_t<ex::set_value_t>) const noexcept { return {}; }
+    };
+    attrs get_env() const noexcept { return {}; }
+    template <class R>
+    struct op {
+      using operation_state_concept = ex::operation_state_tag;
+      R r;
+      void start() & noexcept { ex::set_value(std::move(r)); }
+    };
+    template <class R>
+    op<R> connect(R r) const noexcept {
+      return {std::move(r)};
+    }
+  };
+  sender schedule() const noexcept { return {}; }
+  ex::forward_progress_guarantee query(ex::get_forward_progress_guarantee_t) const noexcept {
+    return ex::forward_progress_guarantee::weakly_parallel;
+  }
+  bool operator==(const big_sched&) const noexcept { return true; }
+};
+static_assert(ex::scheduler<big_sched>);
 
 using TS = ex::task_scheduler;
 using LoopSched = decltype(std::declval<ex::run_loop&>().get_scheduler());
@@ -70,10 +109,18 @@ int main() {
   CHECK(ex::get_forward_progress_guarantee(a) == ex::get_forward_progress_guarantee(loop1.get_scheduler()));
   CHECK(ex::get_forward_progress_guarantee(in) == ex::get_forward_progress_guarantee(ex::inline_scheduler{}));
 
-  // /3, /5: the allocator is used for the backend.
+  // /4 (QoI): a small scheduler is stored without allocating.
   allocations = 0;
   TS counted(loop1.get_scheduler(), CountingAlloc<int>());
-  CHECK(allocations >= 1 && counted == a);
+  CHECK(allocations == 0 && counted == a);
+  // /3, /5: a large scheduler's backend is allocated with the allocator.
+  {
+    big_sched big;
+    allocations = 0;
+    TS large(big, CountingAlloc<int>());
+    CHECK(allocations >= 1 && large == big && !(large == a));
+    CHECK(std::this_thread::sync_wait(ex::schedule(large)).has_value());
+  }
 
   // /13.1
   auto s = ex::schedule(a);

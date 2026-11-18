@@ -1313,7 +1313,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
   (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
   (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
-  allocates its backend at every construction; spawn_future's sender reports no completion
+  keeps a small scheduler's backend inside itself, without allocating
+  ([exec.task.scheduler]/4); spawn_future's sender reports no completion
   domain (the spawned sender's type is erased; a parent's COMPL-DOMAIN makes it
   `indeterminate_domain<>`); the draft questions of DECISIONS §17. Every adaptor reports its
   completion domain and scheduler per tag as [exec.snd.general]/3-4 describe them (DECISIONS §17,

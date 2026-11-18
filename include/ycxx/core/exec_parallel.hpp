@@ -142,24 +142,36 @@ protected:
   }
 };
 
+}} // namespace __ycxx::__adl_free
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// What keeps an operation's backend alive, and how the operation reaches it: a shared_ptr (the
+// parallel scheduler's), or a task_scheduler, whose backend may live inside it (exec_task.hpp).
+template <class _Holder>
+struct __backend_access {
+  static std::execution::parallel_scheduler_replacement::parallel_scheduler_backend* __get(const _Holder& h) noexcept { return h.get(); }
+};
+using __shared_backend = std::shared_ptr<std::execution::parallel_scheduler_replacement::parallel_scheduler_backend>;
+}}} // namespace __ycxx::__detail::__exec
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __adl_free {
 // The operation state of the parallel scheduler's schedule sender (Fallible) and of
-// task_scheduler's.
-template <class _Rcvr, bool _Fallible = true>
+// task_scheduler's (Holder: the task_scheduler).
+template <class _Rcvr, bool _Fallible = true, class _Holder = ::__ycxx::__detail::__exec::__shared_backend>
 struct __exec_par_sched_op {
   using operation_state_concept = std::execution::operation_state_tag;
-  using __backend_t = std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
   using __proxy_t = __exec_receiver_proxy_for<std::execution::parallel_scheduler_replacement::receiver_proxy, _Rcvr, _Fallible>;
 
   _Rcvr __rcvr;
-  std::shared_ptr<__backend_t> __backend;
+  _Holder __backend;
   __proxy_t proxy{__builtin_addressof(__rcvr)};
   alignas(std::max_align_t) std::byte __storage[::__ycxx::__detail::__exec::__backend_storage_size];
 
-  __exec_par_sched_op(_Rcvr r, std::shared_ptr<__backend_t> b) noexcept : __rcvr(static_cast<_Rcvr&&>(r)), __backend(static_cast<std::shared_ptr<__backend_t>&&>(b)) {}
+  __exec_par_sched_op(_Rcvr r, const _Holder& b) noexcept : __rcvr(static_cast<_Rcvr&&>(r)), __backend(b) {}
   __exec_par_sched_op(__exec_par_sched_op&&) = delete;
   void start() & noexcept {
     proxy.__attach();
-    __backend->schedule(proxy, std::span<std::byte>(__storage));
+    ::__ycxx::__detail::__exec::__backend_access<_Holder>::__get(__backend)->schedule(proxy, std::span<std::byte>(__storage));
   }
 };
 }} // namespace __ycxx::__adl_free
@@ -242,10 +254,9 @@ struct __exec_par_sched_sender {
 // The operation of a bulk_chunked/bulk_unchunked sender on the parallel scheduler
 // ([exec.par.scheduler]/11-12): the child's values are kept (decay-copied) while the backend runs
 // the iterations, then sent.
-template <bool _Chunked, class _Child, class _Shape, class _Fp, class _Rcvr>
+template <bool _Chunked, class _Child, class _Shape, class _Fp, class _Rcvr, class _Holder>
 struct __exec_par_bulk_op {
   using operation_state_concept = std::execution::operation_state_tag;
-  using __backend_t = std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
   using __child_sigs = std::execution::completion_signatures_of_t<_Child, ::__ycxx::__detail::__exec::__fwd_env_t<std::execution::env_of_t<_Rcvr>>>;
   template <class _Args>
   struct __values_tuple;
@@ -291,7 +302,7 @@ struct __exec_par_bulk_op {
   bool par;
   _Shape __shape;
   _Fp __f;
-  std::shared_ptr<__backend_t> __backend;
+  _Holder __backend;
   __args_variant __args;
   std::exception_ptr error;
   bool failed = false;
@@ -300,8 +311,8 @@ struct __exec_par_bulk_op {
   std::execution::connect_result_t<_Child, __child_receiver> __child_op;
 
   template <class _Cp>
-  __exec_par_bulk_op(_Cp&& __child, bool p, _Shape s, _Fp __fn, std::shared_ptr<__backend_t> b, _Rcvr r)
-      : __rcvr(static_cast<_Rcvr&&>(r)), par(p), __shape(s), __f(static_cast<_Fp&&>(__fn)), __backend(static_cast<std::shared_ptr<__backend_t>&&>(b)),
+  __exec_par_bulk_op(_Cp&& __child, bool p, _Shape s, _Fp __fn, const _Holder& b, _Rcvr r)
+      : __rcvr(static_cast<_Rcvr&&>(r)), par(p), __shape(s), __f(static_cast<_Fp&&>(__fn)), __backend(b),
         __child_op(std::execution::connect(static_cast<_Cp&&>(__child), __child_receiver{this})) {}
   __exec_par_bulk_op(__exec_par_bulk_op&&) = delete;
 
@@ -322,10 +333,11 @@ struct __exec_par_bulk_op {
     }
     proxy.__attach();
     const std::size_t n = par ? static_cast<std::size_t>(__shape) : 1;
+    auto* __b = ::__ycxx::__detail::__exec::__backend_access<_Holder>::__get(__backend);
     if constexpr (_Chunked)
-      __backend->schedule_bulk_chunked(n, proxy, std::span<std::byte>(__storage));
+      __b->schedule_bulk_chunked(n, proxy, std::span<std::byte>(__storage));
     else
-      __backend->schedule_bulk_unchunked(n, proxy, std::span<std::byte>(__storage));
+      __b->schedule_bulk_unchunked(n, proxy, std::span<std::byte>(__storage));
   }
   void execute(std::size_t i, std::size_t __j) noexcept {
     auto __body = [&]<class _Tuple>(_Tuple& t) {
@@ -374,15 +386,14 @@ struct __exec_par_bulk_op {
   }
 };
 
-template <bool _Chunked, class _Child, class _Shape, class _Fp>
+template <bool _Chunked, class _Child, class _Shape, class _Fp, class _Holder = ::__ycxx::__detail::__exec::__shared_backend>
 struct __exec_par_bulk_sender {
   using sender_concept = std::execution::sender_tag;
-  using __backend_t = std::execution::parallel_scheduler_replacement::parallel_scheduler_backend;
   _Child __child;
   bool par;
   _Shape __shape;
   _Fp __f;
-  std::shared_ptr<__backend_t> __backend;
+  _Holder __backend;
 
   template <class _Self, class... _Env>
   using __ycxx_csigs = ::__ycxx::__detail::__exec::__sigs_concat_t<
@@ -396,7 +407,7 @@ struct __exec_par_bulk_sender {
   decltype(auto) get_env() const noexcept { return ::__ycxx::__detail::__exec::__fwd_env(std::execution::get_env(__child)); }
   template <::__ycxx::__detail::__exec::__decays_to<__exec_par_bulk_sender> _Self, std::execution::receiver _Rcvr>
   auto connect(this _Self&& __self, _Rcvr __rcvr) {
-    return __exec_par_bulk_op<_Chunked, ::__ycxx::__detail::__forward_like_t<_Self, _Child>, _Shape, _Fp, _Rcvr>(
+    return __exec_par_bulk_op<_Chunked, ::__ycxx::__detail::__forward_like_t<_Self, _Child>, _Shape, _Fp, _Rcvr, _Holder>(
         std::forward_like<_Self>(__self.__child), __self.par, __self.__shape, std::forward_like<_Self>(__self.__f), __self.__backend, static_cast<_Rcvr&&>(__rcvr));
   }
 };

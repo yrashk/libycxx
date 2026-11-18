@@ -234,8 +234,10 @@ constexpr bool before_begin_usable(std::forward_list<T>& c, typename std::forwar
   std::forward_list<T> d{val<T>(53)};
   c.splice_after(bb, d);
   if (!(*std::next(bb) == val<T>(53)) || std::next(bb, 3) != h2 || !d.empty()) return false;
-  // as erase_after positions
-  if (c.erase_after(bb) != c.begin() || !(c.front() == val<T>(52))) return false;
+  // as erase_after positions (the result is taken first: the operands of != are unsequenced
+  // ([intro.execution]/10), so c.begin() could otherwise be read before the erasure)
+  const It r = c.erase_after(bb);
+  if (r != c.begin() || !(c.front() == val<T>(52))) return false;
   if (c.erase_after(cbb) != h2 || c.begin() != h2) return false;
   if (std::addressof(*last) != last_addr || std::next(last) != e) return false;
   if (c.erase_after(bb, e) != e || !c.empty() || c.begin() != e || std::next(bb) != e || c.end() != e) return false;

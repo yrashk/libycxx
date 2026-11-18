@@ -680,6 +680,16 @@ a defect in a test.
   `compare` and the byte `find` of the algorithms call the builtins through non-constexpr inline
   functions (`ycxx/core/mem_builtins.hpp`), which the constant evaluator does not fold; own test
   `string_view/find_folded_offset`.
+- GCC 16.2, on targets where `long double` has `double`'s representation (macOS arm64): an
+  internal compiler error in `compare_ics` (call.cc:12857) when overload resolution compares a
+  conversion to `long double` with one to `_Float64` from an alias of `double` (issue #1:
+  `cp_compare_floating_point_conversion_ranks` compares the standard types without stripping
+  aliases; reproduced without libycxx). Through libycxx it took an argument of an alias type
+  (`std::vector<double>::value_type`) and a call that GCC resolves taking the candidates in
+  reverse declaration order: the global `abs` (`abs(a[0])`, HiGHS) or `using std::sqrt;` in a
+  function. Worked around: `abs` and every `<cmath>` function declare the `double` overload
+  between the `long double` and `_Float64` ones, so it is always the best candidate before those
+  two would be compared; own test `cmath/double_alias_overloads_gcc_ice`.
 - GCC 16.2 at -O2 (C and C++; not -O1, not with `-fno-ipa-modref` or `-fno-tree-pta`, not
   Clang) folds `f == a + 4` to false where `f` is the pointer a non-inlined function returns after
   walking from `a` to `a + 4`, one past the end of the array `a` (a local or from `new[]`),

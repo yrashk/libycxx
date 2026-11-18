@@ -40,19 +40,28 @@ template <class _Tp = __ycxx::__detail::__y_int128>
 constexpr _Tp abs(type_identity_t<_Tp> __j) noexcept {
   return __j < 0 ? -__j : __j;
 }
-// One overload per floating-point type, as in cmath_std.hpp.
+// One overload per floating-point type, as in cmath_std.hpp, long double's declared before
+// double's. COMPILER-BUG(gcc): on a target where long double has double's representation (macOS
+// arm64), GCC 16.2 crashes (compare_ics, cp/call.cc:12857) when it compares the long double and
+// _Float64 candidates for an argument whose type is an alias of double (as
+// `std::vector<double>::value_type` is). It compares two candidates when the first is the best
+// so far as it reaches the second; it takes them in declaration order for `std::abs(x)` and,
+// observed, in the reverse order through a using-declaration (the global `using std::abs;`,
+// `using std::sqrt;` in a function). With double's overload declared between the two, double's
+// is the best so far in either order before the second of them is reached (issue #1). Own test
+// cmath/double_alias_overloads_gcc_ice.
 template <class _Tp = float>
   requires __ycxx::__detail::__fp_is<_Tp, float>
 constexpr _Tp abs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_abs(__x);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp abs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_abs(__x);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp abs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_abs(__x);
 }

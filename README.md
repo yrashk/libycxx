@@ -193,12 +193,13 @@ units of one program may freely use either. Clang 23 handles both orders. Only L
 ### libycxx's own sources as modules: `src/**/*.cppm`
 
 A source of the library may be a C++ module unit (`src/hosted/print.cppm`) instead of a `.cpp`,
-next to the other sources; it may `import std;`. With a Ninja generator (`YCXX_SOURCE_MODULES`,
-on by default there) CMake compiles such units as modules; with `-DYCXX_SOURCE_MODULES=OFF`, or
-another generator, each unit is lowered to a plain translation unit first, so building libycxx
-never requires C++ modules. Either way the archives define the same symbols:
-`tools/check_source_modules.py` checks it, and DECISIONS §20 has the rules a unit follows (its
-definitions in `extern "C++"`).
+next to the other sources, in any of the archives; units of the hosted library may `import std;`.
+With a Ninja generator (`YCXX_SOURCE_MODULES`, on by default there) CMake compiles such units as
+modules; with `-DYCXX_SOURCE_MODULES=OFF`, or another generator, each unit is lowered to a plain
+translation unit first, so building libycxx never requires C++ modules. Either way the archives
+define the same symbols: `tools/check_source_modules.py` checks it, and DECISIONS §20 has the rules
+a unit follows (its definitions in `extern "C++"`, its module initializer hidden) and how GCC's
+include-then-import gap is worked around.
 
 ## Tests
 

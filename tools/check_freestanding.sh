@@ -54,15 +54,27 @@ run() { # compiler-command target-label C-compiler linker [skip-link-reason]
 }
 # libycxx-freestanding.a for one target: the allocation-function defaults, std::nothrow and
 # floating-point <charconv>, the <atomic> lock and wait tables, <debugging> and the default PAL
-# wait and debugger hooks. Hidden visibility, as the hosted archives (DECISIONS §2).
+# wait and debugger hooks. Hidden visibility, as the hosted archives (DECISIONS §2). A module unit
+# (*.cppm, DECISIONS §20) is lowered to a plain translation unit first, as CMake does with
+# YCXX_SOURCE_MODULES=OFF.
 build_fsrt() {
   rm -rf "$out/fsrt.$2" && mkdir -p "$out/fsrt.$2"
-  for f in "$repo"/src/runtime/new/*.cpp "$repo"/src/freestanding/new/*.cpp "$repo"/src/runtime/charconv/*.cpp \
-           "$repo"/src/runtime/atomic/*.cpp "$repo"/src/runtime/debugging/*.cpp \
-           "$repo"/src/runtime/contracts/*.cpp "$repo"/src/freestanding/contracts/*.cpp "$repo"/src/freestanding/pal/*.cpp; do
-    # One function per file; GCC: no zero fill of the charconv work buffers (CMakeLists.txt).
-    case "$2" in gcc*) nw="-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized" ;; *) nw= ;; esac
-    $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
+  for d in runtime/new freestanding/new runtime/charconv runtime/atomic runtime/debugging \
+           runtime/contracts freestanding/contracts freestanding/pal; do
+    for f in "$repo/src/$d"/*.cpp "$repo/src/$d"/*.cppm; do
+      [ -e "$f" ] || continue
+      case $f in
+        *.cppm)
+          n=$(basename "$f" .cppm)
+          cmake -DINPUT="$f" -DOUTPUT="$out/fsrt.$2/$n.cpp" -DMODE=plain \
+                -DSTD_MODULE="$repo/modules/std.cppm" -DSTD_COMPAT_MODULE="$repo/modules/std.compat.cppm" \
+                -P "$repo/cmake/ycxx-lower-module-unit.cmake" || return 1
+          f=$out/fsrt.$2/$n.cpp ;;
+      esac
+      # One function per file; GCC: no zero fill of the charconv work buffers (CMakeLists.txt).
+      case "$2" in gcc*) nw="-Wno-sized-deallocation -ftrivial-auto-var-init=uninitialized" ;; *) nw= ;; esac
+      $1 $flags $nw -c "$f" -o "$out/fsrt.$2/$(basename "$f" .cpp).o" || return 1
+    done
   done
   rm -f "$out/fsrt.$2.a" && $llvm_ar rcs "$out/fsrt.$2.a" "$out/fsrt.$2"/*.o
 }

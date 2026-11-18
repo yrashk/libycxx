@@ -2000,17 +2000,19 @@ library code be written as modules where that helps (a unit that only needs stan
 can `import std;` instead of including the headers it uses) and to exercise the std modules with
 the library's own code, without making C++ modules a requirement for building libycxx.
 
-- **Two builds of one unit** (`cmake/ycxx-source-modules.cmake`). With `YCXX_SOURCE_MODULES`
+- **Two builds of one unit** (`cmake/ycxx-source-modules.cmake`, `ycxx_add_module_units`, used
+  by each archive: libycxx, libycxx-abi, libycxx-freestanding). With `YCXX_SOURCE_MODULES`
   (default with a Ninja generator) the units of a target are a private `CXX_MODULES` file set of
   it: compiled as modules, scanned alone (the target's `.cpp` sources stay unscanned and cannot
   import), their interfaces never installed. With `-DYCXX_SOURCE_MODULES=OFF` (any generator)
-  `cmake/ycxx-lower-module-unit.cmake` lowers each unit to `<build>/lowered/<dir>/<name>.cpp`:
-  `module;`, `export module NAME;` and the directive hiding the module initializer (below)
-  become empty lines, `import std;` / `import std.compat;`
-  the `#include`s of that module's global module fragment, and `#line` keeps diagnostics on the
-  unit. Source file properties set on the unit are copied to its lowered file. A unit with any
-  other module syntax (another import, an export declaration) does not lower, and the
-  configuration says so.
+  `cmake/ycxx-lower-module-unit.cmake` lowers each unit to
+  `<build>/lowered/<target>/<dir>/<name>.cpp`: `module;`, `export module NAME;` and the directive
+  hiding the module initializer (below) become empty lines, `import std;` / `import std.compat;`
+  the `#include`s of that module's global module fragment (std.compat's: std's too), and `#line`
+  keeps diagnostics on the unit. Source file properties set on the unit are copied to the
+  rewritten file. A unit with any other module syntax (another import, an export declaration)
+  does not lower, and the build says so. `tools/check_freestanding.sh`, which compiles the
+  freestanding runtime's sources itself for bare-metal targets, lowers them the same way.
 - **The form of a unit.** A primary module interface unit named `ycxx.<dir>.<name>` that exports
   nothing (an implementation unit would need an interface unit to belong to):
 
@@ -2019,6 +2021,7 @@ the library's own code, without making C++ modules a requirement for building li
   #include <print>                      // the headers, as in a .cpp
   #include <ycxx/core/hidden_symbol.hpp>
   export module ycxx.hosted.print;
+  // import std;                        // imports, if any, right after the module declaration
   asm((::__ycxx::__detail::__hide_symbol("_ZGIW4ycxxW6hostedW5print")));  // §16, §2
   extern "C++" {
   namespace [[__gnu__::__visibility__("hidden")]] std { ... }   // the definitions, as in a .cpp
@@ -2030,19 +2033,30 @@ the library's own code, without making C++ modules a requirement for building li
   Outside it they would be attached to the named module and mangled with it
   (`__ycxx::f@ycxx.hosted.print()`, `_ZN6__ycxxW4ycxx...`): another ABI. Macros of the global
   module fragment's headers (`stdout`, `errno`) are usable in the purview, as in any translation
-  unit. The compilers emit the unit's module initializer (`_ZGIW4ycxx...`) with default visibility
-  whatever the source says (§16); the `asm` directive hides it (§2). A lambda in an inline or
-  template context of the purview gets a weak, hidden symbol where a `.cpp` gives it none
-  (GCC 16): not exported, not an ABI difference.
-- **`import std;` in a unit** links the target to `ycxx::modules`, so the unit is compiled against
-  the std modules built from the same headers (`YCXX_MODULES` must be on), and a program that
-  links `libycxx.a` also links `libycxx-modules.a` (GCC's importers call `_ZGIW3std`). The GCC
-  limitation of the std modules applies (README, "Modules"): such a unit must not also `#include`
-  a standard header, directly or through a libycxx header, so it is for code that needs only what
-  std exports, not `__ycxx::` internals.
+  unit. The compilers emit the unit's module initializer (`_ZGIW` and the module name's components
+  as `<length><name>` joined by `W`) with default visibility whatever the source says (§16); the
+  `asm` directive hides it (§2), and the configuration stops, printing the line to add, when a
+  unit lacks it. A lambda in an inline or template context of the purview gets a weak, hidden
+  symbol where a `.cpp` gives it none (GCC 16): not exported, not an ABI difference.
+- **`import std;` in a unit** of libycxx links the target to `ycxx::modules` (`YCXX_MODULES` must
+  be on): the unit is compiled against the std modules built from the same headers, and a program
+  that links `libycxx.a`, from the build tree or the installed package
+  (`$<LINK_ONLY:ycxx::modules>`), also links `libycxx-modules.a`, whose initializers GCC's
+  importers call. The units of the ABI runtime (below the library, §3; and importing std there
+  would make the std modules' synthesized BMI target depend on the library that links it) and
+  of the freestanding runtime (no hosted library) cannot import std (`NO_STD`): the
+  configuration says so.
+- **GCC: importing std after standard headers.** GCC 16 cannot import std in a translation unit
+  that has included a standard header (STATUS, known compiler gaps), and a unit that needs
+  `__ycxx::` internals includes their headers. For GCC, a unit that imports std and whose global
+  module fragment includes anything other than `<ycxx/config.hpp>` and
+  `<ycxx/core/hidden_symbol.hpp>` (which include no standard header) is rewritten
+  (`<build>/textual-std/<target>/...`, the lowering script's `textual-std` mode): still a module
+  unit, its imports of std become std's `#include`s at the end of its global module fragment. The
+  definitions are the same; GCC only does not import std there. Clang imports std in every unit.
+  Remove the rewrite when GCC can import after an include.
 - **Checked** by `tools/check_source_modules.py` (the build stage of `tools/test`, for each
-  compiler): `libycxx.a` built with source modules defines no module-attached symbol, and exports
-  exactly the symbols of the same build with `YCXX_SOURCE_MODULES=OFF` (`build/<cc>-lowered`).
-- **Scope.** Units are for the hosted library (`src/hosted`), whose sources are only compiled
-  through CMake. The ABI runtime and the sources of the freestanding archive and of
-  `tools/check_freestanding.sh` stay `.cpp`. The first unit is `src/hosted/print.cppm`.
+  compiler, on `libycxx.a` and `libycxx-abi.a`): an archive built with source modules defines no
+  module-attached symbol, and exports exactly the symbols of the same build with
+  `YCXX_SOURCE_MODULES=OFF` (`build/<cc>-lowered`).
+- **The first unit** is `src/hosted/print.cppm`.

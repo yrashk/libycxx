@@ -647,7 +647,8 @@ a defect in a test.
   merging after an import is not implemented, gcc.info "C++ Modules", reproduced without
   libycxx). Own tests `modules/include_then_import`, `modules/import_then_include` are XFAIL on
   GCC; separate translation units mix freely (`modules/mixed_translation_units`). Clang handles
-  both orders.
+  both orders. libycxx's own module units that need both are rewritten for GCC to include std's
+  headers instead of importing it (DECISIONS §20).
 - GCC 16.2, modules: a declaration of the C library's that a program redeclares differently
   before `import std;` (`extern "C" void abort();` without `noexcept`, as
   `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported

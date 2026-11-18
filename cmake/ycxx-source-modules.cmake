@@ -5,7 +5,8 @@
 # without it, cmake/ycxx-lower-module-unit.cmake lowers the unit to a plain translation unit,
 # so the library builds with any generator. Lowering handles the module lines a unit may have
 # (`module;`, `export module NAME;`, `import std;`, `import std.compat;`); a unit with other module
-# syntax needs YCXX_SOURCE_MODULES=ON.
+# syntax needs YCXX_SOURCE_MODULES=ON. With GCC, a unit that imports std after including standard
+# headers has the import replaced by those headers (GCC 16 cannot import std after them).
 #
 # Whatever a unit defines in namespace std, __ycxx or __cxxabiv1 must stay attached to the global
 # module: it is in the global module fragment or in an `extern "C++"` block of the purview
@@ -25,12 +26,16 @@ if(YCXX_SOURCE_MODULES AND NOT CMAKE_GENERATOR MATCHES "Ninja")
                       "modules only with Ninja); configure with -G Ninja or -DYCXX_SOURCE_MODULES=OFF")
 endif()
 
-# ycxx_add_module_units(<target> <source>...): the sources of <target> that are module units
-# (*.cppm; the others are ignored). Call it after add_library(<target> <all sources>): the units are
-# taken out of the target's ordinary sources and added back as module units or lowered.
+# ycxx_add_module_units(<target> [NO_STD] SOURCES <source>...): the sources of <target> that are
+# module units (*.cppm; the others are ignored). Call it after add_library(<target> <all sources>):
+# the units are taken out of the target's ordinary sources and added back as module units or
+# lowered. NO_STD: the target's units cannot import the std modules (the ABI runtime, below the
+# library; the freestanding runtime, without the hosted library); a unit of it that imports std
+# stops the configuration.
 function(ycxx_add_module_units target)
+  cmake_parse_arguments(PARSE_ARGV 1 _a "NO_STD" "" "SOURCES")
   set(_units "")
-  foreach(_s IN LISTS ARGN)
+  foreach(_s IN LISTS _a_SOURCES)
     if(_s MATCHES "\\.cppm$")
       cmake_path(ABSOLUTE_PATH _s BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} NORMALIZE)
       list(APPEND _units ${_s})
@@ -48,55 +53,129 @@ function(ycxx_add_module_units target)
   endforeach()
   set_property(TARGET ${target} PROPERTY SOURCES ${_kept})
 
-  if(YCXX_SOURCE_MODULES)
-    target_sources(${target} PRIVATE FILE_SET ycxx_module_units TYPE CXX_MODULES
-                   BASE_DIRS ${PROJECT_SOURCE_DIR}/src FILES ${_units})
-    # CMake scans the file set's units (only for a target that requires C++20 or later; the
-    # target's own -std=c++26 wins); the target's other sources stay unscanned
-    # (CMAKE_CXX_SCAN_FOR_MODULES is OFF), so they cannot import anything.
-    target_compile_features(${target} PRIVATE cxx_std_23)
-    foreach(_u IN LISTS _units)
-      file(STRINGS ${_u} _imports REGEX "^[ \t]*import[ \t]+std(\\.compat)?[ \t]*;")
-      if(_imports)
-        set(_imports_std ON)
-      endif()
-    endforeach()
-    if(_imports_std)
-      # `import std;` in the library itself: the std modules' interfaces (defined later in
-      # CMakeLists.txt), built from the same headers.
-      target_link_libraries(${target} PRIVATE ycxx_modules)
-      cmake_language(EVAL CODE "cmake_language(DEFER CALL _ycxx_check_std_modules [==[${target}]==])")
+  set(_imports_std OFF)
+  set(_module_files "")
+  foreach(_u IN LISTS _units)
+    cmake_path(RELATIVE_PATH _u BASE_DIRECTORY ${PROJECT_SOURCE_DIR}/src OUTPUT_VARIABLE _rel)
+    _ycxx_unit_imports_std(${_u} _imports _textual)
+    _ycxx_check_initializer_hidden(${_u} ${_rel})
+    if(_imports AND _a_NO_STD)
+      message(FATAL_ERROR "libycxx: src/${_rel} imports std, which ${target}'s units cannot "
+                          "(DECISIONS §20)")
     endif()
+    if(NOT YCXX_SOURCE_MODULES)
+      # Lowered: <build>/lowered/<target>/<path under src>.cpp.
+      string(REGEX REPLACE "\\.cppm$" ".cpp" _out "${PROJECT_BINARY_DIR}/lowered/${target}/${_rel}")
+      _ycxx_rewrite_unit(${_u} ${_out} plain)
+      target_sources(${target} PRIVATE ${_out})
+      continue()
+    endif()
+    if(_imports)
+      set(_imports_std ON)
+    endif()
+    if(_imports AND _textual AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      # GCC 16 cannot import std after an #include of a standard header (STATUS, known compiler
+      # gaps): the unit includes std's headers instead, still a module unit.
+      set(_out ${PROJECT_BINARY_DIR}/textual-std/${target}/${_rel})
+      _ycxx_rewrite_unit(${_u} ${_out} textual-std)
+      list(APPEND _module_files ${_out})
+    else()
+      list(APPEND _module_files ${_u})
+    endif()
+  endforeach()
+  if(NOT YCXX_SOURCE_MODULES)
     return()
   endif()
 
-  # Lowered: <build>/lowered/<path under src>.cpp, regenerated when the unit changes. Source file
-  # properties set on the unit (COMPILE_OPTIONS, COMPILE_DEFINITIONS) are copied to the lowered
-  # file at the end of the directory, so they may be set after this call.
-  foreach(_u IN LISTS _units)
-    cmake_path(RELATIVE_PATH _u BASE_DIRECTORY ${PROJECT_SOURCE_DIR}/src OUTPUT_VARIABLE _rel)
-    set(_out ${PROJECT_BINARY_DIR}/lowered/${_rel})
-    string(REGEX REPLACE "\\.cppm$" ".cpp" _out "${_out}")
-    add_custom_command(OUTPUT ${_out}
-      COMMAND ${CMAKE_COMMAND} -DINPUT=${_u} -DOUTPUT=${_out}
-              -DSTD_MODULE=${PROJECT_SOURCE_DIR}/modules/std.cppm
-              -DSTD_COMPAT_MODULE=${PROJECT_SOURCE_DIR}/modules/std.compat.cppm
-              -P ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
-      DEPENDS ${_u} ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
-      COMMENT "Lowering module unit src/${_rel}"
-      VERBATIM)
-    target_sources(${target} PRIVATE ${_out})
-    # A deferred call's arguments are evaluated when it runs; EVAL fixes them now.
-    cmake_language(EVAL CODE
-      "cmake_language(DEFER CALL _ycxx_copy_unit_properties [==[${_u}]==] [==[${_out}]==])")
-  endforeach()
+  target_sources(${target} PRIVATE FILE_SET ycxx_module_units TYPE CXX_MODULES
+                 BASE_DIRS ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/textual-std/${target}
+                 FILES ${_module_files})
+  # CMake scans the file set's units (only for a target that requires C++20 or later; the
+  # target's own -std=c++26 wins); the target's other sources stay unscanned
+  # (CMAKE_CXX_SCAN_FOR_MODULES is OFF), so they cannot import anything.
+  target_compile_features(${target} PRIVATE cxx_std_23)
+  if(_imports_std)
+    # `import std;` in the library itself: the std modules' interfaces (defined later in
+    # CMakeLists.txt), built from the same headers. A static library's private link dependency is
+    # its consumers' link dependency: a program that links the target links libycxx-modules.a,
+    # whose module initializers the importing units call.
+    target_link_libraries(${target} PRIVATE ycxx_modules)
+    cmake_language(EVAL CODE "cmake_language(DEFER CALL _ycxx_check_std_modules [==[${target}]==])")
+  endif()
 endfunction()
 
-function(_ycxx_copy_unit_properties unit lowered)
+# _ycxx_unit_imports_std(<unit> <imports-var> <textual-var>): whether the unit imports std or
+# std.compat, and whether its global module fragment includes a header other than the two libycxx
+# headers known to include no standard header (GCC can import std only after those).
+function(_ycxx_unit_imports_std unit imports_var textual_var)
+  file(STRINGS ${unit} _imports REGEX "^[ \t]*import[ \t]+std(\\.compat)?[ \t]*;")
+  file(STRINGS ${unit} _includes REGEX "^[ \t]*#[ \t]*include[ \t]*[<\"]")
+  list(FILTER _includes EXCLUDE REGEX "<ycxx/config\\.hpp>|<ycxx/core/hidden_symbol\\.hpp>")
+  if(_imports)
+    set(${imports_var} ON PARENT_SCOPE)
+  else()
+    set(${imports_var} OFF PARENT_SCOPE)
+  endif()
+  if(_includes)
+    set(${textual_var} ON PARENT_SCOPE)
+  else()
+    set(${textual_var} OFF PARENT_SCOPE)
+  endif()
+endfunction()
+
+# _ycxx_check_initializer_hidden(<unit> <path under src>): the unit hides its module initializer
+# (DECISIONS §20), which the compilers give default visibility whatever the source says. Its
+# Itanium name is _ZGIW then each component of the module name as <length><name>, joined by W:
+# ycxx.hosted.print -> _ZGIW4ycxxW6hostedW5print.
+function(_ycxx_check_initializer_hidden unit rel)
+  file(STRINGS ${unit} _decl REGEX "^[ \t]*export[ \t]+module[ \t]+[A-Za-z_][A-Za-z0-9_.]*[ \t]*;")
+  if(NOT _decl)
+    return()  # not an interface unit: no initializer of its own
+  endif()
+  string(REGEX REPLACE "^[ \t]*export[ \t]+module[ \t]+([A-Za-z0-9_.]*).*" "\\1" _name "${_decl}")
+  string(REPLACE "." ";" _parts "${_name}")
+  set(_mangled "")
+  foreach(_p IN LISTS _parts)
+    string(LENGTH "${_p}" _len)
+    if(_mangled)
+      string(APPEND _mangled "W")
+    endif()
+    string(APPEND _mangled "${_len}${_p}")
+  endforeach()
+  set(_mangled "_ZGIW${_mangled}")
+  file(STRINGS ${unit} _hide REGEX "__hide_symbol\\(\"${_mangled}\"\\)")
+  if(NOT _hide)
+    message(FATAL_ERROR "libycxx: src/${rel} must hide its module initializer (DECISIONS §20): "
+                        "#include <ycxx/core/hidden_symbol.hpp> in its global module fragment and, "
+                        "after `export module ${_name};` and its imports,\n"
+                        "  asm((::__ycxx::__detail::__hide_symbol(\"${_mangled}\")));")
+  endif()
+endfunction()
+
+# _ycxx_rewrite_unit(<unit> <output> plain|textual-std): <output>, made from <unit> by
+# cmake/ycxx-lower-module-unit.cmake when the unit changes. Source file properties set on the unit
+# (COMPILE_OPTIONS, COMPILE_DEFINITIONS, INCLUDE_DIRECTORIES) are copied to the output at the end of
+# the directory, so they may be set after ycxx_add_module_units.
+function(_ycxx_rewrite_unit unit out mode)
+  cmake_path(RELATIVE_PATH unit BASE_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE _rel)
+  add_custom_command(OUTPUT ${out}
+    COMMAND ${CMAKE_COMMAND} -DINPUT=${unit} -DOUTPUT=${out} -DMODE=${mode}
+            -DSTD_MODULE=${PROJECT_SOURCE_DIR}/modules/std.cppm
+            -DSTD_COMPAT_MODULE=${PROJECT_SOURCE_DIR}/modules/std.compat.cppm
+            -P ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
+    DEPENDS ${unit} ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
+    COMMENT "Rewriting module unit ${_rel} (${mode})"
+    VERBATIM)
+  # A deferred call's arguments are evaluated when it runs; EVAL fixes them now.
+  cmake_language(EVAL CODE
+    "cmake_language(DEFER CALL _ycxx_copy_unit_properties [==[${unit}]==] [==[${out}]==])")
+endfunction()
+
+function(_ycxx_copy_unit_properties unit out)
   foreach(_p COMPILE_OPTIONS COMPILE_DEFINITIONS INCLUDE_DIRECTORIES)
     get_source_file_property(_v ${unit} ${_p})
     if(_v)
-      set_property(SOURCE ${lowered} APPEND PROPERTY ${_p} ${_v})
+      set_property(SOURCE ${out} APPEND PROPERTY ${_p} ${_v})
     endif()
   endforeach()
 endfunction()

@@ -115,24 +115,24 @@ set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
 
 # ---- ycxx::core (libycxx.a): the library's out-of-line parts and the platform layer ----
 # One replaceable allocation function per source file (see src/runtime/new).
-file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/hosted/new/*.cpp)
+file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/runtime/new/*.cppm src/hosted/new/*.cpp src/hosted/new/*.cppm)
 # Defining one deallocation function per file is the point; GCC warns about each unpaired one.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)
 endif()
 # Floating-point <charconv> (also in the freestanding runtime archive).
-file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
+file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp src/runtime/charconv/*.cppm)
 # Their work buffers (up to tens of kilobytes) are written before they are read; GCC 16 would
 # zero-fill every automatic variable in C++26 mode (erroneous values) on each call.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_CHARCONV_SOURCES} PROPERTIES COMPILE_OPTIONS -ftrivial-auto-var-init=uninitialized)
 endif()
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
-file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
+file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp src/runtime/atomic/*.cppm)
 # <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
-file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
+file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp src/runtime/debugging/*.cppm)
 # <contracts>: the replaceable default ::handle_contract_violation (also freestanding).
-file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp)
+file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp src/runtime/contracts/*.cppm)
 # The hosted sources by what they need (DECISIONS §18). YCXX_PAL=posix builds all of them with
 # src/pal/posix; YCXX_PAL=none builds those of the selected layers, and fallbacks for three absent
 # ones.
@@ -233,9 +233,10 @@ else()
 endif()
 add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES})
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
-# Its module units (src/**/*.cppm): compiled as modules or lowered (cmake/ycxx-source-modules.cmake).
+# Its module units (src/**/*.cppm; the globs above find them too): compiled as modules or lowered
+# (cmake/ycxx-source-modules.cmake, DECISIONS §20). So are those of the other archives.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-source-modules.cmake)
-ycxx_add_module_units(ycxx ${YCXX_LIBRARY_SOURCES})
+ycxx_add_module_units(ycxx SOURCES ${YCXX_LIBRARY_SOURCES})
 target_link_libraries(ycxx PRIVATE ycxx_headers)
 target_compile_options(ycxx PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
@@ -243,8 +244,9 @@ target_compile_options(ycxx PRIVATE
 
 # ---- ycxx::abi (libycxx-abi.a): the Itanium C++ ABI runtime (exception handling, RTTI,
 # guards), built with RTTI and exceptions ----
-file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp)
+file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp src/abi/*.cppm)
 add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
+ycxx_add_module_units(ycxx_abi NO_STD SOURCES ${YCXX_ABI_SOURCES})
 set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
 target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
 target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings} -fexceptions -frtti
@@ -464,10 +466,14 @@ endif()
 # targets.
 if(YCXX_FREESTANDING_RUNTIME)
   file(GLOB YCXX_FREESTANDING_SOURCES CONFIGURE_DEPENDS
-       src/runtime/new/*.cpp src/freestanding/new/*.cpp src/freestanding/contracts/*.cpp src/freestanding/pal/*.cpp)
+       src/runtime/new/*.cpp src/runtime/new/*.cppm src/freestanding/new/*.cpp src/freestanding/new/*.cppm
+       src/freestanding/contracts/*.cpp src/freestanding/contracts/*.cppm
+       src/freestanding/pal/*.cpp src/freestanding/pal/*.cppm)
   add_library(ycxx_freestanding STATIC
     ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
     ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
+  ycxx_add_module_units(ycxx_freestanding NO_STD SOURCES ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES}
+                        ${YCXX_ATOMIC_SOURCES} ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
   set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
                         POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)

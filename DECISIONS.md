@@ -1700,9 +1700,15 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   operation states intrusively (the pool's items live in the proxies' preallocated backend
   storage, 128 bytes). Allocating: a task's coroutine frame (with its allocator), connect of an
   awaitable that is not a sender (a coroutine frame), spawn/spawn_future's state (with the
-  allocator of [exec.spawn]/9), and task_scheduler, which holds its backend through
-  allocate_shared on every construction (a task constructs one at each start; the recommended
-  practice of [exec.task.scheduler]/4, avoiding it for small schedulers, is not followed yet).
+  allocator of [exec.spawn]/9), and task_scheduler from a large scheduler. task_scheduler
+  follows the recommended practice of [exec.task.scheduler]/4: its backend-for lives in a buffer
+  of three pointers inside it when it fits and the scheduler's copy cannot throw (a run_loop's or
+  thread pool's scheduler, inline_scheduler), so constructing and copying one allocate nothing
+  and a copy copies the scheduler; otherwise the buffer holds a forwarding backend that shares
+  the one made by allocate_shared with the given allocator (/3, /5). The schedule and bulk
+  operations hold a copy of the task_scheduler (the parallel scheduler's a shared_ptr to its
+  backend), so the backend outlives the sender as before. sizeof(task_scheduler) is 32 on
+  64-bit targets (a shared_ptr was 16).
 - **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
   hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
   locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's

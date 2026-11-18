@@ -2,7 +2,14 @@ name: ci
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+# One run per PR (or branch): a new push cancels the PR's run still in progress. macOS runners are
+# scarce and shared with the account's other repositories.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:

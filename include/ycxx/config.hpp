@@ -21,7 +21,7 @@
 // The compilers libycxx recognizes, by their identity macros only (DECISIONS §5, "Recognizing a
 // compiler"): GCC (__GNUC__ without __clang__), Clang (__clang__) and ycxx (__ycxx__, defining
 // neither). Identity selects nothing else (one exception, _BitInt, below): what a compiler provides
-// is asked of it through __has_builtin, __has_cpp_attribute, the __cpp_* macros and the target
+// is asked of it through __has_builtin, in-language probes, the __cpp_* macros and the target
 // macros, so a compiler that answers those truthfully gets the paths it can compile.
 #if !defined(__clang__) && !defined(__GNUC__) && !defined(__ycxx__)
 #  error "libycxx supports GCC, Clang and ycxx (DECISIONS §5: how a compiler is recognized)"
@@ -359,11 +359,11 @@
 #  define _YCXX_FP_ILOGBNAN 2147483647
 #endif
 // Clang's predefined int_fast16/32 types (16 and 32 bits wide) disagree with glibc on 64-bit Linux
-// (glibc: long); GCC's are long. So the predefined width says whether the compiler disagrees.
+// (glibc: long); GCC's agree. Clang's 16-bit int_fast16_t is what the predefined width shows.
 // The <cstdint> limit macros must be usable in #if, so this is a preprocessor switch. Freestanding
 // (no C library; DECISIONS §18) the compiler's own <stdint.h> is the C library's header, and it
 // agrees with the predefined types (Clang's <unwind.h> includes it).
-#if defined(__INT_FAST16_WIDTH__) && __INT_FAST16_WIDTH__ < __SIZEOF_LONG__ * __CHAR_BIT__ && \
+#if defined(__INT_FAST16_WIDTH__) && __INT_FAST16_WIDTH__ == 16 && \
     defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8 && __STDC_HOSTED__
 #  define _YCXX_FAST16_IS_LONG 1
 #else

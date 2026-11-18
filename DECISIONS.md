@@ -845,7 +845,8 @@ Clang's own probe answers and once with every probe answering 0 (ycxx's today). 
 public header preprocesses without an `#error`, and `config.hpp` takes the path the probes select
 (Clang's builtins, then the fallbacks); with Clang's answers every core and freestanding header
 compiles freestanding, and with zero answers `tests/foreign/fallbacks.cpp` tests the fallbacks.
-It also pins GCC's and Clang's own choices.
+It also pins GCC's and Clang's own choices, and that a compiler with no recognized identity still
+stops at the `#error`.
 
 ## 6. Development process
 

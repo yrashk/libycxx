@@ -11,13 +11,15 @@ and ycxx's defined (-U__clang__ -U__GNUC__ -D__ycxx__=1 ...), in two configurati
                 answers select, every public header preprocesses without an #error, and every
                 core and freestanding header compiles freestanding (as tools/check_freestanding.sh
                 compiles them: with no C library, whose facts a configured build would supply);
-  zero-probes   the probes answer 0, as ycxx's do until it implements a feature (__has_builtin,
-                __has_attribute, __has_cpp_attribute, __has_feature and __has_extension
-                redefined, every __cpp_* macro but __cpp_rtti undefined): config.hpp takes its
+  zero-probes   the probes answer 0, as ycxx's do until it implements a feature (__has_builtin
+                redefined, and __has_attribute, __has_cpp_attribute, __has_feature and
+                __has_extension too, which libycxx does not use today, so that a future use is
+                covered; every __cpp_* macro but __cpp_rtti undefined): config.hpp takes its
                 portable fallbacks, every public header preprocesses without an #error, and a
                 test of those fallbacks compiles freestanding (tests/foreign/fallbacks.cpp).
 
-It also pins the native choices: GCC ($YCXX_GXX) and Clang still take their own builtins.
+It also pins the native choices (GCC, $YCXX_GXX, and Clang still take their own builtins) and
+that a compiler with no recognized identity still stops at config.hpp's #error.
 
   tools/check_foreign_compiler.py [-v]
 """
@@ -61,6 +63,8 @@ def zero_probes():
     (__cpp_rtti stays: RTTI is a language mode, not a feature ycxx lacks here)."""
     r = run([CLANGXX, "-std=c++26", "-x", "c++", "-E", "-dM", "-"])
     cpp = sorted(set(re.findall(r"^#define (__cpp_\w+)", r.stdout, re.M)) - {"__cpp_rtti"})
+    if r.returncode != 0 or "__cpp_exceptions" not in cpp:
+        sys.exit(f"{CLANGXX} -E -dM did not list its __cpp_* macros:\n{r.stderr}")
     return (["-Wno-builtin-macro-redefined"] + [f"-D{p}(x)=0" for p in PROBES] +
             [f"-U{m}" for m in cpp])
 
@@ -90,7 +94,7 @@ def freestanding(cmd):
     """cmd compiling freestanding, with the compiler's own headers only (tools/check_freestanding.sh)."""
     r = run([cmd[0], "-print-file-name=include"])
     return cmd + ["-ffreestanding", "-nostdinc", "-isystem", r.stdout.strip(), "-fno-exceptions",
-                  "-fno-rtti"]
+                  "-fno-rtti", "-Wall", "-Wextra", "-Werror"]
 
 
 def each_header(label, cmd, headers, action):
@@ -110,6 +114,14 @@ CLANG_BUILTINS = ["__remove_reference_t(_Tp)", "__make_integer_seq<_Seq, _Tp, _N
 GCC_BUILTINS = ["__remove_reference(_Tp)", "__integer_pack(_Np)"]
 FALLBACKS = ["struct __remove_ref_impl", "struct __int_pack_make"]
 
+# No recognized identity: the #error (which also shows that -U removes Clang's identity).
+r = run([CLANGXX] + BASE + [f for f in FOREIGN if not f.startswith("-D")] + ["-E", "-"],
+        "#include <ycxx/config.hpp>\n")
+if r.returncode == 0 or "libycxx supports GCC, Clang and ycxx" not in r.stderr:
+    fail("unrecognized compiler: config.hpp does not stop at its #error", r.stderr)
+else:
+    print("ok   unrecognized compiler: config.hpp stops at its #error")
+
 # Native: the identity change selects nothing; each compiler keeps its builtins.
 expect("gcc", config_text([GXX] + BASE), GCC_BUILTINS, CLANG_BUILTINS + FALLBACKS)
 expect("clang", config_text([CLANGXX] + BASE), CLANG_BUILTINS, GCC_BUILTINS + FALLBACKS)
@@ -127,6 +139,8 @@ each_header("foreign, clang-probes", freestanding(probes), FREESTANDING, "-fsynt
 zero = [CLANGXX] + BASE + FOREIGN + zero_probes()
 text = config_text(zero)
 expect("foreign, zero-probes", text, FALLBACKS, GCC_BUILTINS + CLANG_BUILTINS)
+if text is not None and "inline constexpr bool __constexpr_throw = false;" not in text:
+    fail("foreign, zero-probes: __constexpr_throw is not false (__cpp_constexpr_exceptions undefined)")
 each_header("foreign, zero-probes", zero, HEADERS, "-E")
 test = REPO / "tests/foreign/fallbacks.cpp"
 r = run(freestanding(zero) + ["-fsyntax-only", str(test)])

@@ -35,5 +35,3 @@ static_assert(ascending(std::make_index_sequence<10007>{}));
 template <int N>
 concept makeable = requires { typename std::make_integer_sequence<int, N>; };
 static_assert(makeable<0> && makeable<7> && !makeable<-1>);
-
-int main() {}

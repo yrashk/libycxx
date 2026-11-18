@@ -1666,7 +1666,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's workaround);
   a CMake check of the importers' options (known only at generation, through generator
   expressions). Left undiagnosed: with the option OFF, a CMake target that adds `-freflection`
-  itself compiles against an empty `std::meta` (GCC accepts that importer).
+  itself compiles against an empty `std::meta` (GCC accepts that importer; #15).
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

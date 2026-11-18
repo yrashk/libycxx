@@ -187,7 +187,7 @@ modules and every importer must agree:
 - CMake: configure libycxx with `-DYCXX_MODULES_REFLECTION=ON` (GCC; Clang 23 has no reflection
   and is rejected). `ycxx::modules` is then built with `-freflection` and gives it to every target
   that links it, also from the installed package. Without the option, a target that adds
-  `-freflection` itself sees an empty `std::meta`, with no diagnostic.
+  `-freflection` itself sees an empty `std::meta`, with no diagnostic (#15).
 - `tools/ycxx-modules gcc -o build/gcc/modules-refl -freflection` records `-freflection` in the
   directory's `flags`, so `tools/ycxx-cxx gcc --std-modules=build/gcc/modules-refl` adds it.
   `tools/ycxx-cxx` stops with an error when the program's `-freflection`/`-fno-reflection`

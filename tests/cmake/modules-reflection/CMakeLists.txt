@@ -4,9 +4,16 @@
 #   cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-16 -DCMAKE_PREFIX_PATH=<libycxx install prefix>
 # or, with libycxx built as part of the project:
 #   cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-16 -DLIBYCXX_SOURCE_DIR=<libycxx checkout> -DYCXX_MODULES_REFLECTION=ON
+# With libycxx built without the option, YCXX_TEST_OWN_REFLECTION gives the program -freflection
+# itself: "target" (its own options) and "dependency" (a linked interface library's) must stop the
+# configuration (cmake/ycxx-modules-reflection.cmake); "directory" (add_compile_options ahead of
+# libycxx, which the module then gets too) must not.
 cmake_minimum_required(VERSION 3.28)
 project(ycxx_test_modules_reflection LANGUAGES C CXX)
 
+if(YCXX_TEST_OWN_REFLECTION STREQUAL "directory")
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-freflection>)
+endif()
 if(LIBYCXX_SOURCE_DIR)
   add_subdirectory(${LIBYCXX_SOURCE_DIR} libycxx EXCLUDE_FROM_ALL)
 else()
@@ -16,3 +23,10 @@ endif()
 add_executable(demo_reflection main.cpp side.c)
 set_source_files_properties(side.c PROPERTIES COMPILE_OPTIONS -Werror)
 target_link_libraries(demo_reflection PRIVATE ycxx::modules)
+if(YCXX_TEST_OWN_REFLECTION STREQUAL "target")
+  target_compile_options(demo_reflection PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-freflection>)
+elseif(YCXX_TEST_OWN_REFLECTION STREQUAL "dependency")
+  add_library(demo_reflection_flags INTERFACE)
+  target_compile_options(demo_reflection_flags INTERFACE -freflection)
+  target_link_libraries(demo_reflection PRIVATE demo_reflection_flags)
+endif()

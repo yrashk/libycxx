@@ -9,7 +9,7 @@
 //     new nor through an allocator passed to the constructor. This part is an
 //     implementation-quality check (a "should"), not a conformance requirement;
 //   the copy constructor and copy assignment are defaulted (synopsis) over a shared_ptr: they do
-//     not throw and allocate nothing (copies share SCHED(s));
+//     not throw and allocate nothing (copies refer to equal schedulers);
 //   /6-7: copies compare equal to the original and to the wrapped scheduler; a copy keeps
 //     scheduling on SCHED(s) after the original is destroyed or reassigned (/13.3, /10);
 //   /1, /13.2, /14-15: bulk_chunked and bulk_unchunked of schedule(copy) go through ts-domain and

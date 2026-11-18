@@ -1004,7 +1004,10 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     `wcsxfrm_l`, `strftime_l`, `wcsftime_l`, `nl_langinfo_l`), and the calling thread's
     `uselocale` (restored before returning) where the C library has none (`mbrtowc`/`wcrtomb`,
     `btowc`, `catopen`; glibc's `localeconv`, called under a lock because it fills one static
-    object; Darwin's `localeconv_l` is found by a `requires` probe). The global C locale and other
+    object; Darwin's `localeconv_l` is found by a `requires` probe). `newlocale` is called under a
+    lock of the runtime as well: Darwin's corrupts the locales it makes when threads open the same
+    names at once (a plain C program crashed in `localeconv_l` four runs of five; issue #21), and
+    serializing it costs nothing where it is safe. The global C locale and other
     threads' locales are never changed, except by `locale::global` ([locale.statics]/2:
     `setlocale` per category for a named locale).
   - *Values the draft leaves to the implementation:* ctype<char> gives a byte that is not a

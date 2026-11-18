@@ -15,6 +15,13 @@
 // localeconv has no _l form in glibc and fills one static object, so it is called under a lock
 // of this file (a program that calls localeconv itself in another thread at the same moment can
 // still race with it; Darwin's localeconv_l has no such object and is used where it exists).
+//
+// newlocale is called under a lock of this file too: concurrent calls are not safe in every C
+// library. On Darwin (macOS 26) four threads opening the same names corrupted the objects they
+// made: localeconv_l of one dereferenced a null pointer, in about four runs of five of a plain C
+// program, never with the calls serialized (issue #21; own test locale/named_threads). Locales are
+// opened when facets are built, rarely, so the lock costs nothing that matters. A program's own
+// newlocale calls at the same moment are not covered.
 #include <locale>
 #include <climits>
 #include <cstdlib>
@@ -45,7 +52,8 @@ constexpr int ctype_index = 1;
 constexpr int c_masks[__ycxx::__detail::__locale_ncategories] = {LC_COLLATE_MASK, LC_CTYPE_MASK, LC_MONETARY_MASK,
                                                            LC_NUMERIC_MASK, LC_TIME_MASK, LC_MESSAGES_MASK};
 
-__ycxx::__detail::__pal_lock cache_lock; // the list of open locales and their counts
+__ycxx::__detail::__pal_lock cache_lock;     // the list of open locales and their counts
+__ycxx::__detail::__pal_lock newlocale_lock; // every newlocale call (above)
 
 struct lock_guard {
   explicit lock_guard(__ycxx::__detail::__pal_lock& __l) noexcept : l_(__l) { l_.lock(); }
@@ -109,11 +117,17 @@ __named_locale* open_list = nullptr; // under cache_lock
   ::__ycxx::__detail::__throw_runtime_error(__msg.c_str());
 }
 
+// newlocale(mask, name), one call at a time (above).
+locale_t c_newlocale(int __mask, const char* name) noexcept {
+  lock_guard __g(newlocale_lock);
+  return ::newlocale(__mask, name, static_cast<locale_t>(0));
+}
+
 // newlocale for category c (an index) of name, with the name's LC_CTYPE where it has one.
 locale_t new_c_locale(const char* name, int c) noexcept {
-  locale_t __l = ::newlocale(c_masks[c] | LC_CTYPE_MASK, name, static_cast<locale_t>(0));
+  locale_t __l = c_newlocale(c_masks[c] | LC_CTYPE_MASK, name);
   if (__l == static_cast<locale_t>(0))
-    __l = ::newlocale(c_masks[c], name, static_cast<locale_t>(0));
+    __l = c_newlocale(c_masks[c], name);
   return __l;
 }
 
@@ -946,7 +960,7 @@ std::size_t __named_strftime(const __named_locale* h, wchar_t* __buf, std::size_
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 bool __named_exists(const char* name, int c) {
-  const locale_t __l = ::newlocale(c_masks[c], name, static_cast<locale_t>(0));
+  const locale_t __l = c_newlocale(c_masks[c], name);
   if (__l == static_cast<locale_t>(0))
     return false;
   ::freelocale(__l);
@@ -954,7 +968,7 @@ bool __named_exists(const char* name, int c) {
 }
 
 std::string __named_codeset(const char* name) {
-  const locale_t __l = ::newlocale(LC_CTYPE_MASK, name, static_cast<locale_t>(0));
+  const locale_t __l = c_newlocale(LC_CTYPE_MASK, name);
   if (__l == static_cast<locale_t>(0))
     return std::string();
   std::string r;
@@ -1356,7 +1370,7 @@ struct __collate_access {
 static bool collating_element(const __named_locale* h, const char* s, std::size_t n, const wchar_t* ws) {
   if (h == nullptr || n < 2 || n > 64)
     return false;
-  const locale_t __loc = ::newlocale(LC_CTYPE_MASK | LC_COLLATE_MASK, h->name.c_str(), static_cast<locale_t>(0));
+  const locale_t __loc = c_newlocale(LC_CTYPE_MASK | LC_COLLATE_MASK, h->name.c_str());
   if (__loc == static_cast<locale_t>(0))
     return false;
   bool ok = true;

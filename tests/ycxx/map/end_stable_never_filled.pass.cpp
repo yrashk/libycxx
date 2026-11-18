@@ -330,12 +330,28 @@ constexpr bool one(int s, int w) {
   });
 }
 
+// Every insertion member on the start state S.
+template <class X, int S>
+constexpr bool test_start() {
+  for (int w = 0; w < n_ops<X>; ++w)
+    if (!one<X>(S, w)) return false;
+  return true;
+}
+
+// One constant evaluation per container type and start state (all of them at once exceed
+// Clang's default constexpr step limit); a failure names the type and the start state.
+template <class X, int S>
+struct start_state {
+  static_assert(test_start<X, S>());
+  static constexpr bool ok = true;
+};
+template <class X, int... S>
+constexpr bool test(std::integer_sequence<int, S...>) {
+  return (start_state<X, S>::ok && ...);
+}
 template <class X>
 constexpr bool test() {
-  for (int s = 0; s < n_starts; ++s)
-    for (int w = 0; w < n_ops<X>; ++w)
-      if (!one<X>(s, w)) return false;
-  return true;
+  return test<X>(std::make_integer_sequence<int, n_starts>{});
 }
 
 static_assert(test<std::map<int, int>>());

@@ -553,7 +553,7 @@ HEADER = """\
 // The global module fragment includes the headers; the purview only re-exports their
 // declarations, so each entity stays attached to the global module and is the same entity
 // whether it is reached through `import {module};` or an #include ([std.modules]/5).
-// Macros are not exported ([module.import]/7). Build and use: README.md, "Modules".
+// Macros are not exported ([module.import]/7). Build and use: docs/USAGE.md, "Modules".
 """
 
 

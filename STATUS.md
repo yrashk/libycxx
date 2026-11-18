@@ -721,6 +721,14 @@ a defect in a test.
   before `import std;` (`extern "C" void abort();` without `noexcept`, as
   `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported
   declaration"); module tests use `module_check.hpp`.
+- GCC 16.2, modules: an internal compiler error (`tsubst_expr`) in an importer when a
+  requires-parameter appears in a template argument inside a requires-expression (nested, simple
+  or type requirement), as in the draft's `unstoppable_token`
+  (`requires bool_constant<(!tok.stop_possible())>::value`), so every `std::execution` algorithm
+  that checks it (`when_all`, `parallel_scheduler`, `counting_scope`, `task`) failed through
+  `import std;`. Worked around: the concept uses a declared-only `const Token` object of unknown
+  value instead (COMPILER-BUG(gcc) in `stop_token.hpp`; own test
+  `modules/import_std_unstoppable_token_gcc_ice`; #4).
 - GCC 16.2: no `__builtin_is_within_lifetime`, so `std::is_within_lifetime` is unavailable on GCC
   (constraint, probed in-language). Consequence: `std::start_lifetime` cannot detect an
   already-live object in constant evaluation on GCC, so it re-begins its lifetime and loses

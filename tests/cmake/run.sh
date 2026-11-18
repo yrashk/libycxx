@@ -23,6 +23,8 @@
 #  10. the standard library modules: ycxx::modules is installed (libycxx-modules.a, the interface
 #      units as a CXX_MODULES file set) and examples/modules (`import std.compat;`) builds and runs
 #      from the installed package and with add_subdirectory, exporting none of libycxx's symbols;
+#      GCC: with YCXX_MODULES_REFLECTION, tests/cmake/modules-reflection (std::meta through
+#      `import std;`) builds and runs both ways; Clang rejects the option at configure time;
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -255,6 +257,36 @@ for c in $compilers; do
       bad $c "modules ($how): configure/build (see $log)"
     fi
   done
+  # YCXX_MODULES_REFLECTION: GCC builds std with -freflection and gives it to the importers, so
+  # tests/cmake/modules-reflection (std::meta through `import std;`, no flag of its own) builds
+  # and runs, from a package installed with the option and with add_subdirectory; Clang (no
+  # reflection) is rejected at configure time with a clear message.
+  if [ $c = gcc ]; then
+    if x cmake -S "$repo" -B "$d/lib-reflection" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix-reflection" \
+         -DYCXX_MODULES_REFLECTION=ON &&
+       x cmake --build "$d/lib-reflection" && x cmake --install "$d/lib-reflection"; then
+      for how in find_package add_subdirectory; do
+        b=$d/modules-reflection-$how
+        src=
+        [ $how = add_subdirectory ] && src="-DLIBYCXX_SOURCE_DIR=$repo -DYCXX_MODULES_REFLECTION=ON"
+        if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
+             -DCMAKE_PREFIX_PATH="$d/prefix-reflection" $src &&
+           x cmake --build "$b" && run_demo "$b/demo_reflection" "$log"; then
+          ok $c "modules ($how, YCXX_MODULES_REFLECTION): std::meta through import std; build and run"
+        else
+          bad $c "modules ($how, YCXX_MODULES_REFLECTION): configure/build/run (see $log)"
+        fi
+      done
+    else
+      bad $c "modules: build and install with YCXX_MODULES_REFLECTION (see $log)"
+    fi
+  elif x cmake -S "$repo" -B "$d/lib-reflection" $gen -DYCXX_MODULES_REFLECTION=ON; then
+    bad $c "modules: YCXX_MODULES_REFLECTION accepted without reflection"
+  elif grep -q 'YCXX_MODULES_REFLECTION needs GCC' "$log"; then
+    ok $c "modules: YCXX_MODULES_REFLECTION rejected with a clear message"
+  else
+    bad $c "modules: YCXX_MODULES_REFLECTION rejected without the expected message (see $log)"
+  fi
 
   # 7. libycxx and the toolchain's C++ library in one process
   b=$d/visibility

@@ -190,6 +190,16 @@ Limitations: GCC 16 cannot mix `#include` of a standard header and `import std;`
 translation unit (its own module bugs; STATUS.md, known compiler gaps); different translation
 units of one program may freely use either. Clang 23 handles both orders. Only Linux is tested.
 
+### libycxx's own sources as modules: `src/**/*.cppm`
+
+A source of the library may be a C++ module unit (`src/hosted/print.cppm`) instead of a `.cpp`,
+next to the other sources; it may `import std;`. With a Ninja generator (`YCXX_SOURCE_MODULES`,
+on by default there) CMake compiles such units as modules; with `-DYCXX_SOURCE_MODULES=OFF`, or
+another generator, each unit is lowered to a plain translation unit first, so building libycxx
+never requires C++ modules. Either way the archives define the same symbols:
+`tools/check_source_modules.py` checks it, and DECISIONS §20 has the rules a unit follows (its
+definitions in `extern "C++"`).
+
 ## Tests
 
 One driver runs everything. It prints each command before running it, then live progress

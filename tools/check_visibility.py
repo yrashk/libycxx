@@ -18,7 +18,7 @@ import pathlib, re, sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 ROOTS = (REPO / "include", REPO / "src")
-SOURCE_SUFFIXES = {".cpp", ".hpp"}  # under src/; include/ has extensionless headers too
+SOURCE_SUFFIXES = {".cpp", ".cppm", ".hpp"}  # under src/; include/ has extensionless headers too
 ATTR = '[[__gnu__::__visibility__("hidden")]]'
 # An unannotated file-scope opening: `namespace std {`, `namespace __ycxx::__detail::__x {`, ...
 OPEN = re.compile(r'^namespace ((?:std|__ycxx|__cxxabiv1)\b)((?:::\w+)*) \{')

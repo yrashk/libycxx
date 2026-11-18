@@ -183,7 +183,7 @@ set(YCXX_CLIB_SOURCES
   src/hosted/chrono.cpp
   # formatting
   src/hosted/format.cpp
-  src/hosted/print.cpp)
+  src/hosted/print.cppm)
 # The 'debug' layer (with the C library).
 set(YCXX_DEBUG_SOURCES src/hosted/stacktrace.cpp)
 # Files: C stdio's (src/hosted/fstream.cpp) or the 'files' layer's (fstream_pal.cpp).
@@ -233,6 +233,9 @@ else()
 endif()
 add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES})
 set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
+# Its module units (src/**/*.cppm): compiled as modules or lowered (cmake/ycxx-source-modules.cmake).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-source-modules.cmake)
+ycxx_add_module_units(ycxx ${YCXX_LIBRARY_SOURCES})
 target_link_libraries(ycxx PRIVATE ycxx_headers)
 target_compile_options(ycxx PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>

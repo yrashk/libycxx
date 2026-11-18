@@ -1991,3 +1991,58 @@ pays most of it once.
 
 `tools/probe_transitive.py && tools/gen_transitive_includes.py --propose` refreshes the probe
 (for new library releases or items) and prints the baseline pairs the data file lacks.
+
+## 20. Module units among the library's own sources (`src/**/*.cppm`, `YCXX_SOURCE_MODULES`)
+
+A source of libycxx's archives may be a C++ module unit, `src/<dir>/<name>.cppm`, in place of a
+`.cpp` at the same place; nothing requires one and the layout stays as it is. The point is to let
+library code be written as modules where that helps (a unit that only needs standard facilities
+can `import std;` instead of including the headers it uses) and to exercise the std modules with
+the library's own code, without making C++ modules a requirement for building libycxx.
+
+- **Two builds of one unit** (`cmake/ycxx-source-modules.cmake`). With `YCXX_SOURCE_MODULES`
+  (default with a Ninja generator) the units of a target are a private `CXX_MODULES` file set of
+  it: compiled as modules, scanned alone (the target's `.cpp` sources stay unscanned and cannot
+  import), their interfaces never installed. With `-DYCXX_SOURCE_MODULES=OFF` (any generator)
+  `cmake/ycxx-lower-module-unit.cmake` lowers each unit to `<build>/lowered/<dir>/<name>.cpp`:
+  `module;`, `export module NAME;` and the directive hiding the module initializer (below)
+  become empty lines, `import std;` / `import std.compat;`
+  the `#include`s of that module's global module fragment, and `#line` keeps diagnostics on the
+  unit. Source file properties set on the unit are copied to its lowered file. A unit with any
+  other module syntax (another import, an export declaration) does not lower, and the
+  configuration says so.
+- **The form of a unit.** A primary module interface unit named `ycxx.<dir>.<name>` that exports
+  nothing (an implementation unit would need an interface unit to belong to):
+
+  ```cpp
+  module;
+  #include <print>                      // the headers, as in a .cpp
+  #include <ycxx/core/hidden_symbol.hpp>
+  export module ycxx.hosted.print;
+  asm((::__ycxx::__detail::__hide_symbol("_ZGIW4ycxxW6hostedW5print")));  // §16, §2
+  extern "C++" {
+  namespace [[__gnu__::__visibility__("hidden")]] std { ... }   // the definitions, as in a .cpp
+  } // extern "C++"
+  ```
+
+  The definitions are in an `extern "C++"` block of the purview (or the global module fragment):
+  attached to the global module ([module.unit]/7), mangled and linked exactly as a `.cpp`'s.
+  Outside it they would be attached to the named module and mangled with it
+  (`__ycxx::f@ycxx.hosted.print()`, `_ZN6__ycxxW4ycxx...`): another ABI. Macros of the global
+  module fragment's headers (`stdout`, `errno`) are usable in the purview, as in any translation
+  unit. The compilers emit the unit's module initializer (`_ZGIW4ycxx...`) with default visibility
+  whatever the source says (§16); the `asm` directive hides it (§2). A lambda in an inline or
+  template context of the purview gets a weak, hidden symbol where a `.cpp` gives it none
+  (GCC 16): not exported, not an ABI difference.
+- **`import std;` in a unit** links the target to `ycxx::modules`, so the unit is compiled against
+  the std modules built from the same headers (`YCXX_MODULES` must be on), and a program that
+  links `libycxx.a` also links `libycxx-modules.a` (GCC's importers call `_ZGIW3std`). The GCC
+  limitation of the std modules applies (README, "Modules"): such a unit must not also `#include`
+  a standard header, directly or through a libycxx header, so it is for code that needs only what
+  std exports, not `__ycxx::` internals.
+- **Checked** by `tools/check_source_modules.py` (the build stage of `tools/test`, for each
+  compiler): `libycxx.a` built with source modules defines no module-attached symbol, and exports
+  exactly the symbols of the same build with `YCXX_SOURCE_MODULES=OFF` (`build/<cc>-lowered`).
+- **Scope.** Units are for the hosted library (`src/hosted`), whose sources are only compiled
+  through CMake. The ABI runtime and the sources of the freestanding archive and of
+  `tools/check_freestanding.sh` stay `.cpp`. The first unit is `src/hosted/print.cppm`.

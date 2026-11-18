@@ -1,9 +1,21 @@
 // libycxx hosted runtime: the print functions of <print> ([print.fun]) and of <ostream>
 // ([ostream.formatted.print]). See ycxx/hosted/print.hpp for the design.
+// A module unit of the library (DECISIONS §20): the headers are in the global module fragment and
+// the definitions in an `extern "C++"` block, so that they stay attached to the global module
+// (the same symbols as a plain translation unit's). The module exports nothing; its initializer is
+// hidden (DECISIONS §16, §2).
+module;
 #include <print>
 #include <ostream>
 #include <system_error>
 #include <cerrno>
+#include <ycxx/core/hidden_symbol.hpp>
+
+export module ycxx.hosted.print;
+
+asm((::__ycxx::__detail::__hide_symbol("_ZGIW4ycxxW6hostedW5print")));
+
+extern "C++" {
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
@@ -100,3 +112,5 @@ void println(ostream& __os) {
 }
 
 } // namespace std
+
+} // extern "C++"

@@ -1763,9 +1763,20 @@ stops at the `#error`.
   operation states intrusively (the pool's items live in the proxies' preallocated backend
   storage, 128 bytes). Allocating: a task's coroutine frame (with its allocator), connect of an
   awaitable that is not a sender (a coroutine frame), spawn/spawn_future's state (with the
-  allocator of [exec.spawn]/9), and task_scheduler, which holds its backend through
-  allocate_shared on every construction (a task constructs one at each start; the recommended
-  practice of [exec.task.scheduler]/4, avoiding it for small schedulers, is not followed yet).
+  allocator of [exec.spawn]/9), and task_scheduler from a large scheduler. task_scheduler
+  follows the recommended practice of [exec.task.scheduler]/4: its backend-for lives in a buffer
+  of three pointers inside it when it fits and the scheduler's copy cannot throw (run_loop's
+  scheduler, inline_scheduler, a program's handle to its own pool), so constructing and copying
+  one allocate nothing and a copy copies the scheduler (a scheduler whose schedule() changes
+  its own state, a round-robin counter, then counts per copy; the draft's shared backend would
+  count across copies, which /4 lets go); otherwise the buffer holds a forwarding backend that shares
+  the one made by allocate_shared with the given allocator (/3, /5). The schedule and bulk
+  operations hold a copy of the task_scheduler (the parallel scheduler's a shared_ptr to its
+  backend), so the backend outlives the sender as before. Copy assignment copies the source
+  before destroying its own backend, which may own the source. sizeof(task_scheduler) is 32 on
+  64-bit targets (a shared_ptr was 16). Not followed: /5 for the backend's own allocations (an
+  operation that does not fit the proxy's 128 bytes of storage is allocated with
+  `::operator new`, and a backend in place keeps no allocator; STATUS, known limitations; #24).
 - **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
   hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
   locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's
@@ -1873,8 +1884,15 @@ stops at the `#error`.
     scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
   - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query
     can throw (TRY-SET-VALUE);
-  - spawn_future: none. The state erases the spawned sender's type; a parent's COMPL-DOMAIN
-    makes that `indeterminate_domain<>`, which is what is known.
+  - spawn_future ([exec.spawn.future]): domains only, and only given an environment. A
+    completion reaches the receiver on the agent where the spawned sender completed (complete,
+    /10.2) or inline on the starting agent, when the result was there first or the association
+    failed (consume, /11.3, /8). So for each tag T: the spawned sender's T completions (its
+    receiver's environment is `env<>`), for set_error also its completions whose decay-copy can
+    throw (/6), and `get_domain(env)`. The state's type keeps the spawned sender's. A spawned
+    sender on another domain than the consumer's gives `indeterminate_domain<D, default_domain>`:
+    the consumer may run either. try-set-stopped's set_stopped runs on the agent requesting the
+    stop (/12.1), of no known domain, and adds none.
 
   The draft's three-way disagreement about schedulers ([exec.sched]/6,
   [exec.get.compl.sched]/5.2, [exec.get.compl.domain]/2.3; STATUS "Draft issues noticed") is

@@ -178,7 +178,9 @@ def body(impl):
     return re.sub(r"\b([XYZ])\b", lambda m: f"static_cast<T>({m.group(1).lower()})", impl)
 
 
-FP_TYPES = ["float", "double", "long double", "ycxx::detail::float16", "ycxx::detail::float32",
+# long double before double: COMPILER-BUG(gcc), see the header comment written below and
+# ycxx/core/math_abs.hpp.
+FP_TYPES = ["float", "long double", "double", "ycxx::detail::float16", "ycxx::detail::float32",
             "ycxx::detail::float64", "ycxx::detail::float128", "ycxx::detail::bfloat16"]
 ONE_FP = {"x", "x_pint", "x_int", "x_long", "x_ld", "u_x", "uu_x"}  # one floating-point-type parameter
 
@@ -189,7 +191,10 @@ std = ["// libycxx core: the std:: functions of <cmath> ([cmath.syn], [sf.cmath]
        "// ([cmath.syn]/2: `template <class T = F> requires fp_is<T, F> R f(type_identity_t<T>)`,",
        "// whose parameter type is fixed, so arguments convert to it as to a plain function; the",
        "// overloads of unavailable extended types are never viable), and one constrained template",
-       "// for the integer and mixed arguments of [cmath.syn]/3.",
+       "// for the integer and mixed arguments of [cmath.syn]/3. long double's overloads come before",
+       "// double's: COMPILER-BUG(gcc), GCC 16.2 crashes comparing the long double and float64",
+       "// candidates for an argument of an alias of double where long double has double's",
+       "// representation, unless double's is declared between them (ycxx/core/math_abs.hpp).",
        "#pragma once", "", "namespace std {", ""]
 for name, sig, ret, impl, cexpr, fl in STD:
     spec = "constexpr " if cexpr else ""

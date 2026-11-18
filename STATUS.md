@@ -680,6 +680,16 @@ a defect in a test.
   `compare` and the byte `find` of the algorithms call the builtins through non-constexpr inline
   functions (`ycxx/core/mem_builtins.hpp`), which the constant evaluator does not fold; own test
   `string_view/find_folded_offset`.
+- GCC 16.2, on targets where `long double` has `double`'s representation (macOS arm64): an
+  internal compiler error in `compare_ics` (call.cc:12857) when overload resolution compares a
+  conversion to `long double` with one to `_Float64` from an alias of `double` (issue #1:
+  `cp_compare_floating_point_conversion_ranks` compares the standard types without stripping
+  aliases; reproduced without libycxx). Through libycxx it took an argument of an alias type
+  (`std::vector<double>::value_type`) and a call that GCC resolves taking the candidates in
+  reverse declaration order: the global `abs` (`abs(a[0])`, HiGHS) or `using std::sqrt;` in a
+  function. Worked around: `abs` and every `<cmath>` function declare the `double` overload
+  between the `long double` and `_Float64` ones, so it is always the best candidate before those
+  two would be compared; own test `cmath/double_alias_overloads_gcc_ice`.
 - GCC 16.2 at -O2 (C and C++; not -O1, not with `-fno-ipa-modref` or `-fno-tree-pta`, not
   Clang) folds `f == a + 4` to false where `f` is the pointer a non-inlined function returns after
   walking from `a` to `a + 4`, one past the end of the array `a` (a local or from `new[]`),
@@ -881,6 +891,15 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `list`, `map`, `multimap`, `set`, `multiset` cannot be `constexpr` variables (`constexpr
+  std::set<int> s;` is rejected: "must have constant destruction"); they are constant-initialized
+  at namespace scope (`constinit` works) and usable in constant evaluation. `end()` stays the same
+  from construction on ([associative.reqmts.general]/175, [list.modifiers]/2; issue #5) without
+  the constructors setting anything up. At run time the header (sentinel) is a member; during
+  constant evaluation it is allocated by the first member that needs it, `end()` included, so the
+  pointer to it is `mutable`, and the destructor reads it. An embedded header in constant
+  evaluation would need none of this, but GCC 16 mis-evaluates pointers from the nodes into it
+  when the container is returned from a function (`return std::list<int>{1, 2, 3};`).
 - UBSan's vptr check (`-fsanitize=vptr`, part of GCC's `-fsanitize=undefined`) is not available:
   its runtime inspects type_info objects through the `__dynamic_cast` of the C++ runtime it was
   built against (libstdc++ or libc++abi), which libycxx's ABI runtime cannot serve. The

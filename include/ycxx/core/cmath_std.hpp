@@ -5,7 +5,10 @@
 // ([cmath.syn]/2: `template <class _Tp = _Fp> requires __fp_is<_Tp, _Fp> _Rp __f(type_identity_t<_Tp>)`,
 // whose parameter type is fixed, so arguments convert to it as to a plain function; the
 // overloads of unavailable extended types are never viable), and one constrained template
-// for the integer and mixed arguments of [cmath.syn]/3.
+// for the integer and mixed arguments of [cmath.syn]/3. long double's overloads come before
+// double's: COMPILER-BUG(gcc), GCC 16.2 crashes comparing the long double and float64
+// candidates for an argument of an alias of double where long double has double's
+// representation, unless double's is declared between them (ycxx/core/math_abs.hpp).
 #pragma once
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
@@ -15,13 +18,13 @@ template <class _Tp = float>
 constexpr _Tp acos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acos, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp acos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acos, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp acos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acos, _Tp>(static_cast<_Tp>(__x));
 }
@@ -71,13 +74,13 @@ template <class _Tp = float>
 constexpr _Tp asin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asin, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp asin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asin, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp asin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asin, _Tp>(static_cast<_Tp>(__x));
 }
@@ -127,13 +130,13 @@ template <class _Tp = float>
 constexpr _Tp atan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp atan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp atan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan, _Tp>(static_cast<_Tp>(__x));
 }
@@ -183,13 +186,13 @@ template <class _Tp = float>
 constexpr _Tp cos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cos, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp cos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cos, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp cos(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cos, _Tp>(static_cast<_Tp>(__x));
 }
@@ -239,13 +242,13 @@ template <class _Tp = float>
 constexpr _Tp sin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sin, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp sin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sin, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp sin(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sin, _Tp>(static_cast<_Tp>(__x));
 }
@@ -295,13 +298,13 @@ template <class _Tp = float>
 constexpr _Tp tan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tan, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp tan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tan, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp tan(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tan, _Tp>(static_cast<_Tp>(__x));
 }
@@ -351,13 +354,13 @@ template <class _Tp = float>
 constexpr _Tp acosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acosh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp acosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acosh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp acosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::acosh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -407,13 +410,13 @@ template <class _Tp = float>
 constexpr _Tp asinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asinh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp asinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asinh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp asinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::asinh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -463,13 +466,13 @@ template <class _Tp = float>
 constexpr _Tp atanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atanh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp atanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atanh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp atanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atanh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -519,13 +522,13 @@ template <class _Tp = float>
 constexpr _Tp cosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cosh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp cosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cosh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp cosh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::cosh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -575,13 +578,13 @@ template <class _Tp = float>
 constexpr _Tp sinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sinh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp sinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sinh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp sinh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::sinh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -631,13 +634,13 @@ template <class _Tp = float>
 constexpr _Tp tanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tanh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp tanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tanh, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp tanh(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tanh, _Tp>(static_cast<_Tp>(__x));
 }
@@ -687,13 +690,13 @@ template <class _Tp = float>
 constexpr _Tp exp(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp exp(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp exp(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp, _Tp>(static_cast<_Tp>(__x));
 }
@@ -743,13 +746,13 @@ template <class _Tp = float>
 constexpr _Tp exp2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp2, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp exp2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp2, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp exp2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::exp2, _Tp>(static_cast<_Tp>(__x));
 }
@@ -799,13 +802,13 @@ template <class _Tp = float>
 constexpr _Tp expm1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::expm1, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp expm1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::expm1, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp expm1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::expm1, _Tp>(static_cast<_Tp>(__x));
 }
@@ -855,13 +858,13 @@ template <class _Tp = float>
 constexpr _Tp log(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp log(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp log(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log, _Tp>(static_cast<_Tp>(__x));
 }
@@ -911,13 +914,13 @@ template <class _Tp = float>
 constexpr _Tp log10(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log10, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp log10(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log10, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp log10(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log10, _Tp>(static_cast<_Tp>(__x));
 }
@@ -967,13 +970,13 @@ template <class _Tp = float>
 constexpr _Tp log1p(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log1p, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp log1p(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log1p, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp log1p(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log1p, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1023,13 +1026,13 @@ template <class _Tp = float>
 constexpr _Tp log2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log2, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp log2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log2, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp log2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::log2, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1079,13 +1082,13 @@ template <class _Tp = float>
 constexpr _Tp erf(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erf, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp erf(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erf, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp erf(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erf, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1135,13 +1138,13 @@ template <class _Tp = float>
 constexpr _Tp erfc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erfc, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp erfc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erfc, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp erfc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::erfc, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1191,13 +1194,13 @@ template <class _Tp = float>
 constexpr _Tp lgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::lgamma, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp lgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::lgamma, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp lgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::lgamma, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1247,13 +1250,13 @@ template <class _Tp = float>
 constexpr _Tp tgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tgamma, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp tgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tgamma, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp tgamma(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::tgamma, _Tp>(static_cast<_Tp>(__x));
 }
@@ -1303,13 +1306,13 @@ template <class _Tp = float>
 constexpr _Tp atan2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan2, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp atan2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan2, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp atan2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::atan2, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -1359,13 +1362,13 @@ template <class _Tp = float>
 constexpr _Tp pow(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::pow, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp pow(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::pow, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp pow(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::__transcendental<__ycxx::__detail::__cm::op::pow, _Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -1415,13 +1418,13 @@ template <class _Tp = float>
 constexpr _Tp frexp(type_identity_t<_Tp> __x, int* e) noexcept {
   return __ycxx::__detail::__cm::frexp<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp frexp(type_identity_t<_Tp> __x, int* e) noexcept {
   return __ycxx::__detail::__cm::frexp<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp frexp(type_identity_t<_Tp> __x, int* e) noexcept {
   return __ycxx::__detail::__cm::frexp<_Tp>(static_cast<_Tp>(__x), e);
 }
@@ -1471,13 +1474,13 @@ template <class _Tp = float>
 constexpr int ilogb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::ilogb<_Tp>(static_cast<_Tp>(__x), FP_ILOGB0, FP_ILOGBNAN);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr int ilogb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::ilogb<_Tp>(static_cast<_Tp>(__x), FP_ILOGB0, FP_ILOGBNAN);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr int ilogb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::ilogb<_Tp>(static_cast<_Tp>(__x), FP_ILOGB0, FP_ILOGBNAN);
 }
@@ -1527,13 +1530,13 @@ template <class _Tp = float>
 constexpr _Tp ldexp(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp ldexp(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp ldexp(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
@@ -1583,13 +1586,13 @@ template <class _Tp = float>
 constexpr _Tp logb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::logb<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp logb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::logb<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp logb(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::logb<_Tp>(static_cast<_Tp>(__x));
 }
@@ -1639,13 +1642,13 @@ template <class _Tp = float>
 constexpr _Tp modf(type_identity_t<_Tp> __x, type_identity_t<_Tp>* __iptr) noexcept {
   return __ycxx::__detail::__cm::modf<_Tp>(__x, __iptr);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp modf(type_identity_t<_Tp> __x, type_identity_t<_Tp>* __iptr) noexcept {
   return __ycxx::__detail::__cm::modf<_Tp>(__x, __iptr);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp modf(type_identity_t<_Tp> __x, type_identity_t<_Tp>* __iptr) noexcept {
   return __ycxx::__detail::__cm::modf<_Tp>(__x, __iptr);
 }
@@ -1689,13 +1692,13 @@ template <class _Tp = float>
 constexpr _Tp scalbn(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp scalbn(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp scalbn(type_identity_t<_Tp> __x, int e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
@@ -1745,13 +1748,13 @@ template <class _Tp = float>
 constexpr _Tp scalbln(type_identity_t<_Tp> __x, long e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp scalbln(type_identity_t<_Tp> __x, long e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp scalbln(type_identity_t<_Tp> __x, long e) noexcept {
   return __ycxx::__detail::__cm::scalbln<_Tp>(static_cast<_Tp>(__x), e);
 }
@@ -1801,13 +1804,13 @@ template <class _Tp = float>
 constexpr _Tp cbrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::cbrt<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp cbrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::cbrt<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp cbrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::cbrt<_Tp>(static_cast<_Tp>(__x));
 }
@@ -1857,13 +1860,13 @@ template <class _Tp = float>
 constexpr _Tp fabs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::fabs<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fabs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::fabs<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fabs(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::fabs<_Tp>(static_cast<_Tp>(__x));
 }
@@ -1913,13 +1916,13 @@ template <class _Tp = float>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::hypot<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::hypot<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::hypot<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -1969,13 +1972,13 @@ template <class _Tp = float>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::__hypot3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::__hypot3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp hypot(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::__hypot3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
@@ -2015,13 +2018,13 @@ template <class _Tp = float>
 constexpr _Tp sqrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::sqrt<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp sqrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::sqrt<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp sqrt(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::sqrt<_Tp>(static_cast<_Tp>(__x));
 }
@@ -2071,13 +2074,13 @@ template <class _Tp = float>
 constexpr _Tp ceil(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::ceil, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp ceil(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::ceil, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp ceil(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::ceil, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2127,13 +2130,13 @@ template <class _Tp = float>
 constexpr _Tp floor(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::floor, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp floor(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::floor, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp floor(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::floor, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2183,13 +2186,13 @@ template <class _Tp = float>
 _Tp nearbyint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::nearbyint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp nearbyint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::nearbyint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp nearbyint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::nearbyint<_Tp>(static_cast<_Tp>(__x));
 }
@@ -2239,13 +2242,13 @@ template <class _Tp = float>
 _Tp rint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::rint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp rint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::rint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp rint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::rint<_Tp>(static_cast<_Tp>(__x));
 }
@@ -2295,13 +2298,13 @@ template <class _Tp = float>
 long lrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 long lrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 long lrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2351,13 +2354,13 @@ template <class _Tp = float>
 long long llrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 long long llrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 long long llrint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lrint<long long, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2407,13 +2410,13 @@ template <class _Tp = float>
 constexpr _Tp round(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::round, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp round(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::round, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp round(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::round, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2463,13 +2466,13 @@ template <class _Tp = float>
 constexpr long lround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr long lround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr long lround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2519,13 +2522,13 @@ template <class _Tp = float>
 constexpr long long llround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr long long llround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long long, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr long long llround(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::lround<long long, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2575,13 +2578,13 @@ template <class _Tp = float>
 constexpr _Tp trunc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::trunc, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp trunc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::trunc, _Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp trunc(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__cm::__round_integral<__ycxx::__detail::__cm::__rint_op::trunc, _Tp>(static_cast<_Tp>(__x));
 }
@@ -2631,13 +2634,13 @@ template <class _Tp = float>
 constexpr _Tp fmod(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmod<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fmod(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmod<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fmod(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmod<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -2687,13 +2690,13 @@ template <class _Tp = float>
 constexpr _Tp remainder(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::remainder<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp remainder(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::remainder<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp remainder(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::remainder<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -2743,13 +2746,13 @@ template <class _Tp = float>
 constexpr _Tp remquo(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, int* __quo) noexcept {
   return __ycxx::__detail::__cm::remquo<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), __quo);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp remquo(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, int* __quo) noexcept {
   return __ycxx::__detail::__cm::remquo<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), __quo);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp remquo(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, int* __quo) noexcept {
   return __ycxx::__detail::__cm::remquo<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), __quo);
 }
@@ -2799,13 +2802,13 @@ template <class _Tp = float>
 constexpr _Tp copysign(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::copysign<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp copysign(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::copysign<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp copysign(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::copysign<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -2855,13 +2858,13 @@ template <class _Tp = float>
 constexpr _Tp nextafter(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::nextafter<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp nextafter(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::nextafter<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp nextafter(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::nextafter<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -2913,15 +2916,15 @@ constexpr _Tp nexttoward(type_identity_t<_Tp> __x, long double y) noexcept {
                 "[cmath.syn]/4: nexttoward is ill-formed for an argument of extended floating-point type");
   return __ycxx::__detail::__cm::nexttoward<_Tp>(static_cast<_Tp>(__x), y);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp nexttoward(type_identity_t<_Tp> __x, long double y) noexcept {
   static_assert(__ycxx::__detail::__fp_std_index<_Tp> >= 0,
                 "[cmath.syn]/4: nexttoward is ill-formed for an argument of extended floating-point type");
   return __ycxx::__detail::__cm::nexttoward<_Tp>(static_cast<_Tp>(__x), y);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp nexttoward(type_identity_t<_Tp> __x, long double y) noexcept {
   static_assert(__ycxx::__detail::__fp_std_index<_Tp> >= 0,
                 "[cmath.syn]/4: nexttoward is ill-formed for an argument of extended floating-point type");
@@ -2983,13 +2986,13 @@ template <class _Tp = float>
 constexpr _Tp nextup(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextup<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp nextup(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextup<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp nextup(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextup<_Tp>(static_cast<_Tp>(__x));
 }
@@ -3039,13 +3042,13 @@ template <class _Tp = float>
 constexpr _Tp nextdown(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextdown<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp nextdown(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextdown<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp nextdown(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__fpm::__fp_nextdown<_Tp>(static_cast<_Tp>(__x));
 }
@@ -3095,13 +3098,13 @@ template <class _Tp = float>
 constexpr _Tp fdim(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fdim<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fdim(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fdim<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fdim(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fdim<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3151,13 +3154,13 @@ template <class _Tp = float>
 constexpr _Tp fmax(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fmax(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fmax(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3207,13 +3210,13 @@ template <class _Tp = float>
 constexpr _Tp fmin(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmin<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fmin(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmin<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fmin(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__cm::fmin<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3263,13 +3266,13 @@ template <class _Tp = float>
 constexpr _Tp fmaximum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, false);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fmaximum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, false);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fmaximum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, false);
 }
@@ -3309,13 +3312,13 @@ template <class _Tp = float>
 constexpr _Tp fmaximum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, true);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fmaximum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, true);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fmaximum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), true, true);
 }
@@ -3355,13 +3358,13 @@ template <class _Tp = float>
 constexpr _Tp fminimum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, false);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fminimum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, false);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fminimum(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, false);
 }
@@ -3401,13 +3404,13 @@ template <class _Tp = float>
 constexpr _Tp fminimum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, true);
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fminimum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, true);
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fminimum_num(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__fpm::__fp_minmax<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), false, true);
 }
@@ -3447,13 +3450,13 @@ template <class _Tp = float>
 constexpr _Tp fma(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::fma<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp fma(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::fma<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp fma(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__cm::fma<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
@@ -3503,13 +3506,13 @@ template <class _Tp = float>
 constexpr _Tp lerp(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__fpm::__fp_lerp<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr _Tp lerp(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__fpm::__fp_lerp<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr _Tp lerp(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__fpm::__fp_lerp<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
@@ -3549,13 +3552,13 @@ template <class _Tp = float>
 constexpr int fpclassify(type_identity_t<_Tp> __x) noexcept {
   return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr int fpclassify(type_identity_t<_Tp> __x) noexcept {
   return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr int fpclassify(type_identity_t<_Tp> __x) noexcept {
   return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, static_cast<_Tp>(__x));
 }
@@ -3595,13 +3598,13 @@ template <class _Tp = float>
 constexpr bool isfinite(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isfinite(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isfinite(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isfinite(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isfinite(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isfinite(static_cast<_Tp>(__x));
 }
@@ -3641,13 +3644,13 @@ template <class _Tp = float>
 constexpr bool isinf(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isinf(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isinf(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isinf(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isinf(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isinf(static_cast<_Tp>(__x));
 }
@@ -3687,13 +3690,13 @@ template <class _Tp = float>
 constexpr bool isnan(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnan(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isnan(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnan(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isnan(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnan(static_cast<_Tp>(__x));
 }
@@ -3733,13 +3736,13 @@ template <class _Tp = float>
 constexpr bool isnormal(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnormal(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isnormal(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnormal(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isnormal(type_identity_t<_Tp> __x) noexcept {
   return __builtin_isnormal(static_cast<_Tp>(__x));
 }
@@ -3779,13 +3782,13 @@ template <class _Tp = float>
 constexpr bool signbit(type_identity_t<_Tp> __x) noexcept {
   return __builtin_signbit(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool signbit(type_identity_t<_Tp> __x) noexcept {
   return __builtin_signbit(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool signbit(type_identity_t<_Tp> __x) noexcept {
   return __builtin_signbit(static_cast<_Tp>(__x));
 }
@@ -3825,13 +3828,13 @@ template <class _Tp = float>
 constexpr bool isgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3871,13 +3874,13 @@ template <class _Tp = float>
 constexpr bool isgreaterequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreaterequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isgreaterequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreaterequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isgreaterequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isgreaterequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3917,13 +3920,13 @@ template <class _Tp = float>
 constexpr bool isless(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isless(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isless(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isless(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isless(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isless(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -3963,13 +3966,13 @@ template <class _Tp = float>
 constexpr bool islessequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool islessequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool islessequal(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessequal(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4009,13 +4012,13 @@ template <class _Tp = float>
 constexpr bool islessgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool islessgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool islessgreater(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_islessgreater(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4055,13 +4058,13 @@ template <class _Tp = float>
 constexpr bool isunordered(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isunordered(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 constexpr bool isunordered(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isunordered(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 constexpr bool isunordered(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __builtin_isunordered(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4101,13 +4104,13 @@ template <class _Tp = float>
 _Tp assoc_laguerre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_laguerre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp assoc_laguerre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_laguerre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp assoc_laguerre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_laguerre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
@@ -4157,13 +4160,13 @@ template <class _Tp = float>
 _Tp assoc_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp assoc_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp assoc_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::assoc_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
@@ -4213,13 +4216,13 @@ template <class _Tp = float>
 _Tp beta(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::beta<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp beta(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::beta<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp beta(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::beta<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4269,13 +4272,13 @@ template <class _Tp = float>
 _Tp comp_ellint_1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_1<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp comp_ellint_1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_1<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp comp_ellint_1(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_1<_Tp>(static_cast<_Tp>(__x));
 }
@@ -4325,13 +4328,13 @@ template <class _Tp = float>
 _Tp comp_ellint_2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_2<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp comp_ellint_2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_2<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp comp_ellint_2(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_2<_Tp>(static_cast<_Tp>(__x));
 }
@@ -4381,13 +4384,13 @@ template <class _Tp = float>
 _Tp comp_ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp comp_ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp comp_ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::comp_ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4437,13 +4440,13 @@ template <class _Tp = float>
 _Tp cyl_bessel_i(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_i<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp cyl_bessel_i(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_i<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp cyl_bessel_i(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_i<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4493,13 +4496,13 @@ template <class _Tp = float>
 _Tp cyl_bessel_j(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_j<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp cyl_bessel_j(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_j<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp cyl_bessel_j(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_j<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4549,13 +4552,13 @@ template <class _Tp = float>
 _Tp cyl_bessel_k(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_k<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp cyl_bessel_k(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_k<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp cyl_bessel_k(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_bessel_k<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4605,13 +4608,13 @@ template <class _Tp = float>
 _Tp cyl_neumann(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_neumann<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp cyl_neumann(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_neumann<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp cyl_neumann(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::cyl_neumann<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4661,13 +4664,13 @@ template <class _Tp = float>
 _Tp ellint_1(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_1<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp ellint_1(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_1<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp ellint_1(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_1<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4717,13 +4720,13 @@ template <class _Tp = float>
 _Tp ellint_2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_2<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp ellint_2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_2<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp ellint_2(type_identity_t<_Tp> __x, type_identity_t<_Tp> y) noexcept {
   return __ycxx::__detail::__sf::ellint_2<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y));
 }
@@ -4773,13 +4776,13 @@ template <class _Tp = float>
 _Tp ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__sf::ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__sf::ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp ellint_3(type_identity_t<_Tp> __x, type_identity_t<_Tp> y, type_identity_t<_Tp> __z) noexcept {
   return __ycxx::__detail::__sf::ellint_3<_Tp>(static_cast<_Tp>(__x), static_cast<_Tp>(y), static_cast<_Tp>(__z));
 }
@@ -4829,13 +4832,13 @@ template <class _Tp = float>
 _Tp expint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::expint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp expint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::expint<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp expint(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::expint<_Tp>(static_cast<_Tp>(__x));
 }
@@ -4885,13 +4888,13 @@ template <class _Tp = float>
 _Tp hermite(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::hermite<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp hermite(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::hermite<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp hermite(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::hermite<_Tp>(n, static_cast<_Tp>(__x));
 }
@@ -4941,13 +4944,13 @@ template <class _Tp = float>
 _Tp laguerre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::laguerre<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp laguerre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::laguerre<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp laguerre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::laguerre<_Tp>(n, static_cast<_Tp>(__x));
 }
@@ -4997,13 +5000,13 @@ template <class _Tp = float>
 _Tp legendre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::legendre<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp legendre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::legendre<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp legendre(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::legendre<_Tp>(n, static_cast<_Tp>(__x));
 }
@@ -5053,13 +5056,13 @@ template <class _Tp = float>
 _Tp riemann_zeta(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::riemann_zeta<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp riemann_zeta(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::riemann_zeta<_Tp>(static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp riemann_zeta(type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::riemann_zeta<_Tp>(static_cast<_Tp>(__x));
 }
@@ -5109,13 +5112,13 @@ template <class _Tp = float>
 _Tp sph_bessel(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_bessel<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp sph_bessel(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_bessel<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp sph_bessel(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_bessel<_Tp>(n, static_cast<_Tp>(__x));
 }
@@ -5165,13 +5168,13 @@ template <class _Tp = float>
 _Tp sph_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp sph_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp sph_legendre(unsigned n, unsigned m, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_legendre<_Tp>(n, m, static_cast<_Tp>(__x));
 }
@@ -5221,13 +5224,13 @@ template <class _Tp = float>
 _Tp sph_neumann(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_neumann<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = double>
-  requires __ycxx::__detail::__fp_is<_Tp, double>
+template <class _Tp = long double>
+  requires __ycxx::__detail::__fp_is<_Tp, long double>
 _Tp sph_neumann(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_neumann<_Tp>(n, static_cast<_Tp>(__x));
 }
-template <class _Tp = long double>
-  requires __ycxx::__detail::__fp_is<_Tp, long double>
+template <class _Tp = double>
+  requires __ycxx::__detail::__fp_is<_Tp, double>
 _Tp sph_neumann(unsigned n, type_identity_t<_Tp> __x) noexcept {
   return __ycxx::__detail::__sf::sph_neumann<_Tp>(n, static_cast<_Tp>(__x));
 }

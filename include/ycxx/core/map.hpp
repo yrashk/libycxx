@@ -275,14 +275,14 @@ private:
   template <class _Kp>
   constexpr mapped_type& __at_impl(const _Kp& __x) const {
     __node_base* n = this->__find_node(__x);
-    if (n == this->__hdr_)
+    if (n == this->__end_node())
       __ycxx::__detail::__throw_out_of_range("std::map::at: key not found");
     return base::value(n).second;
   }
   template <class _Rp, class _Kp>
   constexpr optional<_Rp> __lookup_impl(const _Kp& __x) const {
     __node_base* n = this->__find_node(__x);
-    if (n == this->__hdr_)
+    if (n == this->__end_node())
       return nullopt;
     return optional<_Rp>(base::value(n).second);
   }

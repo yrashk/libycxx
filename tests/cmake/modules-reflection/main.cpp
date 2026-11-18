@@ -2,6 +2,8 @@
 // "libycxx example: ok" and returns 0 when every check holds.
 import std;
 
+extern "C" int side_value(); // side.c
+
 struct point {
   int x;
   int y;
@@ -17,7 +19,7 @@ int main() {
   static_assert(member_count(^^point) == 2);
   constexpr std::string_view second = std::meta::identifier_of(members[1]);
   point p{1, 2};
-  if (second != "y" || p.[:members[1]:] != 2)
+  if (second != "y" || p.[:members[1]:] != side_value())
     return 1;
   std::println("libycxx example: ok");
   return 0;

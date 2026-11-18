@@ -14,7 +14,7 @@
 # -fsanitize=...): a BMI is only valid with the options it was built with (Clang rejects a
 # mismatch, GCC does not always notice one). Then compile and link with
 #   ycxx-cxx clang|gcc --std-modules[=DIR] [flags...] prog.cpp -o prog
-# which adds the flags and links the archive (README, "Modules").
+# which adds the flags and links the archive (docs/USAGE.md, "Modules").
 here=$(cd "$(dirname "$0")/.." && pwd)
 which=$1
 case $which in

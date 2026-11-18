@@ -720,10 +720,13 @@ else()
 endif()
 option(YCXX_MODULES "Build the standard library modules std and std.compat (ycxx::modules; Ninja generators)"
        ${_ycxx_modules_default})
-option(YCXX_MODULES_REFLECTION "Build std and std.compat with -freflection (GCC), so importers see std::meta; every importer gets -freflection"
+option(YCXX_MODULES_REFLECTION "Build std and std.compat with -freflection (GCC), so importers see std::meta; every C++ source of a target that links ycxx::modules gets -freflection"
        OFF)
 if(YCXX_MODULES_REFLECTION AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   message(FATAL_ERROR "libycxx: YCXX_MODULES_REFLECTION needs GCC (16, -freflection); ${CMAKE_CXX_COMPILER_ID} has no reflection")
+endif()
+if(YCXX_MODULES_REFLECTION AND NOT YCXX_MODULES)
+  message(FATAL_ERROR "libycxx: YCXX_MODULES_REFLECTION needs YCXX_MODULES (a Ninja generator and YCXX_PAL=posix)")
 endif()
 # Built per kind (DECISIONS §20.4): the BMIs and the initializers carry the mode's visibility.
 # ycxx::modules is the default kind's; with both kinds built, ycxx::shared_modules is the shared one's.
@@ -756,9 +759,10 @@ function(_ycxx_modules_target target output export linkage)
   # <meta> declares std::meta only with -freflection, and GCC 16 records the setting in the
   # module's CMI: built without it, std::meta is empty for every importer, -freflection or not;
   # built with it, an importer compiled without it crashes GCC (an ICE at the first use of the
-  # module). PUBLIC, so the CMI and each target that links the modules are compiled alike.
+  # module). PUBLIC, so the CMI and each target that links the modules are compiled alike; C++
+  # only (GCC warns about -freflection on a C source).
   if(YCXX_MODULES_REFLECTION)
-    target_compile_options(${target} PUBLIC -freflection)
+    target_compile_options(${target} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-freflection>)
   endif()
 endfunction()
 set(_ycxx_modules_targets "")

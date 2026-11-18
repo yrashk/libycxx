@@ -1,6 +1,6 @@
 # `import std;` and std::meta with libycxx built with YCXX_MODULES_REFLECTION=ON (GCC): the project
 # sets no -freflection of its own; ycxx::modules brings it, for the module's CMI and the program
-# alike (tests/cmake/run.sh, 10).
+# alike (tests/cmake/run.sh, 10), and none to the program's C source (side.c, built with -Werror).
 #   cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-16 -DCMAKE_PREFIX_PATH=<libycxx install prefix>
 # or, with libycxx built as part of the project:
 #   cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=g++-16 -DLIBYCXX_SOURCE_DIR=<libycxx checkout> -DYCXX_MODULES_REFLECTION=ON
@@ -13,5 +13,6 @@ else()
   find_package(libycxx 0.1 CONFIG REQUIRED)
 endif()
 
-add_executable(demo_reflection main.cpp)
+add_executable(demo_reflection main.cpp side.c)
+set_source_files_properties(side.c PROPERTIES COMPILE_OPTIONS -Werror)
 target_link_libraries(demo_reflection PRIVATE ycxx::modules)

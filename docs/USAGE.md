@@ -185,13 +185,15 @@ empty for every importer; built with it, GCC crashes on an importer compiled wit
 modules and every importer must agree:
 
 - CMake: configure libycxx with `-DYCXX_MODULES_REFLECTION=ON` (GCC; Clang 23 has no reflection
-  and is rejected). `ycxx::modules` is then built with `-freflection` and gives it to every target
-  that links it, also from the installed package. Without the option, a target that adds
+  and is rejected). `ycxx::modules` is then built with `-freflection` and gives it to every C++
+  source of a target that links it, also from the installed package. Without the option, a target that adds
   `-freflection` itself sees an empty `std::meta`, with no diagnostic (#15).
 - `tools/ycxx-modules gcc -o build/gcc/modules-refl -freflection` records `-freflection` in the
   directory's `flags`, so `tools/ycxx-cxx gcc --std-modules=build/gcc/modules-refl` adds it.
   `tools/ycxx-cxx` stops with an error when the program's `-freflection`/`-fno-reflection`
-  differs from the modules' setting (instead of an empty `std::meta` or a compiler crash).
+  differs from the modules' setting (instead of an empty `std::meta` or a compiler crash). A
+  modules directory built before libycxx recorded the setting has no `-freflection` in its
+  `flags`: rebuild it.
 
 With a compiler directly: Clang needs `-fmodule-file=std=<dir>/std.pcm` (and
 `-fmodule-file=std.compat=<dir>/std.compat.pcm`), GCC `-fmodules -fmodule-mapper=<dir>/module.map`

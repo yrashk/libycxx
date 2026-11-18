@@ -1663,10 +1663,14 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   rejects a program whose `-freflection`/`-fno-reflection` differs from the modules'. Default
   OFF: the option changes every importer's language (`^^`, splices), which a project chooses.
   Rejected: only documenting "pass `-freflection`" (CMake has no place for a project to pass it
-  to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's workaround);
-  a CMake check of the importers' options (known only at generation, through generator
-  expressions). Left undiagnosed: with the option OFF, a CMake target that adds `-freflection`
-  itself compiles against an empty `std::meta` (GCC accepts that importer; #15).
+  to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's workaround).
+  With the option OFF, a GCC project target that gets `-freflection` from its own options or a
+  dependency's interface while the module does not is a configure error naming the option
+  (`cmake/ycxx-modules-reflection.cmake`, #15): GCC would accept it with an empty `std::meta`.
+  The check runs once at the end of the top-level directory (`cmake_language(DEFER)`), because
+  `ycxx::modules`' interface cannot read its importer's options (a generator expression's
+  self-reference evaluates to nothing); a directory's `add_compile_options` ahead of libycxx and
+  `CMAKE_CXX_FLAGS` reach the module too and are no mismatch. Not looked at: per-source options.
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

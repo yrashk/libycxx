@@ -7,7 +7,9 @@
 
 libycxx implements the C++26 standard library from the working draft, with its own
 Itanium C++ ABI runtime. Use it with GCC 16.2 or Clang 23.1 on Linux and macOS, or use
-its freestanding core on bare metal.
+its freestanding core on bare metal. It is also the standard library of
+[ycxx](https://github.com/yrashk/ycxx); DECISIONS §5 ("Recognizing a compiler") says how a
+compiler is recognized and what it must provide.
 
 It replaces the compiler's usual C++ library when you explicitly select it for a project.
 You can use standard headers or `import std;`.

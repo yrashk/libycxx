@@ -18,8 +18,13 @@
 #if !defined(__cplusplus) || __cplusplus <= 202302L
 #  error "libycxx requires C++26 (-std=c++26 or -std=c++2c)"
 #endif
-#if !defined(__clang__) && !defined(__GNUC__)
-#  error "libycxx supports only GCC and Clang"
+// The compilers libycxx recognizes, by their identity macros only (DECISIONS §5, "Recognizing a
+// compiler"): GCC (__GNUC__ without __clang__), Clang (__clang__) and ycxx (__ycxx__, defining
+// neither). Identity selects nothing else (one exception, _BitInt, below): what a compiler provides
+// is asked of it through __has_builtin, __has_cpp_attribute, the __cpp_* macros and the target
+// macros, so a compiler that answers those truthfully gets the paths it can compile.
+#if !defined(__clang__) && !defined(__GNUC__) && !defined(__ycxx__)
+#  error "libycxx supports GCC, Clang and ycxx (DECISIONS §5: how a compiler is recognized)"
 #endif
 
 // ---------------------------------------------------------------------------------------------
@@ -353,11 +358,13 @@
 #else
 #  define _YCXX_FP_ILOGBNAN 2147483647
 #endif
-// Clang's predefined int_fast16/32 types disagree with glibc on 64-bit Linux (glibc: long).
+// Clang's predefined int_fast16/32 types (16 and 32 bits wide) disagree with glibc on 64-bit Linux
+// (glibc: long); GCC's are long. So the predefined width says whether the compiler disagrees.
 // The <cstdint> limit macros must be usable in #if, so this is a preprocessor switch. Freestanding
 // (no C library; DECISIONS §18) the compiler's own <stdint.h> is the C library's header, and it
 // agrees with the predefined types (Clang's <unwind.h> includes it).
-#if defined(__clang__) && defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8 && __STDC_HOSTED__
+#if defined(__INT_FAST16_WIDTH__) && __INT_FAST16_WIDTH__ < __SIZEOF_LONG__ * __CHAR_BIT__ && \
+    defined(__gnu_linux__) && __SIZEOF_POINTER__ == 8 && __STDC_HOSTED__
 #  define _YCXX_FAST16_IS_LONG 1
 #else
 #  define _YCXX_FAST16_IS_LONG 0
@@ -366,12 +373,16 @@
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace __cfg {
-#if defined(__clang__)
-inline constexpr bool __y_clang = true;
+// No constant names the compiler: what code needs from one is probed (DECISIONS §5).
+// Whether a constant evaluation can evaluate a throw expression at all (P3068's core-language
+// part; GCC 16 can, also under -fno-exceptions, where none is ever reached; Clang 23 cannot).
+// Where it cannot, a function about to throw calls a non-constexpr function first, whose name the
+// diagnostic shows (format_base.hpp).
+#if defined(__cpp_constexpr_exceptions)
+inline constexpr bool __constexpr_throw = true;
 #else
-inline constexpr bool __y_clang = false;
+inline constexpr bool __constexpr_throw = false;
 #endif
-inline constexpr bool __gcc = !__y_clang;
 
 // The target's C library family (see _YCXX_TARGET_DARWIN): Darwin's libSystem, or else the Linux
 // C libraries' conventions.
@@ -586,6 +597,9 @@ using __gnu_float128 = __fp_unavailable<-128>;
 
 // Bit-precise integers (_BitInt(N); a Clang extension in C++). bitint_info<T>::width is 0 for
 // every other type, so library code tests `__bitint_info<_Tp>::width != 0` with no #if.
+// The one feature still chosen by identity: no __has_* probe answers whether _BitInt can be used
+// in C++, and __BITINT_MAXWIDTH__ alone is a target macro that a compiler may define (ycxx copies
+// Clang's) without accepting the type, a parse error that cannot be probed in-language.
 template <class _Tp>
 struct __bitint_info {
   static constexpr int width = 0;
@@ -606,22 +620,71 @@ struct __bitint_info<signed _BitInt(_Np)> {
 template <class _Tp>
 inline constexpr int __bitint_width = __bitint_info<__remove_cv(_Tp)>::width;
 
-// remove_reference: the builtin is spelled differently.
-#if defined(__clang__)
+// remove_reference: the builtin is spelled differently (Clang: __remove_reference_t, GCC:
+// __remove_reference); a compiler with neither gets partial specializations. Type-taking builtins,
+// so __has_builtin decides (§1 rule 4).
+#if __has_builtin(__remove_reference_t)
 template <class _Tp>
 using __remove_ref_t = __remove_reference_t(_Tp);
-#else
+#elif __has_builtin(__remove_reference)
 template <class _Tp>
 using __remove_ref_t = __remove_reference(_Tp);
+#else
+template <class _Tp>
+struct __remove_ref_impl {
+  using type = _Tp;
+};
+template <class _Tp>
+struct __remove_ref_impl<_Tp&> {
+  using type = _Tp;
+};
+template <class _Tp>
+struct __remove_ref_impl<_Tp&&> {
+  using type = _Tp;
+};
+template <class _Tp>
+using __remove_ref_t = typename __remove_ref_impl<_Tp>::type;
 #endif
 
-// make_integer_seq<Seq, T, N> = Seq<T, 0, ..., N-1>: different builtins.
-#if defined(__clang__)
+// make_integer_seq<Seq, T, N> = Seq<T, 0, ..., N-1>: different builtins (Clang: __make_integer_seq,
+// GCC: __integer_pack); a compiler with neither builds the pack by doubling, so N needs only
+// log2(N) levels of template instantiation.
+#if __has_builtin(__make_integer_seq)
 template <template <class _Up, _Up...> class _Seq, class _Tp, _Tp _Np>
 using __y_make_integer_seq = __make_integer_seq<_Seq, _Tp, _Np>;
-#else
+#elif __has_builtin(__integer_pack)
 template <template <class _Up, _Up...> class _Seq, class _Tp, _Tp _Np>
 using __y_make_integer_seq = _Seq<_Tp, __integer_pack(_Np)...>;
+#else
+template <class _Tp, _Tp... _Is>
+struct __int_pack {
+  template <template <class _Up, _Up...> class _Seq>
+  using __apply = _Seq<_Tp, _Is...>;
+};
+// 0, ..., M-1 -> 0, ..., 2M-1, and 2M appended when _Odd.
+template <class _Pack, unsigned long long _Mp, bool _Odd>
+struct __int_pack_double;
+template <class _Tp, _Tp... _Is, unsigned long long _Mp>
+struct __int_pack_double<__int_pack<_Tp, _Is...>, _Mp, false> {
+  using type = __int_pack<_Tp, _Is..., static_cast<_Tp>(_Is + _Mp)...>;
+};
+template <class _Tp, _Tp... _Is, unsigned long long _Mp>
+struct __int_pack_double<__int_pack<_Tp, _Is...>, _Mp, true> {
+  using type = __int_pack<_Tp, _Is..., static_cast<_Tp>(_Is + _Mp)..., static_cast<_Tp>(2 * _Mp)>;
+};
+template <class _Tp, unsigned long long _Np>
+struct __int_pack_make {
+  using type = typename __int_pack_double<typename __int_pack_make<_Tp, _Np / 2>::type, _Np / 2, _Np % 2 != 0>::type;
+};
+template <class _Tp>
+struct __int_pack_make<_Tp, 0> {
+  using type = __int_pack<_Tp>;
+};
+// [intseq.make]: N must not be negative.
+template <template <class _Up, _Up...> class _Seq, class _Tp, _Tp _Np>
+  requires(!(_Np < _Tp(0)))
+using __y_make_integer_seq =
+    typename __int_pack_make<_Tp, static_cast<unsigned long long>(_Np)>::type::template __apply<_Seq>;
 #endif
 
 }} // namespace __ycxx::__detail

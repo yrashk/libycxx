@@ -11,7 +11,7 @@ variable templates. The preprocessor is used only where the language cannot do t
    target or language-mode macros (`__clang__`, `__GNUC__`, `__cpp_exceptions`,
    `__SIZEOF_INT128__`, `__has_builtin`, `__STDCPP_FLOAT16_T__`, ...).
 2. **Convert once, then use the language.** Each answer becomes a `constexpr` value in
-   `ycxx::detail::cfg` (`cfg::clang`, `cfg::exceptions`, `cfg::hardened`, ...) or a type alias or
+   `ycxx::detail::cfg` (`cfg::exceptions`, `cfg::hardened`, ...) or a type alias or
    alias template in `ycxx::detail` (`int128`, `float16`, `remove_ref_t`, `make_integer_seq`, ...).
    Library code consumes them with `if constexpr`, `requires`, and templates.
    An unavailable type aliases a distinct incomplete type (`fp_unavailable<N>`,
@@ -805,6 +805,47 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 | `__builtin_type_order` | yes | no | `std::type_order` via a portable fallback (TBD) |
 | `__builtin_is_structural` | yes | no | `std::is_structural` declared on GCC only (`#if`, type-taking) |
 | reflection (`^^`, metafunctions) | yes (`-freflection`) | no | `<meta>` empty on Clang (§13) |
+
+### Recognizing a compiler
+
+`config.hpp` recognizes a compiler by its identity macros and by nothing else: GCC (`__GNUC__`
+without `__clang__`), Clang (`__clang__`) and ycxx (`__ycxx__`, the compiler libycxx is the
+standard library of, which defines neither: github.com/yrashk/ycxx, its DECISIONS §1.5). Any other
+compiler stops at the `#error` there. Recognition only lets a compiler past that `#error`: no
+constant names the compiler, and no path is chosen by its name. Everything a compiler provides is
+asked of it:
+
+- **builtins** with `__has_builtin` (type-taking ones, `__remove_reference_t` / `__remove_reference`,
+  `__make_integer_seq` / `__integer_pack`) or the in-language probes of §1 rule 4 (function-style
+  ones). Where a compiler has none of a builtin's spellings, `config.hpp` has a portable fallback
+  (`remove_reference` by partial specialization, `make_integer_sequence` by doubling a pack) or the
+  library entity is constrained away;
+- **language features** with the `__cpp_*` feature-test macros (`__cpp_exceptions`,
+  `__cpp_constexpr_exceptions`, `__cpp_impl_reflection`, ...);
+- **the target** with the target macros (`__SIZEOF_*__`, `__*_TYPE__`, `__*_WIDTH__`,
+  `__APPLE__`, `__aarch64__`, `__GCC_ATOMIC_*_LOCK_FREE`, ...);
+- **attributes** are written directly (`[[__gnu__::__visibility__("hidden")]]`, `[[__gnu__::__cold__]]`):
+  a compiler ignores the attributes it does not know ([dcl.attr.grammar]), so no probe is needed
+  to parse them. The few that carry meaning, rather than a hint (`__may_alias__` on the atomic
+  access types, `__vector_size__` in `<simd>`), are needed by a compiler for those headers to work.
+
+One feature is still chosen by identity: `_BitInt` in C++ (Clang only), for which no probe exists
+(`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang without accepting the type).
+
+So adding a compiler takes one change: its identity macro in the `#error`'s condition. The
+compiler must answer the probes truthfully (0 for what it does not implement) and provide what
+libycxx cannot do without: `#include_next` and `__has_include_next` (the C library wrappers), the
+target macros GCC and Clang predefine, and the builtins used unconditionally (the trait builtins of
+`prim_traits.hpp` and `type_traits.hpp`, `__builtin_*` arithmetic, `__atomic_*`). Until it has a
+builtin, the headers that need it fail to compile, not to preprocess.
+
+`tools/check_foreign_compiler.py` (the `policy` stage of `tools/test`) checks this with Clang
+playing a foreign compiler: Clang's identity macros removed and `__ycxx__` defined, once with
+Clang's own probe answers and once with every probe answering 0 (ycxx's today). In both, every
+public header preprocesses without an `#error`, and `config.hpp` takes the path the probes select
+(Clang's builtins, then the fallbacks); with Clang's answers every core and freestanding header
+compiles freestanding, and with zero answers `tests/foreign/fallbacks.cpp` tests the fallbacks.
+It also pins GCC's and Clang's own choices.
 
 ## 6. Development process
 

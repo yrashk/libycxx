@@ -1674,8 +1674,11 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   It runs at the end of the top-level directory (add_subdirectory) or of `find_package`'s
   (`cmake_language(DEFER)`), because `ycxx::modules`' interface cannot read its importer's
   options (a generator expression's self-reference evaluates to nothing). Options that reach the
-  interface units too are no mismatch: a directory's `add_compile_options` ahead of libycxx,
-  `CMAKE_CXX_FLAGS`, the options exported for the units. Not looked at: per-source options, the
+  interface units too are no mismatch: `CMAKE_CXX_FLAGS`; with add_subdirectory, a directory's
+  `add_compile_options` ahead of libycxx; with the installed package, the options exported for
+  the units (`IMPORTED_CXX_MODULES_COMPILE_OPTIONS`). An installed package's interface units do
+  not get the importing directory's `add_compile_options` before CMake 4.4 (checked with 3.31),
+  so there it is a mismatch. Not looked at: per-source options, the
   `COMPILE_FLAGS` property, `CMAKE_CXX_FLAGS` set in a subdirectory, a dependency linked through
   a generator expression (#25).
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include

@@ -7,7 +7,8 @@
 # With libycxx built without the option, YCXX_TEST_OWN_REFLECTION gives the program -freflection
 # itself: "target" (its own options) and "dependency" (a linked interface library's) stop the
 # configuration before CMake 4.4 (cmake/ycxx-modules-reflection.cmake) and build with CMake 4.4
-# and later; "directory" (add_compile_options ahead of libycxx, which the module gets too) builds.
+# and later; so does "directory" (add_compile_options ahead of libycxx) with find_package, while
+# with add_subdirectory the module gets it too and it builds with any CMake.
 cmake_minimum_required(VERSION 3.28)
 project(ycxx_test_modules_reflection LANGUAGES C CXX)
 

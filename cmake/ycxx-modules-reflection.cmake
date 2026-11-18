@@ -14,8 +14,9 @@
 #     have it, which include an add_compile_options of a directory above libycxx's made before
 #     add_subdirectory;
 #   - installed package (the directory is find_package's): when the options exported for the
-#     interface units or the target's directory have it (the importing project compiles the
-#     interface units with that directory's options).
+#     interface units have it (IMPORTED_CXX_MODULES_COMPILE_OPTIONS). The importing project
+#     compiles the interface units with those and CMAKE_CXX_FLAGS only: not with the directory's
+#     add_compile_options (CMake 3.31: std::meta is empty then).
 # CMAKE_CXX_FLAGS of the top-level directory reaches the module and the program alike. Not looked
 # at: per-source options, the COMPILE_FLAGS property, CMAKE_CXX_FLAGS set in a subdirectory, and
 # a dependency linked through a generator expression.
@@ -123,9 +124,6 @@ function(_ycxx_check_modules_reflection scope)
     get_target_property(imported "${module}" IMPORTED)
     if(imported)
       get_target_property(module_flags "${module}" IMPORTED_CXX_MODULES_COMPILE_OPTIONS)
-      get_target_property(dir ${t} SOURCE_DIR)
-      get_property(dir_opts DIRECTORY "${dir}" PROPERTY COMPILE_OPTIONS)
-      list(APPEND module_flags ${dir_opts})
     else()
       get_target_property(module_flags "${module}" COMPILE_OPTIONS)
     endif()

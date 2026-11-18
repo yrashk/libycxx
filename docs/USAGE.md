@@ -190,8 +190,9 @@ modules and every importer must agree:
   target that adds `-freflection` itself (its own options or a linked library's) works with
   CMake 4.4 and later, which compile the module's interface units for it with its options; with
   older CMake its `std::meta` would be empty, so the configuration stops with a message naming
-  the option (an `add_compile_options` ahead of libycxx and `CMAKE_CXX_FLAGS` reach the module
-  too and are fine).
+  the option. `CMAKE_CXX_FLAGS` reaches the module too and is fine, and so is an
+  `add_compile_options` ahead of `add_subdirectory` (libycxx built as part of the project), but
+  not one with the installed package: before CMake 4.4 its module does not get it.
 - `tools/ycxx-modules gcc -o build/gcc/modules-refl -freflection` records `-freflection` in the
   directory's `flags`, so `tools/ycxx-cxx gcc --std-modules=build/gcc/modules-refl` adds it.
   `tools/ycxx-cxx` stops with an error when the program's `-freflection`/`-fno-reflection`

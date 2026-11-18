@@ -29,7 +29,8 @@
 #      the modules; the option is rejected without YCXX_MODULES, and on Clang at configure time.
 #      Without it, a target that gets -freflection itself (its options, a dependency's interface):
 #      before CMake 4.4 std::meta is empty for it and the configuration stops, both ways; CMake 4.4
-#      and later build it (find_package: and run it); an add_compile_options ahead of libycxx works;
+#      and later build it (find_package: and run it); an add_compile_options ahead of libycxx: the
+#      same with find_package, accepted with add_subdirectory (the module gets it too);
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -272,7 +273,8 @@ for c in $compilers; do
     # with it, so the program fails to build (std::meta is empty; shown with the check switched
     # off) and cmake/ycxx-modules-reflection.cmake stops the configuration instead; CMake 4.4 and
     # later build the program its own copy of them, so it builds and runs. An add_compile_options
-    # ahead of libycxx reaches the module too: it builds and runs with any CMake.
+    # ahead of libycxx is the same with find_package (the installed module's interface units do
+    # not get it before 4.4), while with add_subdirectory the module gets it too: accepted.
     cmake_ver=$(cmake --version | sed -n 's/^cmake version \([0-9]*\)\.\([0-9]*\).*/\1 \2/p')
     old_cmake=; [ "${cmake_ver% *}" -lt 4 ] || { [ "${cmake_ver% *}" = 4 ] && [ "${cmake_ver#* }" -lt 4 ]; } && old_cmake=1
     nocheck=$d/no-reflection-check.cmake
@@ -291,7 +293,7 @@ for c in $compilers; do
           else
             bad $c "modules ($how): $what rejected (see $log)"
           fi
-        elif [ $own != directory ] && [ -n "$old_cmake" ]; then
+        elif [ -n "$old_cmake" ]; then
           if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
                $src -DYCXX_TEST_OWN_REFLECTION=$own; then
             bad $c "modules ($how, CMake < 4.4): $what accepted against std built without it"

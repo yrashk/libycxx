@@ -52,12 +52,13 @@ fi
 rm -f "$dir/libycxx-modules.a"
 ar rcs "$dir/libycxx-modules.a" "$dir/std.o" "$dir/std.compat.o"
 # -freflection (std::meta; the last of -freflection/-fno-reflection decides) goes into the flags:
-# the BMI records it, and GCC 16 crashes on an importer compiled without it (README, "Modules").
+# the BMI records it, and GCC 16 crashes on an importer compiled without it (docs/USAGE.md, "Modules").
+reflection=
 for a in "$@"; do
   case $a in
     -freflection) reflection=1 ;;
     -fno-reflection) reflection= ;;
   esac
 done
-[ -n "${reflection:-}" ] && use="$use -freflection"
+[ -n "$reflection" ] && use="$use -freflection"
 printf '%s\n' "$use" >"$dir/flags"

@@ -3,14 +3,22 @@
 //     (directly or indirectly), so constructing distinct locale and facet objects from several
 //     threads at once must be free of data races;
 //   [locale.cons]/2 (locale(const char* std_name)): a locale using the named locale's facets, whose
-//     name() is std_name; constructing it does not change the C locale (the global C++ locale
-//     stays classic: [locale.statics]);
+//     name() is std_name;
 //   [locale.numpunct.byname], [locale.moneypunct.byname], [locale.ctype.byname],
-//     [locale.collate.byname]: the byname facets take their values from the named locale.
+//     [locale.collate.byname], [locale.messages.byname]: the byname facets take their values from
+//     the named locale; [locale.messages.members]/1, [locale.messages.virtuals]: open of a
+//     catalog that cannot be opened returns a value < 0;
+//   [re.traits]/8: lookup_collatename of a valid collating element (a single character) returns
+//     it; of a sequence that is not one, an empty string (under an imbued named locale);
+//   [locale.statics]/1-3: locale::global sets the global locale (a named one also sets the C
+//     locale, setlocale(LC_ALL, name)) and returns the previous value of locale(); no other
+//     library function changes locale().
 // 8 threads, released together by a latch, each construct, use and destroy named locales and
 // byname facets (each facet is destroyed at once) for several locales, mixing the kinds, for
-// about 0.6 s. Every value must equal the value the same construction gave before any thread
-// started (and decimal_point / currency symbols agree with the C library's localeconv). Run
+// about 0.6 s, while a ninth thread keeps switching the global locale between named, composite
+// and classic locales. Every value must equal the value the same construction gave before any
+// thread started (and decimal_point / currency symbols agree with the C library's localeconv).
+// After the join, with the global locale set back to classic, the C locale is "C" again. Run
 // under ThreadSanitizer as well.
 // FLAGS: -pthread
 #include <locale.h>
@@ -19,6 +27,7 @@
 #include <chrono>
 #include <latch>
 #include <locale>
+#include <regex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -38,6 +47,9 @@ struct ctype_n : std::ctype_byname<wchar_t> {
 };
 struct collate_n : std::collate_byname<char> {
   using std::collate_byname<char>::collate_byname;
+};
+struct messages_n : std::messages_byname<char> {
+  using std::messages_byname<char>::messages_byname;
 };
 
 // Byte strings whose order is compared (including bytes >= 0x80, which name letters in the
@@ -135,7 +147,9 @@ int main() {
 
   constexpr int n_threads = 8;
   std::latch start(n_threads);
+  std::latch& start_g = start;  // the ninth thread waits for the release, without counting
   std::atomic<long> total{0};
+  std::atomic<int> finished{0};
   std::vector<std::thread> ts;
   for (int k = 0; k < n_threads; ++k)
     ts.emplace_back([&, k] {
@@ -145,7 +159,7 @@ int main() {
       for (; it < 200 || std::chrono::steady_clock::now() < deadline; ++it) {
         const expected& e = ref[(it * 3 + k) % n_names];
         const char* n = e.name;
-        switch ((it + k) % 7) {
+        switch ((it + k) % 10) {
         case 0: {
           numpunct_n np(n);
           CHECK_SAY(np.decimal_point() == e.point && np.thousands_sep() == e.sep && np.grouping() == e.grouping,
@@ -190,6 +204,22 @@ int main() {
                     "%s: locale facets", n);
           break;
         }
+        case 7: {
+          std::regex_traits<char> tr;
+          tr.imbue(std::locale(n));
+          static const char a[] = "a", z[] = "no-such-collating-element";
+          CHECK_SAY(tr.lookup_collatename(a, a + 1) == "a", "%s: lookup_collatename(\"a\")", n);
+          CHECK_SAY(tr.lookup_collatename(z, z + sizeof z - 1).empty(), "%s: lookup_collatename(nonsense)", n);
+          CHECK(tr.getloc().name() == n);
+          break;
+        }
+        case 8: {
+          messages_n m(n);
+          const std::locale l(n);
+          std::messages_base::catalog c = m.open("/nonexistent/ycxx-no-such-catalog", l);
+          CHECK_SAY(c < 0, "%s: messages open of a nonexistent catalog returned %d", n, static_cast<int>(c));
+          break;
+        }
         default: {
           // A locale holding byname facets, destroyed with the locale.
           std::locale l(std::locale::classic(), new std::collate_byname<char>(n));
@@ -203,17 +233,44 @@ int main() {
           break;
         }
         }
-        if (it % 64 == 0) {
-          // The C locale and the global C++ locale are untouched.
-          CHECK(strcmp(setlocale(LC_ALL, nullptr), "C") == 0);
-          CHECK(std::locale().name() == "C" && std::locale::classic().name() == "C");
-        }
+        if (it % 64 == 0)
+          CHECK(std::locale::classic().name() == "C");
       }
       total += it;
+      ++finished;
     });
+  // The ninth thread: locale::global, while the others construct.
+  long globals = 0;
+  std::thread g([&] {
+    const std::locale classic = std::locale::classic();
+    std::locale last = std::locale();
+    CHECK(last == classic);
+    start_g.wait();
+    for (long i = 0; i < 60 || finished.load() < n_threads; ++i, ++globals) {
+      const char* n = names[i % n_names];
+      std::locale next = i % 3 == 0   ? std::locale(n)
+                         : i % 3 == 1 ? std::locale(classic, n, std::locale::numeric | std::locale::monetary)
+                                      : classic;
+      std::locale prev = std::locale::global(next);
+      CHECK(prev == last);  // /2: the previous value of locale()
+      CHECK(std::locale() == next);
+      if (i % 3 == 0)
+        CHECK_SAY(std::locale().name() == n && std::use_facet<std::numpunct<char>>(std::locale()).decimal_point() ==
+                                                   ref[i % n_names].point,
+                  "global(%s)", n);
+      if (i % 3 == 1)
+        CHECK(std::use_facet<std::numpunct<char>>(std::locale()).decimal_point() == ref[i % n_names].point &&
+              std::use_facet<mp_local>(std::locale()).curr_symbol() == ref[i % n_names].curr[0]);
+      last = next;
+    }
+    std::locale::global(classic);
+  });
   for (auto& t : ts)
     t.join();
-  CHECK(total.load() >= n_threads * 200L);
+  g.join();
+  CHECK(total.load() >= n_threads * 200L && globals >= 60);
+  // [locale.statics]/1: classic has the name "C", so global(classic) sets the C locale to "C".
+  std::locale::global(std::locale::classic());
   CHECK(strcmp(setlocale(LC_ALL, nullptr), "C") == 0 && std::locale().name() == "C");
   // The values are still right after the storm.
   for (int i = 0; i < n_names; ++i) {

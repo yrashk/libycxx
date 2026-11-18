@@ -849,6 +849,15 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
    locale, disables `-Wdeprecated-declarations`.
 6. **Gate before pushing:** `tools/check-all`, plus the affected conformance directories on
    both compilers and both suites.
+   - **CI after pushing** (`.github/workflows/ci.yml`) runs once per change:
+     - on `pull_request`, and on `push` only to main. A `push` trigger on every branch ran each
+       push to a PR branch twice.
+     - in one concurrency group per PR (or ref), `ci-<PR number or ref>`, with
+       `cancel-in-progress`, so a newer push cancels the run it supersedes.
+
+     The reason is the macOS job. It takes about an hour, and the account's macOS runners
+     (5 concurrent jobs) are shared with its other repositories, whose jobs queue behind
+     libycxx's.
 7. **Test scripts are traceable.** `tools/test` is the single driver. Each stage prints the
    commands it runs, shows live progress and ends with a summary; the full logs go to
    `build/test-logs/`. The scripts are POSIX sh and POSIX awk, so they run unchanged on Linux

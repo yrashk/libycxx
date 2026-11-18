@@ -3,10 +3,16 @@
 // Representation: a circular doubly linked list through a sentinel node ({prev, next}; end()
 // is the sentinel), the element count and the node allocator (the allocator rebound to the node
 // type; elements are constructed and destroyed through it). sent_ points to the sentinel, or is
-// null while the list has never held an element. At run time the sentinel is head_, a member;
-// during constant evaluation it is allocated (with std::allocator) instead, because GCC 16
-// mis-evaluates objects reached through pointers into a returned (NRVO) object, which an
-// embedded sentinel always is. Moves and swaps exchange node rings, never sentinels.
+// null until it is set up. Insertions never change end() ([list.modifiers]/2), also for a list
+// that has never held an element, yet no constructor sets the sentinel up: one that may be
+// constant-evaluated can neither store the object's own address nor allocate. At run time the
+// sentinel is head_, a member, which is end() from construction on; its links are set up by the
+// first insertion. During constant evaluation it is allocated (with std::allocator) instead,
+// because GCC 16 mis-evaluates objects reached through pointers into a returned (NRVO) object,
+// which an embedded sentinel always is, by the first member that needs it, const ones (end())
+// included: sent_ is mutable, so no iterator exists before the sentinel does (and a list cannot
+// be a constexpr variable: its destructor reads sent_). Moves and swaps exchange node rings,
+// never sentinels.
 // A node keeps its element in a union member, so the node can exist before and after its
 // element. Multi-element insertions build a detached chain first and splice it in, so an
 // exception leaves the list unchanged. sort is a bottom-up merge sort of the nodes
@@ -146,27 +152,45 @@ private:
   static constexpr bool __always_equal = info::__always_equal;
 
   __node_base __head_ = {nullptr, nullptr};
-  __node_base* __sent_ = nullptr;
+  mutable __node_base* __sent_ = nullptr;
   size_type __size_ = 0;
   [[no_unique_address]] __node_alloc __na_;
 
   // ---- nodes ----
-  constexpr __node_base* __end_node() const noexcept { return __sent_; }
-  constexpr __node_base* __first_node() const noexcept { return __sent_ ? __sent_->next : nullptr; }
-  constexpr __node_base* sentinel() {
+  // During constant evaluation: the sentinel, allocated by the first call.
+  constexpr __node_base* __heap_sentinel() const noexcept {
     if (!__sent_) {
-      if consteval {
-        __sent_ = allocator<__node_base>().allocate(1);
-        std::construct_at(__sent_);
-      } else {
-        __sent_ = __builtin_addressof(__head_);
-      }
+      __sent_ = allocator<__node_base>().allocate(1);
+      std::construct_at(__sent_);
       __sent_->prev = __sent_->next = __sent_;
     }
     return __sent_;
   }
-  // The node of position p (the sentinel, created if need be, for end()).
-  constexpr __node_base* __pos_node(const_iterator p) { return p.__n_ ? p.__n_ : sentinel(); }
+  // end(): at run time head_, even before the first insertion set up its links.
+  constexpr __node_base* __end_node() const noexcept {
+    if consteval {
+      return __heap_sentinel();
+    }
+    return const_cast<__node_base*>(__builtin_addressof(__head_));
+  }
+  constexpr __node_base* __first_node() const noexcept { return __sent_ ? __sent_->next : __end_node(); }
+  // The sentinel with its links set up.
+  constexpr __node_base* sentinel() {
+    if consteval {
+      return __heap_sentinel();
+    }
+    if (!__sent_) {
+      __sent_ = __builtin_addressof(__head_);
+      __sent_->prev = __sent_->next = __sent_;
+    }
+    return __sent_;
+  }
+  // The node of position p, the sentinel's links set up first (p may be end() of a list that has
+  // never held an element: head_, at run time, before its links are set up).
+  constexpr __node_base* __pos_node(const_iterator p) {
+    __node_base* const s = sentinel();
+    return p.__n_ ? p.__n_ : s;
+  }
   static constexpr _Tp& value(__node_base* n) noexcept { return static_cast<node*>(n)->value; }
 
   template <class... _Args>
@@ -270,8 +294,9 @@ private:
     __node_base* const __f = c.first;
     if (!__f)
       return __pos;
+    __node_base* const s = sentinel(); // pos may be head_ before its links are set up
     if (!__pos)
-      __pos = sentinel();
+      __pos = s;
     __node_base* p = __pos->prev;
     p->next = __f;
     __f->prev = p;

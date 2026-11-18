@@ -161,6 +161,13 @@ struct __shared_stop_state {
 template <template <class> class>
 struct __check_type_alias_exists;
 
+// A const _Token object of unknown value: unstoppable_token's stand-in for its requires-parameter,
+// which has the same type. Declared only, as nothing ever evaluates it at run time. An object
+// rather than a reference: a constant evaluation may copy an empty object or take the address
+// of an unknown object, but not of the referent of an unknown reference.
+template <class _Token>
+extern const _Token __unknown_token;
+
 }} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
@@ -186,9 +193,16 @@ concept stoppable_token = requires(const _Token __tok) {
   { _Token(__tok) } noexcept;
 } && copyable<_Token> && equality_comparable<_Token>;
 
+// COMPILER-BUG(gcc): GCC 16 ICEs (tsubst_expr) in an importer of the std module when a
+// requires-parameter, of object or reference type, appears in a template argument inside a
+// requires-expression (nested, simple or type requirement), as in the draft's
+// `requires(const Token tok) { requires bool_constant<(!tok.stop_possible())>::value; }`.
+// A namespace-scope const _Token of unknown value takes tok's place: like tok, it is an object
+// not usable in constant expressions ([expr.const]), so the call is a constant expression in the
+// same cases. Own test: modules/import_std_unstoppable_token_gcc_ice.
 template <class _Token>
-concept unstoppable_token = stoppable_token<_Token> && requires(const _Token __tok) {
-  requires bool_constant<(!__tok.stop_possible())>::value;
+concept unstoppable_token = stoppable_token<_Token> && requires {
+  requires bool_constant<(!__ycxx::__detail::__unknown_token<_Token>.stop_possible())>::value;
 };
 
 struct nostopstate_t {

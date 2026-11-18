@@ -179,9 +179,24 @@ tools/ycxx-modules gcc -o build/gcc/modules-O2 -O2     # other flags: another di
 tools/ycxx-cxx gcc --std-modules=build/gcc/modules-O2 -O2 hello.cpp -o hello
 ```
 
+Reflection (`std::meta`, GCC 16 only): `<meta>` declares its names only with `-freflection`, and
+GCC records the setting in the module's compiled interface. Built without it, `std::meta` is
+empty for every importer; built with it, GCC crashes on an importer compiled without it. So the
+modules and every importer must agree:
+
+- CMake: configure libycxx with `-DYCXX_MODULES_REFLECTION=ON` (GCC; Clang 23 has no reflection
+  and is rejected). `ycxx::modules` is then built with `-freflection` and gives it to every target
+  that links it, also from the installed package. Without the option, a target that adds
+  `-freflection` itself sees an empty `std::meta`, with no diagnostic.
+- `tools/ycxx-modules gcc -o build/gcc/modules-refl -freflection` records `-freflection` in the
+  directory's `flags`, so `tools/ycxx-cxx gcc --std-modules=build/gcc/modules-refl` adds it.
+  `tools/ycxx-cxx` stops with an error when the program's `-freflection`/`-fno-reflection`
+  differs from the modules' setting (instead of an empty `std::meta` or a compiler crash).
+
 With a compiler directly: Clang needs `-fmodule-file=std=<dir>/std.pcm` (and
 `-fmodule-file=std.compat=<dir>/std.compat.pcm`), GCC `-fmodules -fmodule-mapper=<dir>/module.map`
-(the file `tools/ycxx-modules` writes), plus `<dir>/libycxx-modules.a` when linking, on top of
+(the file `tools/ycxx-modules` writes; and `-freflection` if the modules were built with it: all
+of these are in `<dir>/flags`), plus `<dir>/libycxx-modules.a` when linking, on top of
 the flags `tools/ycxx-cxx` passes for any libycxx program (`-std=c++26 -nostdinc++ -isystem
 include`, `-nostdlib++` and the archives).
 

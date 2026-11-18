@@ -1642,6 +1642,22 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   and flags (`tests/ycxxlit/stdmodules.py`, cached by the state of the sources). CMake's
   `CMAKE_CXX_MODULE_STD` (`import std` without naming a target) needs CMake >= 3.30 and is not
   supported: it would build the toolchain's own library's module.
+- **Reflection is a property of the build, kept alike for the module and its importers.** The
+  `std::meta` region is exported under `#if _YCXX_HAS_REFLECTION`, so it is in the module only
+  when the module is built with `-freflection`, and GCC 16 records the setting in the CMI: built
+  without it, `std::meta` is empty for every importer; built with it, an importer compiled
+  without it crashes GCC (STATUS, known compiler gaps). Nothing in the module can diagnose this
+  (the crash comes first), so the tools do: CMake's `YCXX_MODULES_REFLECTION` (default OFF, GCC
+  only) adds `-freflection` as a PUBLIC option of `ycxx::modules`, so the CMI and every target
+  that links it (from the installed package too) are compiled alike; `tools/ycxx-modules` writes
+  `-freflection` into the `flags` that `tools/ycxx-cxx --std-modules` adds, and `tools/ycxx-cxx`
+  rejects a program whose `-freflection`/`-fno-reflection` differs from the modules'. Default
+  OFF: the option changes every importer's language (`^^`, splices), which a project chooses.
+  Rejected: only documenting "pass `-freflection`" (CMake has no place for a project to pass it
+  to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's workaround);
+  a CMake check of the importers' options (known only at generation, through generator
+  expressions). Left undiagnosed: with the option OFF, a CMake target that adds `-freflection`
+  itself compiles against an empty `std::meta` (GCC accepts that importer).
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

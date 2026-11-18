@@ -149,10 +149,12 @@ public:
   explicit task_scheduler(_Sch&& __sch, _Allocator __alloc = {});
   // Equivalent to the draft's defaulted ones: a copy refers to an equal scheduler.
   task_scheduler(const task_scheduler& __o) noexcept : __b_(__o.__b_->__ycxx_copy_to(__buf_)) {}
+  // Copies __o first: __o may be owned by the scheduler this one is about to destroy.
   task_scheduler& operator=(const task_scheduler& __o) noexcept {
     if (this != __builtin_addressof(__o)) {
+      task_scheduler __copy(__o);
       __b_->~__exec_ts_backend_base();
-      __b_ = __o.__b_->__ycxx_copy_to(__buf_);
+      __b_ = __copy.__b_->__ycxx_copy_to(__buf_);
     }
     return *this;
   }
@@ -262,7 +264,7 @@ class task_scheduler::__backend_for : public __ycxx::__adl_free::__exec_ts_backe
 
 public:
   explicit __backend_for(_Sch __sch) : __sched_(static_cast<_Sch&&>(__sch)) {}
-  __backend_for(const __backend_for& __o) noexcept : __sched_(__o.__sched_) {}
+  __backend_for(const __backend_for& __o) noexcept(is_nothrow_copy_constructible_v<_Sch>) : __sched_(__o.__sched_) {}
 
   void schedule(parallel_scheduler_replacement::receiver_proxy& r, span<byte> s) noexcept override {
     using __op_t = connect_result_t<schedule_result_t<_Sch&>, __wrap_rcvr>;
@@ -281,12 +283,13 @@ public:
   const void* __ycxx_sched() const noexcept override { return __builtin_addressof(__sched_); }
   forward_progress_guarantee __ycxx_fpg() const noexcept override { return get_forward_progress_guarantee(__sched_); }
   bool __ycxx_equal_to(const task_scheduler& __lhs) const noexcept override { return __lhs == __sched_; }
-  // Only for a backend in place (task_scheduler::__in_place: Sch's copy does not throw).
+  // Only for a backend in place (task_scheduler::__in_place: Sch's copy does not throw); any
+  // other is reached through a __exec_ts_shared_backend, which copies itself.
   __ycxx::__adl_free::__exec_ts_backend_base* __ycxx_copy_to(void* __buf) const noexcept override {
     if constexpr (task_scheduler::__in_place<_Sch>)
       return ::new (__buf) __backend_for(*this);
     else
-      __builtin_unreachable();
+      std::terminate();
   }
 
 private:

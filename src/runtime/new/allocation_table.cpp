@@ -79,7 +79,9 @@ void __append(char*& __out, const char* __end, const char* __s) noexcept {
     ++__p, ++__m;
   if (*__p == *__m)
     return;
-  char __msg[256];
+  // Zeroed: GCC 16.2 warns -Wmaybe-uninitialized when __end, a const char* into the buffer, is
+  // passed to __append while the buffer is unwritten (COMPILER-BUG(gcc), a false positive).
+  char __msg[256] = {};
   char* __out = __msg;
   const char* __end = __msg + sizeof __msg - 1;
   __append(__out, __end, "libycxx: ABI version mismatch: this image was built against libycxx ");

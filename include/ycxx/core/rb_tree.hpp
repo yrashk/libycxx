@@ -7,10 +7,18 @@
 // header acts as a node greater than every element: the in-order successor of the rightmost
 // node is the header, which is end(). The leftmost node (begin()) is kept in the tree object.
 // While the tree holds no element, header.left is null, header.right the header itself, and the
-// leftmost pointer the header. hdr_ is null until the first insertion. At run time the header is
-// a member; during constant evaluation it is allocated with std::allocator instead (GCC 16
-// mis-evaluates pointers into an object returned with NRVO, as for list). Moves and swaps
-// relink the root to the other header; nodes are never copied by moves.
+// leftmost pointer the header. Insertions never change end() ([associative.reqmts.general]/175),
+// also for a container that has never held an element. No constructor sets the header up: one
+// that may be constant-evaluated can neither store the object's own address nor allocate (a
+// constant-initialized container, a namespace-scope map, must stay constant). At run time the
+// header is head_, a member, which is end() from construction on; its links are set up by the
+// first insertion (hdr_ and first_ are null before; begin() is then end()). During constant
+// evaluation it is allocated with std::allocator instead (GCC 16 mis-evaluates pointers into an
+// object returned with NRVO, as for list), by the first member that needs it, const ones (end())
+// included: hdr_ and first_ are mutable, so no iterator exists before the header does. (So the
+// container cannot be a constexpr variable: its destructor reads hdr_. STATUS, known
+// limitations.) Moves and swaps relink the root to the other header; nodes are never copied by
+// moves.
 //
 // Elements are constructed and destroyed through the allocator rebound to the node type.
 // Insertions find the position first and link a fully built node, so a throwing constructor or
@@ -434,8 +442,8 @@ protected:
   static constexpr bool __always_equal = info::__always_equal;
 
   __node_base __head_ = {nullptr, nullptr, nullptr, false};
-  __node_base* __hdr_ = nullptr;   // the header (end()), or null before the first insertion
-  __node_base* __first_ = nullptr; // the leftmost node (begin()); the header when empty
+  mutable __node_base* __hdr_ = nullptr;   // the header once set up, else null
+  mutable __node_base* __first_ = nullptr; // the leftmost node; the header when empty, null before hdr_
   size_type __size_ = 0;
   [[no_unique_address]] _Compare __comp_;
   [[no_unique_address]] __node_alloc __na_;
@@ -454,22 +462,35 @@ protected:
     return static_cast<bool>(__comp_(a, b));
   }
 
-  constexpr __node_base* __header() {
+  // During constant evaluation: the header, allocated by the first call.
+  constexpr __node_base* __heap_header() const noexcept {
     if (!__hdr_) {
-      if consteval {
-        __hdr_ = std::allocator<__node_base>().allocate(1);
-        std::construct_at(__hdr_, __node_base{nullptr, nullptr, nullptr, false});
-      } else {
-        __hdr_ = __builtin_addressof(__head_);
-      }
+      __hdr_ = std::allocator<__node_base>().allocate(1);
+      std::construct_at(__hdr_, __node_base{nullptr, nullptr, nullptr, false});
+      __hdr_->right = __first_ = __hdr_;
+    }
+    return __hdr_;
+  }
+  // The header with its links set up.
+  constexpr __node_base* __header() {
+    if consteval {
+      return __heap_header();
+    }
+    if (!__hdr_) {
+      __hdr_ = __builtin_addressof(__head_);
       __hdr_->right = __first_ = __hdr_;
     }
     return __hdr_;
   }
   constexpr __node_base* __root() const noexcept { return __hdr_ ? __hdr_->left : nullptr; }
-  constexpr __node_base* __begin_node() const noexcept { return __first_; }
-  constexpr __node_base* __end_node() const noexcept { return __hdr_; }
-  constexpr __node_base* __last_node() const noexcept { return __hdr_->right; }
+  // end(): at run time head_, even before the first insertion set up its links.
+  constexpr __node_base* __end_node() const noexcept {
+    if consteval {
+      return __heap_header();
+    }
+    return const_cast<__node_base*>(__builtin_addressof(__head_));
+  }
+  constexpr __node_base* __begin_node() const noexcept { return __first_ ? __first_ : __end_node(); }
 
   template <class... _Args>
   constexpr node* __make_node(_Args&&... __args) {
@@ -737,7 +758,7 @@ protected:
   }
   constexpr __node_base* __insert_handle_multi(__node_base* __hint, node_type& __nh) {
     if (__nh.empty())
-      return __hdr_;
+      return __end_node();
     __check_handle(__nh);
     __node_base* n = ::__ycxx::__detail::__node_handle_access::peek(__nh);
     __pos p = __hint ? __pos_multi_hint(__hint, key(n)) : __pos_upper(key(n));
@@ -748,7 +769,7 @@ protected:
   // Unique keys: links nh's node unless its key is present; returns the element with its key.
   constexpr std::pair<__node_base*, bool> __insert_handle_unique(__node_base* __hint, node_type& __nh) {
     if (__nh.empty())
-      return {__hdr_, false};
+      return {__end_node(), false};
     __check_handle(__nh);
     __node_base* n = ::__ycxx::__detail::__node_handle_access::peek(__nh);
     __pos p = __hint ? __pos_unique_hint(__hint, key(n)) : __pos_unique(key(n));
@@ -945,7 +966,7 @@ protected:
   // ---- lookup ----
   template <class _Kp>
   constexpr __node_base* lower(const _Kp& k) const {
-    __node_base* y = __hdr_;
+    __node_base* y = __end_node();
     for (__node_base* __x = __root(); __x;) {
       if (!lt(key(__x), k)) {
         y = __x;
@@ -958,7 +979,7 @@ protected:
   }
   template <class _Kp>
   constexpr __node_base* upper(const _Kp& k) const {
-    __node_base* y = __hdr_;
+    __node_base* y = __end_node();
     for (__node_base* __x = __root(); __x;) {
       if (lt(k, key(__x))) {
         y = __x;
@@ -972,8 +993,8 @@ protected:
   template <class _Kp>
   constexpr __node_base* __find_node(const _Kp& k) const {
     __node_base* n = lower(k);
-    if (n == __hdr_ || lt(k, key(n)))
-      return __hdr_;
+    if (n == __end_node() || lt(k, key(n)))
+      return __end_node();
     return n;
   }
   template <class _Kp>
@@ -1003,7 +1024,7 @@ protected:
   template <class _Kp>
   constexpr node_type __extract_key(const _Kp& k) {
     __node_base* n = __find_node(k);
-    if (n == __hdr_)
+    if (n == __end_node())
       return node_type();
     __unlink(n);
     return __make_handle(n);
@@ -1013,10 +1034,10 @@ public:
   constexpr allocator_type get_allocator() const noexcept { return allocator_type(__na_); }
 
   // ---- iterators ----
-  constexpr iterator begin() noexcept { return iterator(__first_); }
-  constexpr const_iterator begin() const noexcept { return const_iterator(__first_); }
-  constexpr iterator end() noexcept { return iterator(__hdr_); }
-  constexpr const_iterator end() const noexcept { return const_iterator(__hdr_); }
+  constexpr iterator begin() noexcept { return iterator(__begin_node()); }
+  constexpr const_iterator begin() const noexcept { return const_iterator(__begin_node()); }
+  constexpr iterator end() noexcept { return iterator(__end_node()); }
+  constexpr const_iterator end() const noexcept { return const_iterator(__end_node()); }
   constexpr reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   constexpr const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
   constexpr reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -1037,7 +1058,7 @@ public:
 
   // ---- modifiers ----
   constexpr node_type extract(const_iterator position) {
-    ::__ycxx::__detail::__precondition(position.__n_ != __hdr_, "associative container extract: end() iterator");
+    ::__ycxx::__detail::__precondition(position.__n_ != __end_node(), "associative container extract: end() iterator");
     __unlink(position.__n_);
     return __make_handle(position.__n_);
   }
@@ -1054,7 +1075,7 @@ public:
     return erase(const_iterator(position));
   }
   constexpr iterator erase(const_iterator position) {
-    ::__ycxx::__detail::__precondition(position.__n_ != __hdr_, "associative container erase: end() iterator");
+    ::__ycxx::__detail::__precondition(position.__n_ != __end_node(), "associative container erase: end() iterator");
     __node_base* n = position.__n_;
     __node_base* __nx = ::__ycxx::__detail::__rb_next(n);
     __unlink(n);
@@ -1068,7 +1089,7 @@ public:
     return __erase_key(__x);
   }
   constexpr iterator erase(const_iterator first, const_iterator last) {
-    if (first.__n_ == __first_ && last.__n_ == __hdr_) {
+    if (first.__n_ == __begin_node() && last.__n_ == __end_node()) {
       clear();
       return end();
     }
@@ -1110,18 +1131,18 @@ public:
     if constexpr (_Multi)
       return __count_key(__x);
     else
-      return __find_node(__x) == __hdr_ ? 0 : 1;
+      return __find_node(__x) == __end_node() ? 0 : 1;
   }
   template <class _Kp>
     requires ::__ycxx::__detail::__transparent_compare<_Compare>
   constexpr size_type count(const _Kp& __x) const {
     return __count_key(__x);
   }
-  constexpr bool contains(const key_type& __x) const { return __find_node(__x) != __hdr_; }
+  constexpr bool contains(const key_type& __x) const { return __find_node(__x) != __end_node(); }
   template <class _Kp>
     requires ::__ycxx::__detail::__transparent_compare<_Compare>
   constexpr bool contains(const _Kp& __x) const {
-    return __find_node(__x) != __hdr_;
+    return __find_node(__x) != __end_node();
   }
   constexpr iterator lower_bound(const key_type& __x) { return iterator(lower(__x)); }
   constexpr const_iterator lower_bound(const key_type& __x) const { return const_iterator(lower(__x)); }

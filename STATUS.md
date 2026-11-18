@@ -891,6 +891,15 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   C library does (`0x0.000000000000001p-16385` is the smallest), so that both forms agree there.
 
 ## Known limitations and draft defects
+- `list`, `map`, `multimap`, `set`, `multiset` cannot be `constexpr` variables (`constexpr
+  std::set<int> s;` is rejected: "must have constant destruction"); they are constant-initialized
+  at namespace scope (`constinit` works) and usable in constant evaluation. `end()` stays the same
+  from construction on ([associative.reqmts.general]/175, [list.modifiers]/2; issue #5) without
+  the constructors setting anything up. At run time the header (sentinel) is a member; during
+  constant evaluation it is allocated by the first member that needs it, `end()` included, so the
+  pointer to it is `mutable`, and the destructor reads it. An embedded header in constant
+  evaluation would need none of this, but GCC 16 mis-evaluates pointers from the nodes into it
+  when the container is returned from a function (`return std::list<int>{1, 2, 3};`).
 - UBSan's vptr check (`-fsanitize=vptr`, part of GCC's `-fsanitize=undefined`) is not available:
   its runtime inspects type_info objects through the `__dynamic_cast` of the C++ runtime it was
   built against (libstdc++ or libc++abi), which libycxx's ABI runtime cannot serve. The

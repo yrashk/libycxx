@@ -17,6 +17,8 @@
 //     the order of Ds is not specified, so both orders are accepted).
 //   Without an environment the starting agent is not known, so the query is ill-formed
 //     ([exec.get.compl.domain]/2.5); checked through a concept.
+//   set_stopped likewise: a spawned sender with a set_stopped completion on D / D2, with env<>
+//     and with an env whose get_domain is D / D2.
 //   In every case the future still delivers the spawned sender's value (sync_wait).
 #include <execution>
 #include <concepts>
@@ -81,6 +83,39 @@ struct dsched {
 };
 static_assert(ex::scheduler<dsched<D>> && ex::scheduler<dsched<D2>>);
 
+// A sender that can complete with set_value(int) or set_stopped(), both on an agent whose domain
+// is Dom (it reports that domain for both tags); `stop` picks which one happens.
+template <class Dom>
+struct ssender {
+  using sender_concept = ex::sender_tag;
+  bool stop = false;
+  template <class Self, class... Env>
+  static consteval auto get_completion_signatures() {
+    return ex::completion_signatures<ex::set_value_t(int), ex::set_stopped_t()>();
+  }
+  struct attrs {
+    Dom query(ex::get_completion_domain_t<ex::set_value_t>) const noexcept { return {}; }
+    Dom query(ex::get_completion_domain_t<ex::set_stopped_t>) const noexcept { return {}; }
+  };
+  attrs get_env() const noexcept { return {}; }
+  template <class R>
+  struct op {
+    using operation_state_concept = ex::operation_state_tag;
+    R r;
+    bool stop;
+    void start() & noexcept {
+      if (stop)
+        ex::set_stopped(std::move(r));
+      else
+        ex::set_value(std::move(r), 8);
+    }
+  };
+  template <class R>
+  op<R> connect(R r) const noexcept {
+    return {std::move(r), stop};
+  }
+};
+
 // A value whose decay-copy can throw (it never does here).
 struct MayThrow {
   int v = 0;
@@ -139,6 +174,20 @@ static_assert(std::is_same_v<domain_of<FT, ex::set_error_t, env_D2>, D2>);
 static_assert(std::is_same_v<domain_of<FT, ex::set_value_t, env_D2>, D2>);
 static_assert(!has_domain<FT, ex::set_error_t>);
 
+// set_stopped: COMMON-DOMAIN of the spawned sender's set_stopped domain and get_domain(env)
+// (/8, /11.2-11.3, /12: a stopped future completes inline on the starting agent).
+using FSD = future_of<ssender<D>>;
+static_assert(std::is_same_v<domain_of<FSD, ex::set_stopped_t, ex::env<>>, ex::default_domain>);
+static_assert(std::is_same_v<domain_of<FSD, ex::set_stopped_t, env_D>, D>);
+static_assert(std::is_same_v<domain_of<FSD, ex::set_value_t, env_D>, D>);
+static_assert(!has_domain<FSD, ex::set_stopped_t>);
+using FSD2 = future_of<ssender<D2>>;
+static_assert(is_indeterminate_of<domain_of<FSD2, ex::set_stopped_t, ex::env<>>, D2, ex::default_domain>);
+static_assert(std::is_same_v<domain_of<FSD2, ex::set_stopped_t, env_D2>, D2>);
+static_assert(is_indeterminate_of<domain_of<FSD2, ex::set_value_t, ex::env<>>, D2, ex::default_domain>);
+static_assert(std::is_same_v<domain_of<FSD2, ex::set_value_t, env_D2>, D2>);
+static_assert(!has_domain<FSD2, ex::set_stopped_t>);
+
 int main() {
   ex::counting_scope scope;
   {
@@ -166,6 +215,15 @@ int main() {
   {
     auto r = tt::sync_wait(ex::spawn_future(dsender<D2, MayThrow>{std::tuple<MayThrow>(MayThrow(5))}, scope.get_token()));
     CHECK(r && std::get<0>(*r).v == 5);
+  }
+  // The spawned sender's set_stopped reaches the future's receiver; its value does too.
+  {
+    auto r = tt::sync_wait(ex::spawn_future(ssender<D2>{true}, scope.get_token()));
+    CHECK(!r.has_value());
+    auto r2 = tt::sync_wait(ex::spawn_future(ssender<D2>{false}, scope.get_token()));
+    CHECK(r2 && std::get<0>(*r2) == 8);
+    auto r3 = tt::sync_wait(ex::spawn_future(ssender<D>{true}, scope.get_token()));
+    CHECK(!r3.has_value());
   }
   tt::sync_wait(scope.join());
   return 0;

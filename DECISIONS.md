@@ -1713,7 +1713,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   before destroying its own backend, which may own the source. sizeof(task_scheduler) is 32 on
   64-bit targets (a shared_ptr was 16). Not followed: /5 for the backend's own allocations (an
   operation that does not fit the proxy's 128 bytes of storage is allocated with
-  `::operator new`, and a backend in place keeps no allocator; STATUS, known limitations).
+  `::operator new`, and a backend in place keeps no allocator; STATUS, known limitations; #24).
 - **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
   hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
   locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's

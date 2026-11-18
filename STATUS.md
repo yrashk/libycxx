@@ -1412,7 +1412,7 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   allocating ([exec.task.scheduler]/4), and spawn_future's sender reports its completion domains
   given an environment (DECISIONS §17); task_scheduler's backend allocates an operation larger
   than the proxy's storage with `::operator new`, not the constructor's allocator
-  ([exec.task.scheduler]/5). Every adaptor reports its
+  ([exec.task.scheduler]/5; #24). Every adaptor reports its
   completion domain and scheduler per tag as [exec.snd.general]/3-4 describe them (DECISIONS §17,
   "Attributes"; spec-coverage audit G8).
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character

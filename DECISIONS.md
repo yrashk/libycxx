@@ -1046,7 +1046,12 @@ stops at the `#error`.
     `wcsxfrm_l`, `strftime_l`, `wcsftime_l`, `nl_langinfo_l`), and the calling thread's
     `uselocale` (restored before returning) where the C library has none (`mbrtowc`/`wcrtomb`,
     `btowc`, `catopen`; glibc's `localeconv`, called under a lock because it fills one static
-    object; Darwin's `localeconv_l` is found by a `requires` probe). The global C locale and other
+    object; Darwin's `localeconv_l` is found by a `requires` probe). The C library's locale loading,
+    `newlocale` and `setlocale` (`locale::global`, the PAL's `newlocale` for
+    `text_encoding::environment`), is one call at a time, under a lock of the runtime: Darwin's
+    corrupts the heap or the locales made when two threads load the same non-LC_CTYPE category,
+    any names (plain C programs crashed in most runs; issue #21), and serializing costs nothing
+    where it is safe. The global C locale and other
     threads' locales are never changed, except by `locale::global` ([locale.statics]/2:
     `setlocale` per category for a named locale).
   - *Values the draft leaves to the implementation:* ctype<char> gives a byte that is not a

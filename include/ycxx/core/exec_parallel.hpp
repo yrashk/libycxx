@@ -113,9 +113,15 @@ struct __exec_receiver_proxy_for : _Base {
   explicit __exec_receiver_proxy_for(_Rcvr* r) noexcept : __rcvr(r) {}
   void __attach() noexcept { __stop.__attach(std::get_stop_token(std::execution::get_env(*__rcvr))); }
 
+  // A bulk proxy's set_value is its operation's, which overrides this one and sends the child's
+  // values; this one is instantiated anyway (it is virtual), and the receiver need not take no
+  // values (the child receiver of an enclosing bulk does not).
   void set_value() noexcept override {
     __stop.detach();
-    std::execution::set_value(static_cast<_Rcvr&&>(*__rcvr));
+    if constexpr (std::is_same_v<_Base, std::execution::parallel_scheduler_replacement::receiver_proxy>)
+      std::execution::set_value(static_cast<_Rcvr&&>(*__rcvr));
+    else
+      std::terminate();
   }
   void set_error(std::exception_ptr e) noexcept override {
     __stop.detach();

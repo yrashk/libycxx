@@ -1,9 +1,10 @@
 // [stoptoken.concepts] (unstoppable_token) and the parts of <execution> that check it, through
 // `import std;`: when_all on the parallel scheduler ([exec.when.all], [exec.par.scheduler]),
 // counting_scope with spawn ([exec.counting.scopes], [exec.spawn]), a stop token given through
-// write_env ([exec.write.env]), and task awaiting senders ([exec.task]). Regression test for a
-// GCC 16 modules ICE (tsubst_expr) on the draft's spelling of unstoppable_token (COMPILER-BUG(gcc)
-// in stop_token.hpp; yrashk/libycxx#4).
+// write_env ([exec.write.env]), and task awaiting senders ([exec.task]). unstoppable_token holds
+// exactly when !tok.stop_possible() is a constant expression whose value is true, for an object
+// tok of the token type ([expr.const]): it may copy an empty member, but not read a member's
+// value. Regression test for a GCC 16 modules ICE (tsubst_expr; yrashk/libycxx#4).
 // MODULES: std
 // FLAGS: -pthread
 // REQUIRES: exceptions
@@ -38,7 +39,48 @@ struct runtime_member {
   bool operator==(const runtime_member&) const = default;
 };
 
+// A token whose constant stop_possible() copies an empty member (reading nothing of tok).
+struct wrapping {
+  std::never_stop_token in;
+  template <class F>
+  using callback_type = std::stop_callback_for_t<std::never_stop_token, F>;
+  constexpr std::never_stop_token inner() const noexcept { return in; }
+  constexpr bool stop_requested() const noexcept { return inner().stop_requested(); }
+  constexpr bool stop_possible() const noexcept { return inner().stop_possible(); }
+  bool operator==(const wrapping&) const = default;
+};
+
+// constexpr stop_possible() that reads a member: it depends on tok's value.
+struct reads_member {
+  bool possible = false;
+  template <class F>
+  struct cb {
+    cb(reads_member, F) noexcept {}
+  };
+  template <class F>
+  using callback_type = cb<F>;
+  constexpr bool stop_requested() const noexcept { return false; }
+  constexpr bool stop_possible() const noexcept { return possible; }
+  bool operator==(const reads_member&) const = default;
+};
+
+// A constant true stop_possible().
+struct always_possible {
+  template <class F>
+  struct cb {
+    cb(always_possible, F) noexcept {}
+  };
+  template <class F>
+  using callback_type = cb<F>;
+  constexpr bool stop_requested() const noexcept { return false; }
+  constexpr bool stop_possible() const noexcept { return true; }
+  bool operator==(const always_possible&) const = default;
+};
+
 static_assert(std::unstoppable_token<std::never_stop_token>);
+static_assert(std::stoppable_token<wrapping> && std::unstoppable_token<wrapping>);
+static_assert(std::stoppable_token<reads_member> && !std::unstoppable_token<reads_member>);
+static_assert(std::stoppable_token<always_possible> && !std::unstoppable_token<always_possible>);
 static_assert(std::stoppable_token<std::stop_token> && !std::unstoppable_token<std::stop_token>);
 static_assert(std::stoppable_token<std::inplace_stop_token> && !std::unstoppable_token<std::inplace_stop_token>);
 static_assert(std::stoppable_token<never_member> && std::unstoppable_token<never_member>);

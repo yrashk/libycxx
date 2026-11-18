@@ -1677,7 +1677,7 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   interface units too are no mismatch: a directory's `add_compile_options` ahead of libycxx,
   `CMAKE_CXX_FLAGS`, the options exported for the units. Not looked at: per-source options, the
   `COMPILE_FLAGS` property, `CMAKE_CXX_FLAGS` set in a subdirectory, a dependency linked through
-  a generator expression.
+  a generator expression (#25).
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

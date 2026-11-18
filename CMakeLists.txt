@@ -135,24 +135,24 @@ set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
 
 # ---- ycxx::core (libycxx.a): the library's out-of-line parts and the platform layer ----
 # One replaceable allocation function per source file (see src/runtime/new).
-file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/hosted/new/*.cpp)
+file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/runtime/new/*.cppm src/hosted/new/*.cpp src/hosted/new/*.cppm)
 # Defining one deallocation function per file is the point; GCC warns about each unpaired one.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)
 endif()
 # Floating-point <charconv> (also in the freestanding runtime archive).
-file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp)
+file(GLOB YCXX_CHARCONV_SOURCES CONFIGURE_DEPENDS src/runtime/charconv/*.cpp src/runtime/charconv/*.cppm)
 # Their work buffers (up to tens of kilobytes) are written before they are read; GCC 16 would
 # zero-fill every automatic variable in C++26 mode (erroneous values) on each call.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_CHARCONV_SOURCES} PROPERTIES COMPILE_OPTIONS -ftrivial-auto-var-init=uninitialized)
 endif()
 # The lock and wait tables of <atomic> (also in the freestanding runtime archive).
-file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp)
+file(GLOB YCXX_ATOMIC_SOURCES CONFIGURE_DEPENDS src/runtime/atomic/*.cpp src/runtime/atomic/*.cppm)
 # <debugging> (also in the freestanding runtime archive); is_debugger_present is replaceable.
-file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp)
+file(GLOB YCXX_DEBUGGING_SOURCES CONFIGURE_DEPENDS src/runtime/debugging/*.cpp src/runtime/debugging/*.cppm)
 # <contracts>: the replaceable default ::handle_contract_violation (also freestanding).
-file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp)
+file(GLOB YCXX_CONTRACTS_SOURCES CONFIGURE_DEPENDS src/runtime/contracts/*.cpp src/runtime/contracts/*.cppm)
 # The hosted sources by what they need (DECISIONS §18). YCXX_PAL=posix builds all of them with
 # src/pal/posix; YCXX_PAL=none builds those of the selected layers, and fallbacks for three absent
 # ones.
@@ -204,7 +204,7 @@ set(YCXX_CLIB_SOURCES
   src/hosted/chrono.cpp
   # formatting
   src/hosted/format.cpp
-  src/hosted/print.cpp)
+  src/hosted/print.cppm)
 # The 'debug' layer (with the C library).
 set(YCXX_DEBUG_SOURCES src/hosted/stacktrace.cpp)
 # Files: C stdio's (src/hosted/fstream.cpp) or the 'files' layer's (fstream_pal.cpp).
@@ -256,7 +256,7 @@ endif()
 # guards), built with RTTI and exceptions ----
 # src/abi/entry: the entry points under the Itanium C++ ABI's names, forwarding to the runtime's own
 # (src/abi/entry.hpp, DECISIONS §20.6).
-file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp src/abi/entry/*.cpp)
+file(GLOB YCXX_ABI_SOURCES CONFIGURE_DEPENDS src/abi/*.cpp src/abi/*.cppm src/abi/entry/*.cpp src/abi/entry/*.cppm)
 set_property(SOURCE ${YCXX_ABI_SOURCES} APPEND PROPERTY COMPILE_OPTIONS -fexceptions -frtti
   # The hierarchy walks keep fixed tables of visited virtual bases on the stack, written before
   # they are read; GCC 16 would zero-fill them on every dynamic_cast and handler search (C++26
@@ -351,22 +351,35 @@ endforeach()
 # objects, std::nothrow, the default allocation functions and the allocation table. In static mode
 # they are members of the archives like the rest; in shared mode they are libycxx_nonshared.a, which
 # every image linking libycxx.so links, libycxx.so included.
-file(GLOB YCXX_PER_IMAGE_SOURCES CONFIGURE_DEPENDS src/abi/entry/*.cpp)
+file(GLOB YCXX_PER_IMAGE_SOURCES CONFIGURE_DEPENDS src/abi/entry/*.cpp src/abi/entry/*.cppm)
 list(APPEND YCXX_PER_IMAGE_SOURCES ${YCXX_NEW_SOURCES})
 foreach(_s src/abi/rtti_classes.cpp src/abi/rtti_float16.cpp src/abi/nothrow.cpp src/hosted/cxa_demangle_entry.cpp)
   list(APPEND YCXX_PER_IMAGE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${_s})
 endforeach()
+
+# Module units among the sources (src/**/*.cppm; the globs above find them too): compiled as modules
+# or lowered to plain translation units, in every target below (cmake/ycxx-source-modules.cmake,
+# DECISIONS §21).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-source-modules.cmake)
 
 # ---- Static mode (YCXX_STATIC): ycxx::core (libycxx.a, the library's out-of-line parts and the
 # platform layer) and ycxx::abi (libycxx-abi.a, the ABI runtime) ----
 if(YCXX_STATIC)
   add_library(ycxx STATIC ${YCXX_LIBRARY_SOURCES} src/runtime/linkage/static.cpp)
   set_target_properties(ycxx PROPERTIES EXPORT_NAME core)
+  # Units that import std use the static kind's std modules: ycxx::modules when static is the
+  # default kind (below); otherwise they include std's headers.
+  if(YCXX_DEFAULT_LINKAGE STREQUAL "static")
+    ycxx_add_module_units(ycxx STD_MODULES ycxx_modules SOURCES ${YCXX_LIBRARY_SOURCES})
+  else()
+    ycxx_add_module_units(ycxx SOURCES ${YCXX_LIBRARY_SOURCES})
+  endif()
   target_link_libraries(ycxx PRIVATE ycxx_headers)
   target_compile_options(ycxx PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
     $<$<COMPILE_LANGUAGE:C>:${_ycxx_warnings}>)
   add_library(ycxx_abi STATIC ${YCXX_ABI_SOURCES})
+  ycxx_add_module_units(ycxx_abi NO_STD SOURCES ${YCXX_ABI_SOURCES})
   set_target_properties(ycxx_abi PROPERTIES OUTPUT_NAME ycxx-abi EXPORT_NAME abi)
   target_link_libraries(ycxx_abi PRIVATE ycxx_headers)
   target_compile_options(ycxx_abi PRIVATE -std=c++26 ${_ycxx_warnings})
@@ -478,12 +491,15 @@ if(YCXX_SHARED)
   # libycxx_nonshared.a: the per-image sources, and the platform layer's forwarders to the shared
   # library (src/nonshared/pal.c, tools/gen_pal_forwarders.py).
   add_library(ycxx_nonshared STATIC ${YCXX_PER_IMAGE_SOURCES} src/nonshared/pal.c)
+  ycxx_add_module_units(ycxx_nonshared NO_STD SOURCES ${YCXX_PER_IMAGE_SOURCES})
   set_target_properties(ycxx_nonshared PROPERTIES OUTPUT_NAME ycxx_nonshared EXPORT_NAME nonshared
                         POSITION_INDEPENDENT_CODE ON)
   # The library's sources less the per-image ones, the shared marker and the exported platform layer.
   set(_ycxx_so_sources ${YCXX_LIBRARY_SOURCES} ${YCXX_ABI_SOURCES})
   list(REMOVE_ITEM _ycxx_so_sources ${YCXX_PER_IMAGE_SOURCES})
   add_library(ycxx_so SHARED ${_ycxx_so_sources} src/runtime/linkage/shared.cpp src/pal/export.c)
+  # Its units are always lowered: their exports are a plain build's (DECISIONS §21).
+  ycxx_add_module_units(ycxx_so LOWERED SOURCES ${_ycxx_so_sources})
   # libycxx.so.0.1.0, soname libycxx.so.0.1 (ELF); libycxx.0.1.0.dylib, install name
   # @rpath/libycxx.0.1.dylib, compatibility version 0.1 (Mach-O). DECISIONS §20.7.
   set_target_properties(ycxx_so PROPERTIES OUTPUT_NAME ycxx EXPORT_NAME shared_library
@@ -677,10 +693,14 @@ endif()
 # targets.
 if(YCXX_FREESTANDING_RUNTIME)
   file(GLOB YCXX_FREESTANDING_SOURCES CONFIGURE_DEPENDS
-       src/runtime/new/*.cpp src/freestanding/new/*.cpp src/freestanding/contracts/*.cpp src/freestanding/pal/*.cpp)
+       src/runtime/new/*.cpp src/runtime/new/*.cppm src/freestanding/new/*.cpp src/freestanding/new/*.cppm
+       src/freestanding/contracts/*.cpp src/freestanding/contracts/*.cppm
+       src/freestanding/pal/*.cpp src/freestanding/pal/*.cppm)
   add_library(ycxx_freestanding STATIC
     ${YCXX_FREESTANDING_SOURCES} src/runtime/linkage/static.cpp ${YCXX_CHARCONV_SOURCES} ${YCXX_ATOMIC_SOURCES}
     ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
+  ycxx_add_module_units(ycxx_freestanding NO_STD SOURCES ${YCXX_FREESTANDING_SOURCES} ${YCXX_CHARCONV_SOURCES}
+                        ${YCXX_ATOMIC_SOURCES} ${YCXX_DEBUGGING_SOURCES} ${YCXX_CONTRACTS_SOURCES})
   set_target_properties(ycxx_freestanding PROPERTIES OUTPUT_NAME ycxx-freestanding EXPORT_NAME freestanding
                         POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(ycxx_freestanding PUBLIC ycxx_headers)

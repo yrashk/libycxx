@@ -25,4 +25,15 @@ bool __named_exists(const char* name, int c);
 // semantics; empty if the C library has no such locale.
 std::string __named_codeset(const char* name);
 
+// The C library loads locales (newlocale, setlocale) one call at a time: the runtime makes every
+// such call while a __c_locale_guard lives (locale_named.cpp says why).
+void __c_locale_lock() noexcept;
+void __c_locale_unlock() noexcept;
+struct __c_locale_guard {
+  __c_locale_guard() noexcept { __c_locale_lock(); }
+  ~__c_locale_guard() { __c_locale_unlock(); }
+  __c_locale_guard(const __c_locale_guard&) = delete;
+  __c_locale_guard& operator=(const __c_locale_guard&) = delete;
+};
+
 }} // namespace __ycxx::__detail

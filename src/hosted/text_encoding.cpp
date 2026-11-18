@@ -26,7 +26,12 @@ std::text_encoding from_name(const char* name) {
 std::text_encoding std::text_encoding::environment() {
   static const text_encoding env = [] {
     char __buf[max_name_length + 2] = {};
-    if (ycxx_pal_environment_encoding(__buf, sizeof __buf) != 0)
+    int __rc;
+    {
+      __ycxx::__detail::__c_locale_guard __g; // the PAL calls newlocale
+      __rc = ycxx_pal_environment_encoding(__buf, sizeof __buf);
+    }
+    if (__rc != 0)
       return text_encoding();
     return from_name(__buf);
   }();

@@ -16,12 +16,17 @@
 // of this file (a program that calls localeconv itself in another thread at the same moment can
 // still race with it; Darwin's localeconv_l has no such object and is used where it exists).
 //
-// newlocale is called under a lock of this file too: concurrent calls are not safe in every C
-// library. On Darwin (macOS 26) four threads opening the same names corrupted the objects they
-// made: localeconv_l of one dereferenced a null pointer, in about four runs of five of a plain C
-// program, never with the calls serialized (issue #21; own test locale/named_threads). Locales are
-// opened when facets are built, rarely, so the lock costs nothing that matters. A program's own
-// newlocale calls at the same moment are not covered.
+// The C library's locale loading, newlocale and setlocale, is one call at a time
+// (c_locale_lock, held by every such call of the runtime: here, locale::global's setlocale and
+// the PAL's newlocale for text_encoding::environment): concurrent calls are not safe in every C
+// library. On Darwin (macOS 26) two threads loading the same non-LC_CTYPE category, of any
+// names, corrupt the heap or the locales made (a crash in newlocale or later in localeconv_l, in
+// most runs of a plain C program), and setlocale does the same next to newlocale; serialized,
+// no failure (issue #21; own tests locale/named_threads, named_construction_concurrent).
+// localeconv_l, nl_langinfo_l, freelocale, duplocale and the uselocale paths showed none.
+// Locales are loaded when facets are built and by locale::global, rarely, so the lock costs
+// nothing that matters. A program's own newlocale or setlocale calls are not covered (C lets
+// setlocale race, [res.on.data.races] does not reach them).
 #include <locale>
 #include <climits>
 #include <cstdlib>
@@ -53,7 +58,7 @@ constexpr int c_masks[__ycxx::__detail::__locale_ncategories] = {LC_COLLATE_MASK
                                                            LC_NUMERIC_MASK, LC_TIME_MASK, LC_MESSAGES_MASK};
 
 __ycxx::__detail::__pal_lock cache_lock;     // the list of open locales and their counts
-__ycxx::__detail::__pal_lock newlocale_lock; // every newlocale call (above)
+__ycxx::__detail::__pal_lock c_locale_lock; // every newlocale and setlocale call (above)
 
 struct lock_guard {
   explicit lock_guard(__ycxx::__detail::__pal_lock& __l) noexcept : l_(__l) { l_.lock(); }
@@ -119,7 +124,7 @@ __named_locale* open_list = nullptr; // under cache_lock
 
 // newlocale(mask, name), one call at a time (above).
 locale_t c_newlocale(int __mask, const char* name) noexcept {
-  lock_guard __g(newlocale_lock);
+  lock_guard __g(c_locale_lock);
   return ::newlocale(__mask, name, static_cast<locale_t>(0));
 }
 
@@ -958,6 +963,9 @@ std::size_t __named_strftime(const __named_locale* h, wchar_t* __buf, std::size_
 
 // locale_named.hpp's, for the runtime's sources only.
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
+
+void __c_locale_lock() noexcept { c_locale_lock.lock(); }
+void __c_locale_unlock() noexcept { c_locale_lock.unlock(); }
 
 bool __named_exists(const char* name, int c) {
   const locale_t __l = c_newlocale(c_masks[c], name);

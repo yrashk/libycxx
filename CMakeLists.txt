@@ -775,6 +775,12 @@ if(YCXX_MODULES)
     list(APPEND _ycxx_modules_targets ycxx_shared_modules)
     add_library(ycxx::shared_modules ALIAS ycxx_shared_modules)
   endif()
+  # Without reflection, a GCC project target that adds -freflection itself is a configure error
+  # before CMake 4.4 (cmake/ycxx-modules-reflection.cmake).
+  if(NOT YCXX_MODULES_REFLECTION AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_VERSION VERSION_LESS 4.4)
+    set(_ycxx_reflection_scope "${CMAKE_SOURCE_DIR}")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-modules-reflection.cmake)
+  endif()
 endif()
 
 add_library(ycxx::headers ALIAS ycxx_headers)
@@ -835,6 +841,6 @@ if(YCXX_INSTALL)
     COMPATIBILITY SameMinorVersion)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake
                 ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfigVersion.cmake
-                cmake/ycxx-hosted-layers.cmake
+                cmake/ycxx-hosted-layers.cmake cmake/ycxx-modules-reflection.cmake
           DESTINATION ${YCXX_CMAKE_DIR})
 endif()

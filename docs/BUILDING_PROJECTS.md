@@ -649,7 +649,7 @@ bound in the executable, two-level namespace; DECISIONS §2, STATUS "macOS").
 
 From CMake (3.28+, Ninja): `find_package(libycxx)` and `target_link_libraries(app PRIVATE
 ycxx::modules)`, with the plain compiler; CMake builds the interfaces of `std` and `std.compat`
-for the project (README, "Modules"; `examples/modules`). CMake's own `CMAKE_CXX_MODULE_STD` is not
+for the project (docs/USAGE.md, "Modules"; `examples/modules`). CMake's own `CMAKE_CXX_MODULE_STD` is not
 supported (it would build the toolchain library's module). The installed `ycxx-c++` does not
 build or find modules; outside CMake use `tools/ycxx-modules` and `tools/ycxx-cxx --std-modules`
 from the source tree. GCC 16 cannot mix `#include <...>` of a standard header and `import std;`

@@ -674,7 +674,8 @@ template <class _Alloc, class _Token, class _Sender, class _Env>
 struct __exec_spawn_future_state final
     : __exec_spawn_future_state_base<std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>,
                                                                               std::execution::env<>>> {
-  using __sigs_t = std::execution::completion_signatures_of_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, std::execution::env<>>;
+  using __spawned_t = ::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>;
+  using __sigs_t = std::execution::completion_signatures_of_t<__spawned_t, std::execution::env<>>;
   using __base_t = __exec_spawn_future_state_base<__sigs_t>;
   using __receiver_t = __exec_spawn_future_receiver<__sigs_t>;
   using __op_t = std::execution::connect_result_t<::__ycxx::__detail::__exec::__future_spawned_sender<_Sender, _Env>, __receiver_t>;
@@ -822,6 +823,7 @@ private:
 template <class _State>
 struct __exec_future_state_ptr {
   using __ycxx_sigs = typename _State::__sigs_t;
+  using __ycxx_spawned = typename _State::__spawned_t;
   _State* p = nullptr;
   __exec_future_state_ptr() = default;
   explicit __exec_future_state_ptr(_State* __q) noexcept : p(__q) {}
@@ -916,11 +918,46 @@ inline constexpr spawn_future_t spawn_future{};
 }} // namespace std::execution
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail { namespace __exec {
+// spawn_future's attributes ([exec.snd.general]/3; DECISIONS §17). A completion with tag T reaches
+// the receiver on one of two agents: the one on which the spawned sender completed (complete
+// hands its result over, [exec.spawn.future]/10.2), or the starting agent (consume delivers a
+// result that was there first, /11.3, also the set_stopped of a failed association, /8). So the
+// sources of T are the spawned sender's T completions (asked in env<>, its receiver's
+// environment), its completions whose decay-copy can throw for set_error (/6), and the starting
+// agent's domain, get_domain(env): only given an environment. try-set-stopped's set_stopped runs
+// on the agent requesting the stop, of no known domain (/12.1). No scheduler, no forwarding.
+template <class _CS, class _Sp>
+inline constexpr bool __throwing_copy_of = false;
+template <class... _Sigs, class _Sp>
+inline constexpr bool __throwing_copy_of<std::execution::completion_signatures<_Sigs...>, _Sp> =
+    ((std::is_same_v<typename __sig_tag<_Sigs>::type, _Sp> && !__nothrow_decay_copy_sig<_Sigs>) || ...);
+
+template <class _Tp, class _OwnCS, class _Spawned, class... _Envs>
+struct __spawn_future_sources {
+  using type = __no_attr;
+};
+template <class _Tp, class _OwnCS, class _Spawned, class _Env>
+  requires __attr_has_tag<_OwnCS, _Tp>
+struct __spawn_future_sources<_Tp, _OwnCS, _Spawned, _Env> {
+  using _CS = __csigs_of_t<_Spawned, std::execution::env<>>;
+  template <class _Sp>
+  using __spawned = __src_if<__sigs_count<_Sp, _CS> != 0 && (std::is_same_v<_Sp, _Tp> || (std::is_same_v<_Tp, set_error_t> && __throwing_copy_of<_CS, _Sp>)),
+                             __src_dom<__compl_domain_of_t<_Sp, const _Spawned&, std::execution::env<>>>>;
+  using type = __srcs_t<__spawned<set_value_t>, __spawned<set_error_t>, __spawned<set_stopped_t>,
+                        __tlist<__src_dom<decltype(std::execution::get_domain(std::declval<const _Env&>()))>>>;
+};
+template <class _Sndr, class _Spawned>
+struct __pol_spawn_future {
+  template <class _Tp, class... _Envs>
+  using __sources = typename __spawn_future_sources<_Tp, __own_csigs_t<_Sndr, _Envs...>, _Spawned, _Envs...>::type;
+};
+
 template <>
 struct __impls_for<std::execution::spawn_future_t> : __default_impls {
   template <class _Data>
   static constexpr auto __get_attrs(const _Data&) noexcept {
-    return std::execution::env<>();
+    using _Pol = __pol_spawn_future<__basic_sender_t<std::execution::spawn_future_t, _Data>, typename _Data::__ycxx_spawned>;
+    return __compl_attrs_t<_Pol>{};
   }
   template <class _Sndr, class _Rcvr>
   static auto __get_state(_Sndr&& __sndr, _Rcvr& __rcvr) noexcept {

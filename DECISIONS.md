@@ -1758,8 +1758,15 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
   - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query
     can throw (TRY-SET-VALUE);
-  - spawn_future: none. The state erases the spawned sender's type; a parent's COMPL-DOMAIN
-    makes that `indeterminate_domain<>`, which is what is known.
+  - spawn_future ([exec.spawn.future]): domains only, and only given an environment. A
+    completion reaches the receiver on the agent where the spawned sender completed (complete,
+    /10.2) or inline on the starting agent, when the result was there first or the association
+    failed (consume, /11.3, /8). So for each tag T: the spawned sender's T completions (its
+    receiver's environment is `env<>`), for set_error also its completions whose decay-copy can
+    throw (/6), and `get_domain(env)`. The state's type keeps the spawned sender's. A spawned
+    sender on another domain than the consumer's gives `indeterminate_domain<D, default_domain>`:
+    the consumer may run either. try-set-stopped's set_stopped runs on the agent requesting the
+    stop (/12.1), of no known domain, and adds none.
 
   The draft's three-way disagreement about schedulers ([exec.sched]/6,
   [exec.get.compl.sched]/5.2, [exec.get.compl.domain]/2.3; STATUS "Draft issues noticed") is

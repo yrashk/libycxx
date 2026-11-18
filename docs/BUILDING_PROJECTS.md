@@ -653,7 +653,9 @@ for the project (README, "Modules"; `examples/modules`). CMake's own `CMAKE_CXX_
 supported (it would build the toolchain library's module). The installed `ycxx-c++` does not
 build or find modules; outside CMake use `tools/ycxx-modules` and `tools/ycxx-cxx --std-modules`
 from the source tree. GCC 16 cannot mix `#include <...>` of a standard header and `import std;`
-in one translation unit.
+in one translation unit. For `std::meta` through `import std;` (GCC 16), configure libycxx with
+`-DYCXX_MODULES_REFLECTION=ON`: the module and every importer are then compiled with
+`-freflection`, which GCC needs to be the same for both (docs/USAGE.md, "Modules").
 
 ### Freestanding and hosted layers
 

@@ -721,6 +721,13 @@ a defect in a test.
   before `import std;` (`extern "C" void abort();` without `noexcept`, as
   `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported
   declaration"); module tests use `module_check.hpp`.
+- GCC 16.2, modules and reflection: the CMI of `std` records the `-freflection` setting it was
+  built with. Built without it, `std::meta` is empty for every importer, whether or not the
+  importer has `-freflection` ("'nonstatic_data_members_of' is not a member of 'std::meta'");
+  built with it, an importer compiled without `-freflection` is an internal compiler error
+  (segmentation fault) at its first use of the module, even of `std::vector`. libycxx's tools
+  keep the two alike (`YCXX_MODULES_REFLECTION`, `tools/ycxx-modules`, `tools/ycxx-cxx`;
+  docs/USAGE.md, "Modules"); own test `modules/import_std_reflection`.
 - GCC 16.2, modules: an internal compiler error (`tsubst_expr`) in an importer when a
   requires-parameter appears in a template argument inside a requires-expression (nested, simple
   or type requirement), as in the draft's `unstoppable_token`

@@ -7,7 +7,8 @@
 #   gcc:   std.gcm, std.compat.gcm      the compiled module interfaces (CMIs), and module.map, the
 #                                       -fmodule-mapper file naming them
 #   libycxx-modules.a                   the modules' object files (their initializers)
-#   flags                               the compile flags that use them (one line)
+#   flags                               the compile flags that use them (one line; with
+#                                       -freflection when the modules were built with it)
 # The modules come from modules/std.cppm and modules/std.compat.cppm (tools/gen_std_module.py).
 # Pass the flags of the code that will import them (-O2, -fno-exceptions, -DYCXX_HARDENED=1,
 # -fsanitize=...): a BMI is only valid with the options it was built with (Clang rejects a
@@ -50,4 +51,13 @@ else
 fi
 rm -f "$dir/libycxx-modules.a"
 ar rcs "$dir/libycxx-modules.a" "$dir/std.o" "$dir/std.compat.o"
+# -freflection (std::meta; the last of -freflection/-fno-reflection decides) goes into the flags:
+# the BMI records it, and GCC 16 crashes on an importer compiled without it (README, "Modules").
+for a in "$@"; do
+  case $a in
+    -freflection) reflection=1 ;;
+    -fno-reflection) reflection= ;;
+  esac
+done
+[ -n "${reflection:-}" ] && use="$use -freflection"
 printf '%s\n' "$use" >"$dir/flags"

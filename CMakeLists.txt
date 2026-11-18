@@ -776,8 +776,9 @@ if(YCXX_MODULES)
     add_library(ycxx::shared_modules ALIAS ycxx_shared_modules)
   endif()
   # Without reflection, a GCC project target that adds -freflection itself is a configure error
-  # (cmake/ycxx-modules-reflection.cmake).
-  if(NOT YCXX_MODULES_REFLECTION AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # before CMake 4.4 (cmake/ycxx-modules-reflection.cmake).
+  if(NOT YCXX_MODULES_REFLECTION AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_VERSION VERSION_LESS 4.4)
+    set(_ycxx_reflection_scope "${CMAKE_SOURCE_DIR}")
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-modules-reflection.cmake)
   endif()
 endif()

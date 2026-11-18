@@ -27,8 +27,9 @@
 #      `import std;`) builds and runs both ways, as it does through tools/ycxx-modules -freflection
 #      and tools/ycxx-cxx, which rejects a program whose -freflection/-fno-reflection disagrees with
 #      the modules; the option is rejected without YCXX_MODULES, and on Clang at configure time.
-#      Without it, a target that gets -freflection itself (its options, a dependency's interface)
-#      stops the configuration, both ways; an add_compile_options ahead of libycxx does not;
+#      Without it, a target that gets -freflection itself (its options, a dependency's interface):
+#      before CMake 4.4 std::meta is empty for it and the configuration stops, both ways; CMake 4.4
+#      and later build it (find_package: and run it); an add_compile_options ahead of libycxx works;
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -267,34 +268,53 @@ for c in $compilers; do
   # reflection) is rejected at configure time with a clear message.
   if [ $c = gcc ]; then
     # Without the option (the package of 1.), a target that gets -freflection from its own options
-    # or a dependency's interface stops the configuration (cmake/ycxx-modules-reflection.cmake);
-    # an add_compile_options ahead of libycxx reaches the module too: it builds and runs.
+    # or a dependency's interface: before CMake 4.4 the module's interface units are not compiled
+    # with it, so the program fails to build (std::meta is empty; shown with the check switched
+    # off) and cmake/ycxx-modules-reflection.cmake stops the configuration instead; CMake 4.4 and
+    # later build the program its own copy of them, so it builds and runs. An add_compile_options
+    # ahead of libycxx reaches the module too: it builds and runs with any CMake.
+    cmake_ver=$(cmake --version | sed -n 's/^cmake version \([0-9]*\)\.\([0-9]*\).*/\1 \2/p')
+    old_cmake=; [ "${cmake_ver% *}" -lt 4 ] || { [ "${cmake_ver% *}" = 4 ] && [ "${cmake_ver#* }" -lt 4 ]; } && old_cmake=1
+    nocheck=$d/no-reflection-check.cmake
+    echo 'set_property(DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY _YCXX_MODULES_REFLECTION_CHECK TRUE)' >"$nocheck"
     for how in find_package add_subdirectory; do
       src=
       [ $how = add_subdirectory ] && src="-DLIBYCXX_SOURCE_DIR=$repo"
       for own in target dependency directory; do
         b=$d/modules-own-reflection-$how-$own
-        if [ $own != directory ]; then
+        what="-freflection from the $own"
+        [ $own = directory ] && what="add_compile_options(-freflection)"
+        if [ $how = add_subdirectory ] && { [ $own = directory ] || [ -z "$old_cmake" ]; }; then
+          # Configuring is what the check decides (building libycxx again here would be long).
+          if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen $src -DYCXX_TEST_OWN_REFLECTION=$own; then
+            ok $c "modules ($how): $what accepted"
+          else
+            bad $c "modules ($how): $what rejected (see $log)"
+          fi
+        elif [ $own != directory ] && [ -n "$old_cmake" ]; then
           if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
                $src -DYCXX_TEST_OWN_REFLECTION=$own; then
-            bad $c "modules ($how): -freflection from the $own accepted against std built without it"
+            bad $c "modules ($how, CMake < 4.4): $what accepted against std built without it"
           elif grep -q 'libycxx: target demo_reflection compiles with -freflection' "$log"; then
-            ok $c "modules ($how): -freflection from the $own rejected with a clear message"
+            ok $c "modules ($how, CMake < 4.4): $what rejected with a clear message"
           else
-            bad $c "modules ($how): -freflection from the $own rejected without the expected message (see $log)"
+            bad $c "modules ($how, CMake < 4.4): $what rejected without the expected message (see $log)"
           fi
-        elif [ $how = add_subdirectory ]; then # configuring is what the check decides
-          if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen $src -DYCXX_TEST_OWN_REFLECTION=$own; then
-            ok $c "modules ($how): add_compile_options(-freflection) ahead of libycxx accepted"
-          else
-            bad $c "modules ($how): add_compile_options(-freflection) ahead of libycxx rejected (see $log)"
+          if [ $how = find_package ]; then
+            if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b-nocheck" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
+                 -DYCXX_TEST_OWN_REFLECTION=$own -DCMAKE_PROJECT_INCLUDE="$nocheck" &&
+               ! x cmake --build "$b-nocheck" && grep -q "is not a member of 'std::meta'" "$log"; then
+              ok $c "modules ($how, CMake < 4.4, no check): $what: std::meta empty, as the check says"
+            else
+              bad $c "modules ($how, CMake < 4.4, no check): $what did not fail on an empty std::meta (see $log)"
+            fi
           fi
         elif x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
                -DYCXX_TEST_OWN_REFLECTION=$own &&
              x cmake --build "$b" && run_demo "$b/demo_reflection" "$log"; then
-          ok $c "modules ($how): add_compile_options(-freflection): std::meta through import std; build and run"
+          ok $c "modules ($how): $what: std::meta through import std; build and run"
         else
-          bad $c "modules ($how): add_compile_options(-freflection): configure/build/run (see $log)"
+          bad $c "modules ($how): $what: configure/build/run (see $log)"
         fi
       done
     done

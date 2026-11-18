@@ -1662,15 +1662,22 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `-freflection` into the `flags` that `tools/ycxx-cxx --std-modules` adds, and `tools/ycxx-cxx`
   rejects a program whose `-freflection`/`-fno-reflection` differs from the modules'. Default
   OFF: the option changes every importer's language (`^^`, splices), which a project chooses.
-  Rejected: only documenting "pass `-freflection`" (CMake has no place for a project to pass it
-  to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's workaround).
-  With the option OFF, a GCC project target that gets `-freflection` from its own options or a
-  dependency's interface while the module does not is a configure error naming the option
-  (`cmake/ycxx-modules-reflection.cmake`, #15): GCC would accept it with an empty `std::meta`.
-  The check runs once at the end of the top-level directory (`cmake_language(DEFER)`), because
-  `ycxx::modules`' interface cannot read its importer's options (a generator expression's
-  self-reference evaluates to nothing); a directory's `add_compile_options` ahead of libycxx and
-  `CMAKE_CXX_FLAGS` reach the module too and are no mismatch. Not looked at: per-source options.
+  Rejected: only documenting "pass `-freflection`" (before CMake 4.4 a project has no place to
+  pass it to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's
+  workaround). CMake 4.4 and later build an importer whose options differ from the module's its
+  own copy of the interface units, with its options, so there a target that adds `-freflection`
+  itself gets a populated `std::meta` with the option OFF too. Older CMake (Debian's 3.31, the
+  minimum 3.28) does not, and GCC accepts that importer with an empty `std::meta`: with the
+  option OFF, GCC and CMake older than 4.4, such a target (`-freflection` left on by its own
+  options or its dependencies' interfaces, the last of `-freflection`/`-fno-reflection`
+  deciding) is a configure error naming the option (`cmake/ycxx-modules-reflection.cmake`, #15).
+  It runs at the end of the top-level directory (add_subdirectory) or of `find_package`'s
+  (`cmake_language(DEFER)`), because `ycxx::modules`' interface cannot read its importer's
+  options (a generator expression's self-reference evaluates to nothing). Options that reach the
+  interface units too are no mismatch: a directory's `add_compile_options` ahead of libycxx,
+  `CMAKE_CXX_FLAGS`, the options exported for the units. Not looked at: per-source options, the
+  `COMPILE_FLAGS` property, `CMAKE_CXX_FLAGS` set in a subdirectory, a dependency linked through
+  a generator expression.
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

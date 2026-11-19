@@ -98,6 +98,8 @@ if [ -f "$_ycxx_conf" ]; then
   [ -n "${YCXX_CLANG_BIN:-}" ] && _ycxx_path="$YCXX_CLANG_BIN:$_ycxx_path"
   [ -n "${YCXX_GCC_BIN:-}" ] && _ycxx_path="$YCXX_GCC_BIN:$_ycxx_path"
   [ -n "$_ycxx_use" ] && _ycxx_path="$_ycxx_use/bin:$_ycxx_path"
+  # Keep the verified CMake ahead of Homebrew's bin directory on macOS CI.
+  [ -n "${YCXX_CI_CMAKE_BIN:-}" ] && _ycxx_path="$YCXX_CI_CMAKE_BIN:$_ycxx_path"
   export PATH="$_ycxx_path:$PATH"
   if [ -n "$_ycxx_use" ]; then
     export YCXX_USE="$_ycxx_use" CXX="$_ycxx_use/bin/ycxx-c++" CC="$_ycxx_use/bin/ycxx-cc"

@@ -683,6 +683,8 @@ for c in $compilers; do
   if [ $c = gcc ]; then tc_cxx=${YCXX_GXX:-g++-16}; else tc_cxx=${YCXX_CLANGXX:-clang++-23}; fi
   tc_cxx=$(command -v "$tc_cxx" 2>/dev/null || true)
   tc_path=$PATH; [ -n "$tc_cxx" ] && tc_path=$(dirname "$tc_cxx"):$PATH
+  # The compiler's directory can also contain CMake on macOS CI.
+  tc_path=${YCXX_CI_CMAKE_BIN:+$YCXX_CI_CMAKE_BIN:}$tc_path
   if PATH=$tc_path YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
        -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=$c \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-$c.log" 2>&1 &&

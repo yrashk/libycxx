@@ -1,0 +1,23 @@
+November 19 Claude recovery handoff
+
+Recovery issue: https://github.com/yrashk/ycxx/issues/377
+Repository: yrashk/libycxx
+Handoff branch: handoff-nov-19/optimistic-aryabhata-f569c5
+Original branch: refs/heads/claude/locale-named-threads
+Original directory: /Users/yrashk/Projects/libycxx/.claude/worktrees/optimistic-aryabhata-f569c5
+Original HEAD: ef430cb9d48b3e5d8dc2df8ff37f1444622e6054
+Snapshot tip: ef430cb9d48b3e5d8dc2df8ff37f1444622e6054
+Snapshot kind: original commit; no worktree changes added
+Task: Review fixes for 8ade9494: setlocale under the same lock as newlocale; the PAL's newlocale too
+Issues: https://github.com/yrashk/libycxx/issues/21, https://github.com/yrashk/libycxx/issues/13, https://github.com/yrashk/libycxx/issues/14, https://github.com/yrashk/libycxx/issues/24
+Commits absent from current origin/main at inventory: 0
+
+Claude chat summaries (one entry per matched chat):
+
+Session 8cda764b-ad94-497a-851f-522bad012974
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-optimistic-aryabhata-f569c5/8cda764b-ad94-497a-851f-522bad012974.jsonl
+Log SHA-256: 9f3970028e63c808b300406861bd16546586b218b8b7c64d53d02b55e8de1155
+This libycxx session worked on named-locale serialization (#21 / PR #27) and std::execution scheduler/future fixes (#13/#14 / PR #23). Locale loading and setlocale operations were placed under one lock; task_scheduler avoided allocation for small schedulers and spawn_future gained completion domains. The allocator-specific limitation was routed to #24 and linked in STATUS, DECISIONS and the PR body by 31c88437. The original worktree remained on the locale branch while the session later published execution documentation on another branch; both checkpoints are preserved. The final report gave the coordinator merge order #27, #23, #22 and left deletion of a stale branch pending user approval.
+
+Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
+Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.

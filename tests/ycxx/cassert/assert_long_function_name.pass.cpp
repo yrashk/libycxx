@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
   CHECK(r.err.find("assert_long_function_name.pass.cpp") != std::string::npos);
   const std::string name = victim(-1);
   CHECK(r.err.find(name + ": Assertion") != std::string::npos);
-#if defined(__GNUC__) && !defined(__clang__)
+// GCC only (Clang and ycxx define __GNUC__ too): its __PRETTY_FUNCTION__ spells the long name.
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__ycxx__)
   CHECK(name.size() > 600); // the case this test is about: longer than a 512-byte buffer
 #endif
   return 0;

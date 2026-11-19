@@ -13,17 +13,37 @@
 //     some configuration (a `throw` expression under -fno-exceptions, a declaration that needs
 //     a builtin only one compiler has, a standard macro that must work inside `#if`). Such an
 //     `#if` tests a _YCXX_HAS_* / YCXX_* switch from this file -- never a compiler name.
+//   * The compiler's identity is converted once too, ycxx first (DECISIONS §5, "Recognizing a
+//     compiler"): the _YCXX_COMPILER_* switches below, and __cfg::__compiler_* for `if constexpr`.
+//     A compiler-specific choice anywhere else tests one of those, never __clang__ or __GNUC__
+//     (tools/check_preprocessor.py rejects the identity macros outside this file's detection).
 #pragma once
 
 #if !defined(__cplusplus) || __cplusplus <= 202302L
 #  error "libycxx requires C++26 (-std=c++26 or -std=c++2c)"
 #endif
-// The compilers libycxx recognizes, by their identity macros only (DECISIONS §5, "Recognizing a
-// compiler"): GCC (__GNUC__ without __clang__), Clang (__clang__) and ycxx (__ycxx__, defining
-// neither). Identity selects nothing else (one exception, _BitInt, below): what a compiler provides
+// The compiler, recognized by its identity macros here and nowhere else (DECISIONS §5,
+// "Recognizing a compiler"): ycxx first, by __ycxx__ (it also defines __GNUC__, as Clang does:
+// ycxx#229), then Clang, by __clang__ (which defines __GNUC__ too), then GCC, by __GNUC__. Exactly
+// one of the switches _YCXX_COMPILER_YCXX, _YCXX_COMPILER_CLANG and _YCXX_COMPILER_GCC is 1, the
+// others 0, and a compiler-specific check anywhere in libycxx tests them, never __clang__ or
+// __GNUC__ themselves, so a compiler that claims another's dialect never selects that compiler's
+// paths. Identity selects nothing else (one exception, _BitInt, below): what a compiler provides
 // is asked of it through __has_builtin, in-language probes, the __cpp_* macros and the target
 // macros, so a compiler that answers those truthfully gets the paths it can compile.
-#if !defined(__clang__) && !defined(__GNUC__) && !defined(__ycxx__)
+#if defined(__ycxx__)
+#  define _YCXX_COMPILER_YCXX 1
+#  define _YCXX_COMPILER_CLANG 0
+#  define _YCXX_COMPILER_GCC 0
+#elif defined(__clang__)
+#  define _YCXX_COMPILER_YCXX 0
+#  define _YCXX_COMPILER_CLANG 1
+#  define _YCXX_COMPILER_GCC 0
+#elif defined(__GNUC__)
+#  define _YCXX_COMPILER_YCXX 0
+#  define _YCXX_COMPILER_CLANG 0
+#  define _YCXX_COMPILER_GCC 1
+#else
 #  error "libycxx supports GCC, Clang and ycxx (DECISIONS §5: how a compiler is recognized)"
 #endif
 
@@ -373,7 +393,11 @@
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace __cfg {
-// No constant names the compiler: what code needs from one is probed (DECISIONS §5).
+// The compiler, as the detection above recognized it (DECISIONS §5, "Recognizing a compiler"):
+// for the rare choice that no probe can make. What code needs from a compiler is probed.
+inline constexpr bool __compiler_ycxx = _YCXX_COMPILER_YCXX;
+inline constexpr bool __compiler_clang = _YCXX_COMPILER_CLANG;
+inline constexpr bool __compiler_gcc = _YCXX_COMPILER_GCC;
 // Whether a constant evaluation can evaluate a throw expression at all (P3068's core-language
 // part; GCC 16 can, also under -fno-exceptions, where none is ever reached; Clang 23 cannot).
 // Where it cannot, a function about to throw calls a non-constexpr function first, whose name the
@@ -605,7 +629,7 @@ struct __bitint_info {
   static constexpr int width = 0;
   static constexpr bool is_signed = false;
 };
-#if defined(__BITINT_MAXWIDTH__) && defined(__clang__)
+#if defined(__BITINT_MAXWIDTH__) && _YCXX_COMPILER_CLANG
 template <unsigned _Np>
 struct __bitint_info<unsigned _BitInt(_Np)> {
   static constexpr int width = _Np;

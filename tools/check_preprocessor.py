@@ -11,6 +11,9 @@
   public header that tools/gen_transitive_includes.py writes: `#if _YCXX_TRANSITIVE_INCLUDES`,
   #include lines of public headers, at most one nested `#if _YCXX_HOSTED` ... `#endif` of the same,
   `#endif`, and nothing after it. Nothing else may test it, and no other file may name it.
+- The compiler's identity (DECISIONS §5, "Recognizing a compiler"): __GNUC__, __GNUG__,
+  __clang__ and __ycxx__ appear only in config.hpp (include/ and src/, comments aside), whose
+  detection converts them into the _YCXX_COMPILER_* switches; ycxx defines __GNUC__ too.
 - The mode switch (DECISIONS §20.3): outside config.hpp, the user's YCXX_SHARED is never named,
   and _YCXX_VISIBILITY appears only as the argument of a visibility attribute,
   `[[__gnu__::__visibility__(_YCXX_VISIBILITY)]]` (include/ and src/).
@@ -97,6 +100,7 @@ for path in sorted(p for p in ROOT.rglob("*") if p.is_file()):
                 errors.append(f"{rel}:{n}: preprocessor conditional must test only _YCXX_* switches: {line.strip()}")
 
 VIS_USE = "__gnu__::__visibility__(_YCXX_VISIBILITY)"
+IDENTITY = re.compile(r"\b(__GNUC__|__GNUG__|__clang__|__ycxx__)\b")
 SRC = ROOT.parent / "src"
 for path in sorted([p for p in ROOT.rglob("*") if p.is_file()] +
                    [p for p in SRC.rglob("*") if p.suffix in (".cpp", ".hpp", ".c", ".h")]):
@@ -107,6 +111,9 @@ for path in sorted([p for p in ROOT.rglob("*") if p.is_file()] +
         code = line.split("//")[0]
         if "_YCXX_VISIBILITY" in code.replace(VIS_USE, ""):
             errors.append(f"{rel}:{n}: _YCXX_VISIBILITY may only be the argument of a visibility attribute: {VIS_USE}")
+        if IDENTITY.search(code) and not code.lstrip().startswith(("*", "/*")):
+            errors.append(f"{rel}:{n}: a compiler's identity macro outside config.hpp: test _YCXX_COMPILER_* "
+                          "or cfg::__compiler_* instead")
         if re.search(r"(?<![A-Z_])YCXX_SHARED\b", code):
             errors.append(f"{rel}:{n}: YCXX_SHARED is read only by ycxx/config.hpp (cfg::__shared elsewhere)")
 

@@ -23,7 +23,8 @@ variable templates. The preprocessor is used only where the language cannot do t
    - those the standard mandates (`NULL`, `offsetof`, `INT_MAX`, `INT32_C`, `__cpp_lib_*`,
      `assert`, `errno`, ...), and
    - the `YCXX_*` switches in `config.hpp` (user-settable `YCXX_HARDENED`, `YCXX_NO_TRANSITIVE_INCLUDES`, §19, and
-     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches), and `_YCXX_VISIBILITY`, the one
+     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches; the compiler's identity,
+     `_YCXX_COMPILER_*`, §5), and `_YCXX_VISIBILITY`, the one
      switch used outside `#if`: the string literal of every namespace opening's visibility
      attribute, which takes only a literal (§20.3; `tools/check_preprocessor.py` allows it only
      there).
@@ -808,12 +809,29 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 
 ### Recognizing a compiler
 
-`config.hpp` recognizes a compiler by its identity macros and by nothing else: GCC (`__GNUC__`
-without `__clang__`), Clang (`__clang__`) and ycxx (`__ycxx__`, the compiler libycxx is the
-standard library of, which defines neither: github.com/yrashk/ycxx, its DECISIONS §1.5). Any other
-compiler stops at the `#error` there. Recognition only lets a compiler past that `#error`: no
-constant names the compiler, and no path is chosen by its name. Everything a compiler provides is
-asked of it:
+`config.hpp` recognizes a compiler by its identity macros and by nothing else, ycxx first:
+ycxx (`__ycxx__`, the compiler libycxx is the standard library of: github.com/yrashk/ycxx, its
+DECISIONS §1.5), then Clang (`__clang__`), then GCC (`__GNUC__`). Any other compiler stops at the
+`#error` there.
+
+- **ycxx first.** ycxx defines `__GNUC__` 4.2.1, as Clang does (ycxx#229, which revised its #112),
+  so that the macOS SDK's headers take their supported-compiler paths. `__GNUC__` therefore never
+  identifies GCC by itself: a compiler that claims another's dialect must not get that compiler's
+  workarounds.
+- **One identity, three switches.** The answer is converted once (rule 2), into
+  `_YCXX_COMPILER_YCXX`, `_YCXX_COMPILER_CLANG` and `_YCXX_COMPILER_GCC`, exactly one of them 1
+  and the others 0, and the constants `cfg::__compiler_ycxx`, `__compiler_clang` and
+  `__compiler_gcc`. Any compiler-specific choice in the library tests these (`if constexpr`, or
+  the switch in an `#if` where rule 4 allows one), never `__clang__` or `__GNUC__`, which only
+  `config.hpp`'s detection reads (rule 1; `tools/check_preprocessor.py` rejects the identity
+  macros anywhere else in `include/` and `src/`). Today one choice does: `_BitInt`, below. A
+  `COMPILER-BUG(gcc)` workaround is written for every compiler (portable code that avoids the
+  bug), not selected by identity; one that had to be selected would test `cfg::__compiler_gcc`.
+- **Tests.** `tests/ycxx` runs against libstdc++ too (`tools/ref-cxx`), so its tests cannot read
+  the switches; a test that tells GCC apart tests `__ycxx__` and `__clang__` before `__GNUC__`.
+
+Recognition only lets a compiler past that `#error`: no path is chosen by its name, except
+through the switches above. Everything a compiler provides is asked of it:
 
 - **builtins** with `__has_builtin` (type-taking ones, `__remove_reference_t` / `__remove_reference`,
   `__make_integer_seq` / `__integer_pack`) or the in-language probes of §1 rule 4 (function-style
@@ -829,10 +847,12 @@ asked of it:
   to parse them. The few that carry meaning, rather than a hint (`__may_alias__` on the atomic
   access types, `__vector_size__` in `<simd>`), are needed by a compiler for those headers to work.
 
-One feature is still chosen by identity: `_BitInt` in C++ (Clang only), for which no probe exists
-(`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang without accepting the type).
+One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_COMPILER_CLANG`),
+for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang
+without accepting the type).
 
-So adding a compiler takes one change: its identity macro in the `#error`'s condition. The
+So adding a compiler takes one detection branch and its switch (defined 0 in the other
+branches, and its constant), ahead of any compiler whose dialect macros it also defines. The
 compiler must answer the probes truthfully (0 for what it does not implement) and provide what
 libycxx cannot do without: `#include_next` and `__has_include_next` (the C library wrappers), the
 target macros GCC and Clang predefine, and the builtins used unconditionally (the trait builtins of
@@ -840,12 +860,14 @@ target macros GCC and Clang predefine, and the builtins used unconditionally (th
 builtin, the headers that need it fail to compile, not to preprocess.
 
 `tools/check_foreign_compiler.py` (the `policy` stage of `tools/test`) checks this with Clang
-playing a foreign compiler: Clang's identity macros removed and `__ycxx__` defined, once with
+playing a foreign compiler: Clang's identity macros removed and ycxx's defined (`__ycxx__`, and
+`__GNUC__` 4.2.1), once with
 Clang's own probe answers and once with every probe answering 0 (ycxx's today). In both, every
 public header preprocesses without an `#error`, and `config.hpp` takes the path the probes select
 (Clang's builtins, then the fallbacks); with Clang's answers every core and freestanding header
 compiles freestanding, and with zero answers `tests/foreign/fallbacks.cpp` tests the fallbacks.
-It also pins GCC's and Clang's own choices, and that a compiler with no recognized identity still
+It also pins GCC's and Clang's own choices, the `_YCXX_COMPILER_*` switch each compiler gets (ycxx's
+for ycxx, although it defines `__GNUC__`), and that a compiler with no recognized identity still
 stops at the `#error`.
 
 ## 6. Development process

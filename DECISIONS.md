@@ -23,7 +23,8 @@ variable templates. The preprocessor is used only where the language cannot do t
    - those the standard mandates (`NULL`, `offsetof`, `INT_MAX`, `INT32_C`, `__cpp_lib_*`,
      `assert`, `errno`, ...), and
    - the `YCXX_*` switches in `config.hpp` (user-settable `YCXX_HARDENED`, `YCXX_NO_TRANSITIVE_INCLUDES`, §19, and
-     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches), and `_YCXX_VISIBILITY`, the one
+     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches; the compiler's identity,
+     `_YCXX_COMPILER_*`, §5), and `_YCXX_VISIBILITY`, the one
      switch used outside `#if`: the string literal of every namespace opening's visibility
      attribute, which takes only a literal (§20.3; `tools/check_preprocessor.py` allows it only
      there).
@@ -817,12 +818,15 @@ DECISIONS §1.5), then Clang (`__clang__`), then GCC (`__GNUC__`). Any other com
   so that the macOS SDK's headers take their supported-compiler paths. `__GNUC__` therefore never
   identifies GCC by itself: a compiler that claims another's dialect must not get that compiler's
   workarounds.
-- **One identity, three switches.** The answer is converted once, into `_YCXX_COMPILER_YCXX`,
-  `_YCXX_COMPILER_CLANG` and `_YCXX_COMPILER_GCC`, exactly one of them 1 and the others 0. Any
-  compiler-specific check in the library tests these, never `__clang__` or `__GNUC__` (which only
-  `config.hpp`'s detection reads, rule 1). Today one does: `_BitInt`, below. A `COMPILER-BUG(gcc)`
-  workaround is written for every compiler (portable code that avoids the bug), not selected by
-  identity; one that had to be selected would test `_YCXX_COMPILER_GCC`.
+- **One identity, three switches.** The answer is converted once (rule 2), into
+  `_YCXX_COMPILER_YCXX`, `_YCXX_COMPILER_CLANG` and `_YCXX_COMPILER_GCC`, exactly one of them 1
+  and the others 0, and the constants `cfg::__compiler_ycxx`, `__compiler_clang` and
+  `__compiler_gcc`. Any compiler-specific choice in the library tests these (`if constexpr`, or
+  the switch in an `#if` where rule 4 allows one), never `__clang__` or `__GNUC__`, which only
+  `config.hpp`'s detection reads (rule 1; `tools/check_preprocessor.py` rejects the identity
+  macros anywhere else in `include/` and `src/`). Today one choice does: `_BitInt`, below. A
+  `COMPILER-BUG(gcc)` workaround is written for every compiler (portable code that avoids the
+  bug), not selected by identity; one that had to be selected would test `cfg::__compiler_gcc`.
 - **Tests.** `tests/ycxx` runs against libstdc++ too (`tools/ref-cxx`), so its tests cannot read
   the switches; a test that tells GCC apart tests `__ycxx__` and `__clang__` before `__GNUC__`.
 
@@ -847,8 +851,8 @@ One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_CO
 for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang
 without accepting the type).
 
-So adding a compiler takes one change: its identity macro in the detection, with its own
-`_YCXX_COMPILER_*` switch, ahead of any compiler whose dialect macros it also defines. The
+So adding a compiler takes one detection branch and its switch (defined 0 in the other
+branches, and its constant), ahead of any compiler whose dialect macros it also defines. The
 compiler must answer the probes truthfully (0 for what it does not implement) and provide what
 libycxx cannot do without: `#include_next` and `__has_include_next` (the C library wrappers), the
 target macros GCC and Clang predefine, and the builtins used unconditionally (the trait builtins of

@@ -121,13 +121,13 @@ CLANG_BUILTINS = ["__remove_reference_t(_Tp)", "__make_integer_seq<_Seq, _Tp, _N
 GCC_BUILTINS = ["__remove_reference(_Tp)", "__integer_pack(_Np)"]
 FALLBACKS = ["struct __remove_ref_impl", "struct __int_pack_make"]
 
-# No recognized identity: the #error (which also shows that -U removes Clang's identity).
+# No recognized identity: the #error (which also shows that ANONYMOUS removes Clang's identity and
+# GCC's __GNUC__).
 r = run([CLANGXX] + BASE + ANONYMOUS + ["-E", "-"], "#include <ycxx/config.hpp>\n")
 if r.returncode == 0 or "libycxx supports GCC, Clang and ycxx" not in r.stderr:
     fail("unrecognized compiler: config.hpp does not stop at its #error", r.stderr)
 else:
     print("ok   unrecognized compiler: config.hpp stops at its #error")
-
 
 
 def identity(label, cmd, want):
@@ -139,7 +139,6 @@ def identity(label, cmd, want):
         fail(f"{label}: config.hpp's _YCXX_COMPILER_* (YCXX CLANG GCC) are {got}, not {want}", r.stderr)
     else:
         print(f"ok   {label}: config.hpp's _YCXX_COMPILER_* (YCXX CLANG GCC) are {want}")
-
 
 # Identity: ycxx first (it defines __GNUC__ too), then Clang, then GCC.
 identity("gcc", [GXX] + BASE, "0 0 1")

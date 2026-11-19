@@ -13,6 +13,10 @@
 //     some configuration (a `throw` expression under -fno-exceptions, a declaration that needs
 //     a builtin only one compiler has, a standard macro that must work inside `#if`). Such an
 //     `#if` tests a _YCXX_HAS_* / YCXX_* switch from this file -- never a compiler name.
+//   * The compiler's identity is converted once too, ycxx first (DECISIONS §5, "Recognizing a
+//     compiler"): the _YCXX_COMPILER_* switches below, and __cfg::__compiler_* for `if constexpr`.
+//     A compiler-specific choice anywhere else tests one of those, never __clang__ or __GNUC__
+//     (tools/check_preprocessor.py rejects the identity macros outside this file's detection).
 #pragma once
 
 #if !defined(__cplusplus) || __cplusplus <= 202302L
@@ -389,7 +393,11 @@
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
 namespace __cfg {
-// No constant names the compiler: what code needs from one is probed (DECISIONS §5).
+// The compiler, as the detection above recognized it (DECISIONS §5, "Recognizing a compiler"):
+// for the rare choice that no probe can make. What code needs from a compiler is probed.
+inline constexpr bool __compiler_ycxx = _YCXX_COMPILER_YCXX;
+inline constexpr bool __compiler_clang = _YCXX_COMPILER_CLANG;
+inline constexpr bool __compiler_gcc = _YCXX_COMPILER_GCC;
 // Whether a constant evaluation can evaluate a throw expression at all (P3068's core-language
 // part; GCC 16 can, also under -fno-exceptions, where none is ever reached; Clang 23 cannot).
 // Where it cannot, a function about to throw calls a non-constexpr function first, whose name the

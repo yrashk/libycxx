@@ -697,11 +697,13 @@ for c in $compilers; do
   else bad $c "toolchain file: $key missing from $cache/toolchains.env"; fi
 done
 rm -rf "$work/tc-missing"
+# CMake can wrap the provisioning hint across lines.
 if YCXX_TOOLCHAINS=$work/toolchain-cache-missing cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-missing" \
      -G Ninja -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=gcc \
      -DYCXX_GCC_VERSION=99.1.0 >"$work/tc-missing.log" 2>&1; then
   bad toolchain "accepted a missing GCC 99.1"
-elif grep -q "Configure with -DYCXX_PROVISION=ON" "$work/tc-missing.log"; then
+elif printf '%s\n' "$(tr -s '[:space:]' '[ *]' <"$work/tc-missing.log")" |
+     grep -Fq 'Configure with -DYCXX_PROVISION=ON'; then
   ok toolchain "missing version without YCXX_PROVISION fails clearly"
 else
   bad toolchain "missing version failed without the expected message (see $work/tc-missing.log)"

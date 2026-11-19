@@ -1,0 +1,23 @@
+November 19 Claude recovery handoff
+
+Recovery issue: https://github.com/yrashk/ycxx/issues/377
+Repository: yrashk/libycxx
+Handoff branch: handoff-nov-19/wt-libycxx-229
+Original branch: refs/heads/claude/compiler-identity-ycxx-229
+Original directory: /private/tmp/claude-501/-Users-yrashk--claude-spares-spare-fqwOi7/3e65a657-a06f-46f3-8ec5-e0ee52ad7308/scratchpad/wt-libycxx-229
+Original HEAD: 4119d83efbc821f4f3d77ecdb7d9979acebc9f11
+Snapshot tip: 4119d83efbc821f4f3d77ecdb7d9979acebc9f11
+Snapshot kind: original commit; no worktree changes added
+Task: Review fixes for 2bacd5dc: identity constants, a policy check, §1 wording
+Issues: https://github.com/yrashk/libycxx/issues/17
+Commits absent from current origin/main at inventory: 0
+
+Claude chat summaries (one entry per matched chat):
+
+Session 3e65a657-a06f-46f3-8ec5-e0ee52ad7308
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-ycxx/3e65a657-a06f-46f3-8ec5-e0ee52ad7308.jsonl
+Log SHA-256: 7c19b58ca3610d165ed64b3ee99473f1ce186dabfccf62b8b62d5a3bbfdd684c
+The coordinating chat established and advanced the compiler project, its clean-room constraints, C++26/libycxx bootstrap, query-engine designs, slice planning and cross-session integration. It created temporary libycxx worktrees for ycxx compiler identity and ABI-check warning fixes, and coordinated CI, branch-base repairs, feature-map changes and follow-up routing. The latest narrative concerned iota PRs #371/#375 and parking a green stacked PR until its dependency was integrated. For this branch, use the preserved commit subject and linked PR/issue as the narrow task: the chat spans many other sessions and is not an instruction to resume all of them.
+
+Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
+Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.

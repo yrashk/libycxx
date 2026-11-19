@@ -1,0 +1,23 @@
+November 19 Claude recovery handoff
+
+Recovery issue: https://github.com/yrashk/ycxx/issues/377
+Repository: yrashk/libycxx
+Handoff branch: handoff-nov-19/bug-sweep
+Original branch: refs/heads/fix/bug-sweep
+Original directory: /Users/yrashk/Projects/libycxx/.claude/worktrees/bug-sweep
+Original HEAD: 753fe541893e144889ffaa9842d28e9bec7feb27
+Snapshot tip: 753fe541893e144889ffaa9842d28e9bec7feb27
+Snapshot kind: original commit; no worktree changes added
+Task: Silence GCC's false -Warray-bounds in the short-string copy
+Issues:
+Commits absent from current origin/main at inventory: 0
+
+Claude chat summaries (one entry per matched chat):
+
+Session bbfc3a4b-1a65-43af-a4bf-46f29e256414
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-bug-sweep/bbfc3a4b-1a65-43af-a4bf-46f29e256414.jsonl
+Log SHA-256: 115db31ac3d82165cdcc60e5ae2a67956df890806a3a190784d4846c5f1bfec2
+The libycxx bug-sweep chat audited and fixed memory-safety, correctness and performance problems in the library with regression coverage. The work was published as PR #3 and ultimately merged into main as 010a6cbf, retaining individual fix commits. The original fix/bug-sweep branch was deliberately left on GitHub. Treat this worktree as a historical recovery checkpoint; compare with main before doing further implementation.
+
+Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
+Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.

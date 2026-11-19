@@ -1,0 +1,90 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 89d1f39..8a50ed6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -165,6 +165,12 @@ endif()
+ # libgcc_s.so; a second, static copy (libgcc_eh) used by the personality routine would abort.
+ target_link_options(ycxx_ycxx INTERFACE $<$<LINK_LANGUAGE:CXX>:-nostdlib++>
+                     $<$<AND:$<LINK_LANGUAGE:CXX>,$<PLATFORM_ID:Linux>>:-shared-libgcc>)
++# Darwin: keep the program's weak std:: definitions from being bound at load time to
++# libc++.1.dylib's (see the file).
++if(APPLE)
++  target_link_options(ycxx_ycxx INTERFACE
++    "LINKER:-unexported_symbols_list,$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cmake>$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_LIBDIR}/cmake/libycxx>/darwin-unexported-symbols.txt")
++endif()
+ 
+ add_library(ycxx::headers ALIAS ycxx_headers)
+ add_library(ycxx::core ALIAS ycxx)
+@@ -179,6 +185,9 @@ if(YCXX_INSTALL)
+   install(TARGETS ycxx_headers ycxx ycxx_abi ycxx_ycxx EXPORT libycxxTargets
+           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+   install(EXPORT libycxxTargets NAMESPACE ycxx:: DESTINATION ${YCXX_CMAKE_DIR})
++  if(APPLE)
++    install(FILES cmake/darwin-unexported-symbols.txt DESTINATION ${YCXX_CMAKE_DIR})
++  endif()
+   configure_package_config_file(cmake/libycxxConfig.cmake.in
+     ${CMAKE_CURRENT_BINARY_DIR}/libycxxConfig.cmake INSTALL_DESTINATION ${YCXX_CMAKE_DIR})
+   write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/libycxxConfigVersion.cmake
+diff --git a/cmake/darwin-unexported-symbols.txt b/cmake/darwin-unexported-symbols.txt
+new file mode 100644
+index 0000000..3a8c6e2
+--- /dev/null
++++ b/cmake/darwin-unexported-symbols.txt
+@@ -0,0 +1,27 @@
++# ld64 -unexported_symbols_list for programs and dylibs linked against libycxx on Darwin.
++#
++# Every process on macOS loads Apple's libc++.1.dylib and libc++abi.dylib (libSystem depends on
++# them). dyld coalesces weak definitions across all loaded images, and a non-weak export wins
++# over a weak one: an inline std:: function libycxx's headers emit as a weak definition in the
++# program (std::current_exception, std::rethrow_exception, the exception classes' members,
++# typeinfo and vtables, which GCC emits weak) would be bound at load time to libc++'s, which
++# talks to libc++abi's exception state, not libycxx's runtime. Not exporting them from the image
++# lets the static linker bind them directly. libycxx's runtime compares type_info by name, so
++# typeinfo objects need not be unique across images.
++__ZSt*
++__ZNSt*
++__ZNKSt*
++__ZTISt*
++__ZTSSt*
++__ZTVSt*
++__ZTTSt*
++# typeinfo (names) of the fundamental types and pointers to them
++__ZT[IS]?
++__ZT[IS]P?
++__ZT[IS]PK?
++__ZT[IS]D*
++__ZT[IS]PD*
++__ZT[IS]PKD*
++__ZT[IS]u*
++__ZT[IS]Pu*
++__ZT[IS]PKu*
+diff --git a/tools/ycxx-cxx b/tools/ycxx-cxx
+index 0b931ba..f73b974 100755
+--- a/tools/ycxx-cxx
++++ b/tools/ycxx-cxx
+@@ -12,12 +12,15 @@ case $which in
+   clang) cxx=${YCXX_CLANGXX:-clang++-23} ;;
+   *) echo "usage: ycxx-cxx gcc|clang args..." >&2; exit 2 ;;
+ esac
+-extra=
++extra= extra_link=
+ if [ "$(uname -s)" = Darwin ]; then
+   # Apple's linker searches archives repeatedly by itself, and the C runtime comes from the SDK.
+   # Unwinding is libSystem's unwinder for both compilers (GCC's Darwin specs link -lemutls_w and
+   # libgcc with -static-libgcc, not an unwinder of their own), so there is one per process.
+   group_begin= group_end= static_libgcc=
++  # dyld would bind the program's weak std:: definitions to libc++.1.dylib's non-weak exports
++  # (libSystem loads it into every process); see cmake/darwin-unexported-symbols.txt.
++  extra_link="-Wl,-unexported_symbols_list,$here/cmake/darwin-unexported-symbols.txt"
+   [ $which = gcc ] && static_libgcc=-static-libgcc
+   # libycxx's <atomic> needs no libatomic (DECISIONS §3), and Apple's SDK has none: drop
+   # -latomic when the compiler cannot find one (Clang; Homebrew's GCC ships its own).
+@@ -53,7 +56,7 @@ link=1
+ for a in "$@"; do case $a in -c|-S|-E|-fsyntax-only|-M|-MM) link=0 ;; esac; done
+ if [ $link = 1 ]; then
+   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@" \
+-    -nostdlib++ $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc
++    -nostdlib++ $group_begin "$libdir/libycxx.a" "$abi" $group_end -lm $static_libgcc $extra_link
+ else
+   exec $cxx $extra -std=c++26 -nostdinc++ -isystem "$here/include" "$@"
+ fi

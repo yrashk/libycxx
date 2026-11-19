@@ -1,0 +1,23 @@
+November 19 Claude recovery handoff
+
+Recovery issue: https://github.com/yrashk/ycxx/issues/377
+Repository: yrashk/libycxx
+Handoff branch: handoff-nov-19/exciting-poincare-c63cbc
+Original branch: (detached HEAD)
+Original directory: /Users/yrashk/Projects/libycxx/.claude/worktrees/exciting-poincare-c63cbc
+Original HEAD: e40460e0ad7bf0424f17a8389bdec40684a8f0ea
+Snapshot tip: 8a14943a3032a205609d1b702229a1514447f598
+Snapshot kind: WIP commit containing final working-tree changes
+Task: CI (macOS): diagnostics keep going after the test program aborts; record the link line and the linker map's choices
+Issues:
+Commits absent from current origin/main at inventory: 506
+
+Claude chat summaries (one entry per matched chat):
+
+Session 0877be96-3b27-4397-a6d6-5d2140905795
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-exciting-poincare-c63cbc/0877be96-3b27-4397-a6d6-5d2140905795.jsonl
+Log SHA-256: e3861dafcf094a046a98f24baad24b5748f91ff340d124bfa4afdcc550725545
+This chat diagnosed macOS exception failures caused by runtime symbol coalescing with Apple system libraries. It prepared two uncommitted deliverables, macos-exception-findings.md and macos-exception-fix.patch, for another session. It reported that the original entry-point-binding hypothesis was wrong and that hiding exported standard-library/type-information symbols improved targeted exception/RTTI/future conformance runs (Clang failures 36 to 2, GCC 42 to 5). A broader declaration-visibility approach was also explored. The CMake half of the quick patch was not tested; remaining pointer-catch and compiler limitations were documented. The final message said the findings already incorporated its research result. These are historical findings; current libycxx has evolved substantially.
+
+Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
+Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.

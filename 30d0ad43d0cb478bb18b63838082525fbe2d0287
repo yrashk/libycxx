@@ -1,0 +1,33 @@
+November 19 Claude recovery handoff
+
+Recovery issue: https://github.com/yrashk/ycxx/issues/377
+Repository: yrashk/libycxx
+Handoff branch: handoff-nov-19/libycxx-macos-ci-300457
+Original branch: refs/heads/claude/magical-matsumoto-0f6bf3
+Original directory: /Users/yrashk/Projects/libycxx/.claude/worktrees/libycxx-macos-ci-300457
+Original HEAD: 30d0ad43d0cb478bb18b63838082525fbe2d0287
+Snapshot tip: 30d0ad43d0cb478bb18b63838082525fbe2d0287
+Snapshot kind: original commit; no worktree changes added
+Task: Review fixes for 5d9d4eed: harness rigour, FAST16 condition, probe wording
+Issues: https://github.com/yrashk/libycxx/issues/17, https://github.com/yrashk/libycxx/issues/18, https://github.com/yrashk/libycxx/issues/19, https://github.com/yrashk/libycxx/issues/20
+Commits absent from current origin/main at inventory: 0
+
+Claude chat summaries (one entry per matched chat):
+
+Session 317a9a35-f2d4-416d-9dac-142c78e9a93b
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-libycxx-macos-ci-300457/317a9a35-f2d4-416d-9dac-142c78e9a93b.jsonl
+Log SHA-256: c21dc4376d2c43fb08c403dd6c65c282a14ce9a52773003d4090345580d4e050
+This chat implemented ycxx detection at libycxx config.hpp (#17, PR #22, related ycxx#133). It replaced several compiler-identity choices with truthful builtin/feature probes, added fallback type-trait paths and policy checks for a foreign compiler, and reviewed the FAST16 probe and test rigor. It reported check-all 17/17 passing, targeted own tests on GCC and Clang, and preprocessing comparisons across exception/RTTI modes. Follow-ups #18-#20 recorded remaining probe/policy gaps. The final narrative left PR #22 open awaiting CI; the current inventory records its later merge.
+
+Session a9808fe2-c0b8-4032-8f90-098c5fded0ae
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-libycxx-macos-ci-300457/a9808fe2-c0b8-4032-8f90-098c5fded0ae.jsonl
+Log SHA-256: 04ae1c7bbb144eb773756ea0924cdbe0014f48f49272b60cf57124f0e03ac8a9
+This earlier libycxx chat handled bootstrap/CI integration including reflection modules PR #9, solver-spike fixes #7, GCC workaround #8 and CI de-duplication/cancellation #10. It corrected macOS test prerequisites and checked staged integrations. The last exchange said #10 was already merged and #9 CI was still running. It did not establish periodic polling; auto-merge would require repository configuration. These CI states are historical.
+
+Session 02577a3a-1788-40fd-9e41-d48b2bc7411a
+Log: /Users/yrashk/.claude/projects/-Users-yrashk-Projects-libycxx--claude-worktrees-libycxx-macos-ci-300457/02577a3a-1788-40fd-9e41-d48b2bc7411a.jsonl
+Log SHA-256: 3e4971b3ec36351ef53d67050e74f5a0719e02e0a1bb330c50462d41349783b8
+This earlier macOS chat tested shared-library ABI isolation and coexistence on the shared-lib-design branch. Its final targeted probe report had 97 pass and zero fail on a fresh work directory with macOS arm64, GCC 16.2 and Clang 23.1.2. It checked hidden emulated TLS helpers, allowed exports, system/foreign-runtime coexistence, and static/shared host-plugin state. It distinguished the libstdc++ control result from a libycxx regression. The report was ready for the wider macOS gate and external suites after upstream namespace changes landed.
+
+Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
+Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.

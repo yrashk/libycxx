@@ -106,6 +106,8 @@ for c in $compilers; do
     cxx=$(command -v "$cxx" 2>/dev/null || true)
     [ -n "$cxx" ] && path=$(dirname "$cxx"):$PATH
   fi
+  # The compiler's directory can also contain CMake on macOS CI.
+  path=${YCXX_CI_CMAKE_BIN:+$YCXX_CI_CMAKE_BIN:}$path
   (cd "$d/run" && PATH=$path YCXX_TOOLCHAINS=$d/toolchains sh -ex "$d/commands.sh") >>"$log" 2>&1 || st=$?
   secs=$(( $(date +%s) - start ))
   printf '%s %s %s seconds\n' "$variant" "$c" "$secs" >"$d/time.txt"

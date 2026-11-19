@@ -16,7 +16,9 @@ runs:
         printf '%s  %s\n' 679e77a96b9ef9484cc6c1445255fc4f84206b48a65420efbedf16bdab55fbff \
           "$cmake_dir/$cmake_archive.tar.gz" | shasum -a 256 -c -
         tar -xzf "$cmake_dir/$cmake_archive.tar.gz" -C "$cmake_dir"
-        echo "$cmake_dir/$cmake_archive/CMake.app/Contents/bin" >> "$GITHUB_PATH"
+        cmake_bin="$cmake_dir/$cmake_archive/CMake.app/Contents/bin"
+        echo "$cmake_bin" >> "$GITHUB_PATH"
+        echo "YCXX_CI_CMAKE_BIN=$cmake_bin" >> "$GITHUB_ENV"
     - uses: actions/cache@v4
       with:
         path: ~/.local/share/ycxx/toolchains

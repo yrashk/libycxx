@@ -236,9 +236,9 @@ struct __placed_op {
             _Traits::deallocate(__alloc, __ptr, 1);
         }
       } __allocation{__alloc, _Traits::allocate(__alloc, 1)};
-      auto* __block = ::new (static_cast<void*>(std::to_address(__allocation.__ptr))) __heap_op(__alloc, __allocation.__ptr, r, __make);
+      auto* __stored_op = ::new (static_cast<void*>(std::to_address(__allocation.__ptr))) __heap_op(__alloc, __allocation.__ptr, r, __make);
       __allocation.__ptr = nullptr;
-      return __builtin_addressof(__block->__op_);
+      return __builtin_addressof(__stored_op->__op_);
     }
   };
 

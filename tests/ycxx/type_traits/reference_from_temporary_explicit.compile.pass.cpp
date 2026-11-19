@@ -11,8 +11,8 @@ struct ExplicitToInt { explicit operator int() const; };
 
 // Compiler gap: GCC 16 rejects the core-language initialization itself
 // ('const int& r(ExplicitToInt{});' is diagnosed as invalid), so its built-in trait cannot
-// agree with the draft. Checked on other compilers only.
-#if defined(__clang__) || !defined(__GNUC__)
+// agree with the draft. Checked on other compilers only (Clang and ycxx define __GNUC__ too).
+#if defined(__ycxx__) || defined(__clang__) || !defined(__GNUC__)
 
 static_assert(std::reference_constructs_from_temporary_v<const int&, ExplicitToInt>);
 static_assert(std::reference_constructs_from_temporary_v<int&&, ExplicitToInt>);

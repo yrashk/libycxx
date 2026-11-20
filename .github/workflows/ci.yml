@@ -72,12 +72,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Toolchains (Homebrew GCC 16, ninja, cmake, uv; provisioned Clang 23, cached)
+      - name: Toolchains (Homebrew GCC 16, Ninja, uv; pinned CMake and cached Clang 23)
         uses: ./.github/actions/setup-macos
 
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: |
           . tools/toolchain/activate.sh
+          cmake_path=$(command -v cmake)
+          echo "CMake: $cmake_path"
+          test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
+          cmake --version
           tools/test -j3 policy build freestanding cmake ycxx
 
       # The shared library (DECISIONS §20): the own suite linked against libycxx.0.1.dylib, and

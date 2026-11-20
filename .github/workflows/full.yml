@@ -356,11 +356,19 @@ jobs:
       - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }} (tools/test; fetches the suite)
         run: |
           . tools/toolchain/activate.sh
+          cmake_path=$(command -v cmake)
+          echo "CMake: $cmake_path"
+          test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
+          cmake --version
           tools/test -j3 -q -c ${{ matrix.compiler }} build ${{ matrix.suite }}
       - name: ${{ matrix.suite }} suite, ${{ matrix.compiler }}, shared library (tools/test --shared)
         if: always()
         run: |
           . tools/toolchain/activate.sh
+          cmake_path=$(command -v cmake)
+          echo "CMake: $cmake_path"
+          test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
+          cmake --version
           tools/test -j3 -q -c ${{ matrix.compiler }} --shared build ${{ matrix.suite }}
       - name: Test reports
         if: always()

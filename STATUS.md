@@ -1684,6 +1684,8 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
   provides `EOF` (its transitive includes have `<cstdio>`, DECISIONS §19; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
+  Hosted `<cstdint>` matches the target C library's fast 16- and 32-bit types and limits,
+  including musl and glibc on Linux x86-64.
 - **Transitive includes (user decision, 2026-10-07; DECISIONS §19).** On by default (what
   libstdc++ and libc++ both provide, measured by `tools/probe_transitive.py`, plus the reliances
   of the real-world projects and suites); `-DYCXX_NO_TRANSITIVE_INCLUDES` turns them off. Three

@@ -1,7 +1,11 @@
-// libycxx core: <cstdint> types and macros, defined from compiler-predefined macros only.
+// libycxx core: <cstdint> types and macros.
 #pragma once
 
 #include <ycxx/config.hpp>
+
+#if _YCXX_HOSTED
+#  include <stdint.h>
+#endif
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 using int8_t = __INT8_TYPE__;
@@ -22,23 +26,22 @@ using uint_least16_t = __UINT_LEAST16_TYPE__;
 using uint_least32_t = __UINT_LEAST32_TYPE__;
 using uint_least64_t = __UINT_LEAST64_TYPE__;
 
-using int_fast8_t = __INT_FAST8_TYPE__;
-#if _YCXX_FAST16_IS_LONG
-using int_fast16_t = long;
-using int_fast32_t = long;
+#if _YCXX_HOSTED
+// The same target can have different fast integer types in different C libraries. The
+// compiler's predefined types apply when there is no C library.
+using int_fast16_t = ::int_fast16_t;
+using int_fast32_t = ::int_fast32_t;
+using uint_fast16_t = ::uint_fast16_t;
+using uint_fast32_t = ::uint_fast32_t;
 #else
 using int_fast16_t = __INT_FAST16_TYPE__;
 using int_fast32_t = __INT_FAST32_TYPE__;
-#endif
-using int_fast64_t = __INT_FAST64_TYPE__;
-using uint_fast8_t = __UINT_FAST8_TYPE__;
-#if _YCXX_FAST16_IS_LONG
-using uint_fast16_t = unsigned long;
-using uint_fast32_t = unsigned long;
-#else
 using uint_fast16_t = __UINT_FAST16_TYPE__;
 using uint_fast32_t = __UINT_FAST32_TYPE__;
 #endif
+using int_fast8_t = __INT_FAST8_TYPE__;
+using int_fast64_t = __INT_FAST64_TYPE__;
+using uint_fast8_t = __UINT_FAST8_TYPE__;
 using uint_fast64_t = __UINT_FAST64_TYPE__;
 
 using intmax_t = __INTMAX_TYPE__;
@@ -117,21 +120,12 @@ typedef ::std::uintptr_t uintptr_t;
 #  define INT_FAST64_MIN (-__INT_FAST64_MAX__ - 1)
 #  define INT_FAST64_MAX __INT_FAST64_MAX__
 #  define UINT_FAST64_MAX __UINT_FAST64_MAX__
-#  if _YCXX_FAST16_IS_LONG
-#    define INT_FAST16_MIN (-__INT64_MAX__ - 1)
-#    define INT_FAST16_MAX __INT64_MAX__
-#    define UINT_FAST16_MAX __UINT64_MAX__
-#    define INT_FAST32_MIN (-__INT64_MAX__ - 1)
-#    define INT_FAST32_MAX __INT64_MAX__
-#    define UINT_FAST32_MAX __UINT64_MAX__
-#  else
-#    define INT_FAST16_MIN (-__INT_FAST16_MAX__ - 1)
-#    define INT_FAST16_MAX __INT_FAST16_MAX__
-#    define UINT_FAST16_MAX __UINT_FAST16_MAX__
-#    define INT_FAST32_MIN (-__INT_FAST32_MAX__ - 1)
-#    define INT_FAST32_MAX __INT_FAST32_MAX__
-#    define UINT_FAST32_MAX __UINT_FAST32_MAX__
-#  endif
+#  define INT_FAST16_MIN (-__INT_FAST16_MAX__ - 1)
+#  define INT_FAST16_MAX __INT_FAST16_MAX__
+#  define UINT_FAST16_MAX __UINT_FAST16_MAX__
+#  define INT_FAST32_MIN (-__INT_FAST32_MAX__ - 1)
+#  define INT_FAST32_MAX __INT_FAST32_MAX__
+#  define UINT_FAST32_MAX __UINT_FAST32_MAX__
 #endif
 #ifndef INTPTR_MIN
 #  define INTPTR_MIN (-__INTPTR_MAX__ - 1)
@@ -192,16 +186,47 @@ typedef ::std::uintptr_t uintptr_t;
 #  define INT_FAST64_WIDTH __INT_FAST64_WIDTH__
 #  define UINT_FAST8_WIDTH __INT_FAST8_WIDTH__
 #  define UINT_FAST64_WIDTH __INT_FAST64_WIDTH__
-#  if _YCXX_FAST16_IS_LONG
-#    define INT_FAST16_WIDTH __LONG_WIDTH__
-#    define INT_FAST32_WIDTH __LONG_WIDTH__
-#    define UINT_FAST16_WIDTH __LONG_WIDTH__
-#    define UINT_FAST32_WIDTH __LONG_WIDTH__
-#  else
+#endif
+// Older C libraries define the limits but do not supply C23 widths. The limits
+// describe the selected types and are also usable in preprocessor expressions.
+#ifndef INT_FAST16_WIDTH
+#  if !_YCXX_HOSTED
 #    define INT_FAST16_WIDTH __INT_FAST16_WIDTH__
+#  elif INT_FAST16_MAX == INT64_MAX
+#    define INT_FAST16_WIDTH 64
+#  elif INT_FAST16_MAX == INT32_MAX
+#    define INT_FAST16_WIDTH 32
+#  else
+#    define INT_FAST16_WIDTH 16
+#  endif
+#endif
+#ifndef INT_FAST32_WIDTH
+#  if !_YCXX_HOSTED
 #    define INT_FAST32_WIDTH __INT_FAST32_WIDTH__
+#  elif INT_FAST32_MAX == INT64_MAX
+#    define INT_FAST32_WIDTH 64
+#  else
+#    define INT_FAST32_WIDTH 32
+#  endif
+#endif
+#ifndef UINT_FAST16_WIDTH
+#  if !_YCXX_HOSTED
 #    define UINT_FAST16_WIDTH __INT_FAST16_WIDTH__
+#  elif UINT_FAST16_MAX == UINT64_MAX
+#    define UINT_FAST16_WIDTH 64
+#  elif UINT_FAST16_MAX == UINT32_MAX
+#    define UINT_FAST16_WIDTH 32
+#  else
+#    define UINT_FAST16_WIDTH 16
+#  endif
+#endif
+#ifndef UINT_FAST32_WIDTH
+#  if !_YCXX_HOSTED
 #    define UINT_FAST32_WIDTH __INT_FAST32_WIDTH__
+#  elif UINT_FAST32_MAX == UINT64_MAX
+#    define UINT_FAST32_WIDTH 64
+#  else
+#    define UINT_FAST32_WIDTH 32
 #  endif
 #endif
 #ifndef INTPTR_WIDTH

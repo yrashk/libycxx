@@ -300,10 +300,10 @@ tooling.
 
 ## 3. Freestanding layering
 
-- `include/ycxx/core/**`: no OS, no libc headers, no heap unless an allocator is supplied, and
-  no dependency on `<exception>`/`<typeinfo>`. C types and macros (`<cstddef>`, `<cstdint>`,
-  `<climits>`) are defined from compiler-predefined macros only. The one exception is the
-  compiler's own `<stddef.h>` (GCC and Clang ship it for freestanding environments; it is not the
+- `include/ycxx/core/**`: no OS, no libc headers in freestanding builds, no heap unless an
+  allocator is supplied, and no dependency on `<exception>`/`<typeinfo>`. C types and macros
+  use compiler predefines by default. Core includes the compiler's own `<stddef.h>`
+  (GCC and Clang ship it for freestanding environments; it is not the
   C library's): `std::max_align_t` must be `::max_align_t` ([support.c.headers.other]/1), a class
   only that header can name, so core reads it (`#include_next`, past libycxx's own `<stddef.h>`,
   which is `<cstddef>` in C++: Clang's header lacks `::nullptr_t` there; partial `__need_*`
@@ -311,6 +311,11 @@ tooling.
   freestanding builds keep `-nostdinc` (no C library) and add the compiler's header directory
   back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` does not
   follow `#include_next`.
+- **Hosted `<cstdint>` takes the fast 16- and 32-bit types from the target C library.**
+  It includes `<stdint.h>` in the hosted branch and aliases its four types ([cstdint.syn]).
+  The C library also supplies their limit macros. If its header predates C23 width macros,
+  libycxx derives those widths from the corresponding integer limits. A freestanding build
+  uses the compiler predefines for both the types and macros.
 - `include/ycxx/hosted/**` plus `src/hosted`: anything needing the OS, reached only through the PAL.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.

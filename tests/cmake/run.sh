@@ -161,7 +161,8 @@ for c in $compilers; do
   # 1. build and install
   if x cmake -S "$repo" -B "$d/lib" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix" -DYCXX_FREESTANDING_RUNTIME=ON &&
      x cmake --build "$d/lib" &&
-     x cmake --install "$d/lib"; then
+     x cmake --install "$d/lib" &&
+     module_archive=$(cat "$d/lib/ycxx-static-module-archive"); then
     ok $c "build and install"
     discard_ci_build "$d/lib"
   else
@@ -171,15 +172,20 @@ for c in $compilers; do
   # libycxx.a and libycxx-abi.a (--whole-archive, Darwin's -force_load) must not meet a duplicate
   # definition, which a static link, pulling only the members it needs, would not show (the
   # _Float16 type_info objects of GCC on Darwin, CMakeLists.txt).
+  # If the core archive imports std, resolve its initializer through ordinary extraction from
+  # the installed provider after the two forced archives.
   if [ "$(uname -s)" = Darwin ]; then
     whole="-dynamiclib -Wl,-force_load,$d/prefix/lib/libycxx.a -Wl,-force_load,$d/prefix/lib/libycxx-abi.a"
-    [ $c = gcc ] && whole="$whole -static-libgcc"
+    whole_runtime=
+    [ $c = gcc ] && whole_runtime=-static-libgcc
   else
-    whole="-shared -Wl,--whole-archive $d/prefix/lib/libycxx.a $d/prefix/lib/libycxx-abi.a -Wl,--no-whole-archive -lm -shared-libgcc"
+    whole="-shared -Wl,--whole-archive $d/prefix/lib/libycxx.a $d/prefix/lib/libycxx-abi.a -Wl,--no-whole-archive"
+    whole_runtime="-lm -shared-libgcc"
   fi
   gid=
   [ $c = clang ] && [ "$(uname -s)" = Linux ] && gid="--gcc-install-dir=$(dirname "$(${YCXX_GXX:-g++-16} -print-libgcc-file-name)")"
-  if x $cxx $gid -nostdlib++ $whole -o "$d/whole-archive.so"; then
+  if x $cxx $gid -nostdlib++ $whole ${module_archive:+"$d/prefix/lib/$module_archive"} \
+       $whole_runtime -o "$d/whole-archive.so"; then
     ok $c "every archive member in one image (whole-archive link): no duplicate definitions"
   else
     bad $c "whole-archive link of libycxx.a and libycxx-abi.a fails (see $log)"

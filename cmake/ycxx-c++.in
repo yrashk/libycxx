@@ -95,7 +95,9 @@ if [ $link = 1 ] && [ $linkage = shared ]; then
   exec $cxx $extra -std=c++26 -nostdinc++ $mode @YCXX_W_INCLUDES@ "$@" \
     -nostdlib++ @YCXX_W_LINK_OPTIONS@ "$libdir/@YCXX_W_SONAME@" "$libdir/libycxx_nonshared.a" ${rpath:+"$rpath"} -lm $libgcc
 elif [ $link = 1 ]; then
+  module_archive='@YCXX_W_STATIC_MODULE_ARCHIVE@'
   exec $cxx $extra -std=c++26 -nostdinc++ @YCXX_W_INCLUDES@ "$@" \
-    -nostdlib++ @YCXX_W_LINK_OPTIONS@ $group_begin "$libdir/libycxx.a" "$libdir/libycxx-abi.a" $group_end -lm $libgcc
+    -nostdlib++ @YCXX_W_LINK_OPTIONS@ $group_begin "$libdir/libycxx.a" "$libdir/libycxx-abi.a" \
+    ${module_archive:+"$libdir/$module_archive"} $group_end -lm $libgcc
 fi
 exec $cxx $extra -std=c++26 -nostdinc++ $mode @YCXX_W_INCLUDES@ "$@"

@@ -37,7 +37,7 @@ import pathlib, re, sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 ROOTS = (REPO / "include", REPO / "src")
-SOURCE_SUFFIXES = {".cpp", ".hpp"}  # under src/; include/ has extensionless headers too
+SOURCE_SUFFIXES = {".cpp", ".cppm", ".hpp"}  # under src/; include/ has extensionless headers too
 DATA = REPO / "tools/data/visibility.txt"
 HIDDEN = '[[__gnu__::__visibility__("hidden")]]'
 MODE = '[[__gnu__::__visibility__(_YCXX_VISIBILITY)]]'

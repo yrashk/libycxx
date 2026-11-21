@@ -24,10 +24,26 @@
 # <prefix>/share/libycxx/meson-native.ini (each finds the prefix relative to itself, so the
 # installation can be moved; the compilers' own paths are absolute).
 #
-# Only for the default platform layer (YCXX_PAL=posix): with YCXX_PAL=none the program's
-# providers of the hosted layers are part of the link (ycxx_add_hosted_layer).
+# The wrappers and pkg-config files are only for YCXX_PAL=posix: with YCXX_PAL=none the program's
+# providers of the hosted layers are part of the link (ycxx_add_hosted_layer). The build's static
+# module archive record is also used by tools/ycxx-cxx.
 
 function(ycxx_consumer_files link_options)
+  # Deferred source classification sets the private dependency. A standard module archive can
+  # also be built for application imports, so its presence alone does not imply this edge.
+  set(static_module_archive "")
+  if(YCXX_STATIC)
+    get_target_property(static_links ycxx LINK_LIBRARIES)
+    if("ycxx_modules" IN_LIST static_links)
+      set(static_module_archive libycxx-modules.a)
+    endif()
+  endif()
+  file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ycxx-static-module-archive"
+       CONTENT "${static_module_archive}\n" @ONLY)
+  if(NOT YCXX_PAL STREQUAL "posix")
+    return()
+  endif()
+
   set(stage ${CMAKE_CURRENT_BINARY_DIR}/consumer)
   file(MAKE_DIRECTORY ${stage} ${CMAKE_CURRENT_BINARY_DIR}/bin ${CMAKE_CURRENT_BINARY_DIR}/pkgconfig)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -88,6 +104,7 @@ function(ycxx_consumer_files link_options)
   set(YCXX_W_LIBGCC "${libgcc}")
   set(YCXX_W_LINK_OPTIONS "${opts}")
   set(YCXX_W_DEFAULT_LINKAGE ${YCXX_DEFAULT_LINKAGE})
+  set(YCXX_W_STATIC_MODULE_ARCHIVE "${static_module_archive}")
   set(YCXX_W_STATIC "")
   set(YCXX_W_SHARED "")
   if(YCXX_STATIC)
@@ -201,9 +218,13 @@ Version: ${PROJECT_VERSION}
   set(pc_kinds "")
   if(YCXX_STATIC)
     list(APPEND pc_kinds static)
+    set(pc_static_modules "")
+    if(static_module_archive)
+      set(pc_static_modules " \${libdir}/${static_module_archive}")
+    endif()
     set(pc_static "Name: libycxx
 ${pc_common}Cflags: -std=c++26 -nostdinc++ @PC_INCLUDES@${cflags_extra}
-Libs: -nostdlib++ ${opts} ${group_begin}\${libdir}/libycxx.a \${libdir}/libycxx-abi.a${group_end} -lm ${libgcc}${libs_extra}
+Libs: -nostdlib++ ${opts} ${group_begin}\${libdir}/libycxx.a \${libdir}/libycxx-abi.a${pc_static_modules}${group_end} -lm ${libgcc}${libs_extra}
 ")
   endif()
   if(YCXX_SHARED)

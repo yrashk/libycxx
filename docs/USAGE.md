@@ -213,3 +213,18 @@ include`, `-nostdlib++` and the archives).
 Limitations: GCC 16 cannot mix `#include` of a standard header and `import std;` in one
 translation unit (its own module bugs; STATUS.md, known compiler gaps); different translation
 units of one program may freely use either. Clang 23 handles both orders. Only Linux is tested.
+### libycxx's own sources as modules: `src/**/*.cppm`
+
+A source of the library may be a C++ module unit (`src/hosted/print.cppm`) instead of a `.cpp`,
+next to the other sources, in any of the archives and in the shared library; units of the hosted
+library may `import std;`. The default `YCXX_SOURCE_MODULES=AUTO` uses native source modules with
+Ninja when `YCXX_MODULES` is enabled and lowers them to plain translation units otherwise. With
+`-DYCXX_MODULES=OFF`, this default lets Ninja build without a module scanner. Explicit
+`-DYCXX_SOURCE_MODULES=ON` uses native source modules on Ninja independently of `YCXX_MODULES`, and
+`-DYCXX_SOURCE_MODULES=OFF` always lowers the library's own units. Existing cached `ON` and `OFF`
+values keep their meaning. Set `-DYCXX_SOURCE_MODULES=AUTO` to use the automatic choice again.
+Either way the library defines the same symbols: `tools/check_source_modules.py` checks the
+archives (and `tools/check_abi.py` the shared library's exports). DECISIONS §21 has the rules a
+unit follows (its definitions in `extern "C++"`, its module initializer hidden) and where a unit's
+`import std;` becomes std's headers instead (GCC's include-then-import gap). The shared library
+always compiles them lowered.

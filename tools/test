@@ -13,6 +13,8 @@
 #                 (tools/similarity/leakcheck --quick)
 #   build         the library for each compiler, RelWithDebInfo (build/<cc>, what the suites
 #                 link) and Release (build/<cc>-release, -O3, as CMake consumers build it)
+#                 and, without source modules (build/<cc>-lowered), libycxx.a and libycxx-abi.a: the
+#                 module units' symbols (tools/check_source_modules.py, DECISIONS §21)
 #   freestanding  every core header with -ffreestanding -nostdinc, bare-metal smoke link
 #   cmake         CMake package, add_subdirectory and toolchain file, the shared library
 #                 (tests/cmake/run.sh), and the quickstart's commands as documented
@@ -306,6 +308,29 @@ for stage in $stages; do
           step "$c $t: build ($d)" build-$c-$t ninja -C $d ${jobs:+-j$jobs} ||
             { [ $t = Release ] || broken="$broken $c"; }
         done
+        # The library's own module units (src/**/*.cppm, DECISIONS §21) define what their lowered
+        # translation units do, and nothing attached to a named module.
+        d=build/$c-lowered
+        if [ ! -f $d/build.ninja ]; then
+          step "$c: configure without source modules ($d)" build-$c-lowered-configure cmake -S . -B $d -G Ninja \
+            -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DYCXX_SOURCE_MODULES=OFF || continue
+        fi
+        step "$c: build without source modules ($d)" build-$c-lowered ninja -C $d ${jobs:+-j$jobs} ycxx ycxx_abi &&
+          step "$c: module units' symbols" build-$c-source-modules \
+            sh -c 'for a in libycxx libycxx-abi; do python3 tools/check_source_modules.py build/$1/$a.a $2/$a.a || exit; done' \
+            sh $c $d || :
+        step "$c: source module quoted includes" build-$c-source-module-includes \
+          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-includes-test" \
+          -P tests/cmake/source-module-includes.cmake || :
+        step "$c: source module rebuild dependencies" build-$c-source-module-dependencies \
+          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-dependencies-test" \
+          -P tests/cmake/source-module-dependencies.cmake || :
+        if [ "$c" = clang ]; then
+          step "Clang: source module scanner defaults" build-clang-source-module-scanner \
+            cmake "-DCXX=$(cxx_of clang)" "-DWORK_DIR=$PWD/$d/source-module-scanner-test" \
+            -P tests/cmake/source-module-scanner.cmake || :
+        fi
         # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
         if [ $linkage = shared ]; then
           d=build/$c-shared
@@ -327,6 +352,11 @@ for stage in $stages; do
       # cmake --build takes the job count from CMAKE_BUILD_PARALLEL_LEVEL.
       direct "CMake package and toolchain file" cmake "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/cmake/run.sh $compilers || :
+      case " $compilers " in
+        *" gcc "*) step "GCC: static implementation module provider" cmake-static-module-provider \
+          cmake "-DCC=$(cc_of gcc)" "-DCXX=$(cxx_of gcc)" "-DWORK_DIR=$PWD/build/source-module-provider-test" \
+          -P tests/cmake/source-module-provider.cmake || : ;;
+      esac
       direct "quickstart commands, as documented (examples/quickstart)" quickstart "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh $compilers || :
       if [ $linkage = shared ]; then

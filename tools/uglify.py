@@ -452,7 +452,7 @@ def include_files():
 
 
 def src_files():
-    return sorted(p for p in (REPO / "src").rglob("*") if p.is_file() and p.suffix in (".cpp", ".hpp", ".c", ".h"))
+    return sorted(p for p in (REPO / "src").rglob("*") if p.is_file() and p.suffix in (".cpp", ".cppm", ".hpp", ".c", ".h"))
 
 
 def checked_files():

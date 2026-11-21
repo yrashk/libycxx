@@ -640,8 +640,11 @@ What every link of a libycxx program or shared library needs (the wrapper, `liby
 | `-Wno-attributes` (GCC, compiling) | silences GCC's warning about program classes with members of hidden library types (STATUS) |
 
 The exact options of a build are in `<build>/ycxx-link-options` and in `pkg-config --libs
-libycxx`. On macOS there is no `-rpath`, `--export-dynamic-symbol` or group (the archives are
-bound in the executable, two-level namespace; DECISIONS §2, STATUS "macOS").
+libycxx`. When static libycxx imports a standard module, add the archive named by
+`<build>/ycxx-static-module-archive` after `libycxx-abi.a`, inside the same ELF archive group.
+The compiler wrappers and pkg-config include it automatically. On macOS there is no `-rpath`,
+`--export-dynamic-symbol` or group (the archives are bound in the executable, two-level
+namespace; DECISIONS §2, STATUS "macOS").
 
 ## 4. Anything else
 

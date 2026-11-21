@@ -21,3 +21,13 @@ This chat developed optional .cppm implementation units (YCXX_SOURCE_MODULES), o
 
 Recovery next step: read the linked issue, compare this snapshot with current main and the implementation/test-author counterparts, finish unfinished review work, run required checks in a new worktree, and continue toward a green PR. Notify original issues when starting the parallel continuation; after the PR is green, link it there and explicitly take over from the previous agent. Amend WIP snapshots as the work continues, preserving/rewriting the note onto the new tip.
 Validation: preservation session verified source HEAD/index/status unchanged and snapshot tree equality. Historical test statements above are reports from Claude logs, not new test runs. No compiler implementation sources were consulted to summarize these chats.
+
+November 21 Codex continuation of optional library implementation modules
+
+Original snapshot 642d62e5c359fe8fb4dce5cc37642b8251ca7252 and its note remain preserved. The original draft yrashk/libycxx#12 still points directly to that commit. Prior verified local source and sibling worktrees remained in place.
+
+Main a872d6b39bc141966a5a714a0bfdb4c190739825 and the snapshot project to fba888e720b393fae087235c6f2e6db4958ed250. Commit 8919f36b03dad13cb4ee0b1465726c9c1680ac4d preserves source-local literal quoted includes and locations in both lowering modes (#35). Commit 646ce04cefb7d30f166d059138e9c44029a9d444, tree 6909a2ce5f03f85cc53f4c050b6db685d7c64c09, adds exact configure and build dependencies for native imports and per-rewrite standard header manifests (#36).
+
+The unmodified checker, temporary atomic module conversion, CMake GCC archives and both-compilers regression cases witnessed the #35 failure and fix. The #36 tests compare incremental and fresh builds, native import add/remove and independent standard header-list edits. The exact combined tree passed tools/check-all -j2 --no-fetch, 31 of 31 steps in 5m21s on Linux x86-64, GCC 16.2.0, Clang 23.1.6, CMake 4.4.5 and Ninja 1.13.2. Both compiler variants passed the normal regression entry points, archive symbol parity and the three freestanding smoke checks. Source was clean.
+
+This is a tested handoff checkpoint. The original discussion draft and its remaining consumer linkage (#37), scanner defaults (#38), and measured real-import payoff are still open. Recovery policy remains yrashk/ycxx#377.

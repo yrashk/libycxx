@@ -318,6 +318,9 @@ for stage in $stages; do
           step "$c: module units' symbols" build-$c-source-modules \
             sh -c 'for a in libycxx libycxx-abi; do python3 tools/check_source_modules.py build/$1/$a.a $2/$a.a || exit; done' \
             sh $c $d || :
+        step "$c: source module quoted includes" build-$c-source-module-includes \
+          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-includes-test" \
+          -P tests/cmake/source-module-includes.cmake || :
         # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
         if [ $linkage = shared ]; then
           d=build/$c-shared

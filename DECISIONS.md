@@ -3177,6 +3177,9 @@ the library's own code, without making C++ modules a requirement for building li
   The units of the ABI runtime (`src/abi`, below the library, §3), of each image's part
   (`ycxx_nonshared`) and of the freestanding runtime (no hosted library) cannot import std
   (`NO_STD`): the configuration says so.
+  Editing an implementation module unit reruns CMake so the choice of source, import policy and
+  private module dependency follow its current imports. Each rewritten unit depends on the
+  module header lists it uses (`std.cppm`, also `std.compat.cppm` for `import std.compat;`).
 - **GCC: importing std after standard headers.** GCC 16 cannot import std in a translation unit
   that has included a standard header (STATUS, known compiler gaps), and a unit that needs
   `__ycxx::` internals includes their headers. For GCC, a unit that imports std and whose global

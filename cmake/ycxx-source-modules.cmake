@@ -55,6 +55,8 @@ function(ycxx_add_module_units target)
   if(NOT _units)
     return()
   endif()
+  # Adding or removing a standard import can change the chosen source and its link dependencies.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${_units})
   get_target_property(_sources ${target} SOURCES)
   list(FILTER _sources EXCLUDE REGEX "\\.cppm$")
   set_property(TARGET ${target} PROPERTY SOURCES ${_sources})
@@ -84,20 +86,20 @@ function(_ycxx_add_module_units_now target modules std_modules)
   set(_module_files "")
   foreach(_u IN LISTS _units)
     cmake_path(RELATIVE_PATH _u BASE_DIRECTORY ${PROJECT_SOURCE_DIR}/src OUTPUT_VARIABLE _rel)
+    _ycxx_unit_imports_std(${_u} _imports _textual)
     if(NOT modules)
       # Lowered: <build>/lowered/<target>/<path under src>.cpp.
       string(REGEX REPLACE "\\.cppm$" ".cpp" _out "${PROJECT_BINARY_DIR}/lowered/${target}/${_rel}")
-      _ycxx_rewrite_unit(${_u} ${_out} plain)
+      _ycxx_rewrite_unit(${_u} ${_out} plain "${_imports}")
       target_sources(${target} PRIVATE ${_out})
       continue()
     endif()
-    _ycxx_unit_imports_std(${_u} _imports _textual)
     if(_imports AND (NOT std_modules OR NOT TARGET "${std_modules}"
                      OR (_textual AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")))
       # The unit includes std's headers instead of importing it; still a module unit. GCC 16
       # cannot import std after an #include of a standard header (STATUS, known compiler gaps).
       set(_out ${PROJECT_BINARY_DIR}/textual-std/${target}/${_rel})
-      _ycxx_rewrite_unit(${_u} ${_out} textual-std)
+      _ycxx_rewrite_unit(${_u} ${_out} textual-std "${_imports}")
       list(APPEND _module_files ${_out})
     else()
       if(_imports)
@@ -124,18 +126,22 @@ function(_ycxx_add_module_units_now target modules std_modules)
   endif()
 endfunction()
 
-# _ycxx_unit_imports_std(<unit> <imports-var> <textual-var>): whether the unit imports std or
-# std.compat, and whether its global module fragment includes a header other than the two libycxx
-# headers known to include no standard header (GCC can import std only after those).
+# _ycxx_unit_imports_std(<unit> <imports-var> <textual-var>): the widest standard import of the
+# unit (std.compat, std or empty), and whether the unit includes a header other than the two
+# libycxx headers known to include no standard header (GCC can import std only after those).
 function(_ycxx_unit_imports_std unit imports_var textual_var)
   file(STRINGS ${unit} _imports REGEX "^[ \t]*import[ \t]+std(\\.compat)?[ \t]*;")
   file(STRINGS ${unit} _includes REGEX "^[ \t]*#[ \t]*include[ \t]*[<\"]")
   list(FILTER _includes EXCLUDE REGEX "<ycxx/config\\.hpp>|<ycxx/core/hidden_symbol\\.hpp>")
+  set(_kind "")
   if(_imports)
-    set(${imports_var} ON PARENT_SCOPE)
-  else()
-    set(${imports_var} OFF PARENT_SCOPE)
+    set(_kind std)
+    list(FILTER _imports INCLUDE REGEX "^[ \t]*import[ \t]+std\\.compat[ \t]*;")
+    if(_imports)
+      set(_kind std.compat)
+    endif()
   endif()
+  set(${imports_var} "${_kind}" PARENT_SCOPE)
   if(_includes)
     set(${textual_var} ON PARENT_SCOPE)
   else()
@@ -172,18 +178,24 @@ function(_ycxx_check_initializer_hidden unit rel)
   endif()
 endfunction()
 
-# _ycxx_rewrite_unit(<unit> <output> plain|textual-std): <output>, made from <unit> by
-# cmake/ycxx-lower-module-unit.cmake when the unit changes, with the source file properties set
-# on the unit (COMPILE_OPTIONS, COMPILE_DEFINITIONS, INCLUDE_DIRECTORIES; this runs at the end of
-# the directory, after every set_source_files_properties).
-function(_ycxx_rewrite_unit unit out mode)
+# Generate <out> from <unit> and the header lists it imports (std.compat also includes std).
+# Copy the source file properties after every set_source_files_properties in the directory.
+function(_ycxx_rewrite_unit unit out mode imports)
   cmake_path(RELATIVE_PATH unit BASE_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE _rel)
+  set(_lower ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake)
+  set(_std ${PROJECT_SOURCE_DIR}/modules/std.cppm)
+  set(_std_compat ${PROJECT_SOURCE_DIR}/modules/std.compat.cppm)
+  set(_depends ${unit} ${_lower})
+  if(imports)
+    list(APPEND _depends ${_std})
+    if(imports STREQUAL "std.compat")
+      list(APPEND _depends ${_std_compat})
+    endif()
+  endif()
   add_custom_command(OUTPUT ${out}
     COMMAND ${CMAKE_COMMAND} -DINPUT=${unit} -DOUTPUT=${out} -DMODE=${mode}
-            -DSTD_MODULE=${PROJECT_SOURCE_DIR}/modules/std.cppm
-            -DSTD_COMPAT_MODULE=${PROJECT_SOURCE_DIR}/modules/std.compat.cppm
-            -P ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
-    DEPENDS ${unit} ${PROJECT_SOURCE_DIR}/cmake/ycxx-lower-module-unit.cmake
+            -DSTD_MODULE=${_std} -DSTD_COMPAT_MODULE=${_std_compat} -P ${_lower}
+    DEPENDS ${_depends}
     COMMENT "Rewriting module unit ${_rel} (${mode})"
     VERBATIM)
   foreach(_p COMPILE_OPTIONS COMPILE_DEFINITIONS INCLUDE_DIRECTORIES)

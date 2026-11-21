@@ -321,6 +321,9 @@ for stage in $stages; do
         step "$c: source module quoted includes" build-$c-source-module-includes \
           cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-includes-test" \
           -P tests/cmake/source-module-includes.cmake || :
+        step "$c: source module rebuild dependencies" build-$c-source-module-dependencies \
+          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-dependencies-test" \
+          -P tests/cmake/source-module-dependencies.cmake || :
         # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
         if [ $linkage = shared ]; then
           d=build/$c-shared

@@ -21,9 +21,10 @@ two configurations:
                 freestanding (tests/foreign/fallbacks.cpp).
 
 It also pins the native builtin choices (GCC, $YCXX_GXX, and Clang), the vector layout of <simd>
-when the attribute probe succeeds, the _YCXX_COMPILER_* switch each compiler gets (ycxx's, not
-GCC's, although it defines __GNUC__), and
-that a compiler with no recognized identity still stops at config.hpp's #error.
+when the attribute probe succeeds, the <atomic> paths with and without the GNU may-alias
+attribute, the _YCXX_COMPILER_* switch each compiler gets (ycxx's, not GCC's, although it
+defines __GNUC__), and that a compiler with no recognized identity still stops at config.hpp's
+#error.
 
   tools/check_foreign_compiler.py [-v]
 """
@@ -174,6 +175,57 @@ for label, cmd in (("gcc", [GXX] + BASE), ("clang", [CLANGXX] + BASE), ("foreign
         fail(f"{label}: <simd> uses vector chunks", r.stderr)
     else:
         print(f"ok   {label}: <simd> uses vector chunks")
+
+# Give the exact scoped attribute an unknown name so the probe and any declaration spelling
+# both see the same unavailable attribute. A probe-only override would leave aliasing enabled.
+atomic_types = """
+#include <atomic>
+struct word { unsigned int value; };
+struct byte { unsigned char value; };
+struct bulk { unsigned char value[3]; };
+"""
+atomic_unaffected = """
+static_assert(std::atomic<int>::is_always_lock_free);
+static_assert(std::atomic_ref<const volatile int>::is_always_lock_free);
+static_assert(std::atomic<byte>::is_always_lock_free);
+static_assert(!std::atomic<bulk>::is_always_lock_free);
+static_assert(!std::atomic_ref<bulk>::is_always_lock_free);
+static_assert(std::atomic_ref<word>::required_alignment == sizeof(word));
+void unaffected(word& w, volatile std::atomic<word>& a, int& i, bulk& b) {
+  std::atomic_ref<word>(w).notify_all();
+  std::atomic_notify_one(&a);
+  std::atomic_ref<int>(i).fetch_add(1);
+  std::atomic_ref<bulk>(b).exchange({});
+  std::atomic<byte> value;
+  value.store(value.load());
+}
+"""
+atomic_affected = {
+    "atomic CAS": "bool f(std::atomic<word>& a, word& e) { return a.compare_exchange_strong(e, {}); }",
+    "atomic_ref wait": "void f(word& w) { std::atomic_ref<word>(w).wait({}); }",
+    "atomic pointer RMW": "void f(std::atomic<int*>& a) { a.fetch_add(1); }",
+    "atomic distinct character type": "char32_t f(std::atomic<char32_t>& a) { return a.load(); }",
+    "atomic lock-free query": "static_assert(std::atomic<word>::is_always_lock_free);",
+    "atomic_ref lock-free query": "bool f(const word& w) { return std::atomic_ref(w).is_lock_free(); }",
+}
+for label, compiler in (("gcc", GXX), ("clang", CLANGXX)):
+    cmd = freestanding([compiler] + BASE)
+    missing = cmd + ["-D__may_alias__=__ycxx_missing_may_alias__"]
+    syntax = ["-fsyntax-only", "-"]
+    r = run(missing + syntax, atomic_types + atomic_unaffected)
+    if r.returncode != 0:
+        fail(f"{label}: <atomic> operations available without may_alias", r.stderr)
+    else:
+        print(f"ok   {label}: <atomic> operations that do not require may_alias compile")
+    for check, use in atomic_affected.items():
+        r = run(cmd + syntax, atomic_types + use)
+        if r.returncode != 0:
+            fail(f"{label}: {check} with may_alias", r.stderr)
+        r = run(missing + syntax, atomic_types + use)
+        if r.returncode == 0 or "lock-free atomic access for this type requires" not in r.stderr:
+            fail(f"{label}: {check} diagnoses missing may_alias", r.stderr)
+        else:
+            print(f"ok   {label}: {check} diagnoses missing may_alias")
 
 # Foreign, answering 0 to every probe (ycxx today) and ignoring the SIMD vector attribute.
 zero = [CLANGXX] + BASE + FOREIGN + zero_probes() + ["-D__vector_size__=__ycxx_missing_vector_size__"]

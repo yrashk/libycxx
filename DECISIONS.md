@@ -849,8 +849,11 @@ through the switches above. Everything a compiler provides is asked of it:
   `__APPLE__`, `__aarch64__`, `__GCC_ATOMIC_*_LOCK_FREE`, ...);
 - **attributes** are written directly (`[[__gnu__::__visibility__("hidden")]]`, `[[__gnu__::__cold__]]`):
   a compiler ignores the attributes it does not know ([dcl.attr.grammar]), so no probe is needed
-  to parse them. The atomic access types rely on `__may_alias__`. `<simd>` probes its vector
-  attribute in `config.hpp` and uses scalar chunks when the attribute is unavailable (§12).
+  to parse them. Lock-free atomics probe `__gnu__::__may_alias__` in `config.hpp`. When it is
+  unavailable, an operation or lock-free query that needs an access outside [basic.lval] diagnoses
+  the missing attribute. Alias-safe accesses and the lock-based backend remain available.
+  `<simd>` probes its vector attribute in `config.hpp` and uses scalar chunks when the attribute
+  is unavailable (§12).
 
 One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_COMPILER_CLANG`),
 for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang

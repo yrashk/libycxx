@@ -540,6 +540,28 @@ using __y_int128 = __int128_unavailable;
 using __uint128 = __int128_unavailable;
 #endif
 
+// The exact attribute spelling on the aliases used for lock-free atomic access. Keep the
+// plain types available for value representations and accesses that satisfy [basic.lval].
+#if __has_cpp_attribute(__gnu__::__may_alias__)
+namespace __cfg { inline constexpr bool __atomic_may_alias = true; }
+using __atomic_u8 [[__gnu__::__may_alias__]] = unsigned char;
+using __atomic_u16 [[__gnu__::__may_alias__]] = unsigned short;
+using __atomic_u32 [[__gnu__::__may_alias__]] = unsigned int;
+using __atomic_u64 [[__gnu__::__may_alias__]] = unsigned long long;
+#  if defined(__SIZEOF_INT128__)
+using __atomic_u128 [[__gnu__::__may_alias__]] = __uint128;
+#  else
+using __atomic_u128 = __uint128;
+#  endif
+#else
+namespace __cfg { inline constexpr bool __atomic_may_alias = false; }
+using __atomic_u8 = unsigned char;
+using __atomic_u16 = unsigned short;
+using __atomic_u32 = unsigned int;
+using __atomic_u64 = unsigned long long;
+using __atomic_u128 = __uint128;
+#endif
+
 // Floating-point formats: the only per-type facts read from the compiler. Everything else in
 // numeric_limits is derived from these three numbers in constexpr code (see <limits>).
 struct __fp_format_info {

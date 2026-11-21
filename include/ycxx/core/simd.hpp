@@ -261,10 +261,15 @@ template <class _Sp>
 using __simd_unsigned_chunk = __simd_vector<std::make_unsigned_t<typename _Sp::element_type>, _Sp::__lanes>;
 template <class _Sp, class _Fp>
 constexpr _Sp __simd_wrapping_map(const _Sp& a, _Fp __f) noexcept {
+  using _Ep = typename _Sp::element_type;
   if constexpr (__simd_narrow_signed<_Sp>) {
     using _Up = __simd_unsigned_chunk<_Sp>;
     using _Cp = typename _Sp::__chunk_type;
     return _Sp::map(a, [__f](_Cp __x) { return __builtin_bit_cast(_Cp, static_cast<_Up>(__f(__builtin_bit_cast(_Up, __x)))); });
+  } else if constexpr (std::is_integral_v<_Ep> && std::is_signed_v<_Ep> && sizeof(_Ep) < sizeof(int)) {
+    // COMPILER-BUG(gcc): GCC 16.2 can miscompile negation followed by comparison when it
+    // vectorizes the scalar loop. Negate in unsigned int and narrow modulo the element width.
+    return _Sp::map(a, [__f](_Ep __x) { return static_cast<_Ep>(__f(static_cast<unsigned>(__x))); });
   } else {
     return _Sp::map(a, __f);
   }

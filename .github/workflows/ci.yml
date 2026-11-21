@@ -147,8 +147,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Toolchains (Homebrew GCC 16, Ninja, uv; pinned CMake and cached Clang 23)
+      - name: Toolchains for CMake (${{ matrix.compiler }})
         uses: ./.github/actions/setup-macos
+        with:
+          gcc-only: ${{ matrix.compiler == 'gcc' }}
 
       - name: CMake package and quickstart (tools/test)
         env:

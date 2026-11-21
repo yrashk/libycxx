@@ -646,6 +646,12 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- On compilers without `[[__gnu__::__may_alias__]]`, `<atomic>` diagnoses lock-free operations
+  and lock-free queries for types whose selected integer access type is incompatible under
+  [basic.lval]. For example, the lock-free backend for a four-byte aggregate accesses it
+  through an `unsigned int`. Lock-based atomics and compatible lock-free accesses remain
+  available. The `ATOMIC_*_LOCK_FREE` macros expose the compiler's target lock-free constants
+  (DECISIONS §5).
 - Neither GCC 16.2 nor Clang 23.1 can set bits of a pointer during constant evaluation (no
   pointer-tagging builtin; `reinterpret_cast`, `bit_cast` of pointers, arithmetic outside an
   object or on a null pointer, and reading the other member of a pointer/integer union are all

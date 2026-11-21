@@ -95,7 +95,7 @@ struct __atomic_base {
     }
   }
 
-  static constexpr bool is_always_lock_free = ::__ycxx::__detail::__atomic_lock_free<_Tp>;
+  static constexpr bool is_always_lock_free = ::__ycxx::__detail::__atomic_checked_lock_free<_Tp>;
   bool is_lock_free() const volatile noexcept { return is_always_lock_free; }
   bool is_lock_free() const noexcept { return is_always_lock_free; }
 
@@ -283,9 +283,9 @@ struct __atomic_ref_base {
   constexpr explicit __atomic_ref_base(_Tp* p) noexcept : __ptr_(p) {}
 
   static constexpr std::size_t required_alignment = ::__ycxx::__detail::__atomic_align<value_type>;
-  static constexpr bool is_always_lock_free = ::__ycxx::__detail::__atomic_lock_free<value_type>;
+  static constexpr bool is_always_lock_free = ::__ycxx::__detail::__atomic_checked_lock_free<value_type>;
   static_assert(std::is_trivially_copyable_v<value_type>, "atomic_ref<T> needs a trivially copyable T");
-  static_assert(is_always_lock_free || !std::is_volatile_v<_Tp>,
+  static_assert(!std::is_volatile_v<_Tp> || ::__ycxx::__detail::__atomic_lock_free<value_type>,
                 "atomic_ref<volatile T> needs a T whose operations are always lock-free");
 
   bool is_lock_free() const noexcept { return is_always_lock_free; }
@@ -353,6 +353,20 @@ struct __atomic_ref_base {
 };
 
 }} // namespace __ycxx::__adl_free
+
+namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
+
+// Notification only uses the object's address. Follow the raw backend for the volatile
+// overloads while letting specializations such as atomic<shared_ptr<T>> report their own.
+template <class _Tp, class _Ap>
+inline constexpr bool __atomic_notify_lock_free = [] {
+  if constexpr (std::is_base_of_v<__adl_free::__atomic_base<_Tp>, _Ap>)
+    return __atomic_lock_free<_Tp>;
+  else
+    return _Ap::is_always_lock_free;
+}();
+
+}} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
@@ -2186,12 +2200,12 @@ constexpr void atomic_wait_explicit(const atomic<_Tp>* __object, typename atomic
   __object->wait(__old, __o);
 }
 template <class _Tp>
-  requires atomic<_Tp>::is_always_lock_free
+  requires(::__ycxx::__detail::__atomic_notify_lock_free<_Tp, atomic<_Tp>>)
 void atomic_notify_one(volatile atomic<_Tp>* __object) noexcept {
   __object->notify_one();
 }
 template <class _Tp>
-  requires(!atomic<_Tp>::is_always_lock_free)
+  requires(!::__ycxx::__detail::__atomic_notify_lock_free<_Tp, atomic<_Tp>>)
 [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
              "([depr.atomics.volatile])")]]
 void atomic_notify_one(volatile atomic<_Tp>* __object) noexcept {
@@ -2202,12 +2216,12 @@ constexpr void atomic_notify_one(atomic<_Tp>* __object) noexcept {
   __object->notify_one();
 }
 template <class _Tp>
-  requires atomic<_Tp>::is_always_lock_free
+  requires(::__ycxx::__detail::__atomic_notify_lock_free<_Tp, atomic<_Tp>>)
 void atomic_notify_all(volatile atomic<_Tp>* __object) noexcept {
   __object->notify_all();
 }
 template <class _Tp>
-  requires(!atomic<_Tp>::is_always_lock_free)
+  requires(!::__ycxx::__detail::__atomic_notify_lock_free<_Tp, atomic<_Tp>>)
 [[deprecated("a volatile atomic operation on a type that is not always lock-free is deprecated "
              "([depr.atomics.volatile])")]]
 void atomic_notify_all(volatile atomic<_Tp>* __object) noexcept {

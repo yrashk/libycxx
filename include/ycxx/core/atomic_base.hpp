@@ -3,10 +3,10 @@
 //
 // Lock-free types. A type is lock-free when its size is 1, 2, 4, 8 or 16 bytes and the compiler
 // reports __atomic_always_lock_free for that size; atomic<T> and atomic_ref<T> then align the
-// object to its size. Every operation works on the object as an unsigned integer of the same
-// size (a may_alias type, so the access never violates type-based aliasing): values are copied
-// into and out of that integer with memcpy, after their padding bits are cleared, so that
-// compare-and-exchange compares value representations ([atomics.types.operations]/23, Note 7).
+// object to its size. Value accesses use an unsigned integer of the same size. An access that
+// is outside [basic.lval] requires the GNU may_alias attribute. Values are copied into and out
+// of that integer with memcpy after their padding bits are cleared, so compare-and-exchange
+// compares value representations ([atomics.types.operations]/23, Note 7).
 // A compare-and-exchange that fails only because the stored object's padding differs (possible
 // through atomic_ref) is retried with the stored bytes.
 //
@@ -69,10 +69,6 @@ void __atomic_notify(const volatile void* __addr) noexcept;
 // ---- representation -------------------------------------------------------------------------
 template <std::size_t _Np>
 struct __atomic_rep_impl {};
-using __atomic_u8 [[__gnu__::__may_alias__]] = unsigned char;
-using __atomic_u16 [[__gnu__::__may_alias__]] = unsigned short;
-using __atomic_u32 [[__gnu__::__may_alias__]] = unsigned int;
-using __atomic_u64 [[__gnu__::__may_alias__]] = unsigned long long;
 template <>
 struct __atomic_rep_impl<1> {
   using type = __atomic_u8;
@@ -92,8 +88,7 @@ struct __atomic_rep_impl<8> {
 template <std::size_t _Np>
   requires(_Np == 16 && __cfg::__has_int128)
 struct __atomic_rep_impl<_Np> {
-  using __u128 [[__gnu__::__may_alias__]] = __uint128;
-  using type = __u128;
+  using type = __atomic_u128;
 };
 template <class _Vp>
 using __atomic_rep = typename __atomic_rep_impl<sizeof(_Vp)>::type;
@@ -107,6 +102,28 @@ inline constexpr bool __atomic_lock_free = [] {
     return __atomic_always_lock_free(sizeof(_Vp), 0);
   else
     return false;
+}();
+
+// [basic.lval] permits unsigned-char access and access through the same type or the
+// corresponding signed or unsigned type. Here the representation is always unsigned.
+template <class _Vp, class _Tp = _Vp>
+consteval void __atomic_require_rep_access() noexcept {
+  if constexpr (!__cfg::__atomic_may_alias) {
+    using _Rp = __atomic_rep<_Vp>;
+    using _Op = std::remove_cv_t<_Tp>;
+    static_assert(std::is_same_v<_Rp, unsigned char> || std::is_same_v<_Op, _Rp> ||
+                      std::is_same_v<_Op, std::make_signed_t<_Rp>>,
+                  "libycxx: lock-free atomic access for this type requires [[__gnu__::__may_alias__]]");
+  }
+}
+
+// Diagnose when a lock-free query needs the answer. Keep dispatch and layout independent of
+// the attribute so that its absence cannot send the same object through the lock table.
+template <class _Vp>
+inline constexpr bool __atomic_checked_lock_free = [] {
+  if constexpr (__atomic_lock_free<_Vp>)
+    ::__ycxx::__detail::__atomic_require_rep_access<_Vp>();
+  return __atomic_lock_free<_Vp>;
 }();
 
 // The alignment atomic_ref<V> requires: a lock-free V is accessed as its representation type.
@@ -220,6 +237,7 @@ constexpr bool __atomic_const_same(const _Vp& a, const _Vp& b) noexcept {
 // The object as its representation type, with the cv-qualifiers of the pointee.
 template <class _Vp, class _Tp>
 auto* __atomic_rep_ptr(_Tp* p) noexcept {
+  ::__ycxx::__detail::__atomic_require_rep_access<_Vp, _Tp>();
   return reinterpret_cast<__copy_cv<_Tp, __atomic_rep<_Vp>>*>(p);
 }
 // The object as a plain V for the lock-based operations (the lock serializes every access).

@@ -30,7 +30,9 @@
 #      Without it, a target that gets -freflection itself (its options, a dependency's interface):
 #      before CMake 4.4 std::meta is empty for it and the configuration stops, both ways; CMake 4.4
 #      and later build it (find_package: and run it); an add_compile_options ahead of libycxx: the
-#      same with find_package, accepted with add_subdirectory (the module gets it too);
+#      same with find_package, accepted with add_subdirectory (the module gets it too).
+#      Configure-only tests also cover source and target flags, subdirectory flags, links
+#      through generator expressions, and cases where both sides agree;
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -318,6 +320,27 @@ for c in $compilers; do
         else
           bad $c "modules ($how): $what: configure/build/run (see $log)"
         fi
+      done
+      for own in source target_flags source_flags link_expression nested nested_config \
+                 nested_generated nested_override c_source dependency_override global_flags; do
+        b=$d/modules-own-reflection-$how-$own
+        what="reflection options ($how, $own)"
+        reject=
+        if [ -n "$old_cmake" ]; then
+          case $own in
+            source|target_flags|source_flags|link_expression|nested|nested_config|nested_generated) reject=1 ;;
+          esac
+        fi
+        if log="$b.log" x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
+             -DCMAKE_PREFIX_PATH="$d/prefix" $src -DCMAKE_BUILD_TYPE=Debug -DYCXX_TEST_OWN_REFLECTION=$own; then
+          if [ -z "$reject" ]; then ok $c "$what: accepted"
+          else bad $c "$what: accepted against std built without reflection (see $b.log)"; fi
+        elif [ -n "$reject" ] && grep -q 'libycxx: target demo_reflection compiles with -freflection' "$b.log"; then
+          ok $c "$what: rejected with a clear message"
+        else
+          bad $c "$what: unexpected configure error (see $b.log)"
+        fi
+        cat "$b.log" >>"$log"
       done
     done
     if x cmake -S "$repo" -B "$d/lib-reflection" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix-reflection" \

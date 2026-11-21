@@ -1743,23 +1743,31 @@ stops at the `#error`.
   OFF: the option changes every importer's language (`^^`, splices), which a project chooses.
   Rejected: only documenting "pass `-freflection`" (before CMake 4.4 a project has no place to
   pass it to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's
-  workaround). CMake 4.4 and later build an importer whose options differ from the module's its
-  own copy of the interface units, with its options, so there a target that adds `-freflection`
-  itself gets a populated `std::meta` with the option OFF too. Older CMake (Debian's 3.31, the
-  minimum 3.28) does not, and GCC accepts that importer with an empty `std::meta`: with the
-  option OFF, GCC and CMake older than 4.4, such a target (`-freflection` left on by its own
-  options or its dependencies' interfaces, the last of `-freflection`/`-fno-reflection`
-  deciding) is a configure error naming the option (`cmake/ycxx-modules-reflection.cmake`, #15).
-  It runs at the end of the top-level directory (add_subdirectory) or of `find_package`'s
-  (`cmake_language(DEFER)`), because `ycxx::modules`' interface cannot read its importer's
-  options (a generator expression's self-reference evaluates to nothing). Options that reach the
-  interface units too are no mismatch: `CMAKE_CXX_FLAGS`; with add_subdirectory, a directory's
-  `add_compile_options` ahead of libycxx; with the installed package, the options exported for
-  the units (`IMPORTED_CXX_MODULES_COMPILE_OPTIONS`). An installed package's interface units do
-  not get the importing directory's `add_compile_options` before CMake 4.4 (checked with 3.31),
-  so there it is a mismatch. Not looked at: per-source options, the
-  `COMPILE_FLAGS` property, `CMAKE_CXX_FLAGS` set in a subdirectory, a dependency linked through
-  a generator expression (#25).
+  workaround). CMake 4.4 and later can build an importer's own copy of the interface units with
+  its target compile options, so enabling reflection with `target_compile_options` works with
+  the option OFF. On CMake 4.4.5, per-source options, `COMPILE_FLAGS` and directory-specific
+  `CMAKE_CXX_FLAGS` can still produce different flags for the importer and CMI.
+  [CMake C++ modules manual](https://cmake.org/cmake/help/v4.4/manual/cmake-cxxmodules.7.html#generate)
+
+  With the option OFF, GCC and CMake older than 4.4, a C++ source that enables `-freflection` while its
+  std CMI lacks it triggers a configure error naming the option
+  (`cmake/ycxx-modules-reflection.cmake`, #15 and #25). The check reads the target directory's
+  `CMAKE_CXX_FLAGS` and `CMAKE_CXX_FLAGS_<CONFIG>`, target `COMPILE_FLAGS`, target and
+  dependency compile options, then the source's `COMPILE_FLAGS` and `COMPILE_OPTIONS`. The
+  last reflection flag after CMake's target option deduplication decides. The CMI uses the
+  module target's directory flags. With add_subdirectory it also gets `add_compile_options`
+  inherited when libycxx's target is created. With the installed package it uses the options
+  exported for the interface units (`IMPORTED_CXX_MODULES_COMPILE_OPTIONS`), so the importing
+  target's `add_compile_options` can produce a mismatch.
+  The check runs at the end of the top-level directory with add_subdirectory, or the directory
+  that calls `find_package`, using `cmake_language(DEFER)`. CMake resolves general
+  generator expressions in sources, flags and link dependencies during generation, after
+  this check runs. It can read plain target links and common conditions such as
+  `$<BUILD_INTERFACE:ycxx::modules>` and `$<$<CONFIG:Debug>:ycxx::modules>`. The same
+  applies to simple C++ language, compiler ID and configuration conditions on compile options.
+  Dependencies or flags chosen through other expressions, including target property lookups,
+  can escape it. Imported configuration mappings, usage requirements injected with
+  `INTERFACE_LINK_LIBRARIES_DIRECT`, and flags supplied by compiler wrappers can also escape it.
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's

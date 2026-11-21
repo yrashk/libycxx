@@ -7,12 +7,15 @@
 // worker re-queues after claiming a chunk index, so idle workers join in, and whoever finishes
 // the last chunk completes the proxy. Each chunk first checks the proxy's stop token; a stop
 // request turns the completion into set_stopped.
-#include <condition_variable>
-#include <memory>
-#include <execution>
-#include <mutex>
-#include <thread>
-#include <vector>
+module;
+#include <ycxx/core/hidden_symbol.hpp>
+
+export module ycxx.hosted.parallel_scheduler;
+import std;
+
+asm((::__ycxx::__detail::__hide_symbol("_ZGIW4ycxxW6hostedW18parallel_scheduler")));
+
+extern "C++" {
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 namespace {
@@ -213,3 +216,4 @@ std::shared_ptr<psr::parallel_scheduler_backend> __default_parallel_scheduler_ba
   return __backend;
 }
 }}} // namespace __ycxx::__detail::__exec
+} // extern "C++"

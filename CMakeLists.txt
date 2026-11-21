@@ -172,7 +172,7 @@ set(YCXX_RUNTIME_SOURCES
 # The 'threads' layer (with the C library: thread.cpp uses <cfenv>).
 set(YCXX_THREADS_SOURCES
   src/hosted/thread.cpp
-  src/hosted/parallel_scheduler.cpp
+  src/hosted/parallel_scheduler.cppm
   src/hosted/parallel_scheduler_query.cpp
   src/hosted/future.cpp
   src/hosted/rcu.cpp

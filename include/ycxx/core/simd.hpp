@@ -208,7 +208,7 @@ template <bool _Left, class _Sp>
 constexpr _Sp __simd_shift(const _Sp& a, const _Sp& b) noexcept {
   using _Ep = typename _Sp::element_type;
   if constexpr (_Sp::__is_vector && sizeof(_Ep) < sizeof(int)) {
-    using _Wp = __simd_vector<int, _Sp::__lanes>;
+    using _Wp = typename __simd_chunk_type<int, _Sp::__lanes>::type;
     using _Cp = typename _Sp::__chunk_type;
     return _Sp::__map2(a, b, [](_Cp __x, _Cp y) {
       _Wp __wx = __builtin_convertvector(__x, _Wp), __wy = __builtin_convertvector(y, _Wp);
@@ -230,7 +230,7 @@ template <bool _Left, class _Sp>
 constexpr _Sp __simd_shift(const _Sp& a, __simd_size_t n) noexcept {
   using _Ep = typename _Sp::element_type;
   if constexpr (_Sp::__is_vector && sizeof(_Ep) < sizeof(int)) {
-    using _Wp = __simd_vector<int, _Sp::__lanes>;
+    using _Wp = typename __simd_chunk_type<int, _Sp::__lanes>::type;
     using _Cp = typename _Sp::__chunk_type;
     return _Sp::map(a, [n](_Cp __x) {
       _Wp __wx = __builtin_convertvector(__x, _Wp);
@@ -291,7 +291,7 @@ constexpr _Sp __simd_wrapping_map2(const _Sp& a, const _Sp& b, _Fp __f) noexcept
 template <bool _Rem, class _Sp>
 constexpr _Sp __simd_divide(const _Sp& a, const _Sp& b) noexcept {
   if constexpr (__simd_narrow_signed<_Sp>) {
-    using _Wp = __simd_vector<int, _Sp::__lanes>;
+    using _Wp = typename __simd_chunk_type<int, _Sp::__lanes>::type;
     using _Cp = typename _Sp::__chunk_type;
     return _Sp::__map2(a, b, [](_Cp __x, _Cp y) {
       _Wp __wx = __builtin_convertvector(__x, _Wp), __wy = __builtin_convertvector(y, _Wp);

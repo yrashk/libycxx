@@ -15,9 +15,10 @@ two configurations:
                 compiles them: with no C library, whose facts a configured build would supply);
   zero-probes   the probes answer 0, as ycxx's do until it implements a feature. __has_builtin
                 and the attribute and feature probes are redefined, and every __cpp_* macro but
-                __cpp_rtti is undefined. config.hpp takes its
-                portable fallbacks, every public header preprocesses without an #error, and a
-                test of those fallbacks compiles freestanding (tests/foreign/fallbacks.cpp).
+                __cpp_rtti is undefined. The SIMD vector attribute is given an unknown spelling
+                so Clang ignores it. config.hpp takes its portable fallbacks, every public header
+                preprocesses without an #error, and a test of those fallbacks compiles
+                freestanding (tests/foreign/fallbacks.cpp).
 
 It also pins the native builtin choices (GCC, $YCXX_GXX, and Clang), the vector layout of <simd>
 when the attribute probe succeeds, the _YCXX_COMPILER_* switch each compiler gets (ycxx's, not
@@ -174,8 +175,8 @@ for label, cmd in (("gcc", [GXX] + BASE), ("clang", [CLANGXX] + BASE), ("foreign
     else:
         print(f"ok   {label}: <simd> uses vector chunks")
 
-# Foreign, answering 0 to every probe (ycxx today).
-zero = [CLANGXX] + BASE + FOREIGN + zero_probes()
+# Foreign, answering 0 to every probe (ycxx today) and ignoring the SIMD vector attribute.
+zero = [CLANGXX] + BASE + FOREIGN + zero_probes() + ["-D__vector_size__=__ycxx_missing_vector_size__"]
 text = config_text(zero)
 expect("foreign, zero-probes", text, FALLBACKS, GCC_BUILTINS + CLANG_BUILTINS)
 if text is not None and "inline constexpr bool __constexpr_throw = false;" not in text:

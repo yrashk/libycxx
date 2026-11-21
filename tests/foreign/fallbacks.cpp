@@ -37,7 +37,8 @@ template <int N>
 concept makeable = requires { typename std::make_integer_sequence<int, N>; };
 static_assert(makeable<0> && makeable<7> && !makeable<-1>);
 
-// The scalar layout retains the vector's public width and all its element values.
+// Clang ignores the simulated unknown attribute. The scalar layout retains all public lanes.
+static_assert(std::is_same_v<__ycxx::__detail::__simd_vector<int, 8>, int>);
 using storage = __ycxx::__detail::__simd_storage<int, 8>;
 static_assert(!storage::__is_vector);
 static_assert(std::is_same_v<storage::__chunk_type, int>);

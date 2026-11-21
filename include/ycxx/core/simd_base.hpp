@@ -248,6 +248,8 @@ consteval int __simd_chunk_lanes() {
     return static_cast<int>(__cfg::__simd_register_bytes / sizeof(_Ep));
 }
 
+// This class also keeps widened chunk types dependent on the lane count when the vector
+// attribute is ignored. The discarded vector branches can then still be parsed.
 template <class _Ep, int _Lanes>
 struct __simd_chunk_type {
   using type = __simd_vector<_Ep, _Lanes>;

@@ -829,9 +829,9 @@ DECISIONS §1.5), then Clang (`__clang__`), then GCC (`__GNUC__`). Any other com
   `__compiler_gcc`. Any compiler-specific choice in the library tests these (`if constexpr`, or
   the switch in an `#if` where rule 4 allows one), never `__clang__` or `__GNUC__`, which only
   `config.hpp`'s detection reads (rule 1; `tools/check_preprocessor.py` rejects the identity
-  macros anywhere else in `include/` and `src/`). Today one choice does: `_BitInt`, below. A
-  `COMPILER-BUG(gcc)` workaround is written for every compiler (portable code that avoids the
-  bug), not selected by identity; one that had to be selected would test `cfg::__compiler_gcc`.
+  macros anywhere else in `include/` and `src/`). A `COMPILER-BUG(gcc)` workaround is written
+  for every compiler (portable code that avoids the bug), not selected by identity; one that
+  had to be selected would test `cfg::__compiler_gcc`.
 - **Tests.** `tests/ycxx` runs against libstdc++ too (`tools/ref-cxx`), so its tests cannot read
   the switches; a test that tells GCC apart tests `__ycxx__` and `__clang__` before `__GNUC__`.
 
@@ -845,6 +845,10 @@ through the switches above. Everything a compiler provides is asked of it:
   library entity is constrained away;
 - **language features** with the `__cpp_*` feature-test macros (`__cpp_exceptions`,
   `__cpp_constexpr_exceptions`, `__cpp_impl_reflection`, ...);
+- **the `_BitInt` keyword** with `__is_identifier(_BitInt)` when the operator is available.
+  The integer traits use the specializations only when the operator recognizes the keyword in
+  C++ and the target advertises `__BITINT_MAXWIDTH__`. The generic trait covers compilers
+  without either answer.
 - **the target** with the target macros (`__SIZEOF_*__`, `__*_TYPE__`, `__*_WIDTH__`,
   `__APPLE__`, `__aarch64__`, `__GCC_ATOMIC_*_LOCK_FREE`, ...);
 - **attributes** are written directly (`[[__gnu__::__visibility__("hidden")]]`, `[[__gnu__::__cold__]]`):
@@ -854,10 +858,6 @@ through the switches above. Everything a compiler provides is asked of it:
   the missing attribute. Alias-safe accesses and the lock-based backend remain available.
   `<simd>` probes its vector attribute in `config.hpp` and uses scalar chunks when the attribute
   is unavailable (§12).
-
-One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_COMPILER_CLANG`),
-for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang
-without accepting the type).
 
 So adding a compiler takes one detection branch and its switch (defined 0 in the other
 branches, and its constant), ahead of any compiler whose dialect macros it also defines. The
@@ -870,8 +870,9 @@ builtin, the headers that need it fail to compile, not to preprocess.
 `tools/check_foreign_compiler.py` (the `policy` stage of `tools/test`) checks this with Clang
 playing a foreign compiler: Clang's identity macros removed and ycxx's defined (`__ycxx__`, and
 `__GNUC__` 4.2.1), once with
-Clang's own probe answers and once with every probe answering 0 (ycxx's today). In both, every
-public header preprocesses without an `#error`, and `config.hpp` takes the path the probes select
+Clang's own probe answers and once with zero feature-probe answers and no `__is_identifier`
+operator (ycxx's today). In both, every public header preprocesses without an `#error`, and
+`config.hpp` takes the path the probes select
 (Clang's builtins, then the fallbacks); with Clang's answers every core and freestanding header
 compiles freestanding, and with zero answers `tests/foreign/fallbacks.cpp` tests the fallbacks.
 It also pins GCC's and Clang's own choices, the `_YCXX_COMPILER_*` switch each compiler gets (ycxx's

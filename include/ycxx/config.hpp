@@ -28,9 +28,8 @@
 // one of the switches _YCXX_COMPILER_YCXX, _YCXX_COMPILER_CLANG and _YCXX_COMPILER_GCC is 1, the
 // others 0, and a compiler-specific check anywhere in libycxx tests them, never __clang__ or
 // __GNUC__ themselves, so a compiler that claims another's dialect never selects that compiler's
-// paths. Identity selects nothing else (one exception, _BitInt, below): what a compiler provides
-// is asked of it through __has_builtin, in-language probes, the __cpp_* macros and the target
-// macros, so a compiler that answers those truthfully gets the paths it can compile.
+// paths. Identity selects nothing else. Compiler capabilities are detected by probes, the
+// __cpp_* macros and the target macros.
 #if defined(__ycxx__)
 #  define _YCXX_COMPILER_YCXX 1
 #  define _YCXX_COMPILER_CLANG 0
@@ -636,17 +635,18 @@ inline constexpr __fp_format_info __fp_format<__gnu_float128>{113, -16381, 16384
 using __gnu_float128 = __fp_unavailable<-128>;
 #endif
 
-// Bit-precise integers (_BitInt(N); a Clang extension in C++). bitint_info<T>::width is 0 for
+// Bit-precise integers (_BitInt(N); a Clang extension in C++). __bitint_info<T>::width is 0 for
 // every other type, so library code tests `__bitint_info<_Tp>::width != 0` with no #if.
-// The one feature still chosen by identity: no __has_* probe answers whether _BitInt can be used
-// in C++, and __BITINT_MAXWIDTH__ alone is a target macro that a compiler may define (ycxx copies
-// Clang's) without accepting the type, a parse error that cannot be probed in-language.
+// A target may advertise __BITINT_MAXWIDTH__ without recognizing _BitInt in C++. Use the
+// specializations only when __is_identifier confirms the keyword. The nested check keeps
+// preprocessors without the operator from parsing it.
 template <class _Tp>
 struct __bitint_info {
   static constexpr int width = 0;
   static constexpr bool is_signed = false;
 };
-#if defined(__BITINT_MAXWIDTH__) && _YCXX_COMPILER_CLANG
+#if defined(__BITINT_MAXWIDTH__) && defined(__is_identifier)
+#  if !__is_identifier(_BitInt)
 template <unsigned _Np>
 struct __bitint_info<unsigned _BitInt(_Np)> {
   static constexpr int width = _Np;
@@ -657,6 +657,7 @@ struct __bitint_info<signed _BitInt(_Np)> {
   static constexpr int width = _Np;
   static constexpr bool is_signed = true;
 };
+#  endif
 #endif
 template <class _Tp>
 inline constexpr int __bitint_width = __bitint_info<__remove_cv(_Tp)>::width;

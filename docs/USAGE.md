@@ -214,9 +214,12 @@ units of one program may freely use either. Clang 23 handles both orders. Only L
 
 A source of the library may be a C++ module unit (`src/hosted/print.cppm`) instead of a `.cpp`,
 next to the other sources, in any of the archives and in the shared library; units of the hosted
-library may `import std;`. With a Ninja generator (`YCXX_SOURCE_MODULES`, on by default there)
-CMake compiles such units as modules; with `-DYCXX_SOURCE_MODULES=OFF`, or another generator, each
-unit is lowered to a plain translation unit first, so building libycxx never requires C++ modules.
+library may `import std;`. The default `YCXX_SOURCE_MODULES=AUTO` uses native source modules with
+Ninja when `YCXX_MODULES` is enabled and lowers them to plain translation units otherwise. With
+`-DYCXX_MODULES=OFF`, this default lets Ninja build without a module scanner. Explicit
+`-DYCXX_SOURCE_MODULES=ON` uses native source modules on Ninja independently of `YCXX_MODULES`, and
+`-DYCXX_SOURCE_MODULES=OFF` always lowers the library's own units. Existing cached `ON` and `OFF`
+values keep their meaning. Set `-DYCXX_SOURCE_MODULES=AUTO` to use the automatic choice again.
 Either way the library defines the same symbols: `tools/check_source_modules.py` checks the
 archives (and `tools/check_abi.py` the shared library's exports). DECISIONS §21 has the rules a
 unit follows (its definitions in `extern "C++"`, its module initializer hidden) and where a unit's

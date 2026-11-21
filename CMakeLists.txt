@@ -359,7 +359,14 @@ endforeach()
 
 # Module units among the sources (src/**/*.cppm; the globs above find them too): compiled as modules
 # or lowered to plain translation units, in every target below (cmake/ycxx-source-modules.cmake,
-# DECISIONS §21).
+# DECISIONS §21). The automatic source mode follows the public modules option on Ninja.
+if(CMAKE_GENERATOR MATCHES "Ninja" AND YCXX_PAL STREQUAL "posix")
+  set(_ycxx_modules_default ON)
+else()
+  set(_ycxx_modules_default OFF)
+endif()
+option(YCXX_MODULES "Build the standard library modules std and std.compat (ycxx::modules; Ninja generators)"
+       ${_ycxx_modules_default})
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-source-modules.cmake)
 
 # ---- Static mode (YCXX_STATIC): ycxx::core (libycxx.a, the library's out-of-line parts and the
@@ -732,13 +739,6 @@ endif()
 # (installed package: per importing configuration), and libycxx-modules.a holds their object
 # code (the module initializers). C++20 module support in CMake needs CMake >= 3.28 and a Ninja
 # generator (Clang: clang-scan-deps next to the compiler; GCC >= 14). DECISIONS §16.
-if(CMAKE_GENERATOR MATCHES "Ninja" AND YCXX_PAL STREQUAL "posix")
-  set(_ycxx_modules_default ON)
-else()
-  set(_ycxx_modules_default OFF)
-endif()
-option(YCXX_MODULES "Build the standard library modules std and std.compat (ycxx::modules; Ninja generators)"
-       ${_ycxx_modules_default})
 option(YCXX_MODULES_REFLECTION "Build std and std.compat with -freflection (GCC), so importers see std::meta; every C++ source of a target that links ycxx::modules gets -freflection"
        OFF)
 if(YCXX_MODULES_REFLECTION AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

@@ -324,6 +324,11 @@ for stage in $stages; do
         step "$c: source module rebuild dependencies" build-$c-source-module-dependencies \
           cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-dependencies-test" \
           -P tests/cmake/source-module-dependencies.cmake || :
+        if [ "$c" = clang ]; then
+          step "Clang: source module scanner defaults" build-clang-source-module-scanner \
+            cmake "-DCXX=$(cxx_of clang)" "-DWORK_DIR=$PWD/$d/source-module-scanner-test" \
+            -P tests/cmake/source-module-scanner.cmake || :
+        fi
         # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
         if [ $linkage = shared ]; then
           d=build/$c-shared

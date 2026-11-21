@@ -1,9 +1,9 @@
 # libycxx's own sources as C++ module units (DECISIONS §21). A source of the library's archives
 # may be a module interface unit, src/**/*.cppm, instead of a .cpp; nothing requires one. With
-# YCXX_SOURCE_MODULES (the default with a Ninja generator) CMake compiles such a unit as a module
-# unit (a private CXX_MODULES file set: its interface is the library's own and is not installed);
-# without it, cmake/ycxx-lower-module-unit.cmake lowers the unit to a plain translation unit,
-# so the library builds with any generator. Lowering handles the module lines a unit may have
+# source modules enabled, CMake compiles such a unit as a module unit (a private CXX_MODULES file
+# set: its interface is the library's own and is not installed). Otherwise,
+# cmake/ycxx-lower-module-unit.cmake lowers the unit to a plain translation unit so the library
+# builds with any generator. Lowering handles the module lines a unit may have
 # (`module;`, `export module NAME;`, `import std;`, `import std.compat;`); a unit with other module
 # syntax needs YCXX_SOURCE_MODULES=ON. Where a unit cannot import std (ycxx_add_module_units), its
 # imports are replaced by std's headers.
@@ -13,15 +13,21 @@
 # ([module.unit]/7). An entity attached to the named module is mangled with it (_ZW...), which
 # would change libycxx's ABI; tools/check_source_modules.py checks the archive for such symbols.
 
-if(CMAKE_GENERATOR MATCHES "Ninja")
-  set(_ycxx_source_modules_default ON)
-else()
-  set(_ycxx_source_modules_default OFF)
+set(YCXX_SOURCE_MODULES AUTO CACHE STRING
+    "Implementation module mode: AUTO follows YCXX_MODULES on Ninja, ON builds modules on Ninja, OFF lowers them")
+set_property(CACHE YCXX_SOURCE_MODULES PROPERTY TYPE STRING)
+set_property(CACHE YCXX_SOURCE_MODULES PROPERTY STRINGS AUTO ON OFF)
+
+set(_ycxx_native_source_modules OFF)
+string(TOUPPER "${YCXX_SOURCE_MODULES}" _ycxx_source_modules_mode)
+if(_ycxx_source_modules_mode STREQUAL "AUTO")
+  if(YCXX_MODULES AND CMAKE_GENERATOR MATCHES "Ninja")
+    set(_ycxx_native_source_modules ON)
+  endif()
+elseif(YCXX_SOURCE_MODULES) # Existing cache and parent overrides accept CMake Boolean values.
+  set(_ycxx_native_source_modules ON)
 endif()
-option(YCXX_SOURCE_MODULES
-       "Compile libycxx's own module units (src/**/*.cppm) as C++ modules (Ninja generators); OFF lowers them to plain translation units"
-       ${_ycxx_source_modules_default})
-if(YCXX_SOURCE_MODULES AND NOT CMAKE_GENERATOR MATCHES "Ninja")
+if(_ycxx_native_source_modules AND NOT CMAKE_GENERATOR MATCHES "Ninja")
   message(FATAL_ERROR "libycxx: YCXX_SOURCE_MODULES=ON needs a Ninja generator (CMake builds C++ "
                       "modules only with Ninja); configure with -G Ninja or -DYCXX_SOURCE_MODULES=OFF")
 endif()
@@ -71,7 +77,7 @@ function(ycxx_add_module_units target)
   endforeach()
   # A deferred call's arguments are evaluated when it runs; EVAL fixes them now.
   list(JOIN _units "]==] [==[" _list)
-  if(YCXX_SOURCE_MODULES AND NOT _a_LOWERED)
+  if(_ycxx_native_source_modules AND NOT _a_LOWERED)
     set(_modules ON)
   else()
     set(_modules OFF)

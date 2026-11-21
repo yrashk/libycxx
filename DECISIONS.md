@@ -3120,10 +3120,10 @@ the library's own code, without making C++ modules a requirement for building li
 
 - **Two builds of one unit** (`cmake/ycxx-source-modules.cmake`, `ycxx_add_module_units`, used
   by every target that compiles the library's sources: libycxx, libycxx-abi, libycxx.so,
-  libycxx_nonshared, libycxx-freestanding). With `YCXX_SOURCE_MODULES`
-  (default with a Ninja generator) the units of a target are a private `CXX_MODULES` file set of
-  it: compiled as modules, scanned alone (the target's `.cpp` sources stay unscanned and cannot
-  import), their interfaces never installed. With `-DYCXX_SOURCE_MODULES=OFF` (any generator)
+  libycxx_nonshared, libycxx-freestanding). `YCXX_SOURCE_MODULES=AUTO` selects native source
+  modules only for Ninja generators with `YCXX_MODULES` enabled. Explicit `ON` enables them on
+  Ninja independently of the public modules. CMake scans and compiles the native units in a private
+  `CXX_MODULES` file set. In the lowered mode (`YCXX_SOURCE_MODULES=OFF` or the `AUTO` fallback),
   `cmake/ycxx-lower-module-unit.cmake` lowers each unit to
   `<build>/lowered/<target>/<dir>/<name>.cpp`: `module;`, `export module NAME;` and the directive
   hiding the module initializer (below) become empty lines, `import std;` / `import std.compat;`

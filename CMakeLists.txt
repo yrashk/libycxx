@@ -177,6 +177,9 @@ set(YCXX_THREADS_SOURCES
   src/hosted/future.cpp
   src/hosted/rcu.cpp
   src/hosted/hazard_pointer.cpp)
+# Keep the scheduler's original header set in its textual builds.
+set_source_files_properties(src/hosted/parallel_scheduler.cppm PROPERTIES
+  YCXX_STD_FALLBACK_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/hosted/parallel_scheduler_std_headers.txt")
 # The C library ('clib').
 set(YCXX_CLIB_SOURCES
   # the demangler, for <stacktrace> and <cxxabi.h>'s abi::__cxa_demangle (malloc'd results)

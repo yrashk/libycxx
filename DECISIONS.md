@@ -3127,7 +3127,8 @@ the library's own code, without making C++ modules a requirement for building li
   `cmake/ycxx-lower-module-unit.cmake` lowers each unit to
   `<build>/lowered/<target>/<dir>/<name>.cpp`: `module;`, `export module NAME;` and the directive
   hiding the module initializer (below) become empty lines, `import std;` / `import std.compat;`
-  the `#include`s of that module's global module fragment (std.compat's: std's too), and `#line`
+  expand to the selected header lists (by default from the modules' global fragments, with
+  std.compat using std's list too), and `#line`
   keeps diagnostics on the unit. Source file properties set on the unit are copied to the
   rewritten file. A unit with any other module syntax (another import, an export declaration)
   does not lower, and the build says so. `tools/check_freestanding.sh`, which compiles the
@@ -3181,7 +3182,10 @@ the library's own code, without making C++ modules a requirement for building li
   (`NO_STD`): the configuration says so.
   Editing an implementation module unit reruns CMake so the choice of source, import policy and
   private module dependency follow its current imports. Each rewritten unit depends on the
-  module header lists it uses (`std.cppm`, also `std.compat.cppm` for `import std.compat;`).
+  header lists it uses. Both scheduler rewrites use `src/hosted/parallel_scheduler_std_headers.txt`
+  to retain the six headers of the original source. The private source property
+  `YCXX_STD_FALLBACK_HEADERS` applies to rewrites of `import std;` units. `std.compat` rewrites use
+  both standard manifests.
 - **GCC: importing std after standard headers.** GCC 16 cannot import std in a translation unit
   that has included a standard header (STATUS, known compiler gaps), and a unit that needs
   `__ycxx::` internals includes their headers. For GCC, a unit that imports std and whose global

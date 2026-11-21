@@ -42,6 +42,8 @@ target_link_libraries(ycxx INTERFACE ycxx_abi)
 add_library(ycxx_modules STATIC)
 set_target_properties(ycxx_modules PROPERTIES OUTPUT_NAME ycxx-modules)
 target_compile_features(ycxx_modules PUBLIC cxx_std_23)
+# GCC requires the provider BMI to use the same dialect as the witness.
+target_compile_options(ycxx_modules PRIVATE -std=c++26)
 target_sources(ycxx_modules PUBLIC FILE_SET CXX_MODULES FILES modules/std.cppm)
 target_link_libraries(ycxx_modules INTERFACE ycxx_abi)
 cmake_language(DEFER CALL ycxx_consumer_files "")

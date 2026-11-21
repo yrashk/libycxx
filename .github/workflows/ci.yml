@@ -152,6 +152,33 @@ jobs:
         with:
           gcc-only: ${{ matrix.compiler == 'gcc' }}
 
+      - name: Record GCC package setup
+        if: matrix.compiler == 'gcc'
+        continue-on-error: true
+        run: |
+          . tools/toolchain/activate.sh
+          {
+            /bin/sh -c '
+              probe=outer
+              probe_function() { :; }
+              probe=inner probe_function
+              printf "Shell function assignment after return %s (initial outer, temporary inner)\n" "$probe"
+            '
+            df -Pk "$GITHUB_WORKSPACE" "$RUNNER_TEMP" || :
+            printf 'GCC path %s\n' "$YCXX_GXX"
+            "$YCXX_GXX" --version
+            printf 'CMake path %s\n' "$(command -v cmake)"
+            cmake --version
+          } >"$RUNNER_TEMP/libycxx-gcc-package-setup.txt"
+
+      - name: Upload GCC package setup
+        if: matrix.compiler == 'gcc'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-macos-cmake-gcc-setup
+          path: ${{ runner.temp }}/libycxx-gcc-package-setup.txt
+
       - name: CMake package and quickstart (tools/test)
         env:
           COMPILER: ${{ matrix.compiler }}

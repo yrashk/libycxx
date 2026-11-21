@@ -341,8 +341,12 @@ for c in $compilers; do
             source|target_flags|source_flags|link_expression|nested|nested_config|nested_generated) reject=1 ;;
           esac
         fi
-        if log="$b.log" x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
-             -DCMAKE_PREFIX_PATH="$d/prefix" $src -DCMAKE_BUILD_TYPE=Debug -DYCXX_TEST_OWN_REFLECTION=$own; then
+        # Keep the case log separate from the aggregate log across POSIX shells.
+        if (
+          log="$b.log"
+          x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
+            -DCMAKE_PREFIX_PATH="$d/prefix" $src -DCMAKE_BUILD_TYPE=Debug -DYCXX_TEST_OWN_REFLECTION=$own
+        ); then
           if [ -z "$reject" ]; then
             ok $c "$what: accepted"
             discard_ci_build "$b"

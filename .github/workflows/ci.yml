@@ -64,10 +64,10 @@ jobs:
             build/test-logs/*.log
           if-no-files-found: ignore
 
-  # macOS on Apple Silicon: Homebrew's GCC 16 and LLVM's Clang 23 release (provisioned and
-  # cached). The same stages as the Linux job; any FAIL fails it, and its composite report
-  # (artifact test-reports-macos) shows the failures in full.
-  macos:
+  # Keep package builds on separate runners so their build trees do not add to the core suite's
+  # disk use. The macos job below requires all of these checks.
+  macos-core:
+    name: macos core
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -75,14 +75,14 @@ jobs:
       - name: Toolchains (Homebrew GCC 16, Ninja, uv; pinned CMake and cached Clang 23)
         uses: ./.github/actions/setup-macos
 
-      - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
+      - name: Policy, builds, freestanding, own suite (tools/test)
         run: |
           . tools/toolchain/activate.sh
           cmake_path=$(command -v cmake)
           echo "CMake: $cmake_path"
           test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
           cmake --version
-          tools/test -j3 policy build freestanding cmake ycxx
+          tools/test -j3 policy build freestanding ycxx
 
       # The shared library (DECISIONS §20): the own suite linked against libycxx.0.1.dylib, and
       # the dylib's checks (exports, coexistence with Apple's libc++ and Homebrew's libstdc++,
@@ -133,9 +133,59 @@ jobs:
             build/test-logs/*.md
             build/test-logs/*.tsv
             build/test-logs/*.log
-            build/cmake-test/*.log
-            build/quickstart-test/*/log.txt
-            build/cmake-test/*/log.txt
             build/diag/*.txt
             build/diag/*.map
           if-no-files-found: ignore
+
+  macos-cmake:
+    name: macos CMake (${{ matrix.compiler }})
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchains (Homebrew GCC 16, Ninja, uv; pinned CMake and cached Clang 23)
+        uses: ./.github/actions/setup-macos
+
+      - name: CMake package and quickstart (tools/test)
+        env:
+          COMPILER: ${{ matrix.compiler }}
+        run: |
+          . tools/toolchain/activate.sh
+          cmake_path=$(command -v cmake)
+          echo "CMake: $cmake_path"
+          test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
+          cmake --version
+          tools/test -j3 -c "$COMPILER" cmake
+
+      - name: Test reports (composite run report, package and quickstart logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-macos-cmake-${{ matrix.compiler }}
+          path: |
+            build/test-logs/*.html
+            build/test-logs/*.md
+            build/test-logs/*.tsv
+            build/test-logs/*.log
+            build/cmake-test/*.log
+            build/cmake-test/*/log.txt
+            build/quickstart-test/*/log.txt
+          if-no-files-found: ignore
+
+  macos:
+    name: macos
+    runs-on: ubuntu-24.04
+    needs: [macos-core, macos-cmake]
+    if: ${{ always() }}
+    steps:
+      - name: Require all macOS checks
+        env:
+          CORE_RESULT: ${{ needs.macos-core.result }}
+          CMAKE_RESULT: ${{ needs.macos-cmake.result }}
+        run: |
+          printf 'macOS core result %s\nmacOS CMake matrix result %s\n' "$CORE_RESULT" "$CMAKE_RESULT"
+          test "$CORE_RESULT" = success && test "$CMAKE_RESULT" = success

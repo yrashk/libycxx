@@ -378,7 +378,9 @@ for c in $compilers; do
       m=$d/modules-reflection-tools
       ycxx_cxx="$repo/tools/ycxx-cxx gcc --libdir=$d/lib-reflection"
       main=$repo/tests/cmake/modules-reflection/main.cpp side=$repo/tests/cmake/modules-reflection/side.c
-      if x "$repo/tools/ycxx-modules" gcc -o "$m" -freflection && grep -q -- '-freflection' "$m/flags" &&
+      # The standalone CMake run gets the generated headers from this fixture's build.
+      if x env YCXX_LIBDIR="$d/lib-reflection" "$repo/tools/ycxx-modules" gcc -o "$m" -freflection &&
+         grep -q -- '-freflection' "$m/flags" &&
          x $cc -c "$side" -o "$m-side.o" && x $ycxx_cxx --std-modules="$m" "$main" "$m-side.o" -o "$m-demo" &&
          run_demo "$m-demo" "$log"; then
         ok $c "modules (tools/ycxx-modules -freflection): std::meta through ycxx-cxx --std-modules"

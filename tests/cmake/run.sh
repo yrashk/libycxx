@@ -73,6 +73,13 @@ bad() { ui_fail "[$1] $2"; fail=1; }
 # x CMD...: show the command, run it with its output appended to $log.
 x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
 
+# Release completed scratch builds on macOS CI. The tests keep their prefixes and logs.
+discard_ci_build() {
+  if [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_OS:-}" = macOS ]; then
+    rm -rf -- "$1" || ui_warn "Could not remove completed CMake build" "$1"
+  fi
+}
+
 # run_demo EXE LOG: runs an example program, recording in LOG the command, its output (stderr
 # too: a crash or "terminating" message), its exit status and the libraries it links; true when
 # it exits 0 printing just "libycxx example: ok".
@@ -148,6 +155,7 @@ for c in $compilers; do
   mkdir -p "$d"
   log=$d/log.txt
   ui_info "log" "$log"
+  ui_disk_usage "Before CMake package with $c" "$repo" "$work" || :
   gen="-G Ninja -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release"
 
   # 1. build and install
@@ -155,6 +163,7 @@ for c in $compilers; do
      x cmake --build "$d/lib" &&
      x cmake --install "$d/lib"; then
     ok $c "build and install"
+    discard_ci_build "$d/lib"
   else
     bad $c "build and install (see $log)"; continue
   fi
@@ -270,6 +279,7 @@ for c in $compilers; do
   # and runs, from a package installed with the option and with add_subdirectory; Clang (no
   # reflection) is rejected at configure time with a clear message.
   if [ $c = gcc ]; then
+    ui_disk_usage "Before GCC module reflection checks" "$repo" "$work" || :
     # Without the option (the package of 1.), a target that gets -freflection from its own options
     # or a dependency's interface: before CMake 4.4 the module's interface units are not compiled
     # with it, so the program fails to build (std::meta is empty; shown with the check switched
@@ -333,10 +343,13 @@ for c in $compilers; do
         fi
         if log="$b.log" x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
              -DCMAKE_PREFIX_PATH="$d/prefix" $src -DCMAKE_BUILD_TYPE=Debug -DYCXX_TEST_OWN_REFLECTION=$own; then
-          if [ -z "$reject" ]; then ok $c "$what: accepted"
+          if [ -z "$reject" ]; then
+            ok $c "$what: accepted"
+            discard_ci_build "$b"
           else bad $c "$what: accepted against std built without reflection (see $b.log)"; fi
         elif [ -n "$reject" ] && grep -q 'libycxx: target demo_reflection compiles with -freflection' "$b.log"; then
           ok $c "$what: rejected with a clear message"
+          discard_ci_build "$b"
         else
           bad $c "$what: unexpected configure error (see $b.log)"
         fi
@@ -429,10 +442,12 @@ for c in $compilers; do
   log=$ds/log.txt
   mkdir -p "$ds"
   ui_info "log" "$log"
+  ui_disk_usage "Before CMake shared package with $c" "$repo" "$work" || :
   if x cmake -S "$repo" -B "$ds/lib" $gen -DCMAKE_INSTALL_PREFIX="$sp" -DYCXX_SHARED=ON &&
      x cmake --build "$ds/lib" &&
      x cmake --install "$ds/lib"; then
     ok $c "shared: build and install both kinds"
+    discard_ci_build "$ds/lib"
   else
     bad $c "shared: build and install (see $log)"; continue
   fi

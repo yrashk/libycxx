@@ -186,13 +186,16 @@ modules and every importer must agree:
 
 - CMake: configure libycxx with `-DYCXX_MODULES_REFLECTION=ON` (GCC; Clang 23 has no reflection
   and is rejected). `ycxx::modules` is then built with `-freflection` and gives it to every C++
-  source of a target that links it, also from the installed package. Without the option, a
-  target that adds `-freflection` itself (its own options or a linked library's) works with
-  CMake 4.4 and later, which compile the module's interface units for it with its options; with
-  older CMake its `std::meta` would be empty, so the configuration stops with a message naming
-  the option. `CMAKE_CXX_FLAGS` reaches the module too and is fine, and so is an
-  `add_compile_options` ahead of `add_subdirectory` (libycxx built as part of the project), but
-  not one with the installed package: before CMake 4.4 its module does not get it.
+  source of a target that links it, also from the installed package. With the option off,
+  CMake 4.4 and later can compile the module's interface units with the importer's target
+  compile options. Enable reflection with `target_compile_options` for that behavior.
+  Older CMake checks for mismatches at configure time, including
+  per-source options, target and source `COMPILE_FLAGS`, and directory-specific
+  `CMAKE_CXX_FLAGS`. A flag both the importer and the CMI inherit is fine. For example,
+  `add_compile_options` before `add_subdirectory` can reach both, while an installed
+  package's CMI uses its exported module options and directory-wide C++ flags.
+  CMake 4.4.5 can still produce mismatches with per-source options, `COMPILE_FLAGS` or
+  directory-specific C++ flags. Some generator expressions can escape the older check. See [DECISIONS §16](../DECISIONS.md#16-the-standard-library-modules-std-stdcompat).
 - `tools/ycxx-modules gcc -o build/gcc/modules-refl -freflection` records `-freflection` in the
   directory's `flags`, so `tools/ycxx-cxx gcc --std-modules=build/gcc/modules-refl` adds it.
   `tools/ycxx-cxx` stops with an error when the program's `-freflection`/`-fno-reflection`

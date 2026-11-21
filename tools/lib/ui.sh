@@ -15,6 +15,7 @@
 #                                  then a result line with the duration; on failure the end of
 #                                  LOG (all of it under GitHub Actions). Returns CMD's status.
 #   ui_duration SECONDS            "1m05s"
+#   ui_disk_usage STAGE ROOT DIR...  macOS Actions notice for free space and selected directory sizes
 #   ui_catch_interrupt             Ctrl-C (SIGINT) and SIGTERM set ui_interrupted=1 instead of
 #                                  ending the script, which then finishes what it was doing (the
 #                                  interrupted command, its logs and reports) and stops early;
@@ -103,6 +104,25 @@ ui_warn() {
 ui_info() {
   printf '  %s%s%s %s%s\n' "${ui_cyan}" "${ui_sym_info}" "${ui_reset}" "$1" "${2:+ ${ui_dim}$2${ui_reset}}"
 }
+
+# Record a checkpoint as an annotation so it can survive a lost runner log.
+ui_disk_usage() (
+  [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_OS:-}" = macOS ] || exit 0
+  ui_disk_stage=$1 ui_disk_root=$2
+  shift 2
+  printf '::notice title=macOS disk usage::%s' "$ui_disk_stage"
+  df -Pk "$ui_disk_root" "${RUNNER_TEMP:-$ui_disk_root}" 2>/dev/null |
+    awk 'NR == 2 { printf ". Workspace free %s KiB", $4 }
+         NR == 3 { printf ". Runner temp free %s KiB", $4 }' || :
+  for ui_disk_dir do
+    [ -d "$ui_disk_dir" ] || continue
+    ui_disk_size=$(du -sk "$ui_disk_dir" 2>/dev/null | awk 'NR == 1 { print $1 }') || continue
+    if [ -n "$ui_disk_size" ]; then
+      printf '. %s uses %s KiB' "$ui_disk_dir" "$ui_disk_size"
+    fi
+  done
+  printf '\n'
+)
 
 # The end of a failed step's log: all of it, folded, under GitHub Actions (the runner's files are
 # gone afterwards); the last 40 lines elsewhere.

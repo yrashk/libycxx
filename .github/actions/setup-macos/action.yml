@@ -2,6 +2,10 @@ name: setup-macos
 description: >
   macOS on Apple Silicon with Homebrew's GCC 16, Ninja and uv, Kitware's pinned CMake, and LLVM's
   Clang 23 release (tools/toolchain/provision, cached).
+inputs:
+  gcc-only:
+    description: Detect Homebrew GCC and the macOS SDK without restoring or provisioning LLVM.
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -16,12 +20,19 @@ runs:
         printf '%s  %s\n' 679e77a96b9ef9484cc6c1445255fc4f84206b48a65420efbedf16bdab55fbff \
           "$cmake_dir/$cmake_archive.tar.gz" | shasum -a 256 -c -
         tar -xzf "$cmake_dir/$cmake_archive.tar.gz" -C "$cmake_dir"
+        rm -f -- "$cmake_dir/$cmake_archive.tar.gz"
         cmake_bin="$cmake_dir/$cmake_archive/CMake.app/Contents/bin"
         echo "$cmake_bin" >> "$GITHUB_PATH"
         echo "YCXX_CI_CMAKE_BIN=$cmake_bin" >> "$GITHUB_ENV"
-    - uses: actions/cache@v4
+    - if: inputs.gcc-only != 'true'
+      uses: actions/cache@v4
       with:
         path: ~/.local/share/ycxx/toolchains
         key: ycxx-toolchains-${{ runner.os }}-${{ runner.arch }}-llvm-23.1.5
-    - shell: bash
+    - if: inputs.gcc-only != 'true'
+      shell: bash
       run: tools/toolchain/provision
+    - name: Detect Homebrew GCC 16 and the macOS SDK
+      if: inputs.gcc-only == 'true'
+      shell: bash
+      run: tools/toolchain/provision --gcc-only --detect-only

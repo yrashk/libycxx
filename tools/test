@@ -262,6 +262,8 @@ case " $stages " in *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
 esac
 
 for stage in $stages; do
+  ui_disk_usage "Before $stage" "$repo" "$repo/build" \
+    "${YCXX_TOOLCHAINS:-${XDG_DATA_HOME:-$HOME/.local/share}/ycxx/toolchains}" || :
   case $stage in
     policy)
       ui_section "Policy checks"

@@ -30,7 +30,9 @@
 #      Without it, a target that gets -freflection itself (its options, a dependency's interface):
 #      before CMake 4.4 std::meta is empty for it and the configuration stops, both ways; CMake 4.4
 #      and later build it (find_package: and run it); an add_compile_options ahead of libycxx: the
-#      same with find_package, accepted with add_subdirectory (the module gets it too);
+#      same with find_package, accepted with add_subdirectory (the module gets it too).
+#      Configure-only tests also cover source and target flags, subdirectory flags, links
+#      through generator expressions, and cases where both sides agree;
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -70,6 +72,13 @@ ok() { ui_ok "[$1] $2"; }
 bad() { ui_fail "[$1] $2"; fail=1; }
 # x CMD...: show the command, run it with its output appended to $log.
 x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
+
+# Release completed scratch builds on macOS CI. The tests keep their prefixes and logs.
+discard_ci_build() {
+  if [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_OS:-}" = macOS ]; then
+    rm -rf -- "$1" || ui_warn "Could not remove completed CMake build" "$1"
+  fi
+}
 
 # run_demo EXE LOG: runs an example program, recording in LOG the command, its output (stderr
 # too: a crash or "terminating" message), its exit status and the libraries it links; true when
@@ -146,6 +155,7 @@ for c in $compilers; do
   mkdir -p "$d"
   log=$d/log.txt
   ui_info "log" "$log"
+  ui_disk_usage "Before CMake package with $c" "$repo" "$work" || :
   gen="-G Ninja -DCMAKE_C_COMPILER=$cc -DCMAKE_CXX_COMPILER=$cxx -DCMAKE_BUILD_TYPE=Release"
 
   # 1. build and install
@@ -153,6 +163,7 @@ for c in $compilers; do
      x cmake --build "$d/lib" &&
      x cmake --install "$d/lib"; then
     ok $c "build and install"
+    discard_ci_build "$d/lib"
   else
     bad $c "build and install (see $log)"; continue
   fi
@@ -268,6 +279,7 @@ for c in $compilers; do
   # and runs, from a package installed with the option and with add_subdirectory; Clang (no
   # reflection) is rejected at configure time with a clear message.
   if [ $c = gcc ]; then
+    ui_disk_usage "Before GCC module reflection checks" "$repo" "$work" || :
     # Without the option (the package of 1.), a target that gets -freflection from its own options
     # or a dependency's interface: before CMake 4.4 the module's interface units are not compiled
     # with it, so the program fails to build (std::meta is empty; shown with the check switched
@@ -319,6 +331,34 @@ for c in $compilers; do
           bad $c "modules ($how): $what: configure/build/run (see $log)"
         fi
       done
+      for own in source target_flags source_flags link_expression nested nested_config \
+                 nested_generated nested_override c_source dependency_override global_flags; do
+        b=$d/modules-own-reflection-$how-$own
+        what="reflection options ($how, $own)"
+        reject=
+        if [ -n "$old_cmake" ]; then
+          case $own in
+            source|target_flags|source_flags|link_expression|nested|nested_config|nested_generated) reject=1 ;;
+          esac
+        fi
+        # Keep the case log separate from the aggregate log across POSIX shells.
+        if (
+          log="$b.log"
+          x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
+            -DCMAKE_PREFIX_PATH="$d/prefix" $src -DCMAKE_BUILD_TYPE=Debug -DYCXX_TEST_OWN_REFLECTION=$own
+        ); then
+          if [ -z "$reject" ]; then
+            ok $c "$what: accepted"
+            discard_ci_build "$b"
+          else bad $c "$what: accepted against std built without reflection (see $b.log)"; fi
+        elif [ -n "$reject" ] && grep -q 'libycxx: target demo_reflection compiles with -freflection' "$b.log"; then
+          ok $c "$what: rejected with a clear message"
+          discard_ci_build "$b"
+        else
+          bad $c "$what: unexpected configure error (see $b.log)"
+        fi
+        cat "$b.log" >>"$log"
+      done
     done
     if x cmake -S "$repo" -B "$d/lib-reflection" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix-reflection" \
          -DYCXX_MODULES_REFLECTION=ON &&
@@ -342,7 +382,9 @@ for c in $compilers; do
       m=$d/modules-reflection-tools
       ycxx_cxx="$repo/tools/ycxx-cxx gcc --libdir=$d/lib-reflection"
       main=$repo/tests/cmake/modules-reflection/main.cpp side=$repo/tests/cmake/modules-reflection/side.c
-      if x "$repo/tools/ycxx-modules" gcc -o "$m" -freflection && grep -q -- '-freflection' "$m/flags" &&
+      # The standalone CMake run gets the generated headers from this fixture's build.
+      if x env YCXX_LIBDIR="$d/lib-reflection" "$repo/tools/ycxx-modules" gcc -o "$m" -freflection &&
+         grep -q -- '-freflection' "$m/flags" &&
          x $cc -c "$side" -o "$m-side.o" && x $ycxx_cxx --std-modules="$m" "$main" "$m-side.o" -o "$m-demo" &&
          run_demo "$m-demo" "$log"; then
         ok $c "modules (tools/ycxx-modules -freflection): std::meta through ycxx-cxx --std-modules"
@@ -406,10 +448,12 @@ for c in $compilers; do
   log=$ds/log.txt
   mkdir -p "$ds"
   ui_info "log" "$log"
+  ui_disk_usage "Before CMake shared package with $c" "$repo" "$work" || :
   if x cmake -S "$repo" -B "$ds/lib" $gen -DCMAKE_INSTALL_PREFIX="$sp" -DYCXX_SHARED=ON &&
      x cmake --build "$ds/lib" &&
      x cmake --install "$ds/lib"; then
     ok $c "shared: build and install both kinds"
+    discard_ci_build "$ds/lib"
   else
     bad $c "shared: build and install (see $log)"; continue
   fi

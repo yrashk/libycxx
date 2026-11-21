@@ -1,0 +1,13 @@
+Libycxx #47 fixture correction, Nov 21 2026 UTC.
+
+Exact b3c490c1a379b72f8d1ec43e780845810e1393ce/tree791e623bdeef9a2f65092e7c4051c57e75264011 is a direct child of published 1b15714c and tested against a872d6b3. Only the CMake GCC static-provider fixture changes. Older CMake generated a C++23 mock std.gcm and a C++26 witness. The provider now carries the same private explicit C++26 flag as the importer.
+
+With official Debian CMake 3.31.6-2 and GCC 16.2.0, the previous published fixture reproduces the hosted incompatible dialect error and this commit passes with both -std=c++26 switches observed. Both fixtures pass direct testing on 4.4.5. The hosted CMake patch version is inferred from the recorded image and Debian package index; GCC 16.2.0 and the mismatched importer flags are directly logged.
+
+The full exact managed CMake4.4.5 tools/check-all -j2 --no-fetch passed 32/32 in 5m30s. The exact ordinary Debian3.31.6 tools/test -j2 -c gcc cmake passed 3/3 in 8m19s, including package/toolchain integration, the actual integrated static provider fixture, and quickstart. Existing autotools and QEMU missing-dependency skips applied. Original draft #12 ref is preserved. Hosted current checks remain required for takeover. Recovery context https://github.com/yrashk/ycxx/issues/377.
+
+## Native GCC package whole-archive verification
+
+The old hosted module continuation failed at the macOS GCC package’s forced-archive link. The log identifies the real scheduler reference to the `std` initializer. `tests/cmake/run.sh` now reads the generated static provider record before build cleanup and links the installed provider lazily after the forced core and ABI archives. The branch includes the landed split package workflow from #46.
+
+Exact `28799f96`, tree `12c9922f`, passed the managed 31-step gate, including rechecking the prebuilt GCC Release used for the strict native-provider control, and the ordinary older Debian GCC CMake gate, all three steps. The strict Linux missing-provider and installed-provider contrast reproduced the unresolved-symbol behavior. The native Apple Silicon package check is pending at publication. [Old macOS job](https://github.com/yrashk/libycxx/actions/runs/44889120170/job/136800841325)

@@ -345,6 +345,11 @@ for stage in $stages; do
       # cmake --build takes the job count from CMAKE_BUILD_PARALLEL_LEVEL.
       direct "CMake package and toolchain file" cmake "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/cmake/run.sh $compilers || :
+      case " $compilers " in
+        *" gcc "*) step "GCC: static implementation module provider" cmake-static-module-provider \
+          cmake "-DCC=$(cc_of gcc)" "-DCXX=$(cxx_of gcc)" "-DWORK_DIR=$PWD/build/source-module-provider-test" \
+          -P tests/cmake/source-module-provider.cmake || : ;;
+      esac
       direct "quickstart commands, as documented (examples/quickstart)" quickstart "" \
         env ${jobs:+CMAKE_BUILD_PARALLEL_LEVEL=$jobs} tests/quickstart/run.sh $compilers || :
       if [ $linkage = shared ]; then

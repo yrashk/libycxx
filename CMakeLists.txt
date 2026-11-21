@@ -675,9 +675,8 @@ message(STATUS "libycxx: kinds built: ${_ycxx_consumer_targets}; ycxx::ycxx is y
 # meson-native.ini, in the build tree and installed (cmake/ycxx-consumer.cmake).
 include(GNUInstallDirs)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-consumer.cmake)
-if(YCXX_PAL STREQUAL "posix")
-  ycxx_consumer_files("${_ycxx_table_link_options}")
-endif()
+# Read the static archive's dependencies after ycxx_add_module_units has selected its sources.
+cmake_language(DEFER CALL ycxx_consumer_files "${_ycxx_table_link_options}")
 
 # ---- ycxx::freestanding (libycxx-freestanding.a, YCXX_FREESTANDING_RUNTIME): what a freestanding
 # program links instead of ycxx::ycxx (DECISIONS §3): the default replaceable allocation functions

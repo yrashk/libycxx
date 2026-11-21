@@ -3169,8 +3169,10 @@ the library's own code, without making C++ modules a requirement for building li
   modules built from the same headers and the archive links `ycxx::modules` privately, so a
   program that links `libycxx.a`, from the build tree or the installed package
   (`$<LINK_ONLY:ycxx::modules>`), also links `libycxx-modules.a`, whose initializers GCC's
-  importers call. Where that is not possible the unit's imports of std are replaced by std's
-  `#include`s at the end of its global module fragment, and it stays a module unit (the
+  importers call. The generated `ycxx-c++` wrapper, the static pkg-config files and
+  `tools/ycxx-cxx` use that same dependency. They add the module archive after the core and ABI
+  archives, inside the ELF archive group. A unit without a native provider expands its imports
+  into std's `#include`s at the end of its global module fragment and stays a module unit (the
   `textual-std` rewrite, `<build>/textual-std/<target>/...`): in libycxx.a when static is not
   the default kind or `YCXX_MODULES` is off, and with GCC (below). libycxx.so lowers its units
   (above), so their imports become `#include`s there.

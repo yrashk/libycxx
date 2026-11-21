@@ -7,11 +7,11 @@
 // native-abi<T> is simd_abi<R / sizeof(T), R> (at least 1). The tag does not name the element
 // type, so masks of equal element size and width are one type, rebind_t and resize_t only swap
 // the width, and the element type picks the representation:
-//  - an arithmetic element type and a power-of-two width N >= 2: GCC/Clang vector-extension
-//    chunks (vector_size), one vector of N elements while N * sizeof(T) fits the widest vector
-//    register (cfg::simd_register_bytes), else an array of register-sized vectors. Operators map
-//    to the vector operators;
-//  - any other width, and complex<T>: an array of N elements, operated on element by element.
+//  - with the vector_size attribute, an arithmetic element type and a power-of-two width N >= 2:
+//    one vector of N elements while N * sizeof(T) fits the widest vector register
+//    (cfg::simd_register_bytes), else an array of register-sized vectors. Operators map to the
+//    vector operators;
+//  - otherwise, an array of N elements, operated on element by element.
 // A mask stores one integer of the element size per element (integer-from<Bytes>, 64 bits for
 // 16-byte complex elements), all bits set for true, in the same layout as a vec of that integer
 // type, so comparisons and masked selects are bitwise operations on the chunks.
@@ -240,7 +240,7 @@ using __simd_vector [[__gnu__::__vector_size__(sizeof(_Ep) * _Lanes)]] = _Ep;
 // Lanes per chunk of the storage of N elements of type E (1: plain elements).
 template <class _Ep, int _Np>
 consteval int __simd_chunk_lanes() {
-  if constexpr (!__simd_arithmetic<_Ep> || _Np < 2 || (_Np & (_Np - 1)) != 0)
+  if constexpr (!__cfg::__simd_vector_size || !__simd_arithmetic<_Ep> || _Np < 2 || (_Np & (_Np - 1)) != 0)
     return 1;
   else if constexpr (_Np * sizeof(_Ep) <= __cfg::__simd_register_bytes)
     return _Np;
@@ -248,6 +248,8 @@ consteval int __simd_chunk_lanes() {
     return static_cast<int>(__cfg::__simd_register_bytes / sizeof(_Ep));
 }
 
+// This class also keeps widened chunk types dependent on the lane count when the vector
+// attribute is ignored. The discarded vector branches can then still be parsed.
 template <class _Ep, int _Lanes>
 struct __simd_chunk_type {
   using type = __simd_vector<_Ep, _Lanes>;

@@ -1,6 +1,7 @@
-// config.hpp's portable fallbacks for builtins a compiler does not have (DECISIONS §5), compiled by
+// config.hpp's portable fallbacks for compiler features (DECISIONS §5), compiled by
 // tools/check_foreign_compiler.py with every probe answering 0.
 #include <concepts>
+#include <simd>
 #include <type_traits>
 #include <utility>
 
@@ -35,3 +36,20 @@ static_assert(ascending(std::make_index_sequence<10007>{}));
 template <int N>
 concept makeable = requires { typename std::make_integer_sequence<int, N>; };
 static_assert(makeable<0> && makeable<7> && !makeable<-1>);
+
+// Clang ignores the simulated unknown attribute. The scalar layout retains all public lanes.
+static_assert(std::is_same_v<__ycxx::__detail::__simd_vector<int, 8>, int>);
+using storage = __ycxx::__detail::__simd_storage<int, 8>;
+static_assert(!storage::__is_vector);
+static_assert(std::is_same_v<storage::__chunk_type, int>);
+using vec = std::simd::vec<int, 8>;
+static_assert(vec::size() == 8 && vec::mask_type::size() == 8);
+static_assert([] {
+  vec input([](int i) { return i; });
+  auto mask = input > 1;
+  auto result = std::simd::select(mask, input + 1, -input);
+  for (int i = 0; i < vec::size(); ++i)
+    if (mask[i] != (i > 1) || result[i] != (i > 1 ? i + 1 : -i))
+      return false;
+  return true;
+}());

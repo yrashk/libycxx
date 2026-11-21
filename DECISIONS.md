@@ -849,8 +849,8 @@ through the switches above. Everything a compiler provides is asked of it:
   `__APPLE__`, `__aarch64__`, `__GCC_ATOMIC_*_LOCK_FREE`, ...);
 - **attributes** are written directly (`[[__gnu__::__visibility__("hidden")]]`, `[[__gnu__::__cold__]]`):
   a compiler ignores the attributes it does not know ([dcl.attr.grammar]), so no probe is needed
-  to parse them. The few that carry meaning, rather than a hint (`__may_alias__` on the atomic
-  access types, `__vector_size__` in `<simd>`), are needed by a compiler for those headers to work.
+  to parse them. The atomic access types rely on `__may_alias__`. `<simd>` probes its vector
+  attribute in `config.hpp` and uses scalar chunks when the attribute is unavailable (§12).
 
 One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_COMPILER_CLANG`),
 for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang
@@ -1422,10 +1422,12 @@ stops at the `#error`.
   `__AVX__`; 64 with `__AVX512F__`, detected in `config.hpp`). So masks of equal element size and
   width are one type and `rebind_t`/`resize_t` swap the width only. The element type picks the
   representation:
-  power-of-two widths of arithmetic types are GCC/Clang vector-extension chunks (`vector_size`;
-  one vector up to R bytes, else an array of R-byte vectors, so no by-value vector wider than the
-  enabled registers crosses a call and no -Wpsabi ABI change arises); other widths and
-  `complex<T>` are element arrays. Every layout has the object representation of `T[N]`, so
+  with `__has_cpp_attribute(__gnu__::__vector_size__)`, power-of-two widths of arithmetic types
+  use vector-extension chunks (one vector up to R bytes, else an array of R-byte vectors, so no
+  by-value vector wider than the enabled registers crosses a call and no -Wpsabi ABI change
+  arises). GCC 16 and Clang 23 report support for this spelling. Other widths, `complex<T>`, and
+  all types on a compiler without the attribute use element arrays. The public width is the same
+  for either storage layout. Every layout has the object representation of `T[N]`, so
   constant evaluation reaches the elements through `bit_cast` (GCC 16 cannot assign to a vector
   element in a constant expression). A mask stores integer-from<Bytes> elements (64-bit for
   16-byte complex elements) that are all ones or zero, in the layout of a vec of that integer, so

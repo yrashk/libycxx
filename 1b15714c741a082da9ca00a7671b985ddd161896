@@ -1,0 +1,12 @@
+Continuation evidence for the optional implementation-module handoff, Nov 21 2026 UTC.
+
+Candidate 1b15714c741a082da9ca00a7671b985ddd161896 (tree 1083c011004e2e68bf6a60e3f560cb9d86aaf0e9) is a one-newline docs-only child of tested d77f82488af23af589fcef796ff4e8e36b4f8a98 (tree 716777c98b62c55c9aff6fd62aff86362e69de34), from actual a872d6b39bc141966a5a714a0bfdb4c190739825 and the prior published 8bef878245ae5d5ea878d7bbbdafbd0f7bcfbfc5 checkpoint. The original draft branch remains at 642d62e5c359fe8fb4dce5cc37642b8251ca7252. Earlier notes remain attached to their exact commits.
+
+Exact Linux x86-64 with GCC 16.2, Clang 23.1.6, CMake 4.4.5 and Ninja passed 28/28 tools/check-all steps, eight functional build modes, and 28 static/shared consumer runs. Native scheduler scans require std and record the provider archive. The scheduler initializer is hidden and replacement consumers omit the default factory. Six fallback manifest edges rebuild without CMake regeneration. Shared symbol inventories match GCC shipped baseline 1527 and same-version Clang baseline at 8bef8782 with 1590 entries.
+
+Two balanced Linux GCC experiments of the native scheduler, with unchanged scheduler and query source in d77, found warm object medians 1.261->0.821 and 1.268->0.663 seconds, and real source-edit 1.661->0.932 and 1.388->0.919 seconds. Edit ranges overlap. Single cold observations cost +7.295 and +3.661 seconds and about 27 MiB of module artifacts. The first run had a brief unrelated syntax overlap. The quiet replicate reproduced warm gains.
+
+Final quiet fallback comparison [08:04:59, 08:05:59 UTC] passed all 36 one-object trials. Plains were 1.235s object / 1.242s edit, wide textual 2.318s / 2.313s, and narrow textual 1.129s / 1.319s. Narrow beats wide all paired trials. Ranges overlap versus plain and editing a fallback unit regenerated CMake once per trial. The source and query native blobs remain unchanged.
+
+Recovery context: https://github.com/yrashk/ycxx/issues/377
+Original draft: https://github.com/yrashk/libycxx/pull/12

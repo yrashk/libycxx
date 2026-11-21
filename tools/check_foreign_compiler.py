@@ -4,19 +4,19 @@
 
 config.hpp recognizes ycxx, Clang and GCC by their identity macros, in that order (ycxx and Clang
 define __GNUC__ too), sets exactly one _YCXX_COMPILER_* switch, and chooses everything else by
-asking the compiler (__has_builtin, __has_cpp_attribute, __cpp_* and the target macros). This
-check plays a foreign compiler with Clang ($YCXX_CLANGXX): Clang's identity macros are removed
-and ycxx's defined (-U__clang__ ... -D__ycxx__=1 ..., and __GNUC__ 4.2.1 as ycxx#229 has it), in
-two configurations:
+asking the compiler (__has_builtin, __has_cpp_attribute, __is_identifier, __cpp_* and the target
+macros). This check plays a foreign compiler with Clang ($YCXX_CLANGXX): Clang's identity macros
+are removed and ycxx's defined (-U__clang__ ... -D__ycxx__=1 ..., and __GNUC__ 4.2.1 as ycxx#229
+has it), in two configurations:
 
   clang-probes  the probes answer as Clang does: config.hpp takes the builtin paths Clang's
                 answers select, every public header preprocesses without an #error, and every
                 core and freestanding header compiles freestanding (as tools/check_freestanding.sh
                 compiles them: with no C library, whose facts a configured build would supply);
   zero-probes   the probes answer 0, as ycxx's do until it implements a feature. __has_builtin
-                and the attribute and feature probes are redefined, and every __cpp_* macro but
-                __cpp_rtti is undefined. The SIMD vector attribute is given an unknown spelling
-                so Clang ignores it. config.hpp takes its portable fallbacks, every public header
+                and the attribute and feature probes are redefined, and __is_identifier and every
+                __cpp_* macro but __cpp_rtti are undefined. Clang ignores the renamed SIMD
+                vector attribute. config.hpp takes its portable fallbacks, every public header
                 preprocesses without an #error, and a test of those fallbacks compiles
                 freestanding (tests/foreign/fallbacks.cpp).
 
@@ -68,13 +68,13 @@ def fail(what, detail=""):
 
 
 def zero_probes():
-    """Flags that make Clang's probes answer 0 and undefine its __cpp_* feature-test macros
+    """Flags that zero Clang's feature probes, remove __is_identifier and undefine its __cpp_* macros
     (__cpp_rtti stays: RTTI is a language mode, not a feature ycxx lacks here)."""
     r = run([CLANGXX, "-std=c++26", "-x", "c++", "-E", "-dM", "-"])
     cpp = sorted(set(re.findall(r"^#define (__cpp_\w+)", r.stdout, re.M)) - {"__cpp_rtti"})
     if r.returncode != 0 or "__cpp_exceptions" not in cpp:
         sys.exit(f"{CLANGXX} -E -dM did not list its __cpp_* macros:\n{r.stderr}")
-    return (["-Wno-builtin-macro-redefined"] + [f"-D{p}(x)=0" for p in PROBES] +
+    return (["-Wno-builtin-macro-redefined", "-U__is_identifier"] + [f"-D{p}(x)=0" for p in PROBES] +
             [f"-U{m}" for m in cpp])
 
 
@@ -122,6 +122,7 @@ def each_header(label, cmd, headers, action):
 CLANG_BUILTINS = ["__remove_reference_t(_Tp)", "__make_integer_seq<_Seq, _Tp, _Np>"]
 GCC_BUILTINS = ["__remove_reference(_Tp)", "__integer_pack(_Np)"]
 FALLBACKS = ["struct __remove_ref_impl", "struct __int_pack_make"]
+BITINT_SPECIALIZATIONS = ["__bitint_info<unsigned _BitInt(_Np)>", "__bitint_info<signed _BitInt(_Np)>"]
 
 # No recognized identity: the #error (which also shows that ANONYMOUS removes Clang's identity and
 # GCC's __GNUC__).
@@ -155,7 +156,7 @@ expect("clang", config_text([CLANGXX] + BASE), CLANG_BUILTINS, GCC_BUILTINS + FA
 # Foreign, answering Clang's probes.
 probes = [CLANGXX] + BASE + FOREIGN
 text = config_text(probes)
-expect("foreign, clang-probes", text, CLANG_BUILTINS, GCC_BUILTINS + FALLBACKS)
+expect("foreign, clang-probes", text, CLANG_BUILTINS + BITINT_SPECIALIZATIONS, GCC_BUILTINS + FALLBACKS)
 if text is not None and "inline constexpr bool __constexpr_throw = false;" not in text:
     fail("foreign, clang-probes: __constexpr_throw is not false (Clang 23 cannot throw in constant evaluation)")
 each_header("foreign, clang-probes", probes, HEADERS, "-E")
@@ -227,10 +228,10 @@ for label, compiler in (("gcc", GXX), ("clang", CLANGXX)):
         else:
             print(f"ok   {label}: {check} diagnoses missing may_alias")
 
-# Foreign, answering 0 to every probe (ycxx today) and ignoring the SIMD vector attribute.
+# Foreign, without the keyword operator and answering 0 to feature probes (ycxx today).
 zero = [CLANGXX] + BASE + FOREIGN + zero_probes() + ["-D__vector_size__=__ycxx_missing_vector_size__"]
 text = config_text(zero)
-expect("foreign, zero-probes", text, FALLBACKS, GCC_BUILTINS + CLANG_BUILTINS)
+expect("foreign, zero-probes", text, FALLBACKS, GCC_BUILTINS + CLANG_BUILTINS + BITINT_SPECIALIZATIONS)
 if text is not None and "inline constexpr bool __constexpr_throw = false;" not in text:
     fail("foreign, zero-probes: __constexpr_throw is not false (__cpp_constexpr_exceptions undefined)")
 each_header("foreign, zero-probes", zero, HEADERS, "-E")

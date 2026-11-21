@@ -24,12 +24,34 @@ struct __ts_access;
 }}} // namespace __ycxx::__detail::__exec
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __adl_free {
-// What task_scheduler needs of its backend beyond parallel_scheduler_backend.
+// What task_scheduler needs of its backend beyond parallel_scheduler_backend. A backend lives in
+// a task_scheduler's buffer and is copied into another's with __ycxx_copy_to.
 struct __exec_ts_backend_base : std::execution::parallel_scheduler_replacement::parallel_scheduler_backend {
   virtual const void* __ycxx_type() const noexcept = 0;
   virtual const void* __ycxx_sched() const noexcept = 0;
   virtual std::execution::forward_progress_guarantee __ycxx_fpg() const noexcept = 0;
   virtual bool __ycxx_equal_to(const std::execution::task_scheduler& __lhs) const noexcept = 0;
+  virtual __exec_ts_backend_base* __ycxx_copy_to(void* __buf) const noexcept = 0;
+};
+
+// The backend of a scheduler that does not fit a task_scheduler's buffer: shares the backend
+// allocated with allocate_shared ([exec.task.scheduler]/3), its copies the same one.
+struct __exec_ts_shared_backend final : __exec_ts_backend_base {
+  std::shared_ptr<__exec_ts_backend_base> __p;
+
+  explicit __exec_ts_shared_backend(std::shared_ptr<__exec_ts_backend_base> __b) noexcept : __p(static_cast<std::shared_ptr<__exec_ts_backend_base>&&>(__b)) {}
+  void schedule(std::execution::parallel_scheduler_replacement::receiver_proxy& r, std::span<std::byte> s) noexcept override { __p->schedule(r, s); }
+  void schedule_bulk_chunked(std::size_t n, std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy& r, std::span<std::byte> s) noexcept override {
+    __p->schedule_bulk_chunked(n, r, s);
+  }
+  void schedule_bulk_unchunked(std::size_t n, std::execution::parallel_scheduler_replacement::bulk_item_receiver_proxy& r, std::span<std::byte> s) noexcept override {
+    __p->schedule_bulk_unchunked(n, r, s);
+  }
+  const void* __ycxx_type() const noexcept override { return __p->__ycxx_type(); }
+  const void* __ycxx_sched() const noexcept override { return __p->__ycxx_sched(); }
+  std::execution::forward_progress_guarantee __ycxx_fpg() const noexcept override { return __p->__ycxx_fpg(); }
+  bool __ycxx_equal_to(const std::execution::task_scheduler& __lhs) const noexcept override { return __p->__ycxx_equal_to(__lhs); }
+  __exec_ts_backend_base* __ycxx_copy_to(void* __buf) const noexcept override { return ::new (__buf) __exec_ts_shared_backend(__p); }
 };
 
 // just-sndr-like ([exec.task.scheduler]/9)
@@ -102,11 +124,23 @@ namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace _
 
 class task_scheduler {
   class __ts_domain;
-  template <scheduler _Sch>
+  template <scheduler _Sch, class _Allocator>
   class __backend_for;
   friend struct __ycxx::__detail::__exec::__ts_access;
 
-  shared_ptr<__ycxx::__adl_free::__exec_ts_backend_base> __sch_;
+  // sch_ ([exec.task.scheduler]): SCHED(s)'s backend-for, including its allocator, lives in
+  // __buf_ when it fits and copies without throwing, so small schedulers can allocate nothing (the
+  // recommended practice of /4) and a copy of *this copies the scheduler. Otherwise __buf_
+  // holds a __exec_ts_shared_backend sharing the backend made by allocate_shared (/3). __b_ is
+  // the backend in __buf_.
+  static constexpr size_t __buf_size = 3 * sizeof(void*);
+  template <class _Sch, class _Allocator>
+  static constexpr bool __in_place = sizeof(__backend_for<_Sch, _Allocator>) <= __buf_size &&
+                                     alignof(__backend_for<_Sch, _Allocator>) <= alignof(void*) &&
+                                     is_nothrow_copy_constructible_v<_Sch> && is_nothrow_copy_constructible_v<_Allocator>;
+
+  __ycxx::__adl_free::__exec_ts_backend_base* __b_;
+  alignas(void*) byte __buf_[__buf_size];
 
 public:
   using scheduler_concept = scheduler_tag;
@@ -114,24 +148,34 @@ public:
   template <class _Sch, class _Allocator = allocator<void>>
     requires(!same_as<task_scheduler, remove_cvref_t<_Sch>>) && scheduler<_Sch>
   explicit task_scheduler(_Sch&& __sch, _Allocator __alloc = {});
-  task_scheduler(const task_scheduler&) = default;
-  task_scheduler& operator=(const task_scheduler&) = default;
+  // Equivalent to the draft's defaulted ones: a copy refers to an equal scheduler.
+  task_scheduler(const task_scheduler& __o) noexcept : __b_(__o.__b_->__ycxx_copy_to(__buf_)) {}
+  // Copies __o first: __o may be owned by the scheduler this one is about to destroy.
+  task_scheduler& operator=(const task_scheduler& __o) noexcept {
+    if (this != __builtin_addressof(__o)) {
+      task_scheduler __copy(__o);
+      __b_->~__exec_ts_backend_base();
+      __b_ = __copy.__b_->__ycxx_copy_to(__buf_);
+    }
+    return *this;
+  }
+  ~task_scheduler() { __b_->~__exec_ts_backend_base(); }
 
   auto schedule() const noexcept;
 
-  friend bool operator==(const task_scheduler& __lhs, const task_scheduler& __rhs) noexcept { return __rhs.__sch_->__ycxx_equal_to(__lhs); }
+  friend bool operator==(const task_scheduler& __lhs, const task_scheduler& __rhs) noexcept { return __rhs.__b_->__ycxx_equal_to(__lhs); }
   // TS deduced (only task_scheduler is accepted) so that the operator, found by argument-dependent
   // lookup for any type with task_scheduler among its template arguments, checks scheduler<Sch>
   // only when the left operand is a task_scheduler.
   template <class _TS, class _Sch>
     requires same_as<_TS, task_scheduler> && (!same_as<task_scheduler, _Sch>) && scheduler<_Sch>
   friend bool operator==(const _TS& __lhs, const _Sch& __rhs) noexcept {
-    if (__lhs.__sch_->__ycxx_type() != &__ycxx::__detail::__exec::__type_key<_Sch>)
+    if (__lhs.__b_->__ycxx_type() != &__ycxx::__detail::__exec::__type_key<_Sch>)
       return false;
-    return *static_cast<const _Sch*>(__lhs.__sch_->__ycxx_sched()) == __rhs;
+    return *static_cast<const _Sch*>(__lhs.__b_->__ycxx_sched()) == __rhs;
   }
 
-  forward_progress_guarantee query(get_forward_progress_guarantee_t) const noexcept { return __sch_->__ycxx_fpg(); }
+  forward_progress_guarantee query(get_forward_progress_guarantee_t) const noexcept { return __b_->__ycxx_fpg(); }
   template <class... _Envs>
   __ts_domain query(get_completion_domain_t<set_value_t>, const _Envs&...) const noexcept;
 };
@@ -140,42 +184,81 @@ public:
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 struct __ts_access {
-  static const auto& __backend(const std::execution::task_scheduler& s) noexcept { return s.__sch_; }
+  static ::__ycxx::__adl_free::__exec_ts_backend_base* __backend(const std::execution::task_scheduler& s) noexcept { return s.__b_; }
+};
+// An operation holding a copy of a task_scheduler reaches the backend in that copy.
+template <>
+struct __backend_access<std::execution::task_scheduler> {
+  static std::execution::parallel_scheduler_replacement::parallel_scheduler_backend* __get(const std::execution::task_scheduler& s) noexcept {
+    return __ts_access::__backend(s);
+  }
 };
 
 // An operation of type Op placed in a proxy's backend storage when it fits, else on the heap.
 template <class _Op_>
 struct __placed_op {
   static void __destroy_in_place(void* p) noexcept { static_cast<_Op_*>(p)->~_Op_(); }
-  static void __destroy_heap(void* p) noexcept {
-    static_cast<_Op_*>(p)->~_Op_();
-    ::operator delete(p, std::align_val_t(alignof(_Op_)));
-  }
-  // Constructs make(wrap_rcvr) in s or on the heap and starts it; failures complete r.
-  template <class _Make>
-  static void run(std::execution::parallel_scheduler_replacement::receiver_proxy& r, std::span<std::byte> s, _Make __make) noexcept {
-    void* __mem = s.data();
-    std::size_t space = s.size();
-    bool __heap = false;
-    if (!__mem || !std::align(alignof(_Op_), sizeof(_Op_), __mem, space)) {
-      __mem = ::operator new(sizeof(_Op_), std::align_val_t(alignof(_Op_)), std::nothrow);
-      if (!__mem) {
-        r.set_error(std::make_exception_ptr(std::bad_alloc()));
-        return;
-      }
-      __heap = true;
+
+  // A spilled operation owns the allocator and pointer needed to release it before completion.
+  template <class _Allocator>
+  struct __heap_op {
+    using _AllocatorTraits = std::allocator_traits<_Allocator>;
+    using _VoidPointer = typename _AllocatorTraits::void_pointer;
+    [[no_unique_address]] _Allocator __alloc_;
+    _VoidPointer __ptr_;
+    _Op_ __op_;
+
+    static void __destroy(void* p) noexcept {
+      using _Traits = typename _AllocatorTraits::template rebind_traits<__heap_op>;
+      auto* __self = static_cast<__heap_op*>(p);
+      typename _Traits::allocator_type __alloc(__self->__alloc_);
+      auto __ptr = static_cast<typename _Traits::pointer>(__self->__ptr_);
+      __self->~__heap_op();
+      _Traits::deallocate(__alloc, __ptr, 1);
     }
-    ::__ycxx::__adl_free::__exec_wrap_rcvr __w{&r, __mem, __heap ? &__destroy_heap : &__destroy_in_place};
-    auto construct = [&] { return ::new (__mem) _Op_(__make(__w)); };
+
+    template <class _Alloc, class _Make>
+    __heap_op(const _Alloc& __alloc, const _VoidPointer& __ptr, std::execution::parallel_scheduler_replacement::receiver_proxy& r, _Make& __make)
+        : __alloc_(__alloc), __ptr_(__ptr), __op_(__make(::__ycxx::__adl_free::__exec_wrap_rcvr{&r, this, &__destroy})) {}
+
+    template <class _Make>
+    static _Op_* __construct(const _Allocator& __allocator, std::execution::parallel_scheduler_replacement::receiver_proxy& r, _Make& __make) {
+      // Rebind only with a complete record type. The allocator and void pointer round trips
+      // preserve equivalence for deallocation ([allocator.requirements.general]).
+      using _Traits = typename _AllocatorTraits::template rebind_traits<__heap_op>;
+      using _Alloc = typename _Traits::allocator_type;
+      _Alloc __alloc(__allocator);
+      struct __guard {
+        _Alloc& __alloc;
+        typename _Traits::pointer __ptr;
+        ~__guard() {
+          if (__ptr != nullptr)
+            _Traits::deallocate(__alloc, __ptr, 1);
+        }
+      } __allocation{__alloc, _Traits::allocate(__alloc, 1)};
+      auto* __stored_op = ::new (static_cast<void*>(std::to_address(__allocation.__ptr))) __heap_op(__alloc, __allocation.__ptr, r, __make);
+      __allocation.__ptr = nullptr;
+      return __builtin_addressof(__stored_op->__op_);
+    }
+  };
+
+  // Constructs make(wrap_rcvr) in s or in storage from alloc, and starts it.
+  template <class _Allocator, class _Make>
+  static void run(std::execution::parallel_scheduler_replacement::receiver_proxy& r, std::span<std::byte> s, const _Allocator& __alloc, _Make __make) noexcept {
+    auto construct = [&]() -> _Op_* {
+      void* __mem = s.data();
+      std::size_t __space = s.size();
+      if (__mem && std::align(alignof(_Op_), sizeof(_Op_), __mem, __space))
+        return ::new (__mem) _Op_(__make(::__ycxx::__adl_free::__exec_wrap_rcvr{&r, __mem, &__destroy_in_place}));
+      return __heap_op<_Allocator>::__construct(__alloc, r, __make);
+    };
     _Op_* op;
-    if constexpr (noexcept(__make(__w)) || !__cfg::exceptions) {
+    if constexpr (!__cfg::exceptions) {
       op = construct();
     } else {
       try {
         op = construct();
       } catch (...) {
-        if (__heap)
-          ::operator delete(__mem, std::align_val_t(alignof(_Op_)));
         r.set_error(std::current_exception());
         return;
       }
@@ -198,7 +281,7 @@ struct __ts_bulk_fn {
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace execution {
 
-template <scheduler _Sch>
+template <scheduler _Sch, class _Allocator>
 class task_scheduler::__backend_for : public __ycxx::__adl_free::__exec_ts_backend_base {
   using __wrap_rcvr = __ycxx::__adl_free::__exec_wrap_rcvr;
   using __bulk_sndr = decltype(bulk(declval<__ycxx::__adl_free::__exec_just_sndr_like<_Sch>>(), par, size_t(), __ycxx::__detail::__exec::__ts_bulk_fn()));
@@ -206,18 +289,21 @@ class task_scheduler::__backend_for : public __ycxx::__adl_free::__exec_ts_backe
   void __run_bulk(size_t __num_chunks, size_t chunk, size_t __shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r,
                 span<byte> s) noexcept {
     using __op_t = connect_result_t<__bulk_sndr, __wrap_rcvr>;
-    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, [&](__wrap_rcvr __w) {
+    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, __alloc_, [&](__wrap_rcvr __w) {
       return connect(bulk(__ycxx::__adl_free::__exec_just_sndr_like<_Sch>{__sched_}, par, __num_chunks, __ycxx::__detail::__exec::__ts_bulk_fn{&r, chunk, __shape}),
                      static_cast<__wrap_rcvr&&>(__w));
     });
   }
 
 public:
-  explicit __backend_for(_Sch __sch) : __sched_(static_cast<_Sch&&>(__sch)) {}
+  explicit __backend_for(_Sch __sch, const _Allocator& __alloc) : __sched_(static_cast<_Sch&&>(__sch)), __alloc_(__alloc) {}
+  __backend_for(const __backend_for&) = default;
 
   void schedule(parallel_scheduler_replacement::receiver_proxy& r, span<byte> s) noexcept override {
     using __op_t = connect_result_t<schedule_result_t<_Sch&>, __wrap_rcvr>;
-    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, [&](__wrap_rcvr __w) { return connect(execution::schedule(__sched_), static_cast<__wrap_rcvr&&>(__w)); });
+    __ycxx::__detail::__exec::__placed_op<__op_t>::run(r, s, __alloc_, [&](__wrap_rcvr __w) {
+      return connect(execution::schedule(__sched_), static_cast<__wrap_rcvr&&>(__w));
+    });
   }
   void schedule_bulk_chunked(size_t __shape, parallel_scheduler_replacement::bulk_item_receiver_proxy& r, span<byte> s) noexcept override {
     // chunk_size: at most 64 chunks (the scheduler behind is unknown).
@@ -232,16 +318,32 @@ public:
   const void* __ycxx_sched() const noexcept override { return __builtin_addressof(__sched_); }
   forward_progress_guarantee __ycxx_fpg() const noexcept override { return get_forward_progress_guarantee(__sched_); }
   bool __ycxx_equal_to(const task_scheduler& __lhs) const noexcept override { return __lhs == __sched_; }
+  // Only for a backend in place (the scheduler and allocator copies do not throw); any
+  // other is reached through a __exec_ts_shared_backend, which copies itself.
+  __ycxx::__adl_free::__exec_ts_backend_base* __ycxx_copy_to(void* __buf) const noexcept override {
+    if constexpr (task_scheduler::__in_place<_Sch, _Allocator>)
+      return ::new (__buf) __backend_for(*this);
+    else
+      std::terminate();
+  }
 
 private:
   _Sch __sched_;
+  [[no_unique_address]] _Allocator __alloc_;
 };
 
 template <class _Sch, class _Allocator>
   requires(!same_as<task_scheduler, remove_cvref_t<_Sch>>) && scheduler<_Sch>
-task_scheduler::task_scheduler(_Sch&& __sch, _Allocator __alloc)
-    : __sch_(allocate_shared<__backend_for<remove_cvref_t<_Sch>>>(__alloc, static_cast<_Sch&&>(__sch))) {
+task_scheduler::task_scheduler(_Sch&& __sch, _Allocator __alloc) {
   static_assert(__ycxx::__detail::__exec::__infallible_scheduler<_Sch, env<>>, "task_scheduler: the scheduler must be infallible");
+  static_assert(sizeof(__ycxx::__adl_free::__exec_ts_shared_backend) <= __buf_size && alignof(__ycxx::__adl_free::__exec_ts_shared_backend) <= alignof(void*));
+  using _Bk = __backend_for<remove_cvref_t<_Sch>, _Allocator>;
+  if constexpr (__in_place<remove_cvref_t<_Sch>, _Allocator>) {
+    __b_ = ::new (static_cast<void*>(__buf_)) _Bk(static_cast<_Sch&&>(__sch), __alloc);
+  } else {
+    __b_ = ::new (static_cast<void*>(__buf_)) __ycxx::__adl_free::__exec_ts_shared_backend(
+        allocate_shared<_Bk>(__alloc, static_cast<_Sch&&>(__sch), __alloc));
+  }
 }
 
 class task_scheduler::__ts_domain : public default_domain {
@@ -260,8 +362,8 @@ public:
       constexpr bool __chunked = is_same_v<tag_of_t<_BulkSndr>, bulk_chunked_t>;
       using _Shape = remove_cvref_t<decltype(data.template get<1>())>;
       using _Fp = remove_cvref_t<decltype(data.template get<2>())>;
-      return __ycxx::__adl_free::__exec_par_bulk_sender<__chunked, remove_cvref_t<decltype(__child)>, _Shape, _Fp>{
-          std::forward_like<_BulkSndr>(__child), true, _Shape(data.template get<1>()), std::forward_like<_BulkSndr>(data.template get<2>()), __sch.__sch_};
+      return __ycxx::__adl_free::__exec_par_bulk_sender<__chunked, remove_cvref_t<decltype(__child)>, _Shape, _Fp, task_scheduler>{
+          std::forward_like<_BulkSndr>(__child), true, _Shape(data.template get<1>()), std::forward_like<_BulkSndr>(data.template get<2>()), __sch};
     }
   }
 };
@@ -299,8 +401,9 @@ struct __exec_ts_sender {
   };
   __attrs get_env() const noexcept { return {__sch}; }
   template <class _Rcvr>
-  __exec_par_sched_op<std::decay_t<_Rcvr>, false> connect(_Rcvr&& __rcvr) const noexcept(std::is_nothrow_constructible_v<std::decay_t<_Rcvr>, _Rcvr>) {
-    return {static_cast<_Rcvr&&>(__rcvr), ::__ycxx::__detail::__exec::__ts_access::__backend(__sch)};
+  __exec_par_sched_op<std::decay_t<_Rcvr>, false, std::execution::task_scheduler> connect(_Rcvr&& __rcvr) const
+      noexcept(std::is_nothrow_constructible_v<std::decay_t<_Rcvr>, _Rcvr>) {
+    return {static_cast<_Rcvr&&>(__rcvr), __sch};
   }
 };
 }} // namespace __ycxx::__adl_free

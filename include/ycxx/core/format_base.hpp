@@ -68,8 +68,8 @@ inline void __format_string_dynamic_argument_has_wrong_type() noexcept {}
 
 [[noreturn]] [[__gnu__::__cold__]] constexpr void __throw_format_error(const char* what) {
   if consteval {
-    // Clang cannot throw during constant evaluation; this shows the message instead.
-    if constexpr (__cfg::__y_clang)
+    // A compiler that cannot throw during constant evaluation (Clang 23) shows the message instead.
+    if constexpr (!__cfg::__constexpr_throw)
       ::__ycxx::__detail::__format_error_in_constant_evaluation(what);
   }
   ::__ycxx::__detail::__raise_with(ycxx_error_format_error, what, [what] { return std::format_error(what); });

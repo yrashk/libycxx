@@ -23,6 +23,14 @@
 #  10. the standard library modules: ycxx::modules is installed (libycxx-modules.a, the interface
 #      units as a CXX_MODULES file set) and examples/modules (`import std.compat;`) builds and runs
 #      from the installed package and with add_subdirectory, exporting none of libycxx's symbols;
+#      GCC: with YCXX_MODULES_REFLECTION, tests/cmake/modules-reflection (std::meta through
+#      `import std;`) builds and runs both ways, as it does through tools/ycxx-modules -freflection
+#      and tools/ycxx-cxx, which rejects a program whose -freflection/-fno-reflection disagrees with
+#      the modules; the option is rejected without YCXX_MODULES, and on Clang at configure time.
+#      Without it, a target that gets -freflection itself (its options, a dependency's interface):
+#      before CMake 4.4 std::meta is empty for it and the configuration stops, both ways; CMake 4.4
+#      and later build it (find_package: and run it); an add_compile_options ahead of libycxx: the
+#      same with find_package, accepted with add_subdirectory (the module gets it too);
 #  11. the hosted layers (DECISIONS §18, examples/hosted-layers; Linux): Example A (host/, libycxx
 #      with YCXX_PAL=none and the program's own providers) builds, runs and prints its success
 #      line, has none of the POSIX platform layer and no malloc; its absent_* programs fail to
@@ -255,6 +263,120 @@ for c in $compilers; do
       bad $c "modules ($how): configure/build (see $log)"
     fi
   done
+  # YCXX_MODULES_REFLECTION: GCC builds std with -freflection and gives it to the importers, so
+  # tests/cmake/modules-reflection (std::meta through `import std;`, no flag of its own) builds
+  # and runs, from a package installed with the option and with add_subdirectory; Clang (no
+  # reflection) is rejected at configure time with a clear message.
+  if [ $c = gcc ]; then
+    # Without the option (the package of 1.), a target that gets -freflection from its own options
+    # or a dependency's interface: before CMake 4.4 the module's interface units are not compiled
+    # with it, so the program fails to build (std::meta is empty; shown with the check switched
+    # off) and cmake/ycxx-modules-reflection.cmake stops the configuration instead; CMake 4.4 and
+    # later build the program its own copy of them, so it builds and runs. An add_compile_options
+    # ahead of libycxx is the same with find_package (the installed module's interface units do
+    # not get it before 4.4), while with add_subdirectory the module gets it too: accepted.
+    cmake_ver=$(cmake --version | sed -n 's/^cmake version \([0-9]*\)\.\([0-9]*\).*/\1 \2/p')
+    old_cmake=; [ "${cmake_ver% *}" -lt 4 ] || { [ "${cmake_ver% *}" = 4 ] && [ "${cmake_ver#* }" -lt 4 ]; } && old_cmake=1
+    nocheck=$d/no-reflection-check.cmake
+    echo 'set_property(DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY _YCXX_MODULES_REFLECTION_CHECK TRUE)' >"$nocheck"
+    for how in find_package add_subdirectory; do
+      src=
+      [ $how = add_subdirectory ] && src="-DLIBYCXX_SOURCE_DIR=$repo"
+      for own in target dependency directory; do
+        b=$d/modules-own-reflection-$how-$own
+        what="-freflection from the $own"
+        [ $own = directory ] && what="add_compile_options(-freflection)"
+        if [ $how = add_subdirectory ] && { [ $own = directory ] || [ -z "$old_cmake" ]; }; then
+          # Configuring is what the check decides (building libycxx again here would be long).
+          if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen $src -DYCXX_TEST_OWN_REFLECTION=$own; then
+            ok $c "modules ($how): $what accepted"
+          else
+            bad $c "modules ($how): $what rejected (see $log)"
+          fi
+        elif [ -n "$old_cmake" ]; then
+          if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
+               $src -DYCXX_TEST_OWN_REFLECTION=$own; then
+            bad $c "modules ($how, CMake < 4.4): $what accepted against std built without it"
+          elif grep -q 'libycxx: target demo_reflection compiles with -freflection' "$log"; then
+            ok $c "modules ($how, CMake < 4.4): $what rejected with a clear message"
+          else
+            bad $c "modules ($how, CMake < 4.4): $what rejected without the expected message (see $log)"
+          fi
+          if [ $how = find_package ]; then
+            if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b-nocheck" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
+                 -DYCXX_TEST_OWN_REFLECTION=$own -DCMAKE_PROJECT_INCLUDE="$nocheck" &&
+               ! x cmake --build "$b-nocheck" && grep -q "is not a member of 'std::meta'" "$log"; then
+              ok $c "modules ($how, CMake < 4.4, no check): $what: std::meta empty, as the check says"
+            else
+              bad $c "modules ($how, CMake < 4.4, no check): $what did not fail on an empty std::meta (see $log)"
+            fi
+          fi
+        elif x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" \
+               -DYCXX_TEST_OWN_REFLECTION=$own &&
+             x cmake --build "$b" && run_demo "$b/demo_reflection" "$log"; then
+          ok $c "modules ($how): $what: std::meta through import std; build and run"
+        else
+          bad $c "modules ($how): $what: configure/build/run (see $log)"
+        fi
+      done
+    done
+    if x cmake -S "$repo" -B "$d/lib-reflection" $gen -DCMAKE_INSTALL_PREFIX="$d/prefix-reflection" \
+         -DYCXX_MODULES_REFLECTION=ON &&
+       x cmake --build "$d/lib-reflection" && x cmake --install "$d/lib-reflection"; then
+      for how in find_package add_subdirectory; do
+        b=$d/modules-reflection-$how
+        src=
+        [ $how = add_subdirectory ] && src="-DLIBYCXX_SOURCE_DIR=$repo -DYCXX_MODULES_REFLECTION=ON"
+        if x cmake -S "$repo/tests/cmake/modules-reflection" -B "$b" $gen \
+             -DCMAKE_PREFIX_PATH="$d/prefix-reflection" $src &&
+           x cmake --build "$b" && run_demo "$b/demo_reflection" "$log"; then
+          ok $c "modules ($how, YCXX_MODULES_REFLECTION): std::meta through import std; build and run"
+        else
+          bad $c "modules ($how, YCXX_MODULES_REFLECTION): configure/build/run (see $log)"
+        fi
+      done
+      # The tools: tools/ycxx-modules -freflection records it in the directory's flags, so
+      # tools/ycxx-cxx --std-modules builds the same program with no flag of its own, and
+      # rejects -fno-reflection; a copy whose flags lack it stands for modules built without
+      # reflection (ycxx-cxx decides from the flags), against which -freflection is rejected.
+      m=$d/modules-reflection-tools
+      ycxx_cxx="$repo/tools/ycxx-cxx gcc --libdir=$d/lib-reflection"
+      main=$repo/tests/cmake/modules-reflection/main.cpp side=$repo/tests/cmake/modules-reflection/side.c
+      if x "$repo/tools/ycxx-modules" gcc -o "$m" -freflection && grep -q -- '-freflection' "$m/flags" &&
+         x $cc -c "$side" -o "$m-side.o" && x $ycxx_cxx --std-modules="$m" "$main" "$m-side.o" -o "$m-demo" &&
+         run_demo "$m-demo" "$log"; then
+        ok $c "modules (tools/ycxx-modules -freflection): std::meta through ycxx-cxx --std-modules"
+      else
+        bad $c "modules (tools/ycxx-modules -freflection): build/run (see $log)"
+      fi
+      rm -rf "$m-off" && cp -R "$m" "$m-off" && sed 's/ -freflection//' "$m/flags" >"$m-off/flags"
+      for t in "-fno-reflection:$m:were built with -freflection" "-freflection:$m-off:were built without it"; do
+        flag=${t%%:*} rest=${t#*:} dir=${rest%%:*} msg=${rest#*:}
+        if x $ycxx_cxx --std-modules="$dir" $flag "$main" "$m-side.o" -o "$m-reject"; then
+          bad $c "modules: ycxx-cxx $flag accepted against modules that disagree"
+        elif grep -q "$msg" "$log"; then
+          ok $c "modules: ycxx-cxx $flag rejected against modules that disagree"
+        else
+          bad $c "modules: ycxx-cxx $flag rejected without the expected message (see $log)"
+        fi
+      done
+      if x cmake -S "$repo" -B "$d/lib-reflection-nomodules" $gen -DYCXX_MODULES=OFF -DYCXX_MODULES_REFLECTION=ON; then
+        bad $c "modules: YCXX_MODULES_REFLECTION accepted without YCXX_MODULES"
+      elif grep -q 'YCXX_MODULES_REFLECTION needs YCXX_MODULES' "$log"; then
+        ok $c "modules: YCXX_MODULES_REFLECTION without YCXX_MODULES rejected with a clear message"
+      else
+        bad $c "modules: YCXX_MODULES_REFLECTION without YCXX_MODULES rejected without the expected message (see $log)"
+      fi
+    else
+      bad $c "modules: build and install with YCXX_MODULES_REFLECTION (see $log)"
+    fi
+  elif x cmake -S "$repo" -B "$d/lib-reflection" $gen -DYCXX_MODULES_REFLECTION=ON; then
+    bad $c "modules: YCXX_MODULES_REFLECTION accepted without reflection"
+  elif grep -q 'YCXX_MODULES_REFLECTION needs GCC' "$log"; then
+    ok $c "modules: YCXX_MODULES_REFLECTION rejected with a clear message"
+  else
+    bad $c "modules: YCXX_MODULES_REFLECTION rejected without the expected message (see $log)"
+  fi
 
   # 7. libycxx and the toolchain's C++ library in one process
   b=$d/visibility
@@ -561,6 +683,8 @@ for c in $compilers; do
   if [ $c = gcc ]; then tc_cxx=${YCXX_GXX:-g++-16}; else tc_cxx=${YCXX_CLANGXX:-clang++-23}; fi
   tc_cxx=$(command -v "$tc_cxx" 2>/dev/null || true)
   tc_path=$PATH; [ -n "$tc_cxx" ] && tc_path=$(dirname "$tc_cxx"):$PATH
+  # The compiler's directory can also contain CMake on macOS CI.
+  tc_path=${YCXX_CI_CMAKE_BIN:+$YCXX_CI_CMAKE_BIN:}$tc_path
   if PATH=$tc_path YCXX_TOOLCHAINS=$cache cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-$c" -G Ninja \
        -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=$c \
        -DLIBYCXX_SOURCE_DIR="$repo" >"$work/tc-$c.log" 2>&1 &&
@@ -575,11 +699,13 @@ for c in $compilers; do
   else bad $c "toolchain file: $key missing from $cache/toolchains.env"; fi
 done
 rm -rf "$work/tc-missing"
+# CMake can wrap the provisioning hint across lines.
 if YCXX_TOOLCHAINS=$work/toolchain-cache-missing cmake -S "$repo/examples/add_subdirectory" -B "$work/tc-missing" \
      -G Ninja -DCMAKE_TOOLCHAIN_FILE="$repo/cmake/ycxx-toolchain.cmake" -DYCXX_COMPILER=gcc \
      -DYCXX_GCC_VERSION=99.1.0 >"$work/tc-missing.log" 2>&1; then
   bad toolchain "accepted a missing GCC 99.1"
-elif grep -q "Configure with -DYCXX_PROVISION=ON" "$work/tc-missing.log"; then
+elif printf '%s\n' "$(tr -s '[:space:]' '[ *]' <"$work/tc-missing.log")" |
+     grep -Fq 'Configure with -DYCXX_PROVISION=ON'; then
   ok toolchain "missing version without YCXX_PROVISION fails clearly"
 else
   bad toolchain "missing version failed without the expected message (see $work/tc-missing.log)"

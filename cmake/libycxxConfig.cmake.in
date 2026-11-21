@@ -85,4 +85,14 @@ foreach(_ycxx_t ycxx::modules ycxx::shared_modules)
   endif()
 endforeach()
 unset(_ycxx_t)
+# Built without reflection (YCXX_MODULES_REFLECTION=OFF), a GCC project target that adds
+# -freflection itself is a configure error before CMake 4.4 (ycxx-modules-reflection.cmake): the
+# targets of this directory and below, which see the imported targets.
+set(libycxx_MODULES_REFLECTION @YCXX_MODULES_REFLECTION@)
+if(TARGET ycxx::modules AND NOT libycxx_MODULES_REFLECTION AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
+   CMAKE_VERSION VERSION_LESS 4.4)
+  set(_ycxx_reflection_scope "${CMAKE_CURRENT_SOURCE_DIR}")
+  include("${CMAKE_CURRENT_LIST_DIR}/ycxx-modules-reflection.cmake")
+  unset(_ycxx_reflection_scope)
+endif()
 check_required_components(libycxx)

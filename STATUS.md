@@ -646,6 +646,12 @@ libstdc++ 16 lacks, GCC/Clang differences, C-header gaps and ABI limits. No fail
 a defect in a test.
 
 ## Known compiler gaps and bugs
+- On compilers without `[[__gnu__::__may_alias__]]`, `<atomic>` diagnoses lock-free operations
+  and lock-free queries for types whose selected integer access type is incompatible under
+  [basic.lval]. For example, the lock-free backend for a four-byte aggregate accesses it
+  through an `unsigned int`. Lock-based atomics and compatible lock-free accesses remain
+  available. The `ATOMIC_*_LOCK_FREE` macros expose the compiler's target lock-free constants
+  (DECISIONS §5).
 - Neither GCC 16.2 nor Clang 23.1 can set bits of a pointer during constant evaluation (no
   pointer-tagging builtin; `reinterpret_cast`, `bit_cast` of pointers, arithmetic outside an
   object or on a null pointer, and reading the other member of a pointer/integer union are all
@@ -722,6 +728,13 @@ a defect in a test.
   before `import std;` (`extern "C" void abort();` without `noexcept`, as
   `tests/ycxx/support/check.hpp` does) is rejected ("conflicting 'noexcept' specifier for imported
   declaration"); module tests use `module_check.hpp`.
+- GCC 16.2, modules and reflection: the CMI of `std` records the `-freflection` setting it was
+  built with. Built without it, `std::meta` is empty for every importer, whether or not the
+  importer has `-freflection` ("'nonstatic_data_members_of' is not a member of 'std::meta'");
+  built with it, an importer compiled without `-freflection` is an internal compiler error
+  (segmentation fault) at its first use of the module, even of `std::vector`. libycxx's tools
+  keep the two alike (`YCXX_MODULES_REFLECTION`, `tools/ycxx-modules`, `tools/ycxx-cxx`;
+  docs/USAGE.md, "Modules"); own test `modules/import_std_reflection`.
 - GCC 16.2, modules: an internal compiler error (`tsubst_expr`) in an importer when a
   requires-parameter appears in a template argument inside a requires-expression (nested, simple
   or type requirement), as in the draft's `unstoppable_token`
@@ -1362,11 +1375,9 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   permutes, `chunk`/`cat`, `iota`, `vec<complex<T>>`, the `<bit>` and `<cmath>` overloads and their
   using-declarations in `std`), constexpr where the draft says; `__cpp_lib_simd`, `_bitops`,
   `_complex`, `_permutations`. Representation in DECISIONS §12 (vector-extension chunks sized by
-  the enabled registers; codegen: `vec<float, 4>` `a * b` is one `mulps`). Own suite simd: 22/24
-  on both compilers, also under ASan (Clang); the two failures are test defects: `iota` multiplies
-  `vec<short, 9>` by the int literal 2, whose broadcast is not value-preserving, so no `operator*`
-  is viable ([simd.ctor]/2.2); `compress_expand` expects `compress(mk, M(0b10101010u), false)[0]`
-  false, but the first selected index is 1 and `mk[1]` is true ([simd.permute.mask]/3-4).
+  the enabled registers, or scalar chunks at the same public width without the vector-size
+  attribute). With vector chunks, `a * b` on `vec<float, 4>` compiles to one `mulps`. The own SIMD
+  suite exercises both layouts, including optimized narrow signed arithmetic with scalar chunks.
   libstdc++ std/simd (24 tests) is skipped: its harness uses libstdc++-internal names; libc++ has
   only the Parallelism TS's `experimental/simd`. Limitations: no implicit conversions to the
   compiler's vector types (recommended practice only); widths that are not powers of two are
@@ -1408,12 +1419,13 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   `__cpp_lib_counting_scope`, `__cpp_lib_task` 202506L, `__cpp_lib_parallel_scheduler` 202506L
   (hosted). Own suite execution: every test passes on both compilers, also under ASan+UBSan and
   (the threaded ones) TSan. Known limitations: `split`/`ensure_started` are not in the draft
-  (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; task_scheduler
-  allocates its backend at every construction; spawn_future's sender reports no completion
-  domain (the spawned sender's type is erased; a parent's COMPL-DOMAIN makes it
-  `indeterminate_domain<>`); the draft questions of DECISIONS §17. Every adaptor reports its
-  completion domain and scheduler per tag as [exec.snd.general]/3-4 describe them (DECISIONS §17,
-  "Attributes"; spec-coverage audit G8).
+  (P3682) and not provided; `tag_of_t` recognises tuple-like senders only; the draft questions
+  of DECISIONS §17. task_scheduler keeps a small scheduler's backend inside itself, without
+  allocating ([exec.task.scheduler]/4), and spawn_future's sender reports its completion domains
+  given an environment (DECISIONS §17). task_scheduler's backend uses the constructor's allocator
+  for its schedule and bulk operation states that require storage beyond the proxy's buffer (#24).
+  Every adaptor reports its completion domain and scheduler per tag as [exec.snd.general]/3-4
+  describe them (DECISIONS §17, "Attributes"; spec-coverage audit G8).
 - `boyer_moore_searcher`/`boyer_moore_horspool_searcher` (`ycxx/core/searcher.hpp`): bad-character
   table (a 256-entry array for byte-sized integers compared with `equal_to`, otherwise a hash table of
   the pattern's equivalence classes that calls pred only on equal hash values), plus the good-suffix
@@ -1676,6 +1688,8 @@ levels: 29.7 s -> 0.01 s; libstdc++ 8.6 s). Remaining above 1.5x: deque push at 
 - **Decided (user, 2026-10-05): C names through `<string>` and `<cstdint>`.** Hosted `<string>`
   provides `EOF` (its transitive includes have `<cstdio>`, DECISIONS §19; `WEOF` comes with `<wchar.h>`),
   and `<cstdint>` also declares the global `::int64_t`... names, as libstdc++, libc++ and MSVC do.
+  Hosted `<cstdint>` matches the target C library's fast 16- and 32-bit types and limits,
+  including musl and glibc on Linux x86-64.
 - **Transitive includes (user decision, 2026-10-07; DECISIONS §19).** On by default (what
   libstdc++ and libc++ both provide, measured by `tools/probe_transitive.py`, plus the reliances
   of the real-world projects and suites); `-DYCXX_NO_TRANSITIVE_INCLUDES` turns them off. Three

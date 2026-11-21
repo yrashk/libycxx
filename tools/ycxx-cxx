@@ -51,6 +51,26 @@ if [ -n "$modules" ]; then
   fi
   modules_flags=$(cat "$modules/flags")
   modules_lib=$modules/libycxx-modules.a
+  # The BMIs' -freflection setting must be the program's: built without it, std::meta is empty
+  # for the program; built with it (the flags then add it), GCC 16 crashes on an importer
+  # compiled with -fno-reflection.
+  built= wanted= shared_opt=
+  [ $linkage = shared ] && shared_opt=" --shared"
+  case " $modules_flags " in *" -freflection "*) built=1 ;; esac
+  for a in "$@"; do
+    case $a in
+      -freflection) wanted=1 ;;
+      -fno-reflection) wanted=0 ;;
+    esac
+  done
+  if [ "$wanted" = 1 ] && [ -z "$built" ]; then
+    echo "ycxx-cxx: -freflection, but the modules in $modules were built without it (std::meta would be empty): build them with tools/ycxx-modules $which$shared_opt -o DIR -freflection [flags]" >&2
+    exit 1
+  fi
+  if [ "$wanted" = 0 ] && [ -n "$built" ]; then
+    echo "ycxx-cxx: -fno-reflection, but the modules in $modules were built with -freflection: an importer must use the modules' setting" >&2
+    exit 1
+  fi
 fi
 extra=
 # Hidden visibility (DECISIONS §2): GCC's -Wattributes warning about program classes with a member

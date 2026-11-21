@@ -649,11 +649,74 @@ bound in the executable, two-level namespace; DECISIONS §2, STATUS "macOS").
 
 From CMake (3.28+, Ninja): `find_package(libycxx)` and `target_link_libraries(app PRIVATE
 ycxx::modules)`, with the plain compiler; CMake builds the interfaces of `std` and `std.compat`
-for the project (README, "Modules"; `examples/modules`). CMake's own `CMAKE_CXX_MODULE_STD` is not
-supported (it would build the toolchain library's module). The installed `ycxx-c++` does not
-build or find modules; outside CMake use `tools/ycxx-modules` and `tools/ycxx-cxx --std-modules`
+for the project (docs/USAGE.md, "Modules"; `examples/modules`). The installed `ycxx-c++` does
+not build or find modules; outside CMake use `tools/ycxx-modules` and `tools/ycxx-cxx --std-modules`
 from the source tree. GCC 16 cannot mix `#include <...>` of a standard header and `import std;`
-in one translation unit.
+in one translation unit. For `std::meta` through `import std;` (GCC 16), configure libycxx with
+`-DYCXX_MODULES_REFLECTION=ON`: the module and every importer are then compiled with
+`-freflection`, which GCC needs to be the same for both (docs/USAGE.md, "Modules").
+
+#### CMake 4.5.0
+
+CMake 4.5.0 adds the toolchain's standard library modules automatically when scanning C++ module
+dependencies. With libycxx, the toolchain module scan can inherit `-nostdinc++` and fail before
+compilation. The usual `ycxx::modules` setup works with CMake 4.4.5.
+[libycxx #29](https://github.com/yrashk/libycxx/issues/29)
+
+To use CMake 4.5.0, select a placeholder metadata file for the whole build. CMake scans the
+placeholder module, and your existing link to `ycxx::modules` or `ycxx::shared_modules` supplies
+`std` and `std.compat`. Pass the metadata path on the first configure of a fresh build directory
+so CMake sees it before enabling C++. Keep the manifest and placeholder source for subsequent builds.
+Use separate build directories for projects that need the toolchain's standard library modules
+as well as libycxx's.
+
+Run the example from the libycxx checkout with CMake 4.5.0 on your path and `YCXX_GCC` and
+`YCXX_GXX` set to the GCC 16.2 compilers.
+[Getting libycxx](#getting-libycxx)
+
+```sh
+metadata_dir="$PWD/build/libycxx-module-metadata"
+mkdir -p "$metadata_dir"
+cat > "$metadata_dir/placeholder.cppm" <<'EOF'
+export module libycxx_cmake_placeholder;
+EOF
+cat > "$metadata_dir/modules.json" <<'EOF'
+{
+  "version": 1,
+  "revision": 1,
+  "modules": [
+    {
+      "logical-name": "libycxx_cmake_placeholder",
+      "source-path": "placeholder.cppm"
+    }
+  ]
+}
+EOF
+```
+
+For a source-tree build, configure the example with `LIBYCXX_SOURCE_DIR`.
+
+```sh
+cmake -S examples/modules -B build/modules-4.5-source -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release -DLIBYCXX_SOURCE_DIR="$PWD" \
+      -DCMAKE_C_COMPILER="$YCXX_GCC" -DCMAKE_CXX_COMPILER="$YCXX_GXX" \
+      -DCMAKE_CXX_STDLIB_MODULES_JSON="$PWD/build/libycxx-module-metadata/modules.json"
+cmake --build build/modules-4.5-source
+build/modules-4.5-source/demo_modules
+```
+
+For the installed package example, set `prefix` to a libycxx installation with modules enabled
+and built with the same compiler. You can build and install libycxx using CMake 4.4.5.
+[Getting libycxx](#getting-libycxx)
+
+```sh
+cmake -S examples/modules -B build/modules-4.5-package -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$prefix" \
+      -DCMAKE_C_COMPILER="$YCXX_GCC" -DCMAKE_CXX_COMPILER="$YCXX_GXX" \
+      -DCMAKE_CXX_STDLIB_MODULES_JSON="$PWD/build/libycxx-module-metadata/modules.json"
+cmake --build build/modules-4.5-package
+build/modules-4.5-package/demo_modules
+```
 
 ### Freestanding and hosted layers
 

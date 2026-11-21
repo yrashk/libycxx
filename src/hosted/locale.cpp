@@ -612,6 +612,7 @@ locale locale::global(const locale& __loc) {
     __old = global_impl;
     global_impl = __loc.__impl_;
     if (named) {
+      __ycxx::__detail::__c_locale_guard __cg; // global_lock, then this one (a leaf)
       bool __same = true;
       for (int k = 1; k < ncategories; ++k)
         __same = __same && __parts.part[k] == __parts.part[0];

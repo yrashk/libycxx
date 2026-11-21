@@ -11,7 +11,7 @@ variable templates. The preprocessor is used only where the language cannot do t
    target or language-mode macros (`__clang__`, `__GNUC__`, `__cpp_exceptions`,
    `__SIZEOF_INT128__`, `__has_builtin`, `__STDCPP_FLOAT16_T__`, ...).
 2. **Convert once, then use the language.** Each answer becomes a `constexpr` value in
-   `ycxx::detail::cfg` (`cfg::clang`, `cfg::exceptions`, `cfg::hardened`, ...) or a type alias or
+   `ycxx::detail::cfg` (`cfg::exceptions`, `cfg::hardened`, ...) or a type alias or
    alias template in `ycxx::detail` (`int128`, `float16`, `remove_ref_t`, `make_integer_seq`, ...).
    Library code consumes them with `if constexpr`, `requires`, and templates.
    An unavailable type aliases a distinct incomplete type (`fp_unavailable<N>`,
@@ -23,7 +23,8 @@ variable templates. The preprocessor is used only where the language cannot do t
    - those the standard mandates (`NULL`, `offsetof`, `INT_MAX`, `INT32_C`, `__cpp_lib_*`,
      `assert`, `errno`, ...), and
    - the `YCXX_*` switches in `config.hpp` (user-settable `YCXX_HARDENED`, `YCXX_NO_TRANSITIVE_INCLUDES`, §19, and
-     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches), and `_YCXX_VISIBILITY`, the one
+     `YCXX_SHARED`, §20; parse-level `YCXX_HAS_*` switches; the compiler's identity,
+     `_YCXX_COMPILER_*`, §5), and `_YCXX_VISIBILITY`, the one
      switch used outside `#if`: the string literal of every namespace opening's visibility
      attribute, which takes only a literal (§20.3; `tools/check_preprocessor.py` allows it only
      there).
@@ -299,10 +300,10 @@ tooling.
 
 ## 3. Freestanding layering
 
-- `include/ycxx/core/**`: no OS, no libc headers, no heap unless an allocator is supplied, and
-  no dependency on `<exception>`/`<typeinfo>`. C types and macros (`<cstddef>`, `<cstdint>`,
-  `<climits>`) are defined from compiler-predefined macros only. The one exception is the
-  compiler's own `<stddef.h>` (GCC and Clang ship it for freestanding environments; it is not the
+- `include/ycxx/core/**`: no OS, no libc headers in freestanding builds, no heap unless an
+  allocator is supplied, and no dependency on `<exception>`/`<typeinfo>`. C types and macros
+  use compiler predefines by default. Core includes the compiler's own `<stddef.h>`
+  (GCC and Clang ship it for freestanding environments; it is not the
   C library's): `std::max_align_t` must be `::max_align_t` ([support.c.headers.other]/1), a class
   only that header can name, so core reads it (`#include_next`, past libycxx's own `<stddef.h>`,
   which is `<cstddef>` in C++: Clang's header lacks `::nullptr_t` there; partial `__need_*`
@@ -310,6 +311,11 @@ tooling.
   freestanding builds keep `-nostdinc` (no C library) and add the compiler's header directory
   back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` does not
   follow `#include_next`.
+- **Hosted `<cstdint>` takes the fast 16- and 32-bit types from the target C library.**
+  It includes `<stdint.h>` in the hosted branch and aliases its four types ([cstdint.syn]).
+  The C library also supplies their limit macros. If its header predates C23 width macros,
+  libycxx derives those widths from the corresponding integer limits. A freestanding build
+  uses the compiler predefines for both the types and macros.
 - `include/ycxx/hosted/**` plus `src/hosted`: anything needing the OS, reached only through the PAL.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.
@@ -806,6 +812,72 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
 | `__builtin_is_structural` | yes | no | `std::is_structural` declared on GCC only (`#if`, type-taking) |
 | reflection (`^^`, metafunctions) | yes (`-freflection`) | no | `<meta>` empty on Clang (§13) |
 
+### Recognizing a compiler
+
+`config.hpp` recognizes a compiler by its identity macros and by nothing else, ycxx first:
+ycxx (`__ycxx__`, the compiler libycxx is the standard library of: github.com/yrashk/ycxx, its
+DECISIONS §1.5), then Clang (`__clang__`), then GCC (`__GNUC__`). Any other compiler stops at the
+`#error` there.
+
+- **ycxx first.** ycxx defines `__GNUC__` 4.2.1, as Clang does (ycxx#229, which revised its #112),
+  so that the macOS SDK's headers take their supported-compiler paths. `__GNUC__` therefore never
+  identifies GCC by itself: a compiler that claims another's dialect must not get that compiler's
+  workarounds.
+- **One identity, three switches.** The answer is converted once (rule 2), into
+  `_YCXX_COMPILER_YCXX`, `_YCXX_COMPILER_CLANG` and `_YCXX_COMPILER_GCC`, exactly one of them 1
+  and the others 0, and the constants `cfg::__compiler_ycxx`, `__compiler_clang` and
+  `__compiler_gcc`. Any compiler-specific choice in the library tests these (`if constexpr`, or
+  the switch in an `#if` where rule 4 allows one), never `__clang__` or `__GNUC__`, which only
+  `config.hpp`'s detection reads (rule 1; `tools/check_preprocessor.py` rejects the identity
+  macros anywhere else in `include/` and `src/`). Today one choice does: `_BitInt`, below. A
+  `COMPILER-BUG(gcc)` workaround is written for every compiler (portable code that avoids the
+  bug), not selected by identity; one that had to be selected would test `cfg::__compiler_gcc`.
+- **Tests.** `tests/ycxx` runs against libstdc++ too (`tools/ref-cxx`), so its tests cannot read
+  the switches; a test that tells GCC apart tests `__ycxx__` and `__clang__` before `__GNUC__`.
+
+Recognition only lets a compiler past that `#error`: no path is chosen by its name, except
+through the switches above. Everything a compiler provides is asked of it:
+
+- **builtins** with `__has_builtin` (type-taking ones, `__remove_reference_t` / `__remove_reference`,
+  `__make_integer_seq` / `__integer_pack`) or the in-language probes of §1 rule 4 (function-style
+  ones). Where a compiler has none of a builtin's spellings, `config.hpp` has a portable fallback
+  (`remove_reference` by partial specialization, `make_integer_sequence` by doubling a pack) or the
+  library entity is constrained away;
+- **language features** with the `__cpp_*` feature-test macros (`__cpp_exceptions`,
+  `__cpp_constexpr_exceptions`, `__cpp_impl_reflection`, ...);
+- **the target** with the target macros (`__SIZEOF_*__`, `__*_TYPE__`, `__*_WIDTH__`,
+  `__APPLE__`, `__aarch64__`, `__GCC_ATOMIC_*_LOCK_FREE`, ...);
+- **attributes** are written directly (`[[__gnu__::__visibility__("hidden")]]`, `[[__gnu__::__cold__]]`):
+  a compiler ignores the attributes it does not know ([dcl.attr.grammar]), so no probe is needed
+  to parse them. Lock-free atomics probe `__gnu__::__may_alias__` in `config.hpp`. When it is
+  unavailable, an operation or lock-free query that needs an access outside [basic.lval] diagnoses
+  the missing attribute. Alias-safe accesses and the lock-based backend remain available.
+  `<simd>` probes its vector attribute in `config.hpp` and uses scalar chunks when the attribute
+  is unavailable (§12).
+
+One feature is still chosen by identity: `_BitInt` in C++ (Clang only, `_YCXX_COMPILER_CLANG`),
+for which no probe exists (`__BITINT_MAXWIDTH__` is a target macro that ycxx copies from Clang
+without accepting the type).
+
+So adding a compiler takes one detection branch and its switch (defined 0 in the other
+branches, and its constant), ahead of any compiler whose dialect macros it also defines. The
+compiler must answer the probes truthfully (0 for what it does not implement) and provide what
+libycxx cannot do without: `#include_next` and `__has_include_next` (the C library wrappers), the
+target macros GCC and Clang predefine, and the builtins used unconditionally (the trait builtins of
+`prim_traits.hpp` and `type_traits.hpp`, `__builtin_*` arithmetic, `__atomic_*`). Until it has a
+builtin, the headers that need it fail to compile, not to preprocess.
+
+`tools/check_foreign_compiler.py` (the `policy` stage of `tools/test`) checks this with Clang
+playing a foreign compiler: Clang's identity macros removed and ycxx's defined (`__ycxx__`, and
+`__GNUC__` 4.2.1), once with
+Clang's own probe answers and once with every probe answering 0 (ycxx's today). In both, every
+public header preprocesses without an `#error`, and `config.hpp` takes the path the probes select
+(Clang's builtins, then the fallbacks); with Clang's answers every core and freestanding header
+compiles freestanding, and with zero answers `tests/foreign/fallbacks.cpp` tests the fallbacks.
+It also pins GCC's and Clang's own choices, the `_YCXX_COMPILER_*` switch each compiler gets (ycxx's
+for ycxx, although it defines `__GNUC__`), and that a compiler with no recognized identity still
+stops at the `#error`.
+
 ## 6. Development process
 
 1. **Small commits.** One logical change per commit, with conformance test-count deltas in the
@@ -1004,7 +1076,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     `wcsxfrm_l`, `strftime_l`, `wcsftime_l`, `nl_langinfo_l`), and the calling thread's
     `uselocale` (restored before returning) where the C library has none (`mbrtowc`/`wcrtomb`,
     `btowc`, `catopen`; glibc's `localeconv`, called under a lock because it fills one static
-    object; Darwin's `localeconv_l` is found by a `requires` probe). The global C locale and other
+    object; Darwin's `localeconv_l` is found by a `requires` probe). The C library's locale loading,
+    `newlocale` and `setlocale` (`locale::global`, the PAL's `newlocale` for
+    `text_encoding::environment`), is one call at a time, under a lock of the runtime: Darwin's
+    corrupts the heap or the locales made when two threads load the same non-LC_CTYPE category,
+    any names (plain C programs crashed in most runs; issue #21), and serializing costs nothing
+    where it is safe. The global C locale and other
     threads' locales are never changed, except by `locale::global` ([locale.statics]/2:
     `setlocale` per category for a named locale).
   - *Values the draft leaves to the implementation:* ctype<char> gives a byte that is not a
@@ -1348,10 +1425,12 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   `__AVX__`; 64 with `__AVX512F__`, detected in `config.hpp`). So masks of equal element size and
   width are one type and `rebind_t`/`resize_t` swap the width only. The element type picks the
   representation:
-  power-of-two widths of arithmetic types are GCC/Clang vector-extension chunks (`vector_size`;
-  one vector up to R bytes, else an array of R-byte vectors, so no by-value vector wider than the
-  enabled registers crosses a call and no -Wpsabi ABI change arises); other widths and
-  `complex<T>` are element arrays. Every layout has the object representation of `T[N]`, so
+  with `__has_cpp_attribute(__gnu__::__vector_size__)`, power-of-two widths of arithmetic types
+  use vector-extension chunks (one vector up to R bytes, else an array of R-byte vectors, so no
+  by-value vector wider than the enabled registers crosses a call and no -Wpsabi ABI change
+  arises). GCC 16 and Clang 23 report support for this spelling. Other widths, `complex<T>`, and
+  all types on a compiler without the attribute use element arrays. The public width is the same
+  for either storage layout. Every layout has the object representation of `T[N]`, so
   constant evaluation reaches the elements through `bit_cast` (GCC 16 cannot assign to a vector
   element in a constant expression). A mask stores integer-from<Bytes> elements (64-bit for
   16-byte complex elements) that are all ones or zero, in the layout of a vec of that integer, so
@@ -1651,6 +1730,36 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   and flags (`tests/ycxxlit/stdmodules.py`, cached by the state of the sources). CMake's
   `CMAKE_CXX_MODULE_STD` (`import std` without naming a target) needs CMake >= 3.30 and is not
   supported: it would build the toolchain's own library's module.
+- **Reflection is a property of the build, kept alike for the module and its importers.** The
+  `std::meta` region is exported under `#if _YCXX_HAS_REFLECTION`, so it is in the module only
+  when the module is built with `-freflection`, and GCC 16 records the setting in the CMI: built
+  without it, `std::meta` is empty for every importer; built with it, an importer compiled
+  without it crashes GCC (STATUS, known compiler gaps). Nothing in the module can diagnose this
+  (the crash comes first), so the tools do: CMake's `YCXX_MODULES_REFLECTION` (default OFF, GCC
+  only) adds `-freflection` as a PUBLIC option of `ycxx::modules`, so the CMI and every target
+  that links it (from the installed package too) are compiled alike; `tools/ycxx-modules` writes
+  `-freflection` into the `flags` that `tools/ycxx-cxx --std-modules` adds, and `tools/ycxx-cxx`
+  rejects a program whose `-freflection`/`-fno-reflection` differs from the modules'. Default
+  OFF: the option changes every importer's language (`^^`, splices), which a project chooses.
+  Rejected: only documenting "pass `-freflection`" (before CMake 4.4 a project has no place to
+  pass it to the module's CMI but the `ycxx_modules` target's own options, which was ycxx's
+  workaround). CMake 4.4 and later build an importer whose options differ from the module's its
+  own copy of the interface units, with its options, so there a target that adds `-freflection`
+  itself gets a populated `std::meta` with the option OFF too. Older CMake (Debian's 3.31, the
+  minimum 3.28) does not, and GCC accepts that importer with an empty `std::meta`: with the
+  option OFF, GCC and CMake older than 4.4, such a target (`-freflection` left on by its own
+  options or its dependencies' interfaces, the last of `-freflection`/`-fno-reflection`
+  deciding) is a configure error naming the option (`cmake/ycxx-modules-reflection.cmake`, #15).
+  It runs at the end of the top-level directory (add_subdirectory) or of `find_package`'s
+  (`cmake_language(DEFER)`), because `ycxx::modules`' interface cannot read its importer's
+  options (a generator expression's self-reference evaluates to nothing). Options that reach the
+  interface units too are no mismatch: `CMAKE_CXX_FLAGS`; with add_subdirectory, a directory's
+  `add_compile_options` ahead of libycxx; with the installed package, the options exported for
+  the units (`IMPORTED_CXX_MODULES_COMPILE_OPTIONS`). An installed package's interface units do
+  not get the importing directory's `add_compile_options` before CMake 4.4 (checked with 3.31),
+  so there it is a mismatch. Not looked at: per-source options, the
+  `COMPILE_FLAGS` property, `CMAKE_CXX_FLAGS` set in a subdirectory, a dependency linked through
+  a generator expression (#25).
 - **GCC needs `<bits/stdc++.h>`.** With `-fmodules`, GCC 16 looks that header up on the include
   path for every `#include` of a standard header, to translate the `#include` into an import of
   its header unit when one was built; without it the `#include` is a fatal error. libycxx's
@@ -1700,9 +1809,21 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
   operation states intrusively (the pool's items live in the proxies' preallocated backend
   storage, 128 bytes). Allocating: a task's coroutine frame (with its allocator), connect of an
   awaitable that is not a sender (a coroutine frame), spawn/spawn_future's state (with the
-  allocator of [exec.spawn]/9), and task_scheduler, which holds its backend through
-  allocate_shared on every construction (a task constructs one at each start; the recommended
-  practice of [exec.task.scheduler]/4, avoiding it for small schedulers, is not followed yet).
+  allocator of [exec.spawn]/9), and task_scheduler from a large scheduler. task_scheduler
+  follows the recommended practice of [exec.task.scheduler]/4: its backend-for lives in a buffer
+  of three pointers inside it when the scheduler and allocator fit and their copies cannot throw
+  (run_loop's scheduler, inline_scheduler, a program's handle to its own pool), so constructing and copying
+  one allocate nothing and a copy copies the scheduler (a scheduler whose schedule() changes
+  its own state, a round-robin counter, then counts per copy; the draft's shared backend would
+  count across copies, which /4 lets go); otherwise the buffer holds a forwarding backend that shares
+  the one made by allocate_shared with the given allocator (/3, /5). The schedule and bulk
+  operations hold a copy of the task_scheduler (the parallel scheduler's a shared_ptr to its
+  backend), so the backend outlives the sender as before. Copy assignment copies the source
+  before destroying its own backend, which may own the source. sizeof(task_scheduler) is 32 on
+  64-bit targets (a shared_ptr was 16). A schedule or bulk operation that does not fit the proxy's
+  128 bytes of storage uses a rebound copy of the constructor's allocator, consistent with /5
+  (#24). The allocation retains an equivalent allocator and pointer and is released before
+  forwarding completion, or when construction of the operation fails.
 - **Concurrency.** when_all's count and disposition, the counting scopes' state and spawn_future's
   hand-over between complete/consume/try-set-stopped/abandon are small `__atomic` words or spin
   locks around a few stores; completions run outside the locks. run_loop blocks in the PAL's
@@ -1810,8 +1931,15 @@ under the same name. Otherwise it gets one alias template in `config.hpp`.
     scheduler and no forwarding: the wrapped sender is destroyed when the association fails;
   - read_env ([exec.read.env]/3): inline-attrs for set_value, and for set_error when the query
     can throw (TRY-SET-VALUE);
-  - spawn_future: none. The state erases the spawned sender's type; a parent's COMPL-DOMAIN
-    makes that `indeterminate_domain<>`, which is what is known.
+  - spawn_future ([exec.spawn.future]): domains only, and only given an environment. A
+    completion reaches the receiver on the agent where the spawned sender completed (complete,
+    /10.2) or inline on the starting agent, when the result was there first or the association
+    failed (consume, /11.3, /8). So for each tag T: the spawned sender's T completions (its
+    receiver's environment is `env<>`), for set_error also its completions whose decay-copy can
+    throw (/6), and `get_domain(env)`. The state's type keeps the spawned sender's. A spawned
+    sender on another domain than the consumer's gives `indeterminate_domain<D, default_domain>`:
+    the consumer may run either. try-set-stopped's set_stopped runs on the agent requesting the
+    stop (/12.1), of no known domain, and adds none.
 
   The draft's three-way disagreement about schedulers ([exec.sched]/6,
   [exec.get.compl.sched]/5.2, [exec.get.compl.domain]/2.3; STATUS "Draft issues noticed") is

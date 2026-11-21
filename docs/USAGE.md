@@ -225,4 +225,3 @@ archives (and `tools/check_abi.py` the shared library's exports). DECISIONS §21
 unit follows (its definitions in `extern "C++"`, its module initializer hidden) and where a unit's
 `import std;` becomes std's headers instead (GCC's include-then-import gap). The shared library
 always compiles them lowered.
-

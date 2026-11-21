@@ -1368,7 +1368,8 @@ compilers; `visit_format_arg.pass.cpp` needs `EOF` from `constexpr_char_traits.h
   permutes, `chunk`/`cat`, `iota`, `vec<complex<T>>`, the `<bit>` and `<cmath>` overloads and their
   using-declarations in `std`), constexpr where the draft says; `__cpp_lib_simd`, `_bitops`,
   `_complex`, `_permutations`. Representation in DECISIONS §12 (vector-extension chunks sized by
-  the enabled registers; codegen: `vec<float, 4>` `a * b` is one `mulps`). Own suite simd: 22/24
+  the enabled registers, or scalar chunks at the same public width without the vector-size
+  attribute). With vector chunks, `a * b` on `vec<float, 4>` compiles to one `mulps`. Own suite simd: 22/24
   on both compilers, also under ASan (Clang); the two failures are test defects: `iota` multiplies
   `vec<short, 9>` by the int literal 2, whose broadcast is not value-preserving, so no `operator*`
   is viable ([simd.ctor]/2.2); `compress_expand` expects `compress(mk, M(0b10101010u), false)[0]`

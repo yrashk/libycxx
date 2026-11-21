@@ -491,6 +491,13 @@ inline constexpr char __literal_encoding[] = __GNUC_EXECUTION_CHARSET_NAME;
 #else
 inline constexpr char __literal_encoding[] = "";
 #endif
+// The exact attribute spelling on <simd>'s vector alias (reported by GCC 16 and Clang 23).
+// Without it, <simd> uses scalar chunks for every width.
+#if __has_cpp_attribute(__gnu__::__vector_size__)
+inline constexpr bool __simd_vector_size = true;
+#else
+inline constexpr bool __simd_vector_size = false;
+#endif
 // The widest vector register <simd>'s native ABI uses, in bytes: 64 with AVX-512, 32 with AVX,
 // else 16 (SSE2, NEON, and the generic lowering of other targets).
 #if defined(__AVX512F__)

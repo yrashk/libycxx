@@ -13,15 +13,15 @@ two configurations:
                 answers select, every public header preprocesses without an #error, and every
                 core and freestanding header compiles freestanding (as tools/check_freestanding.sh
                 compiles them: with no C library, whose facts a configured build would supply);
-  zero-probes   the probes answer 0, as ycxx's do until it implements a feature (__has_builtin
-                redefined, and __has_attribute, __has_cpp_attribute, __has_feature and
-                __has_extension too, which libycxx does not use today, so that a future use is
-                covered; every __cpp_* macro but __cpp_rtti undefined): config.hpp takes its
+  zero-probes   the probes answer 0, as ycxx's do until it implements a feature. __has_builtin
+                and the attribute and feature probes are redefined, and every __cpp_* macro but
+                __cpp_rtti is undefined. config.hpp takes its
                 portable fallbacks, every public header preprocesses without an #error, and a
                 test of those fallbacks compiles freestanding (tests/foreign/fallbacks.cpp).
 
-It also pins the native choices (GCC, $YCXX_GXX, and Clang still take their own builtins), the
-_YCXX_COMPILER_* switch each compiler gets (ycxx's, not GCC's, although it defines __GNUC__), and
+It also pins the native builtin choices (GCC, $YCXX_GXX, and Clang), the vector layout of <simd>
+when the attribute probe succeeds, the _YCXX_COMPILER_* switch each compiler gets (ycxx's, not
+GCC's, although it defines __GNUC__), and
 that a compiler with no recognized identity still stops at config.hpp's #error.
 
   tools/check_foreign_compiler.py [-v]
@@ -158,6 +158,21 @@ if text is not None and "inline constexpr bool __constexpr_throw = false;" not i
     fail("foreign, clang-probes: __constexpr_throw is not false (Clang 23 cannot throw in constant evaluation)")
 each_header("foreign, clang-probes", probes, HEADERS, "-E")
 each_header("foreign, clang-probes", freestanding(probes), FREESTANDING, "-fsyntax-only")
+
+# A compiler that reports the vector attribute uses the native chunk layout.
+simd = """
+#include <simd>
+using storage = __ycxx::__detail::__simd_storage<int, 4>;
+static_assert(storage::__is_vector);
+static_assert(sizeof(storage::__chunk_type) == 4 * sizeof(int));
+static_assert(std::simd::vec<int, 4>::size() == 4);
+"""
+for label, cmd in (("gcc", [GXX] + BASE), ("clang", [CLANGXX] + BASE), ("foreign, clang-probes", probes)):
+    r = run(freestanding(cmd) + ["-fsyntax-only", "-"], simd)
+    if r.returncode != 0:
+        fail(f"{label}: <simd> uses vector chunks", r.stderr)
+    else:
+        print(f"ok   {label}: <simd> uses vector chunks")
 
 # Foreign, answering 0 to every probe (ycxx today).
 zero = [CLANGXX] + BASE + FOREIGN + zero_probes()

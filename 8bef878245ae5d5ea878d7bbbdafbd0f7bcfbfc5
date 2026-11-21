@@ -1,0 +1,9 @@
+Continuation evidence for #37 and #38, Nov 21 2026 UTC.
+
+Checkpoint 8bef878245ae5d5ea878d7bbbdafbd0f7bcfbfc5 (tree 7a65cbd05c1ffa4f796c633782234c88dcafe779) continues 646ce04cefb7d30f166d059138e9c44029a9d444 via #37 at 82186001708fcb8949477becc1e45b470f649d36. Main was a872d6b39bc141966a5a714a0bfdb4c190739825. Original draft #12 is preserved at 642d62e5c359fe8fb4dce5cc37642b8251ca7252.
+
+Exact tools/check-all -j2 --no-fetch passed 32 of 32 on Linux x86-64, GCC 16.2.0, Clang 23.1.6, CMake 4.4.5, Ninja 1.13.2. This includes 12 policy, nine GCC, ten Clang and the freestanding header and smoke gates on three target/compiler configurations.
+
+The real hosted GCC import-std witness built and executed through all five non-CMake entry points plus relocated installed CMake. Frozen prior metadata failed each non-CMake link with an unresolved module initializer while manual-provider and CMake controls worked. Removing the needed provider failed as expected. Removing the source import regenerated empty metadata and passed with an old archive still present. The same-run configured Clang/Ninja target built its lowered print object with a deliberately absent scanner, and the explicit ON, OFF and AUTO reconfiguration controls behaved as expected.
+
+Measured real standard-module import payoff and a whole green continuation PR remain open. Recovery context: https://github.com/yrashk/ycxx/issues/377

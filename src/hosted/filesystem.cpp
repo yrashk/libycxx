@@ -569,6 +569,7 @@ struct __fs_rec_state {
 
 }} // namespace __ycxx::__detail
 
+#if !_YCXX_HAS_EXCEPTIONS
 namespace {
 
 void push_directory_level(__ycxx::__detail::__fs_rec_state& state, DIR* d, const __fs::path& p) {
@@ -579,6 +580,7 @@ void push_directory_level(__ycxx::__detail::__fs_rec_state& state, DIR* d, const
 }
 
 } // namespace
+#endif
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
@@ -636,7 +638,16 @@ void recursive_directory_iterator::open(const path& p, directory_options options
     ec = errno_code(e);
     return;
   }
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+    __st->stack.push_back({d, p}); // copies p: the descriptor is the stack's once it is pushed
+  } catch (...) {
+    ::closedir(d);
+    throw;
+  }
+#else
   push_directory_level(*__st, d, p);
+#endif
   int r = __ycxx::__detail::__fs_dir_state::read_next(d, __st->stack.back().path, __st->__entry);
   if (r < 0)
     ec = last_error();
@@ -664,7 +675,16 @@ void recursive_directory_iterator::advance(error_code& ec, path* where) {
                             O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
       DIR* d = __fd < 0 ? nullptr : open_dir_fd(__fd);
       if (d != nullptr) {
+#if _YCXX_HAS_EXCEPTIONS
+        try {
+          __st.stack.push_back({d, __st.__entry.path()});
+        } catch (...) {
+          ::closedir(d);
+          throw;
+        }
+#else
         push_directory_level(__st, d, __st.__entry.path());
+#endif
       } else {
         int e = errno;
         // A directory that is gone or was replaced by a non-directory since it was listed is

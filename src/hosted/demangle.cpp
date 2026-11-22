@@ -1869,16 +1869,16 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 static __demangle_result __run_demangle(const char* __mangled, bool __type, bool __propagate) {
   if (__mangled == nullptr || *__mangled == '\0')
-    return {__demangle_status::invalid, {}, 0};
+    return {__demangle_status::__invalid, {}, 0};
   parser __ps(__mangled, __mangled + std::strlen(__mangled), __propagate);
   text s(__ps.scratch());
   const bool ok = __type ? __ps.parse_type(s) : __ps.parse(s);
   if (__ps.scratch().failed)
-    return {__demangle_status::no_memory, {}, 0};
+    return {__demangle_status::__no_memory, {}, 0};
   if (!ok || over(s))
-    return {__demangle_status::invalid, {}, 0};
+    return {__demangle_status::__invalid, {}, 0};
   const size_t n = s.size();
-  return {__demangle_status::success, s.release(), n};
+  return {__demangle_status::__success, s.release(), n};
 }
 
 __demangle_result __try_demangle(const char* __mangled, bool __type) noexcept {
@@ -1890,10 +1890,10 @@ bool __demangle(const char* __mangled, std::string& out) {
     return false;
   const __demangle_result result = __run_demangle(__mangled, false, __cfg::exceptions);
   if constexpr (__cfg::exceptions) {
-    if (result.status == __demangle_status::no_memory)
+    if (result.status == __demangle_status::__no_memory)
       ::__ycxx::__detail::__throw_bad_alloc();
   }
-  if (result.status != __demangle_status::success)
+  if (result.status != __demangle_status::__success)
     return false;
   out.assign(result.c_str(), result.size);
   return true;

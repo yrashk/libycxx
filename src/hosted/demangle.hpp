@@ -7,7 +7,7 @@
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-enum class __demangle_status { success = 0, no_memory = -1, invalid = -2 };
+enum class __demangle_status { __success = 0, __no_memory = -1, __invalid = -2 };
 
 struct __demangle_result {
   __demangle_status status;

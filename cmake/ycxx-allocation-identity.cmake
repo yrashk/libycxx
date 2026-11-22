@@ -6,7 +6,7 @@ function(ycxx_allocation_identity_header output)
   set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
   string(APPEND CMAKE_REQUIRED_FLAGS " ${YCXX_CXX_STANDARD_FLAG} -Werror")
   set(_YCXX_NEW_ELF_ALIAS 0)
-  set(_YCXX_NEW_SIZE_CODE "")
+  set(_YCXX_NEW_SIZE_IS_UNSIGNED_INT 0)
   set(_YCXX_NEW_MACHO_SECTION 0)
   # Compile the actual operator aliases to select the size_t code in their mangling.
   foreach(code m j)
@@ -26,7 +26,9 @@ void* probe_aligned(size_t, std::align_val_t);
     check_cxx_source_compiles("${probe}" _ycxx_new_elf_alias_${code})
     if(_ycxx_new_elf_alias_${code})
       set(_YCXX_NEW_ELF_ALIAS 1)
-      set(_YCXX_NEW_SIZE_CODE "${code}")
+      if(code STREQUAL "j")
+        set(_YCXX_NEW_SIZE_IS_UNSIGNED_INT 1)
+      endif()
       break()
     endif()
   endforeach()
@@ -69,7 +71,7 @@ int main() {
   file(CONFIGURE OUTPUT "${output}" CONTENT [=[
 #pragma once
 #define _YCXX_NEW_ELF_ALIAS @_YCXX_NEW_ELF_ALIAS@
-#define _YCXX_NEW_SIZE_CODE "@_YCXX_NEW_SIZE_CODE@"
+#define _YCXX_NEW_SIZE_IS_UNSIGNED_INT @_YCXX_NEW_SIZE_IS_UNSIGNED_INT@
 #define _YCXX_NEW_MACHO_SECTION @_YCXX_NEW_MACHO_SECTION@
 ]=] @ONLY)
 endfunction()

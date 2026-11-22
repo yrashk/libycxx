@@ -22,7 +22,12 @@ extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_an
 }
 
 #if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_ELF_ALIAS
-extern "C" [[__gnu__::__alias__("_Znw" _YCXX_NEW_SIZE_CODE),
-             __gnu__::__visibility__("hidden"), __gnu__::__malloc__, __gnu__::__alloc_size__(1)]]
+extern "C"
+#  if _YCXX_NEW_SIZE_IS_UNSIGNED_INT
+[[__gnu__::__alias__("_Znwj")]]
+#  else
+[[__gnu__::__alias__("_Znwm")]]
+#  endif
+[[__gnu__::__visibility__("hidden"), __gnu__::__malloc__, __gnu__::__alloc_size__(1)]]
 void* __ycxx_hosted_new_identity(std::size_t);
 #endif

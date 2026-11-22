@@ -317,6 +317,12 @@
 #ifndef _YCXX_LAYER_FILESYSTEM
 #  define _YCXX_LAYER_FILESYSTEM _YCXX_HOSTED
 #endif
+// <cstdint>: the target C header supplies the fast integer types in hosted mode when found.
+#if _YCXX_HOSTED && __has_include(<stdint.h>)
+#  define _YCXX_C_HAS_STDINT_H 1
+#else
+#  define _YCXX_C_HAS_STDINT_H 0
+#endif
 // <cuchar>: whether the C library has <uchar.h> (libycxx's own <uchar.h> is skipped: the search
 // continues after libycxx's include directory, which holds this file's directory). Where it is
 // missing, <cuchar> declares libycxx's own functions (src/hosted/uchar.cpp).

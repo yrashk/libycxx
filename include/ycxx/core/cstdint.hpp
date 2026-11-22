@@ -3,7 +3,7 @@
 
 #include <ycxx/config.hpp>
 
-#if _YCXX_HOSTED
+#if _YCXX_C_HAS_STDINT_H
 #  include <stdint.h>
 #endif
 
@@ -26,9 +26,9 @@ using uint_least16_t = __UINT_LEAST16_TYPE__;
 using uint_least32_t = __UINT_LEAST32_TYPE__;
 using uint_least64_t = __UINT_LEAST64_TYPE__;
 
-#if _YCXX_HOSTED
-// The same target can have different fast integer types in different C libraries. The
-// compiler's predefined types apply when there is no C library.
+// The same target can have different fast integer types in different C libraries. Use
+// the compiler's predefined types in freestanding mode or without the target C header.
+#if _YCXX_C_HAS_STDINT_H
 using int_fast16_t = ::int_fast16_t;
 using int_fast32_t = ::int_fast32_t;
 using uint_fast16_t = ::uint_fast16_t;
@@ -190,7 +190,7 @@ typedef ::std::uintptr_t uintptr_t;
 // Older C libraries define the limits but do not supply C23 widths. The limits
 // describe the selected types and are also usable in preprocessor expressions.
 #ifndef INT_FAST16_WIDTH
-#  if !_YCXX_HOSTED
+#  if !_YCXX_C_HAS_STDINT_H
 #    define INT_FAST16_WIDTH __INT_FAST16_WIDTH__
 #  elif INT_FAST16_MAX == INT64_MAX
 #    define INT_FAST16_WIDTH 64
@@ -201,7 +201,7 @@ typedef ::std::uintptr_t uintptr_t;
 #  endif
 #endif
 #ifndef INT_FAST32_WIDTH
-#  if !_YCXX_HOSTED
+#  if !_YCXX_C_HAS_STDINT_H
 #    define INT_FAST32_WIDTH __INT_FAST32_WIDTH__
 #  elif INT_FAST32_MAX == INT64_MAX
 #    define INT_FAST32_WIDTH 64
@@ -210,7 +210,7 @@ typedef ::std::uintptr_t uintptr_t;
 #  endif
 #endif
 #ifndef UINT_FAST16_WIDTH
-#  if !_YCXX_HOSTED
+#  if !_YCXX_C_HAS_STDINT_H
 #    define UINT_FAST16_WIDTH __INT_FAST16_WIDTH__
 #  elif UINT_FAST16_MAX == UINT64_MAX
 #    define UINT_FAST16_WIDTH 64
@@ -221,7 +221,7 @@ typedef ::std::uintptr_t uintptr_t;
 #  endif
 #endif
 #ifndef UINT_FAST32_WIDTH
-#  if !_YCXX_HOSTED
+#  if !_YCXX_C_HAS_STDINT_H
 #    define UINT_FAST32_WIDTH __INT_FAST32_WIDTH__
 #  elif UINT_FAST32_MAX == UINT64_MAX
 #    define UINT_FAST32_WIDTH 64

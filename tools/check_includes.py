@@ -6,9 +6,8 @@ other core public headers, include/ycxx/config.hpp, include/ycxx/core/**, includ
 Anything else (hosted public headers, include/ycxx/hosted/**, <stdio.h>, compiler headers...)
 is an error, reported with the include chain. #include_next is not followed: core uses it once,
 for the compiler's own <stddef.h> (DECISIONS §3). The headers with a freestanding subset
-(FREESTANDING_SUBSET) are walked too; directives in the _YCXX_HOSTED branch of an
-`#if _YCXX_HOSTED` / `#if !_YCXX_HOSTED` conditional are not followed (they are not reached
-freestanding).
+(FREESTANDING_SUBSET) are walked too. Branches that require a hosted-only switch are
+skipped, including the <stdint.h> include guarded by config.hpp's provider switch.
 """
 import pathlib, re, sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -17,6 +16,7 @@ from headers import CORE, CORE_EXTENSIONS, HOSTED, ABI, FREESTANDING_SUBSET
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "include"
 INC = re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]')
 COND = re.compile(r'^\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b\s*(.*)')
+HOSTED_ONLY = {"_YCXX_HOSTED", "_YCXX_C_HAS_STDINT_H"}
 
 def freestanding_includes(text):
     """The #include targets of text that a freestanding (_YCXX_HOSTED 0) build reaches."""
@@ -27,7 +27,9 @@ def freestanding_includes(text):
         if m:
             kw, arg = m.group(1), m.group(2).split("//")[0].strip()
             if kw in ("if", "ifdef", "ifndef"):
-                stack.append(True if arg == "_YCXX_HOSTED" else False if arg == "!_YCXX_HOSTED" else None)
+                switch = arg.removeprefix("!")
+                # Only #if reads the value of a switch that can be defined as 0.
+                stack.append(arg == switch if kw == "if" and switch in HOSTED_ONLY else None)
             elif kw == "else" and stack and stack[-1] is not None:
                 stack[-1] = not stack[-1]
             elif kw == "elif" and stack:

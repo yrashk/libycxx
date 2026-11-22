@@ -63,6 +63,8 @@ def enabled(on, off):
     return not last or last[-1] == on
 
 features = {compiler, platform.system().lower(), f'{linkage}-linkage'} | set(sanitizer.split(',') if sanitizer else ())
+if not reference:
+    features.add('libycxx')
 if hardened:
     features.add('hardened')
 if enabled('-fexceptions', '-fno-exceptions'):

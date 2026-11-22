@@ -34,12 +34,34 @@ struct active_param;
 
 // A failed allocation aborts this invocation, including any intermediate renders.
 struct scratch_state {
+  explicit scratch_state(bool propagate) noexcept : propagate_allocations(propagate) {}
   bool failed = false;
   pack_state pack;
   bool fail() noexcept {
     failed = true;
     return false;
   }
+
+  // The enabled stacktrace adapter preserves exceptions from ordinary allocation. The C
+  // adapter and the disabled stacktrace adapter both need a recoverable allocation result.
+  template <class _Tp, class... _Args>
+  _Tp* make(_Args&&... args) const {
+    if constexpr (::__ycxx::__detail::__cfg::exceptions)
+      if (propagate_allocations)
+        return new _Tp(static_cast<_Args&&>(args)...);
+    return new (std::nothrow) _Tp(static_cast<_Args&&>(args)...);
+  }
+
+  template <class _Tp>
+  _Tp* make_array(size_t n) const {
+    if constexpr (::__ycxx::__detail::__cfg::exceptions)
+      if (propagate_allocations)
+        return new _Tp[n];
+    return new (std::nothrow) _Tp[n];
+  }
+
+private:
+  bool propagate_allocations;
 };
 
 // Only bytes and node pointers use this storage. Grow before publishing the new size so
@@ -59,7 +81,7 @@ public:
   void truncate(size_t n) noexcept { size_ = n; }
   std::unique_ptr<_Tp[]> release() noexcept { return std::move(data_); }
 
-  bool append(const _Tp* values, size_t n, size_t spare = 0) noexcept {
+  bool append(const _Tp* values, size_t n, size_t spare = 0) {
     if (state_->failed)
       return false;
     constexpr size_t max_size = static_cast<size_t>(std::numeric_limits<std::ptrdiff_t>::max()) / sizeof(_Tp);
@@ -71,7 +93,7 @@ public:
     if (need > capacity_) {
       const size_t doubled = capacity_ <= max_size / 2 ? capacity_ * 2 : max_size;
       const size_t capacity = need > doubled ? need : doubled;
-      grown.reset(new (std::nothrow) _Tp[capacity]);
+      grown.reset(state_->make_array<_Tp>(capacity));
       if (!grown)
         return state_->fail();
       dest = grown.get();
@@ -87,7 +109,7 @@ public:
     return true;
   }
 
-  bool push_back(_Tp value) noexcept { return append(&value, 1); }
+  bool push_back(_Tp value) { return append(&value, 1); }
 
 private:
   scratch_state* state_;
@@ -98,7 +120,7 @@ private:
 
 class text {
 public:
-  explicit text(scratch_state& __state, string_view s = {}) noexcept : bytes_(__state) { *this += s; }
+  explicit text(scratch_state& __state, string_view s = {}) : bytes_(__state) { *this += s; }
   scratch_state& state() const noexcept { return bytes_.state(); }
   size_t size() const noexcept { return bytes_.size(); }
   bool empty() const noexcept { return bytes_.empty(); }
@@ -111,16 +133,16 @@ public:
     if (bytes_.data())
       bytes_.data()[n] = '\0';
   }
-  void operator+=(string_view s) noexcept {
+  void operator+=(string_view s) {
     if (!s.empty() && bytes_.append(s.data(), s.size(), 1))
       bytes_.data()[size()] = '\0';
   }
-  void operator+=(const text& s) noexcept { *this += s.view(); }
-  void operator+=(char c) noexcept { *this += string_view(&c, 1); }
-  void append(const char* first, const char* last) noexcept {
+  void operator+=(const text& s) { *this += s.view(); }
+  void operator+=(char c) { *this += string_view(&c, 1); }
+  void append(const char* first, const char* last) {
     *this += string_view(first, static_cast<size_t>(last - first));
   }
-  void decimal(size_t n) noexcept {
+  void decimal(size_t n) {
     char digits[std::numeric_limits<size_t>::digits10 + 1];
     char* const end = digits + sizeof digits;
     char* first = end;
@@ -555,7 +577,8 @@ const op_info* find_operator(const char* p) {
 
 class parser {
 public:
-  parser(const char* first, const char* last) : __p_(first), __end_(last) {}
+  parser(const char* first, const char* last, bool propagate)
+      : __p_(first), __end_(last), __scratch_(propagate) {}
   parser(const parser&) = delete;
   parser& operator=(const parser&) = delete;
   ~parser() {
@@ -636,7 +659,7 @@ private:
   const _Np* __make(_Args&&... __args) {
     if (__scratch_.failed)
       return nullptr;
-    auto* n = new (std::nothrow) _Np(static_cast<_Args&&>(__args)...);
+    auto* n = __scratch_.make<_Np>(static_cast<_Args&&>(__args)...);
     if (!n) {
       __scratch_.fail();
       return nullptr;
@@ -646,7 +669,7 @@ private:
     return n;
   }
   param_scope* new_scope() {
-    auto* s = new (std::nothrow) param_scope(__scratch_);
+    auto* s = __scratch_.make<param_scope>(__scratch_);
     if (!s) {
       __scratch_.fail();
       return nullptr;
@@ -1844,10 +1867,10 @@ private:
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-__demangle_result __try_demangle(const char* __mangled, bool __type) noexcept {
+static __demangle_result __run_demangle(const char* __mangled, bool __type, bool __propagate) {
   if (__mangled == nullptr || *__mangled == '\0')
     return {__demangle_status::invalid, {}, 0};
-  parser __ps(__mangled, __mangled + std::strlen(__mangled));
+  parser __ps(__mangled, __mangled + std::strlen(__mangled), __propagate);
   text s(__ps.scratch());
   const bool ok = __type ? __ps.parse_type(s) : __ps.parse(s);
   if (__ps.scratch().failed)
@@ -1858,10 +1881,14 @@ __demangle_result __try_demangle(const char* __mangled, bool __type) noexcept {
   return {__demangle_status::success, s.release(), n};
 }
 
+__demangle_result __try_demangle(const char* __mangled, bool __type) noexcept {
+  return __run_demangle(__mangled, __type, false);
+}
+
 bool __demangle(const char* __mangled, std::string& out) {
   if (__mangled == nullptr || std::strncmp(__mangled, "_Z", 2) != 0)
     return false;
-  const __demangle_result result = __try_demangle(__mangled, false);
+  const __demangle_result result = __run_demangle(__mangled, false, __cfg::exceptions);
   if constexpr (__cfg::exceptions) {
     if (result.status == __demangle_status::no_memory)
       ::__ycxx::__detail::__throw_bad_alloc();

@@ -141,10 +141,19 @@ public:
       append(value.data(), value.size());
   }
 
-  // A decimal fragment with its delimiters (for example, "unsigned _BitInt(128)").
-  text(scratch_state& s, const char* prefix, size_t n, const char* suffix) : text(s) {
+  [[__gnu__::__always_inline__]] text(const char* prefix, const text& suffix) : text(suffix.state_) {
     if (state_.propagates()) {
-      string_ = std::string(prefix) + std::to_string(n) + suffix;
+      string_ = prefix + suffix.string_;
+    } else {
+      *this += prefix;
+      *this += suffix;
+    }
+  }
+
+  // A decimal fragment with its delimiters (for example, "{unnamed type#1}").
+  [[__gnu__::__always_inline__]] text(scratch_state& s, const char* prefix, size_t n, const char* suffix) : text(s) {
+    if (state_.propagates()) {
+      string_ = prefix + std::to_string(n) + suffix;
     } else {
       *this += prefix;
       decimal(n);
@@ -231,6 +240,14 @@ public:
       n /= 10;
     } while (n != 0);
     append_bytes({first, static_cast<size_t>(end - first)});
+  }
+  void decimal(size_t n, const char* suffix) {
+    if (state_.propagates()) {
+      string_ = std::move(string_) + std::to_string(n) + suffix;
+    } else {
+      decimal(n);
+      *this += suffix;
+    }
   }
 
 private:
@@ -1188,9 +1205,7 @@ private:
       if (!last_name || last_name->empty())
         return nullptr;
       __p_ += 2;
-      text s(__scratch_, "~");
-      s += *last_name;
-      n = __text(std::move(s));
+      n = __text(text("~", *last_name));
       if (encoding_name_)
         ctor_dtor_conv_ = true;
     } else if (c == 'D' && peek(1) == 'C') { // structured binding: DC <source-name>+ E
@@ -1234,10 +1249,7 @@ private:
       const bool has = __number(__v);
       if (!consume('_'))
         return nullptr;
-      text s(__scratch_, "{unnamed type#");
-      s.decimal(has ? __v + 2 : 1);
-      s += '}';
-      return __text(std::move(s));
+      return __text(text(__scratch_, "{unnamed type#", has ? __v + 2 : 1, "}"));
     }
     if (consume("Ul")) {
       // Template parameter declarations of a generic lambda: Ty, Tn <type>, Tt ... E, Tp ...
@@ -1493,18 +1505,16 @@ private:
         const bool extended = !consume('_');
         if (extended && !consume('x'))
           return nullptr;
-        text s(__scratch_, "_Float");
-        s.decimal(n);
-        if (extended)
-          s += 'x';
-        return __text(std::move(s));
+        return __text(text(__scratch_, "_Float", n, extended ? "x" : ""));
       }
       if (d == 'B' || d == 'U') { // _BitInt(N) / unsigned _BitInt(N)
         __p_ += 2;
         std::size_t n;
         if (!__number(n) || !consume('_'))
           return nullptr;
-        return __text(text(__scratch_, d == 'U' ? "unsigned _BitInt(" : "_BitInt(", n, ")"));
+        text s(__scratch_, d == 'U' ? "unsigned _BitInt(" : "_BitInt(");
+        s.decimal(n, ")");
+        return __text(std::move(s));
       }
       if (d == 'p') { // pack expansion
         __p_ += 2;
@@ -1743,9 +1753,7 @@ private:
         return __text("false");
       if (__v == "1")
         return __text("true");
-      text __o(__scratch_, "(bool)");
-      __o += __v;
-      return __text(std::move(__o));
+      return __text(text("(bool)", __v));
     }
     case 'i': break;
     case 'j': __v += 'u'; break;

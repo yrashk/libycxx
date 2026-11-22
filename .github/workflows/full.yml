@@ -180,7 +180,12 @@ jobs:
       - name: Toolchains
         uses: ./.github/actions/setup-linux
       - name: Own suite, ${{ matrix.compiler }}, ${{ matrix.config.name }} (tools/test)
-        run: tools/test -j4 -q -c ${{ matrix.compiler }} ${{ matrix.config.args }} build ycxx
+        run: |
+          if [ '${{ matrix.config.name }}' = noexcept ]; then
+            # CMake initializes the library's flags from CXXFLAGS in this fresh matrix job.
+            export CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-fno-exceptions"
+          fi
+          tools/test -j4 -q -c ${{ matrix.compiler }} ${{ matrix.config.args }} build ycxx
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4

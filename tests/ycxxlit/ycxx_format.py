@@ -51,8 +51,9 @@ Optional directives:
                                           an uncaught exception in constant evaluation.
   // REQUIRES: <features>   (repeatable) run only when the boolean expression of lit features
                                           (&&, ||, !, parentheses; a comma is &&) holds, else
-                                          UNSUPPORTED. Features: the compiler (gcc, clang), the
-                                          OS (linux, darwin), the sanitizers (asan, ubsan, tsan),
+                                          UNSUPPORTED. Features: libycxx (own-library runs), the
+                                          compiler (gcc, clang), OS (linux, darwin), the sanitizers
+                                          (asan, ubsan, tsan),
                                           hardened (lit param hardened=1: -DYCXX_HARDENED=1),
                                           extended-float32 (the compiler advertises float32_t),
                                           non-lockfree-long-double-atomic (the atomic fixture),

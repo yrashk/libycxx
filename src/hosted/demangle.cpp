@@ -41,27 +41,26 @@ struct scratch_state {
     failed = true;
     return false;
   }
+  bool propagates() const noexcept { return ::__ycxx::__detail::__cfg::exceptions && propagate_allocations; }
 
   // The enabled stacktrace adapter preserves exceptions from ordinary allocation. The C
   // adapter and the disabled stacktrace adapter both need a recoverable allocation result.
   template <class _Tp, class... _Args>
   _Tp* make(_Args&&... args) const {
-    if constexpr (::__ycxx::__detail::__cfg::exceptions)
-      if (propagate_allocations)
-        return new _Tp(static_cast<_Args&&>(args)...);
+    if (propagates())
+      return new _Tp(static_cast<_Args&&>(args)...);
     return new (std::nothrow) _Tp(static_cast<_Args&&>(args)...);
   }
 
   template <class _Tp>
   _Tp* make_array(size_t n) const {
-    if constexpr (::__ycxx::__detail::__cfg::exceptions)
-      if (propagate_allocations)
-        return new _Tp[n];
+    if (propagates())
+      return new _Tp[n];
     return new (std::nothrow) _Tp[n];
   }
 
 private:
-  bool propagate_allocations;
+  const bool propagate_allocations;
 };
 
 // Only bytes and node pointers use this storage. Grow before publishing the new size so
@@ -70,7 +69,6 @@ template <class _Tp>
 class scratch_array {
 public:
   explicit scratch_array(scratch_state& __state) noexcept : state_(&__state) {}
-  scratch_state& state() const noexcept { return *state_; }
   _Tp* data() noexcept { return data_.get(); }
   const _Tp* data() const noexcept { return data_.get(); }
   const _Tp* begin() const noexcept { return data(); }
@@ -118,31 +116,113 @@ private:
   size_t capacity_ = 0;
 };
 
+// Keep the ordinary string operations for stacktrace with exceptions enabled. The C ABI
+// adapter and stacktrace without exceptions instead use checked, fallible byte storage.
 class text {
 public:
-  explicit text(scratch_state& __state, string_view s = {}) : bytes_(__state) { *this += s; }
-  scratch_state& state() const noexcept { return bytes_.state(); }
-  size_t size() const noexcept { return bytes_.size(); }
-  bool empty() const noexcept { return bytes_.empty(); }
-  char back() const noexcept { return bytes_[size() - 1]; }
-  string_view view() const noexcept { return {bytes_.data() ? bytes_.data() : "", size()}; }
-  std::unique_ptr<char[]> release() noexcept { return bytes_.release(); }
+  explicit text(scratch_state& s) noexcept : state_(s) {
+    if (state_.propagates())
+      ::new (&string_) std::string;
+    else
+      ::new (&bytes_) scratch_array<char>(s);
+  }
+  // Inline these operations at the rendering sites so shared builds retain the ordinary
+  // string instantiations used by the original renderer.
+  [[__gnu__::__always_inline__]] text(scratch_state& s, const char* value) : state_(s) {
+    if (state_.propagates()) {
+      ::new (&string_) std::string(value);
+    } else {
+      ::new (&bytes_) scratch_array<char>(s);
+      append_bytes(value);
+    }
+  }
+  text(scratch_state& s, string_view value) : text(s) {
+    if (!value.empty())
+      append(value.data(), value.size());
+  }
 
-  void resize(size_t n) noexcept {
+  // A decimal fragment with its delimiters (for example, "unsigned _BitInt(128)").
+  text(scratch_state& s, const char* prefix, size_t n, const char* suffix) : text(s) {
+    if (state_.propagates()) {
+      string_ = std::string(prefix) + std::to_string(n) + suffix;
+    } else {
+      *this += prefix;
+      decimal(n);
+      *this += suffix;
+    }
+  }
+
+  text(text&& other) noexcept : state_(other.state_) {
+    if (state_.propagates())
+      ::new (&string_) std::string(std::move(other.string_));
+    else
+      ::new (&bytes_) scratch_array<char>(std::move(other.bytes_));
+  }
+  // Text values are only assigned or appended within the same demangling invocation.
+  text& operator=(text&& other) noexcept {
+    if (state_.propagates())
+      string_ = std::move(other.string_);
+    else
+      bytes_ = std::move(other.bytes_);
+    return *this;
+  }
+  ~text() {
+    if (state_.propagates())
+      string_.~basic_string();
+    else
+      bytes_.~scratch_array();
+  }
+
+  scratch_state& state() const noexcept { return state_; }
+  size_t size() const noexcept { return state_.propagates() ? string_.size() : bytes_.size(); }
+  bool empty() const noexcept { return size() == 0; }
+  char back() const noexcept { return view().back(); }
+  string_view view() const noexcept {
+    if (state_.propagates())
+      return {string_.data(), string_.size()};
+    return {bytes_.data() ? bytes_.data() : "", bytes_.size()};
+  }
+  [[__gnu__::__always_inline__]] bool operator==(const char* s) const noexcept {
+    return state_.propagates() ? string_ == s : view() == s;
+  }
+  std::unique_ptr<char[]> release() noexcept { return bytes_.release(); }
+  std::string release_string() noexcept { return std::move(string_); }
+
+  void resize(size_t n) {
+    if (state_.propagates()) {
+      string_.resize(n);
+      return;
+    }
     bytes_.truncate(n);
     if (bytes_.data())
       bytes_.data()[n] = '\0';
   }
-  void operator+=(string_view s) {
-    if (!s.empty() && bytes_.append(s.data(), s.size(), 1))
-      bytes_.data()[size()] = '\0';
+  [[__gnu__::__always_inline__]] void operator+=(const char* s) {
+    if (state_.propagates())
+      string_ += s;
+    else
+      append_bytes(s);
   }
-  void operator+=(const text& s) { *this += s.view(); }
-  void operator+=(char c) { *this += string_view(&c, 1); }
+  void operator+=(const text& s) {
+    if (state_.propagates())
+      string_ += s.string_;
+    else
+      append_bytes(s.view());
+  }
+  [[__gnu__::__always_inline__]] void operator+=(char c) {
+    if (state_.propagates())
+      string_ += c;
+    else
+      append_bytes(string_view(&c, 1));
+  }
   void append(const char* first, const char* last) {
-    *this += string_view(first, static_cast<size_t>(last - first));
+    append(first, static_cast<size_t>(last - first));
   }
-  void decimal(size_t n) {
+  [[__gnu__::__always_inline__]] void decimal(size_t n) {
+    if (state_.propagates()) {
+      string_ += std::to_string(n);
+      return;
+    }
     char digits[std::numeric_limits<size_t>::digits10 + 1];
     char* const end = digits + sizeof digits;
     char* first = end;
@@ -150,11 +230,26 @@ public:
       *--first = static_cast<char>('0' + n % 10);
       n /= 10;
     } while (n != 0);
-    append(first, end);
+    append_bytes({first, static_cast<size_t>(end - first)});
   }
 
 private:
-  scratch_array<char> bytes_;
+  void append(const char* p, size_t n) {
+    if (state_.propagates())
+      string_.append(p, n);
+    else
+      append_bytes({p, n});
+  }
+  void append_bytes(string_view s) {
+    if (!s.empty() && bytes_.append(s.data(), s.size(), 1))
+      bytes_.data()[bytes_.size()] = '\0';
+  }
+
+  scratch_state& state_;
+  union {
+    std::string string_;
+    scratch_array<char> bytes_;
+  };
 };
 
 // ---- nodes ---------------------------------------------------------------------------------------
@@ -1409,10 +1504,7 @@ private:
         std::size_t n;
         if (!__number(n) || !consume('_'))
           return nullptr;
-        text s(__scratch_, d == 'U' ? "unsigned _BitInt(" : "_BitInt(");
-        s.decimal(n);
-        s += ')';
-        return __text(std::move(s));
+        return __text(text(__scratch_, d == 'U' ? "unsigned _BitInt(" : "_BitInt(", n, ")"));
       }
       if (d == 'p') { // pack expansion
         __p_ += 2;
@@ -1647,9 +1739,9 @@ private:
     __v.append(s, __p_ - 1);
     switch (__tc) {
     case 'b': {
-      if (__v.view() == "0")
+      if (__v == "0")
         return __text("false");
-      if (__v.view() == "1")
+      if (__v == "1")
         return __text("true");
       text __o(__scratch_, "(bool)");
       __o += __v;
@@ -1867,35 +1959,43 @@ private:
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-static __demangle_result __run_demangle(const char* __mangled, bool __type, bool __propagate) {
-  if (__mangled == nullptr || *__mangled == '\0')
-    return {__demangle_status::__invalid, {}, 0};
-  parser __ps(__mangled, __mangled + std::strlen(__mangled), __propagate);
-  text s(__ps.scratch());
+static __demangle_status __render_demangle(parser& __ps, text& s, bool __type) {
   const bool ok = __type ? __ps.parse_type(s) : __ps.parse(s);
   if (__ps.scratch().failed)
-    return {__demangle_status::__no_memory, {}, 0};
-  if (!ok || over(s))
-    return {__demangle_status::__invalid, {}, 0};
-  const size_t n = s.size();
-  return {__demangle_status::__success, s.release(), n};
+    return __demangle_status::__no_memory;
+  return ok && !over(s) ? __demangle_status::__success : __demangle_status::__invalid;
 }
 
 __demangle_result __try_demangle(const char* __mangled, bool __type) noexcept {
-  return __run_demangle(__mangled, __type, false);
+  if (__mangled == nullptr || *__mangled == '\0')
+    return {__demangle_status::__invalid, {}, 0};
+  parser __ps(__mangled, __mangled + std::strlen(__mangled), false);
+  text s(__ps.scratch());
+  const auto status = __render_demangle(__ps, s, __type);
+  if (status != __demangle_status::__success)
+    return {status, {}, 0};
+  const size_t n = s.size();
+  return {status, s.release(), n};
 }
 
 bool __demangle(const char* __mangled, std::string& out) {
   if (__mangled == nullptr || std::strncmp(__mangled, "_Z", 2) != 0)
     return false;
-  const __demangle_result result = __run_demangle(__mangled, false, __cfg::exceptions);
+  parser __ps(__mangled, __mangled + std::strlen(__mangled), __cfg::exceptions);
+  text s(__ps.scratch());
+  const auto status = __render_demangle(__ps, s, false);
   if constexpr (__cfg::exceptions) {
-    if (result.status == __demangle_status::__no_memory)
+    if (status == __demangle_status::__no_memory)
       ::__ycxx::__detail::__throw_bad_alloc();
   }
-  if (result.status != __demangle_status::__success)
+  if (status != __demangle_status::__success)
     return false;
-  out.assign(result.c_str(), result.size);
+  if constexpr (__cfg::exceptions) {
+    out = s.release_string();
+  } else {
+    const string_view name = s.view();
+    out.assign(name.data(), name.size());
+  }
   return true;
 }
 

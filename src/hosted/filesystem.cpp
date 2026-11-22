@@ -11,7 +11,10 @@
 // fdopendir, unlinkat) and open subdirectories with O_NOFOLLOW, so a directory replaced by a
 // symbolic link during the walk is not followed out of the tree.
 #include <filesystem>
+#include <limits>
 #include <locale>
+#include <memory>
+#include <new>
 #include <vector>
 #include <ycxx/core/hash.hpp>
 
@@ -566,6 +569,19 @@ struct __fs_rec_state {
 
 }} // namespace __ycxx::__detail
 
+#if !_YCXX_HAS_EXCEPTIONS
+namespace {
+
+void push_directory_level(__ycxx::__detail::__fs_rec_state& state, DIR* d, const __fs::path& p) {
+  auto __close = [](DIR* __dir) noexcept { ::closedir(__dir); };
+  std::unique_ptr<DIR, decltype(__close)> __stream(d, __close);
+  state.stack.push_back({d, p});
+  __stream.release();
+}
+
+} // namespace
+#endif
+
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
 void directory_iterator::open(const path& p, directory_options options, error_code& ec) {
@@ -622,12 +638,16 @@ void recursive_directory_iterator::open(const path& p, directory_options options
     ec = errno_code(e);
     return;
   }
+#if _YCXX_HAS_EXCEPTIONS
   try {
     __st->stack.push_back({d, p}); // copies p: the descriptor is the stack's once it is pushed
   } catch (...) {
     ::closedir(d);
     throw;
   }
+#else
+  push_directory_level(*__st, d, p);
+#endif
   int r = __ycxx::__detail::__fs_dir_state::read_next(d, __st->stack.back().path, __st->__entry);
   if (r < 0)
     ec = last_error();
@@ -655,12 +675,16 @@ void recursive_directory_iterator::advance(error_code& ec, path* where) {
                             O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
       DIR* d = __fd < 0 ? nullptr : open_dir_fd(__fd);
       if (d != nullptr) {
+#if _YCXX_HAS_EXCEPTIONS
         try {
           __st.stack.push_back({d, __st.__entry.path()});
         } catch (...) {
           ::closedir(d);
           throw;
         }
+#else
+        push_directory_level(__st, d, __st.__entry.path());
+#endif
       } else {
         int e = errno;
         // A directory that is gone or was replaced by a non-directory since it was listed is
@@ -1039,15 +1063,36 @@ bool copy_file(const path& from, const path& to, copy_options options, error_cod
 }
 
 void copy_symlink(const path& __existing_symlink, const path& __new_symlink, error_code& ec) noexcept {
-  // The link's target is read into a path, which allocates: this overload is noexcept, so an
-  // allocation failure is reported through ec ([fs.err.report]/3).
-  try {
-    path target = read_symlink(__existing_symlink, ec);
-    if (ec)
+  char __local[256];
+  std::unique_ptr<char[]> __storage;
+  char* __buf = __local;
+  size_t __cap = sizeof __local;
+  for (;;) {
+    ssize_t n = ::readlink(__existing_symlink.c_str(), __buf, __cap);
+    if (n < 0) {
+      ec = last_error();
       return;
-    create_symlink(target, __new_symlink, ec); // POSIX makes no difference for directory links
-  } catch (const std::bad_alloc&) {
-    ec = errno_code(ENOMEM);
+    }
+    if (static_cast<size_t>(n) < __cap) {
+      __buf[n] = '\0';
+      if (::symlink(__buf, __new_symlink.c_str()) != 0)
+        ec = last_error();
+      else
+        ec.clear();
+      return;
+    }
+    // A full buffer may have been truncated. Grow and read the target again.
+    if (__cap > static_cast<size_t>(std::numeric_limits<ssize_t>::max()) / 2) {
+      ec = errno_code(ENOMEM);
+      return;
+    }
+    __cap *= 2;
+    __storage.reset(new (std::nothrow) char[__cap]);
+    if (!__storage) {
+      ec = errno_code(ENOMEM);
+      return;
+    }
+    __buf = __storage.get();
   }
 }
 

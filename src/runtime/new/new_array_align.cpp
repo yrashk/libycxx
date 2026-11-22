@@ -2,11 +2,15 @@
 #include <new>
 #include "hidden.hpp"
 #include "allocation_table.hpp"
+#include "default_identity.hpp"
 
 asm((__ycxx::__detail::__hide_allocation_function("_Zna#St11align_val_t")));
 // What a ThreadSanitizer build's link options name as undefined (hidden.hpp).
 extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_anchor_new_array_align = 0;
 
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_MACHO_SECTION) && _YCXX_NEW_MACHO_SECTION
+[[__gnu__::__section__("__TEXT,__ycxx_new,regular,pure_instructions")]]
+#endif
 [[__gnu__::__weak__]] void* operator new[](std::size_t n, std::align_val_t a) {
   if (auto __f = __ycxx_allocation_functions.__new_array_align; __f != __ycxx::__detail::__own_allocation_functions.__new_array_align)
     return __f(n, static_cast<std::size_t>(a));
@@ -15,3 +19,14 @@ extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_an
 // Marks that the default (forwarding) operator new[] is linked (see
 // src/freestanding/new/try_or_null.hpp).
 extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_default_new_array_align = 0;
+
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_ELF_ALIAS) && _YCXX_NEW_ELF_ALIAS
+extern "C"
+#  if _YCXX_NEW_SIZE_IS_UNSIGNED_INT
+[[__gnu__::__alias__("_ZnajSt11align_val_t")]]
+#  else
+[[__gnu__::__alias__("_ZnamSt11align_val_t")]]
+#  endif
+[[__gnu__::__visibility__("hidden"), __gnu__::__malloc__, __gnu__::__alloc_size__(1)]]
+void* __ycxx_hosted_new_array_align_identity(std::size_t, std::align_val_t);
+#endif

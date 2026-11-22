@@ -11,8 +11,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cxxabi.h>
-#include <new>
-#include <string>
 
 #include "demangle.hpp"
 
@@ -26,18 +24,10 @@ extern "C" char* __ycxx_abi_demangle(const char* __mangled_name, char* __output_
   if (__mangled_name == nullptr || (__output_buffer != nullptr && __length == nullptr)) {
     __st = -3;
   } else {
-    std::string __text;
-    bool __ok = false;
-    try {
-      __ok = std::strncmp(__mangled_name, "_Z", 2) == 0 ? __ycxx::__detail::__demangle(__mangled_name, __text)
-                                                        : __ycxx::__detail::__demangle_type(__mangled_name, __text);
-    } catch (const std::bad_alloc&) {
-      __st = -1;
-    }
-    if (__st == 0 && !__ok)
-      __st = -2;
+    const auto __text = __ycxx::__detail::__try_demangle(__mangled_name, std::strncmp(__mangled_name, "_Z", 2) != 0);
+    __st = static_cast<int>(__text.status);
     if (__st == 0) {
-      const std::size_t __need = __text.size() + 1;
+      const std::size_t __need = __text.size + 1;
       if (__output_buffer != nullptr && *__length >= __need) {
         __result = __output_buffer;
       } else {

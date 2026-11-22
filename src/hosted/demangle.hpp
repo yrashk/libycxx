@@ -2,18 +2,26 @@
 // stacktrace_entry::description() and abi::__cxa_demangle (<cxxabi.h>). Internal to the runtime.
 #pragma once
 
+#include <memory>
 #include <string>
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
-// The demangled form of a mangled name ("_Z..."), in the style of the toolchains' c++filt
-// ("ns::f<int>(char const*) const"); a clone suffix (".cold", ".isra.0", ...) is shown as
-// " [clone .cold]". Returns false, leaving out unspecified, for a name that is not mangled or
-// uses a construct this demangler does not know. Throws bad_alloc only.
-bool __demangle(const char* __mangled, std::string& out);
+enum class __demangle_status { __success = 0, __no_memory = -1, __invalid = -2 };
 
-// The same for a mangled <type> on its own (5.1.5), the form of type_info::name(): "i" is "int",
-// "St13runtime_error" "std::runtime_error", "PFvvE" "void (*)()".
-bool __demangle_type(const char* __mangled, std::string& out);
+struct __demangle_result {
+  __demangle_status status;
+  std::unique_ptr<char[]> bytes;
+  std::size_t size = 0;
+  const char* c_str() const noexcept { return bytes ? bytes.get() : ""; }
+};
+
+// A symbol ("_Z...") or a standalone type ("i", "St13runtime_error", ...). On success the
+// result owns the complete NUL-terminated text independently of the input.
+__demangle_result __try_demangle(const char* __mangled, bool __type) noexcept;
+
+// Stacktrace adapter for symbols. Leaves out untouched on failure. Scratch allocation failure
+// throws bad_alloc with exceptions enabled and otherwise lets the caller use the raw name.
+bool __demangle(const char* __mangled, std::string& out);
 
 }} // namespace __ycxx::__detail

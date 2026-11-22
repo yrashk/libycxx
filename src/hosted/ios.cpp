@@ -2,6 +2,7 @@
 // ([ios.base], [ios.failure], [error.reporting]).
 #include <ios>
 #include <new>
+#include <ycxx/core/error.hpp>
 
 namespace {
 
@@ -241,6 +242,10 @@ void ios_base::__storage_failed() {
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
-void __throw_ios_failure(const char* what) { throw std::ios_base::failure(what); }
+void __throw_ios_failure(const char* what) {
+  ::__ycxx::__detail::__raise_with(ycxx_error_system_error, what, [what] {
+    return std::ios_base::failure(what);
+  });
+}
 
 }} // namespace __ycxx::__detail

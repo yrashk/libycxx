@@ -2,6 +2,7 @@
 // emptied. libycxx's insert of a sized forward range into vector-backed containers first
 // reserves room in both: when that reservation fails nothing has changed yet, so the flat_map
 // keeps its elements (a quality-of-implementation guarantee of libycxx, not of the standard).
+// REQUIRES: exceptions
 #include <flat_map>
 #include <functional>
 #include <new>

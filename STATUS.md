@@ -374,6 +374,13 @@ nightly TSan job runs both compilers.
 | noexcept (`-fno-exceptions`; tests `REQUIRES: exceptions` UNSUPPORTED) | 1941 pass / 0 fail / 7 xfail / 490 unsupported | 1941 pass / 0 fail / 7 xfail / 490 unsupported |
 | strict includes (`-DYCXX_NO_TRANSITIVE_INCLUDES`, DECISIONS §19; 2026-10-08, 2930 tests) | 2846 pass / 0 fail / 15 xfail / 69 unsupported | 2821 pass / 0 fail / 40 xfail / 69 unsupported |
 
+Hosted `-fno-exceptions` builds use the PAL and `new_handler` retry for the four nothrow
+allocation defaults. They return null when there is no handler and honor ordinary scalar and
+array replacements, including when an archive anchor pulls in the default. The Linux allocation
+objects passed focused GCC 16.2 and Clang 23 checks in both exception modes. The Mach-O capability
+and affected sources were cross-checked with Clang 23 and ld64.lld for arm64. Native Apple
+linker and full-suite verification are pending. [#58](https://github.com/yrashk/libycxx/issues/58)
+
 Every expected failure carries its reason in the test (`// XFAIL:` for causes outside the library
 and the test, `// XFAIL-COMPILER:` for a missing compiler feature): the draft defect
 `char_traits/eof`, the Itanium ABI and GCC handler-recording limits (`except/handler_*`), GCC's

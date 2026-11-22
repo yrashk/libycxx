@@ -68,21 +68,19 @@ char* copy_name(const char* s) {
 
 __locale_impl* new_impl(std::size_t nfacets, const char* name) {
   __locale_impl* p = new __locale_impl{1, nullptr, 0, nullptr};
-  if constexpr (__ycxx::__detail::__cfg::exceptions) {
-    try {
-      p->facets = new_zeroed<const std::locale::facet*>(nfacets);
-      p->nfacets = nfacets;
-      p->name = copy_name(name);
-    } catch (...) {
-      ::operator delete(p->facets);
-      delete p;
-      throw;
-    }
-  } else {
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+#endif
     p->facets = new_zeroed<const std::locale::facet*>(nfacets);
     p->nfacets = nfacets;
     p->name = copy_name(name);
+#if _YCXX_HAS_EXCEPTIONS
+  } catch (...) {
+    ::operator delete(p->facets);
+    delete p;
+    throw;
   }
+#endif
   return p;
 }
 
@@ -456,20 +454,18 @@ void install_category(__locale_impl* p, int c, const char* name, const char* wha
 
 // Installs the categories cats of parts in p; on an exception p is released.
 void install_parts(__locale_impl* p, const split_name& __parts, std::locale::category __cats) {
-  if constexpr (__ycxx::__detail::__cfg::exceptions) {
-    try {
-      for (int c = 0; c < ncategories; ++c)
-        if (__cats & category_bits[c])
-          install_category(p, c, __parts.part[c].c_str(), "std::locale");
-    } catch (...) {
-      release(p);
-      throw;
-    }
-  } else {
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+#endif
     for (int c = 0; c < ncategories; ++c)
       if (__cats & category_bits[c])
         install_category(p, c, __parts.part[c].c_str(), "std::locale");
+#if _YCXX_HAS_EXCEPTIONS
+  } catch (...) {
+    release(p);
+    throw;
   }
+#endif
 }
 
 // The global locale ([locale.statics]): one for the program, under a lock.

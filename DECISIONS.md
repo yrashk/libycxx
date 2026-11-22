@@ -311,11 +311,11 @@ tooling.
   freestanding builds keep `-nostdinc` (no C library) and add the compiler's header directory
   back (`-isystem $(cc -print-file-name=include)`); `tools/check_includes.py` does not
   follow `#include_next`.
-- **Hosted `<cstdint>` takes the fast 16- and 32-bit types from the target C library.**
-  It includes `<stdint.h>` in the hosted branch and aliases its four types ([cstdint.syn]).
+- **Hosted `<cstdint>` uses the target's `<stdint.h>` when available.**
+  It includes the header and aliases its four fast 16- and 32-bit types ([cstdint.syn]).
   The C library also supplies their limit macros. If its header predates C23 width macros,
-  libycxx derives those widths from the corresponding integer limits. A freestanding build
-  uses the compiler predefines for both the types and macros.
+  libycxx derives those widths from the corresponding integer limits. Freestanding builds
+  and hosted builds without `<stdint.h>` use compiler predefines for the types and macros.
 - `include/ycxx/hosted/**` plus `src/hosted`: anything needing the OS, reached only through the PAL.
 - `include/ycxx/pal.h`: C-linkage platform hooks (`ycxx_pal_allocate`, `_write`, `_abort`,
   `_clock_now`, ...). `src/pal/posix` implements them on top of libc.

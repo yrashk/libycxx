@@ -28,7 +28,8 @@ def freestanding_includes(text):
             kw, arg = m.group(1), m.group(2).split("//")[0].strip()
             if kw in ("if", "ifdef", "ifndef"):
                 switch = arg.removeprefix("!")
-                stack.append(arg == switch if switch in HOSTED_ONLY else None)
+                # Only #if reads the value of a switch that can be defined as 0.
+                stack.append(arg == switch if kw == "if" and switch in HOSTED_ONLY else None)
             elif kw == "else" and stack and stack[-1] is not None:
                 stack[-1] = not stack[-1]
             elif kw == "elif" and stack:

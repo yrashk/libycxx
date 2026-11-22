@@ -10,7 +10,10 @@ asm((__ycxx::__detail::__hide_allocation_function("_Znw#St11align_val_t")));
 // What a ThreadSanitizer build's link options name as undefined (hidden.hpp).
 extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_anchor_new_align = 0;
 
-_YCXX_NEW_DEFAULT_SECTION [[__gnu__::__weak__]] void* operator new(std::size_t n, std::align_val_t a) {
+#if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+[[__gnu__::__section__("__TEXT,__ycxx_new,regular,pure_instructions")]]
+#endif
+[[__gnu__::__weak__]] void* operator new(std::size_t n, std::align_val_t a) {
   if (auto __f = __ycxx_allocation_functions.__new_align; __f != __ycxx::__detail::__own_allocation_functions.__new_align)
     return __f(n, static_cast<std::size_t>(a));
   if (void* p = __ycxx::__detail::__try_allocate(n, static_cast<std::size_t>(a)))

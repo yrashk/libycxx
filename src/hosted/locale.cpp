@@ -14,7 +14,6 @@
 #include <clocale>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
 #include <new>
 #include <ycxx/core/single_threaded.hpp>
 #include <ycxx/hosted/memory_resource.hpp> // __ycxx::__detail::__pal_lock
@@ -68,16 +67,21 @@ char* copy_name(const char* s) {
 }
 
 __locale_impl* new_impl(std::size_t nfacets, const char* name) {
-  auto __delete_partial = [](__locale_impl* p) noexcept {
+  __locale_impl* p = new __locale_impl{1, nullptr, 0, nullptr};
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+#endif
+    p->facets = new_zeroed<const std::locale::facet*>(nfacets);
+    p->nfacets = nfacets;
+    p->name = copy_name(name);
+#if _YCXX_HAS_EXCEPTIONS
+  } catch (...) {
     ::operator delete(p->facets);
     delete p;
-  };
-  std::unique_ptr<__locale_impl, decltype(__delete_partial)> p(
-      new __locale_impl{1, nullptr, 0, nullptr}, __delete_partial);
-  p->facets = new_zeroed<const std::locale::facet*>(nfacets);
-  p->nfacets = nfacets;
-  p->name = copy_name(name);
-  return p.release();
+    throw;
+  }
+#endif
+  return p;
 }
 
 void __retain(__locale_impl* p) noexcept { ::__ycxx::__detail::__ref_add(p->__refs); }
@@ -450,11 +454,18 @@ void install_category(__locale_impl* p, int c, const char* name, const char* wha
 
 // Installs the categories cats of parts in p; on an exception p is released.
 void install_parts(__locale_impl* p, const split_name& __parts, std::locale::category __cats) {
-  std::unique_ptr<__locale_impl, decltype(&release)> __pending(p, release);
-  for (int c = 0; c < ncategories; ++c)
-    if (__cats & category_bits[c])
-      install_category(p, c, __parts.part[c].c_str(), "std::locale");
-  (void)__pending.release();
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+#endif
+    for (int c = 0; c < ncategories; ++c)
+      if (__cats & category_bits[c])
+        install_category(p, c, __parts.part[c].c_str(), "std::locale");
+#if _YCXX_HAS_EXCEPTIONS
+  } catch (...) {
+    release(p);
+    throw;
+  }
+#endif
 }
 
 // The global locale ([locale.statics]): one for the program, under a lock.

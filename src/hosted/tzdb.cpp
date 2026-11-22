@@ -823,11 +823,14 @@ const __chr::time_zone* find_zone(const __chr::tzdb& __db, string_view name) noe
   return nullptr;
 }
 
-// The database, or nullptr when there is none or memory runs out.
-std::unique_ptr<__chr::tzdb> load_tzdb() noexcept {
-  return load_status([]() -> std::unique_ptr<__chr::tzdb> {
+// Transfers ownership of the database, or returns nullptr on failure.
+__chr::tzdb* load_tzdb() noexcept {
+  __chr::tzdb* __db = nullptr;
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+#endif
     const string __dir = zoneinfo_dir();
-    auto __db = std::make_unique<__chr::tzdb>();
+    __db = new __chr::tzdb;
     __db->version = read_version(__dir);
     vector<string> zones;
     vector<std::pair<string, string>> links;
@@ -846,8 +849,7 @@ std::unique_ptr<__chr::tzdb> load_tzdb() noexcept {
       walk(__dir, string(), zones, links, 0);
     }
     if (zones.empty()) {
-      // Keep the explicit destructor use for the shared ABI.
-      delete __db.release();
+      delete __db;
       return nullptr;
     }
     std::sort(zones.begin(), zones.end());
@@ -868,9 +870,18 @@ std::unique_ptr<__chr::tzdb> load_tzdb() noexcept {
       __db->links.emplace_back(__tz_ctor_tag{}, static_cast<string&&>(__l.first), static_cast<string&&>(__l.second));
     }
     load_leaps(__dir, __db->leap_seconds);
-    return __db;
-  });
+#if _YCXX_HAS_EXCEPTIONS
+  } catch (...) {
+    delete __db;
+    return nullptr;
+  }
+#endif
+  return __db;
 }
+
+struct tzdb_deleter {
+  void operator()(__chr::tzdb* __db) const noexcept { delete __db; }
+};
 
 std::mutex& list_mutex() {
   static std::mutex m;
@@ -948,7 +959,7 @@ __chr::tzdb_list* __ycxx::__detail::__tzdb_list_instance() noexcept {
     std::lock_guard<std::mutex> lock(list_mutex());
     if (list != nullptr)
       return list;
-    auto __db = load_tzdb();
+    std::unique_ptr<__chr::tzdb, tzdb_deleter> __db(load_tzdb());
     if (!__db)
       return nullptr;
     std::unique_ptr<__chr::tzdb_list> __l(new (std::nothrow) __chr::tzdb_list(__tz_ctor_tag{}));
@@ -974,7 +985,7 @@ const __chr::tzdb* __ycxx::__detail::__tzdb_reload() noexcept {
     const string __dir = zoneinfo_dir();
     if (read_version(__dir) == __l->front().version)
       return &__l->front();
-    auto __db = load_tzdb();
+    std::unique_ptr<__chr::tzdb, tzdb_deleter> __db(load_tzdb());
     if (!__db)
       return nullptr;
     std::unique_ptr<__tzdb_node> node(new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr});

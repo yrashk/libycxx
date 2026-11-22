@@ -548,13 +548,6 @@ struct __fs_rec_state {
       ::closedir(__l.__dir);
   }
 
-  void push(DIR* d, const __fs::path& p) {
-    auto __close = [](DIR* __dir) noexcept { ::closedir(__dir); };
-    std::unique_ptr<DIR, decltype(__close)> __stream(d, __close);
-    stack.push_back({d, p});
-    __stream.release();
-  }
-
   bool has(__fs::directory_options __o) const noexcept { return (options & __o) != __fs::directory_options::none; }
 
   // Whether the current entry is a directory to descend into ([fs.rec.dir.itr.members]/21.2),
@@ -575,6 +568,17 @@ struct __fs_rec_state {
 };
 
 }} // namespace __ycxx::__detail
+
+namespace {
+
+void push_directory_level(__ycxx::__detail::__fs_rec_state& state, DIR* d, const __fs::path& p) {
+  auto __close = [](DIR* __dir) noexcept { ::closedir(__dir); };
+  std::unique_ptr<DIR, decltype(__close)> __stream(d, __close);
+  state.stack.push_back({d, p});
+  __stream.release();
+}
+
+} // namespace
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 { namespace filesystem {
 
@@ -632,7 +636,7 @@ void recursive_directory_iterator::open(const path& p, directory_options options
     ec = errno_code(e);
     return;
   }
-  __st->push(d, p);
+  push_directory_level(*__st, d, p);
   int r = __ycxx::__detail::__fs_dir_state::read_next(d, __st->stack.back().path, __st->__entry);
   if (r < 0)
     ec = last_error();
@@ -660,7 +664,7 @@ void recursive_directory_iterator::advance(error_code& ec, path* where) {
                             O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
       DIR* d = __fd < 0 ? nullptr : open_dir_fd(__fd);
       if (d != nullptr) {
-        __st.push(d, __st.__entry.path());
+        push_directory_level(__st, d, __st.__entry.path());
       } else {
         int e = errno;
         // A directory that is gone or was replaced by a non-directory since it was listed is

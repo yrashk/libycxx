@@ -34,6 +34,7 @@ void __message_release(const char* __text) noexcept {
 }
 
 [[noreturn]] void __throw_std(ycxx_error_kind kind, const char* what) {
+#if _YCXX_HAS_EXCEPTIONS
   switch (kind) {
   case ycxx_error_logic_error: throw std::logic_error(what);
   case ycxx_error_domain_error: throw std::domain_error(what);
@@ -48,6 +49,9 @@ void __message_release(const char* __text) noexcept {
   // so no other kind reaches this point; report it rather than throw something unrelated.
   default: ::ycxx_error_handler(kind, what);
   }
+#else
+  ::ycxx_error_handler(kind, what);
+#endif
 }
 
 }} // namespace __ycxx::__detail

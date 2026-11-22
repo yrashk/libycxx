@@ -139,7 +139,6 @@ ycxx_allocation_identity_header(${CMAKE_CURRENT_BINARY_DIR}/generated/abi/alloca
 # ---- ycxx::core (libycxx.a): the library's out-of-line parts and the platform layer ----
 # One replaceable allocation function per source file (see src/runtime/new).
 file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/runtime/new/*.cppm src/hosted/new/*.cpp src/hosted/new/*.cppm)
-set_property(SOURCE ${YCXX_NEW_SOURCES} APPEND PROPERTY INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/generated)
 # Defining one deallocation function per file is the point; GCC warns about each unpaired one.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)
@@ -389,6 +388,7 @@ if(YCXX_STATIC)
     ycxx_add_module_units(ycxx SOURCES ${YCXX_LIBRARY_SOURCES})
   endif()
   target_link_libraries(ycxx PRIVATE ycxx_headers)
+  target_include_directories(ycxx PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
   target_compile_options(ycxx PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++26 ${_ycxx_warnings}>
     $<$<COMPILE_LANGUAGE:C>:${_ycxx_warnings}>)

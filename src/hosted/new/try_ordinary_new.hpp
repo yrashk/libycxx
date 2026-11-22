@@ -14,6 +14,9 @@ extern "C" [[__gnu__::__weak__, __gnu__::__visibility__("hidden")]]
 void* __ycxx_hosted_new_array_identity(std::size_t);
 extern "C" [[__gnu__::__weak__, __gnu__::__visibility__("hidden")]]
 void* __ycxx_hosted_new_array_align_identity(std::size_t, std::align_val_t);
+#elif !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+extern "C" const unsigned char __ycxx_hosted_new_begin[] asm("section$start$__TEXT$__ycxx_new");
+extern "C" const unsigned char __ycxx_hosted_new_end[] asm("section$end$__TEXT$__ycxx_new");
 #endif
 
 namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
@@ -34,6 +37,18 @@ inline bool __is_new_default(__allocation_form __form,
   auto __identity = __form == __allocation_form::__array ? &__ycxx_hosted_new_array_align_identity
                                                         : &__ycxx_hosted_new_align_identity;
   return __identity && __selected == __identity;
+}
+#elif !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+inline constexpr bool __has_new_default_identity = true;
+
+// Linker bounds stay within the image. A discarded or absent default contributes
+// no code to the range. Compare addresses as integers, independent of C++ objects.
+template <class _Fn>
+inline bool __is_new_default(__allocation_form, _Fn __selected) noexcept {
+  auto __entry = reinterpret_cast<__UINTPTR_TYPE__>(__selected);
+  auto __begin = reinterpret_cast<__UINTPTR_TYPE__>(__ycxx_hosted_new_begin);
+  auto __end = reinterpret_cast<__UINTPTR_TYPE__>(__ycxx_hosted_new_end);
+  return __begin <= __entry && __entry < __end;
 }
 #else
 inline constexpr bool __has_new_default_identity = false;

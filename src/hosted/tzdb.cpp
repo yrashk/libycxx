@@ -845,8 +845,11 @@ std::unique_ptr<__chr::tzdb> load_tzdb() noexcept {
     } else {
       walk(__dir, string(), zones, links, 0);
     }
-    if (zones.empty())
+    if (zones.empty()) {
+      // Keep the explicit destructor use for the shared ABI.
+      delete __db.release();
       return nullptr;
+    }
     std::sort(zones.begin(), zones.end());
     zones.erase(std::unique(zones.begin(), zones.end()), zones.end());
     __db->zones.reserve(zones.size());
@@ -954,6 +957,7 @@ __chr::tzdb_list* __ycxx::__detail::__tzdb_list_instance() noexcept {
     std::unique_ptr<__tzdb_node> node(new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr});
     if (!node)
       return nullptr;
+    delete __db.release();
     __l->push_front(__tz_ctor_tag{}, node.release());
     auto* published = __l.release();
     __atomic_store_n(&list, published, __ATOMIC_RELEASE);
@@ -976,6 +980,7 @@ const __chr::tzdb* __ycxx::__detail::__tzdb_reload() noexcept {
     std::unique_ptr<__tzdb_node> node(new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr});
     if (!node)
       return nullptr;
+    delete __db.release();
     const auto* published = &node->__db;
     __l->push_front(__tz_ctor_tag{}, node.release());
     return published;

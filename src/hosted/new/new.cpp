@@ -10,7 +10,7 @@ asm((__ycxx::__detail::__hide_allocation_function("_Znw#")));
 // What a ThreadSanitizer build's link options name as undefined (hidden.hpp).
 extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_anchor_new = 0;
 
-#if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_MACHO_SECTION) && _YCXX_NEW_MACHO_SECTION
 [[__gnu__::__section__("__TEXT,__ycxx_new,regular,pure_instructions")]]
 #endif
 [[__gnu__::__weak__]] void* operator new(std::size_t n) {
@@ -21,7 +21,7 @@ extern "C" [[__gnu__::__visibility__("hidden")]] const char __ycxx_allocation_an
   __ycxx::__detail::__throw_bad_alloc();
 }
 
-#if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_ELF_ALIAS
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_ELF_ALIAS) && _YCXX_NEW_ELF_ALIAS
 extern "C"
 #  if _YCXX_NEW_SIZE_IS_UNSIGNED_INT
 [[__gnu__::__alias__("_Znwj")]]

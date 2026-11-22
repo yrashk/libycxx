@@ -4,7 +4,7 @@
 #include "try_allocate.hpp"
 #include "../../runtime/new/default_identity.hpp"
 
-#if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_ELF_ALIAS
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_ELF_ALIAS) && _YCXX_NEW_ELF_ALIAS
 // A weak reference alone cannot pull an ordinary allocation member from the archive.
 extern "C" [[__gnu__::__weak__, __gnu__::__visibility__("hidden")]]
 void* __ycxx_hosted_new_identity(std::size_t);
@@ -14,7 +14,7 @@ extern "C" [[__gnu__::__weak__, __gnu__::__visibility__("hidden")]]
 void* __ycxx_hosted_new_array_identity(std::size_t);
 extern "C" [[__gnu__::__weak__, __gnu__::__visibility__("hidden")]]
 void* __ycxx_hosted_new_array_align_identity(std::size_t, std::align_val_t);
-#elif !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+#elif !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_MACHO_SECTION) && _YCXX_NEW_MACHO_SECTION
 extern "C" const unsigned char __ycxx_hosted_new_begin[] asm("section$start$__TEXT$__ycxx_new");
 extern "C" const unsigned char __ycxx_hosted_new_end[] asm("section$end$__TEXT$__ycxx_new");
 #endif
@@ -23,7 +23,7 @@ namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __detail {
 
 enum class __allocation_form { __scalar, __array };
 
-#if !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_ELF_ALIAS
+#if !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_ELF_ALIAS) && _YCXX_NEW_ELF_ALIAS
 inline constexpr bool __has_new_default_identity = true;
 
 inline bool __is_new_default(__allocation_form __form, void* (*__selected)(std::size_t)) noexcept {
@@ -38,7 +38,7 @@ inline bool __is_new_default(__allocation_form __form,
                                                         : &__ycxx_hosted_new_align_identity;
   return __identity && __selected == __identity;
 }
-#elif !_YCXX_HAS_EXCEPTIONS && _YCXX_NEW_MACHO_SECTION
+#elif !_YCXX_HAS_EXCEPTIONS && defined(_YCXX_NEW_MACHO_SECTION) && _YCXX_NEW_MACHO_SECTION
 inline constexpr bool __has_new_default_identity = true;
 
 // Linker bounds stay within the image. A discarded or absent default contributes

@@ -75,6 +75,21 @@ struct thread_locale {
   locale_t old_;
 };
 
+class native_locale_guard {
+ public:
+  explicit native_locale_guard(locale_t __loc) noexcept : loc_(__loc) {}
+  ~native_locale_guard() {
+    if (loc_ != static_cast<locale_t>(0))
+      ::freelocale(loc_);
+  }
+  native_locale_guard(const native_locale_guard&) = delete;
+  native_locale_guard& operator=(const native_locale_guard&) = delete;
+  void release() noexcept { loc_ = static_cast<locale_t>(0); }
+
+ private:
+  locale_t loc_;
+};
+
 // Hosted std::mbstate_t is the C library's ::mbstate_t (DECISIONS §3), so a facet's state goes to
 // mbrtowc/wcrtomb as it is.
 static_assert(std::is_same_v<std::mbstate_t, ::mbstate_t>);
@@ -884,17 +899,9 @@ __named_locale* __named_open(const char* name, int cat, const char* what) {
   const locale_t __loc = new_c_locale(part.c_str(), c);
   if (__loc == static_cast<locale_t>(0))
     bad_name(what, part.c_str());
-  __named_locale* h;
-  if constexpr (__cfg::exceptions) {
-    try {
-      h = new __named_locale{1, nullptr, c, part, __loc, {}, {}, {}, {}, {}, 0, 1};
-    } catch (...) {
-      ::freelocale(__loc);
-      throw;
-    }
-  } else {
-    h = new __named_locale{1, nullptr, c, part, __loc, {}, {}, {}, {}, {}, 0, 1};
-  }
+  native_locale_guard __pending(__loc);
+  __named_locale* h = new __named_locale{1, nullptr, c, part, __loc, {}, {}, {}, {}, {}, 0, 1};
+  __pending.release();
   if (c == ctype_index)
     fill_ctype(*h); // does not throw
   // another thread may have opened the same one meanwhile: keep the first
@@ -980,17 +987,10 @@ std::string __named_codeset(const char* name) {
   if (__l == static_cast<locale_t>(0))
     return std::string();
   std::string r;
-  if constexpr (__cfg::exceptions) {
-    try {
-      r = ::nl_langinfo_l(CODESET, __l);
-    } catch (...) {
-      ::freelocale(__l);
-      throw;
-    }
-  } else {
+  {
+    native_locale_guard __pending(__l);
     r = ::nl_langinfo_l(CODESET, __l);
   }
-  ::freelocale(__l);
   return r;
 }
 

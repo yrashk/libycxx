@@ -2,11 +2,11 @@
 // ([exec.par.scheduler], [exec.parschedrepl]): a pool of threads (as many as
 // hardware_concurrency, at least 1) taking work items from one FIFO queue.
 //
-// A work item lives in the proxy's preallocated backend storage (span<byte>; the library's
-// proxies give 128 bytes), so scheduling allocates nothing; a bulk operation is one item that a
-// worker re-queues after claiming a chunk index, so idle workers join in, and whoever finishes
-// the last chunk completes the proxy. Each chunk first checks the proxy's stop token; a stop
-// request turns the completion into set_stopped.
+// A work item uses the proxy's preallocated backend storage when it fits (span<byte>; the
+// library's proxies give 128 bytes), with a heap fallback otherwise. A worker re-queues a bulk
+// item after claiming a chunk index so idle workers can join in. The last chunk to finish
+// completes the proxy. Each chunk first checks the proxy's stop token and a stop request turns
+// the completion into set_stopped.
 module;
 #include <ycxx/core/hidden_symbol.hpp>
 
@@ -16,6 +16,10 @@ import std;
 asm((::__ycxx::__detail::__hide_symbol("_ZGIW4ycxxW6hostedW18parallel_scheduler")));
 
 extern "C++" {
+
+namespace [[__gnu__::__visibility__("hidden")]] __ycxx { namespace __abi {
+std::exception_ptr __parallel_scheduler_bad_alloc() noexcept;
+}}
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail { namespace __exec {
 namespace {
@@ -31,9 +35,18 @@ bool stop_requested(const psr::receiver_proxy& r) noexcept {
   return __tok && __tok->stop_requested();
 }
 
-// Storage for an item of type T: the proxy's buffer when it fits, else the heap.
+// Prepare the disabled-mode error before any submission can fail to allocate.
+std::exception_ptr placement_error() noexcept {
+  if constexpr (!__cfg::exceptions)
+    return ::__ycxx::__abi::__parallel_scheduler_bad_alloc();
+  return {};
+}
+
+// Use the supplied storage when it fits. On failed heap allocation the callback may end the
+// lifetimes of the receiver and its storage, so return without touching either again.
 template <class _Tp>
-_Tp* place(std::span<std::byte> s, bool& __heap) {
+_Tp* place(std::span<std::byte> s, bool& __heap, psr::receiver_proxy& r,
+           const std::exception_ptr& __error) noexcept {
   void* p = s.data();
   std::size_t space = s.size();
   if (s.data() && std::align(alignof(_Tp), sizeof(_Tp), p, space)) {
@@ -41,7 +54,20 @@ _Tp* place(std::span<std::byte> s, bool& __heap) {
     return static_cast<_Tp*>(p);
   }
   __heap = true;
-  return static_cast<_Tp*>(::operator new(sizeof(_Tp), std::align_val_t(alignof(_Tp))));
+  const auto __align = std::align_val_t(alignof(_Tp));
+  if constexpr (__cfg::exceptions) {
+    try {
+      return static_cast<_Tp*>(::operator new(sizeof(_Tp), __align));
+    } catch (...) {
+      r.set_error(std::current_exception());
+      return nullptr;
+    }
+  } else {
+    auto* __item = static_cast<_Tp*>(::operator new(sizeof(_Tp), __align, std::nothrow));
+    if (!__item)
+      r.set_error(__error);
+    return __item;
+  }
 }
 template <class _Tp>
 void unplace(_Tp* t, bool __heap) noexcept {
@@ -51,6 +77,7 @@ void unplace(_Tp* t, bool __heap) noexcept {
 }
 
 class thread_pool_backend final : public psr::parallel_scheduler_backend {
+  const std::exception_ptr __placement_error_ = placement_error();
   std::mutex __m_;
   std::condition_variable __cv_;
   pool_item* __head_ = nullptr;
@@ -146,13 +173,9 @@ class thread_pool_backend final : public psr::parallel_scheduler_backend {
       return;
     }
     bool __heap;
-    bulk* __it;
-    try {
-      __it = place<bulk>(s, __heap);
-    } catch (...) {
-      r.set_error(std::current_exception());
+    bulk* __it = place<bulk>(s, __heap, r, __placement_error_);
+    if (!__it)
       return;
-    }
     ::new (static_cast<void*>(__it)) bulk();
     __it->run = &__run_bulk;
     __it->pool = this;
@@ -185,13 +208,9 @@ public:
 
   void schedule(psr::receiver_proxy& r, std::span<std::byte> s) noexcept override {
     bool __heap;
-    single* __it;
-    try {
-      __it = place<single>(s, __heap);
-    } catch (...) {
-      r.set_error(std::current_exception());
+    single* __it = place<single>(s, __heap, r, __placement_error_);
+    if (!__it)
       return;
-    }
     ::new (static_cast<void*>(__it)) single();
     __it->run = &run_single;
     __it->r = &r;

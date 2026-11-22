@@ -1,6 +1,8 @@
 #include <condition_variable>
+#include <exception>
 #include <memory>
 #include <execution>
 #include <mutex>
+#include <new>
 #include <thread>
 #include <vector>

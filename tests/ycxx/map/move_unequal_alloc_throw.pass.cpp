@@ -4,6 +4,7 @@
 // container ([lib.types.movedfrom], [res.on.exception.handling]): every element it holds can be
 // found by lookup and it iterates in order, although the keys already moved out of it are
 // moved-from.
+// REQUIRES: exceptions
 #include <map>
 #include <set>
 #include <string>

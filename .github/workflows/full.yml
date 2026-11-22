@@ -16,7 +16,8 @@ name: full
 
 on:
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '47 2 * * *'
+      timezone: 'America/Vancouver'
   workflow_dispatch:
 
 jobs:
@@ -346,6 +347,8 @@ jobs:
       YCXX_LONG_TESTS: '1'
     strategy:
       fail-fast: false
+      # The independent macOS Quickstart can run alongside these suite jobs.
+      max-parallel: ${{ github.event_name == 'schedule' && 2 || 4 }}
       matrix:
         suite: [libcxx, libstdcxx]
         compiler: [gcc, clang]

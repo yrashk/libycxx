@@ -21,6 +21,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <new>
 #include <string>
@@ -44,6 +45,21 @@ using std::string_view;
 using std::vector;
 
 namespace {
+
+// The runtime returns an empty status on failure. Ordinary allocations still use the
+// configured library error policy in builds without exceptions.
+template <class _Fn>
+auto load_status(_Fn __load) noexcept -> decltype(__load()) {
+#if _YCXX_HAS_EXCEPTIONS
+  try {
+    return __load();
+  } catch (...) {
+    return {};
+  }
+#else
+  return __load();
+#endif
+}
 
 constexpr int64_t min_time = std::numeric_limits<int64_t>::min();
 constexpr int64_t max_time = std::numeric_limits<int64_t>::max();
@@ -327,7 +343,7 @@ struct __ycxx::__detail::__tz_data {
     abbrevs.emplace_back(a);
     return static_cast<uint32_t>(abbrevs.size() - 1);
   }
-  void load();
+  bool load();
   bool load_tzif(const string& bytes);
   info rule_info(int64_t t) const;
   info sys_info(int64_t t) const;
@@ -463,11 +479,9 @@ bool __ycxx::__detail::__tz_data::load_tzif(const string& bytes) {
   return true;
 }
 
-void __ycxx::__detail::__tz_data::load() {
+bool __ycxx::__detail::__tz_data::load() {
   string bytes;
-  if (!read_file(zoneinfo_dir() + "/" + name, bytes))
-    return;
-  ok = load_tzif(bytes);
+  return read_file(zoneinfo_dir() + "/" + name, bytes) && load_tzif(bytes);
 }
 
 info __ycxx::__detail::__tz_data::rule_info(int64_t t) const {
@@ -558,11 +572,7 @@ void fill(__chr::sys_info& out, const info& i) {
 __ycxx::__detail::__tz_data* loaded(const __chr::time_zone& __tz) {
   __ycxx::__detail::__tz_data* d = __tz.data(__ycxx::__detail::__tz_ctor_tag{});
   std::call_once(d->once, [d] {
-    try {
-      d->load();
-    } catch (...) {
-      d->ok = false;
-    }
+    d->ok = load_status([d] { return d->load(); });
   });
   return d->ok ? d : nullptr;
 }
@@ -760,10 +770,12 @@ void walk(const string& __dir, const string& __rel, vector<string>& zones, vecto
           int depth) {
   if (depth > 8)
     return;
-  DIR* d = ::opendir((__rel.empty() ? __dir : __dir + "/" + __rel).c_str());
-  if (d == nullptr)
+  const auto close_dir = [](DIR* d) noexcept { ::closedir(d); };
+  const std::unique_ptr<DIR, decltype(close_dir)> d(
+      ::opendir((__rel.empty() ? __dir : __dir + "/" + __rel).c_str()), close_dir);
+  if (!d)
     return;
-  while (const dirent* e = ::readdir(d)) {
+  while (const dirent* e = ::readdir(d.get())) {
     const string name = e->d_name;
     if (name.empty() || name[0] == '.' || name[0] == '+')
       continue;
@@ -801,7 +813,6 @@ void walk(const string& __dir, const string& __rel, vector<string>& zones, vecto
       zones.push_back(r);
     }
   }
-  ::closedir(d);
 }
 
 const __chr::time_zone* find_zone(const __chr::tzdb& __db, string_view name) noexcept {
@@ -813,11 +824,10 @@ const __chr::time_zone* find_zone(const __chr::tzdb& __db, string_view name) noe
 }
 
 // The database, or nullptr when there is none or memory runs out.
-__chr::tzdb* load_tzdb() noexcept {
-  __chr::tzdb* __db = nullptr;
-  try {
+std::unique_ptr<__chr::tzdb> load_tzdb() noexcept {
+  return load_status([]() -> std::unique_ptr<__chr::tzdb> {
     const string __dir = zoneinfo_dir();
-    __db = new __chr::tzdb;
+    auto __db = std::make_unique<__chr::tzdb>();
     __db->version = read_version(__dir);
     vector<string> zones;
     vector<std::pair<string, string>> links;
@@ -835,10 +845,8 @@ __chr::tzdb* load_tzdb() noexcept {
     } else {
       walk(__dir, string(), zones, links, 0);
     }
-    if (zones.empty()) {
-      delete __db;
+    if (zones.empty())
       return nullptr;
-    }
     std::sort(zones.begin(), zones.end());
     zones.erase(std::unique(zones.begin(), zones.end()), zones.end());
     __db->zones.reserve(zones.size());
@@ -857,11 +865,8 @@ __chr::tzdb* load_tzdb() noexcept {
       __db->links.emplace_back(__tz_ctor_tag{}, static_cast<string&&>(__l.first), static_cast<string&&>(__l.second));
     }
     load_leaps(__dir, __db->leap_seconds);
-  } catch (...) {
-    delete __db;
-    return nullptr;
-  }
-  return __db;
+    return __db;
+  });
 }
 
 std::mutex& list_mutex() {
@@ -896,7 +901,7 @@ const __chr::time_zone* __ycxx::__detail::__tzdb_find(const __chr::tzdb& __db, s
 // directory), else the target of /etc/localtime below a "zoneinfo/" directory, else
 // /etc/timezone, else UTC.
 const __chr::time_zone* __ycxx::__detail::__tzdb_current(const __chr::tzdb& __db) noexcept {
-  try {
+  return load_status([&]() -> const __chr::time_zone* {
     const string __dir = zoneinfo_dir();
     auto by_name = [&](string_view n) -> const __chr::time_zone* {
       if (!n.empty() && n[0] == ':')
@@ -926,9 +931,7 @@ const __chr::time_zone* __ycxx::__detail::__tzdb_current(const __chr::tzdb& __db
     if (const __chr::time_zone* __z = __tzdb_find(__db, "UTC"))
       return __z;
     return __tzdb_find(__db, "Etc/UTC");
-  } catch (...) {
-    return nullptr;
-  }
+  });
 }
 
 __chr::tzdb_list* __ycxx::__detail::__tzdb_list_instance() noexcept {
@@ -938,47 +941,45 @@ __chr::tzdb_list* __ycxx::__detail::__tzdb_list_instance() noexcept {
   static constinit __chr::tzdb_list* list = nullptr; // written under list_mutex()
   if (__chr::tzdb_list* __l = __atomic_load_n(&list, __ATOMIC_ACQUIRE))
     return __l;
-  try {
+  return load_status([]() -> __chr::tzdb_list* {
     std::lock_guard<std::mutex> lock(list_mutex());
     if (list != nullptr)
       return list;
-    __chr::tzdb* __db = load_tzdb();
-    if (__db == nullptr)
+    auto __db = load_tzdb();
+    if (!__db)
       return nullptr;
-    auto* __l = new (std::nothrow) __chr::tzdb_list(__tz_ctor_tag{});
-    auto* node = __l == nullptr ? nullptr : new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
-    delete __db;
-    if (node == nullptr) {
-      delete __l;
+    std::unique_ptr<__chr::tzdb_list> __l(new (std::nothrow) __chr::tzdb_list(__tz_ctor_tag{}));
+    if (!__l)
       return nullptr;
-    }
-    __l->push_front(__tz_ctor_tag{}, node);
-    __atomic_store_n(&list, __l, __ATOMIC_RELEASE);
-    return __l;
-  } catch (...) { // the mutex (system_error)
-    return nullptr;
-  }
+    std::unique_ptr<__tzdb_node> node(new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr});
+    if (!node)
+      return nullptr;
+    __l->push_front(__tz_ctor_tag{}, node.release());
+    auto* published = __l.release();
+    __atomic_store_n(&list, published, __ATOMIC_RELEASE);
+    return published;
+  });
 }
 
 const __chr::tzdb* __ycxx::__detail::__tzdb_reload() noexcept {
   __chr::tzdb_list* __l = __tzdb_list_instance();
   if (__l == nullptr)
     return nullptr;
-  try {
+  return load_status([__l]() -> const __chr::tzdb* {
     std::lock_guard<std::mutex> lock(list_mutex());
     const string __dir = zoneinfo_dir();
     if (read_version(__dir) == __l->front().version)
       return &__l->front();
-    __chr::tzdb* __db = load_tzdb();
-    if (__db == nullptr)
+    auto __db = load_tzdb();
+    if (!__db)
       return nullptr;
-    auto* node = new __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr};
-    delete __db;
-    __l->push_front(__tz_ctor_tag{}, node);
-    return &node->__db;
-  } catch (...) {
-    return nullptr;
-  }
+    std::unique_ptr<__tzdb_node> node(new (std::nothrow) __tzdb_node{static_cast<__chr::tzdb&&>(*__db), nullptr});
+    if (!node)
+      return nullptr;
+    const auto* published = &node->__db;
+    __l->push_front(__tz_ctor_tag{}, node.release());
+    return published;
+  });
 }
 
 std::string __ycxx::__detail::__tzdb_remote_version() { return read_version(zoneinfo_dir()); }

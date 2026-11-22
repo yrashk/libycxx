@@ -133,9 +133,13 @@ target_include_directories(ycxx_headers SYSTEM INTERFACE $<BUILD_INTERFACE:${YCX
 
 set(_ycxx_warnings -Wall -Wextra $<$<BOOL:${YCXX_WERROR}>:-Werror>)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ycxx-allocation-identity.cmake)
+ycxx_allocation_identity_header(${CMAKE_CURRENT_BINARY_DIR}/generated/abi/allocation_identity.hpp)
+
 # ---- ycxx::core (libycxx.a): the library's out-of-line parts and the platform layer ----
 # One replaceable allocation function per source file (see src/runtime/new).
 file(GLOB YCXX_NEW_SOURCES CONFIGURE_DEPENDS src/runtime/new/*.cpp src/runtime/new/*.cppm src/hosted/new/*.cpp src/hosted/new/*.cppm)
+set_property(SOURCE ${YCXX_NEW_SOURCES} APPEND PROPERTY INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/generated)
 # Defining one deallocation function per file is the point; GCC warns about each unpaired one.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_source_files_properties(${YCXX_NEW_SOURCES} PROPERTIES COMPILE_OPTIONS -Wno-sized-deallocation)

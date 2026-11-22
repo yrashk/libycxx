@@ -3,6 +3,7 @@
 #include <system_error>
 #include <typeinfo>
 #include <ycxx/core/atomic_base.hpp>
+#include <ycxx/core/error.hpp>
 #include <ycxx/hosted/thread_support.hpp>
 #include <ycxx/hosted/condition_variable.hpp>
 #include <ycxx/pal.h>
@@ -46,7 +47,9 @@ namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __det
 bool __handling_foreign_exception() noexcept { return __cxxabiv1::__cxa_current_exception_type() == nullptr; }
 
 [[noreturn]] void __throw_system_error(int __ev, const char* what) {
-  throw std::system_error(std::error_code(__ev, std::generic_category()), what);
+  ::__ycxx::__detail::__raise_with(ycxx_error_system_error, what, [__ev, what] {
+    return std::system_error(std::error_code(__ev, std::generic_category()), what);
+  });
 }
 
 ycxx_pal_handle __thread_start(void (*run)(void*), void* arg, std::size_t __stack_size, const char* name,

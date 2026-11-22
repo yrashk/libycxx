@@ -1,13 +1,16 @@
 // libycxx hosted runtime: std::random_device ([rand.device]), on the PAL's random sources.
 #include <random>
 #include <system_error>
+#include <ycxx/core/error.hpp>
 #include <ycxx/pal.h>
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
 
 namespace {
 [[noreturn]] void random_device_error(int e, const char* what) {
-  throw system_error(e, system_category(), what);
+  ::__ycxx::__detail::__raise_with(ycxx_error_system_error, what, [e, what] {
+    return system_error(e, system_category(), what);
+  });
 }
 } // namespace
 

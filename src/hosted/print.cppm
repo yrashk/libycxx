@@ -9,6 +9,7 @@ module;
 #include <ostream>
 #include <system_error>
 #include <cerrno>
+#include <ycxx/core/error.hpp>
 #include <ycxx/core/hidden_symbol.hpp>
 
 export module ycxx.hosted.print;
@@ -26,7 +27,10 @@ void write_file(std::FILE* stream, const char* p, std::size_t n) {
   errno = 0;
   if (std::fwrite(p, 1, n, stream) != n) {
     const int e = errno != 0 ? errno : EIO;
-    throw std::system_error(e, std::system_category(), "std::print: writing to the stream failed");
+    const char* what = "std::print: writing to the stream failed";
+    ::__ycxx::__detail::__raise_with(ycxx_error_system_error, what, [e, what] {
+      return std::system_error(e, std::system_category(), what);
+    });
   }
 }
 

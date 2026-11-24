@@ -76,6 +76,7 @@ jobs:
         uses: ./.github/actions/setup-macos
 
       - name: Policy, builds, freestanding, own suite (tools/test)
+        id: static-checks
         run: |
           . tools/toolchain/activate.sh
           cmake_path=$(command -v cmake)
@@ -89,9 +90,15 @@ jobs:
       # host/plugin sharing, the mode guard; tools/check-shared-macos.sh).
       - name: Own suite against the shared library (tools/test --shared)
         if: always()
+        env:
+          STATIC_CHECKS_OUTCOME: ${{ steps.static-checks.outcome }}
         run: |
           . tools/toolchain/activate.sh
-          tools/test -j3 --shared build ycxx
+          if [ "$STATIC_CHECKS_OUTCOME" = success ]; then
+            tools/test -j3 --shared-only build ycxx
+          else
+            tools/test -j3 --shared build ycxx
+          fi
       - name: The shared library on macOS (tools/check-shared-macos.sh)
         if: always()
         run: |

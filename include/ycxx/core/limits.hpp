@@ -138,9 +138,7 @@ struct __bool_limits : __limits_base {
 template <class _Tp>
 consteval _Tp __make_signaling_nan() {
   constexpr __fp_format_info __f = __fp_format<_Tp>;
-  if constexpr (__is_same(_Tp, long double) && __f.digits == 64) {
-    return __builtin_nansl(""); // x87 extended: explicit integer bit, not an interchange format
-  } else if constexpr (__f.digits == 113) {
+  if constexpr (__f.digits == 113) {
     struct __words {
       unsigned long long __first, __second;
     };
@@ -149,6 +147,9 @@ consteval _Tp __make_signaling_nan() {
     constexpr auto __one = __builtin_bit_cast(__words, _Tp(1));
     constexpr unsigned long long __nan_high = 0x7fff'4000'0000'0000ull;
     return __builtin_bit_cast(_Tp, __one.__first == 0 ? __words{0, __nan_high} : __words{__nan_high, 0});
+  } else if constexpr (__is_same(_Tp, long double) && (__f.digits == 64 || sizeof(_Tp) == 16)) {
+    // Let the compiler supply the native representation for x87 extended and IBM double-double.
+    return __builtin_nansl("");
   } else {
     using _Up = std::conditional_t<sizeof(_Tp) == 2, unsigned short,
                                   std::conditional_t<sizeof(_Tp) == 4, unsigned int, unsigned long long>>;

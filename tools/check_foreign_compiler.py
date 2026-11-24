@@ -170,13 +170,21 @@ static_assert(std::numeric_limits<unsigned long long>::max() == ~0ull);
 static_assert(std::numeric_limits<float>::max_digits10 == 9);
 static_assert(std::numeric_limits<float>::min_exponent10 == -37);
 static_assert(std::numeric_limits<double>::max_exponent10 == 308);
+static_assert(__builtin_isnan(std::numeric_limits<long double>::signaling_NaN()));
 
 template <class T>
 consteval bool binary128_limits() {
-  if constexpr (complete<T>)
+  if constexpr (complete<T>) {
+    struct Words { unsigned long long first, second; };
+    constexpr auto value = std::numeric_limits<T>::signaling_NaN();
+    constexpr auto bits = __builtin_bit_cast(Words, value);
+    constexpr unsigned long long signaling_high = 0x7fff'4000'0000'0000ull;
     return std::numeric_limits<T>::digits10 == 33 &&
            std::numeric_limits<T>::max_exponent10 == 4932 &&
-           __builtin_isnan(std::numeric_limits<T>::signaling_NaN());
+           __builtin_isnan(value) &&
+           ((bits.first == signaling_high && bits.second == 0) ||
+            (bits.first == 0 && bits.second == signaling_high));
+  }
   return true;
 }
 static_assert(binary128_limits<__y_float128>());

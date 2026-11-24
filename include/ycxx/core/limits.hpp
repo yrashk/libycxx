@@ -34,8 +34,8 @@ consteval int __floor_log10_pow2(int e) {
   // both products are below 2^61. Dividing the low product first gives the same final floor.
   constexpr unsigned long long scale = 1'000'000'000;
   const auto value = static_cast<unsigned long long>(e);
-  const auto magnitude = e < 0 ? 0ull - value : value;
-  const auto digits = static_cast<int>((magnitude * 301'029'995 + magnitude * 663'981'195 / scale) / scale);
+  const auto __magnitude = e < 0 ? 0ull - value : value;
+  const auto digits = static_cast<int>((__magnitude * 301'029'995 + __magnitude * 663'981'195 / scale) / scale);
   // A nonzero integer multiple of log10(2) is never an integer.
   return e < 0 ? -digits - 1 : digits;
 }

@@ -28,12 +28,16 @@ enum [[deprecated("float_denorm_style is deprecated ([depr.numeric.limits.has.de
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 
-// floor(e * log10(2)) for |e| < 2^31 (log10(2) is irrational, so no product is an integer).
+// floor(e * log10(2)) for the exponent domain of numeric_limits.
 consteval int __floor_log10_pow2(int e) {
-  constexpr __y_int128 num = 301029995663981195LL; // log10(2) * 10^18
-  constexpr __y_int128 den = 1000000000000000000LL;
-  __y_int128 p = static_cast<__y_int128>(e) * num;
-  return static_cast<int>(p >= 0 ? p / den : -((-p + den - 1) / den));
+  // Split the scaled numerator 301029995663981195 into base-10^9 limbs. For |e| <= 2^31
+  // both products are below 2^61. Dividing the low product first gives the same final floor.
+  constexpr unsigned long long scale = 1'000'000'000;
+  const auto value = static_cast<unsigned long long>(e);
+  const auto __magnitude = e < 0 ? 0ull - value : value;
+  const auto digits = static_cast<int>((__magnitude * 301'029'995 + __magnitude * 663'981'195 / scale) / scale);
+  // A nonzero integer multiple of log10(2) is never an integer.
+  return e < 0 ? -digits - 1 : digits;
 }
 
 template <class _Tp>
@@ -130,16 +134,25 @@ struct __bool_limits : __limits_base {
 };
 
 // Signaling NaN for a binary interchange format: exponent all ones, quiet bit clear,
-// lowest payload bit set. Built from the format facts, then bit_cast.
+// nonzero payload. Built from the format facts, then bit_cast.
 template <class _Tp>
 consteval _Tp __make_signaling_nan() {
   constexpr __fp_format_info __f = __fp_format<_Tp>;
-  if constexpr (__is_same(_Tp, long double) && __f.digits == 64) {
-    return __builtin_nansl(""); // x87 extended: explicit integer bit, not an interchange format
+  if constexpr (__f.digits == 113) {
+    struct __words {
+      unsigned long long __first, __second;
+    };
+    // The representation of 1 has a zero low word. Locate the high word and give
+    // it the all-ones exponent and a payload bit below the quiet bit.
+    constexpr auto __one = __builtin_bit_cast(__words, _Tp(1));
+    constexpr unsigned long long __nan_high = 0x7fff'4000'0000'0000ull;
+    return __builtin_bit_cast(_Tp, __one.__first == 0 ? __words{0, __nan_high} : __words{__nan_high, 0});
+  } else if constexpr (__is_same(_Tp, long double) && (__f.digits == 64 || sizeof(_Tp) == 16)) {
+    // Let the compiler supply the native representation for x87 extended and IBM double-double.
+    return __builtin_nansl("");
   } else {
     using _Up = std::conditional_t<sizeof(_Tp) == 2, unsigned short,
-                            std::conditional_t<sizeof(_Tp) == 4, unsigned int,
-                                          std::conditional_t<sizeof(_Tp) == 8, unsigned long long, __uint128>>>;
+                                  std::conditional_t<sizeof(_Tp) == 4, unsigned int, unsigned long long>>;
     constexpr int __mant_bits = __f.digits - 1;
     constexpr int __exp_bits = static_cast<int>(sizeof(_Tp) * __CHAR_BIT__) - 1 - __mant_bits;
     _Up bits = ((_Up(1) << __exp_bits) - 1) << __mant_bits; // exponent all ones

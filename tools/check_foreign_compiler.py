@@ -153,8 +153,9 @@ identity("foreign with __clang__", [CLANGXX] + BASE + FOREIGN + ["-D__clang__=1"
 expect("gcc", config_text([GXX] + BASE), GCC_BUILTINS, CLANG_BUILTINS + FALLBACKS)
 expect("clang", config_text([CLANGXX] + BASE), CLANG_BUILTINS, GCC_BUILTINS + FALLBACKS)
 
-# A target without 128-bit integers still needs two distinct incomplete types for <type_traits>.
+# Check the type placeholders and public limits with 128-bit integers unavailable.
 int128_fallback = """
+#include <limits>
 #include <type_traits>
 using namespace __ycxx::__detail;
 template <class T>
@@ -163,14 +164,39 @@ static_assert(!__cfg::__has_int128);
 static_assert(!std::is_same_v<__y_int128, __uint128>);
 static_assert(!complete<__y_int128>);
 static_assert(!complete<__uint128>);
+
+static_assert(std::numeric_limits<long long>::digits10 == 18);
+static_assert(std::numeric_limits<unsigned long long>::max() == ~0ull);
+static_assert(std::numeric_limits<float>::max_digits10 == 9);
+static_assert(std::numeric_limits<float>::min_exponent10 == -37);
+static_assert(std::numeric_limits<double>::max_exponent10 == 308);
+static_assert(__builtin_isnan(std::numeric_limits<long double>::signaling_NaN()));
+
+template <class T>
+consteval bool binary128_limits() {
+  if constexpr (complete<T>) {
+    struct Words { unsigned long long first, second; };
+    constexpr auto value = std::numeric_limits<T>::signaling_NaN();
+    constexpr auto bits = __builtin_bit_cast(Words, value);
+    constexpr unsigned long long signaling_high = 0x7fff'4000'0000'0000ull;
+    return std::numeric_limits<T>::digits10 == 33 &&
+           std::numeric_limits<T>::max_exponent10 == 4932 &&
+           __builtin_isnan(value) &&
+           ((bits.first == signaling_high && bits.second == 0) ||
+            (bits.first == 0 && bits.second == signaling_high));
+  }
+  return true;
+}
+static_assert(binary128_limits<__y_float128>());
+static_assert(binary128_limits<__gnu_float128>());
 """
 for label, compiler in (("gcc", GXX), ("clang", CLANGXX)):
     cmd = freestanding([compiler] + BASE)
     r = run(cmd + ["-U__SIZEOF_INT128__", "-fsyntax-only", "-"], int128_fallback)
     if r.returncode != 0:
-        fail(f"{label}: <type_traits> without 128-bit integers", r.stderr)
+        fail(f"{label}: <type_traits> and <limits> without 128-bit integers", r.stderr)
     else:
-        print(f"ok   {label}: <type_traits> without 128-bit integers")
+        print(f"ok   {label}: <type_traits> and <limits> without 128-bit integers")
 
 # Foreign, answering Clang's probes.
 probes = [CLANGXX] + BASE + FOREIGN

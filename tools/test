@@ -41,6 +41,9 @@
 #                              -DYCXX_SHARED=ON and built on first use; YCXX_LINKAGE=shared), with
 #                              the tests compiled in shared mode; logs and reports named
 #                              <suite>-<cc>-shared
+#   --shared-only              like --shared, with the build stage reusing completed static
+#                              builds and source-module checks from a prior run. Suite stages
+#                              require build/<cc>/libycxx.a for each selected compiler.
 #   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
 #                              run-time precondition checks) and run the death tests of
 #                              tests/ycxx/precondition (YCXX_HARDENED=1)
@@ -76,7 +79,7 @@ started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 usage() { sed -n '2,/^set -eu/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 
-compilers= filters= jobs= sanitizer= fail_fast=0 stages= linkage=static
+compilers= filters= jobs= sanitizer= fail_fast=0 stages= linkage=static static_build=1
 while [ $# -gt 0 ]; do
   case $1 in
     -c|--compiler) compilers="$compilers $2"; shift ;;
@@ -86,6 +89,7 @@ while [ $# -gt 0 ]; do
     -s|--sanitizer) sanitizer=$2; shift ;;
     --hardened) YCXX_HARDENED=1; export YCXX_HARDENED ;;
     --shared) linkage=shared ;;
+    --shared-only) linkage=shared; static_build=0 ;;
     --cxxflags) YCXX_CXXFLAGS=$2; export YCXX_CXXFLAGS; shift ;;
     --cxxflags=*) YCXX_CXXFLAGS=${1#--cxxflags=}; export YCXX_CXXFLAGS ;;
     --config-name) YCXX_CONFIG_NAME=$2; export YCXX_CONFIG_NAME; shift ;;
@@ -120,6 +124,18 @@ if [ "${YCXX_HARDENED:-0}" = 1 ] || [ -n "${ycxx_config_name}" ]; then
   case " $stages " in *" libcxx "*|*" libstdcxx "*)
     echo "tools/test: --hardened, --cxxflags and --config-name apply to the own suite (ycxx) only" >&2
     exit 2 ;;
+  esac
+fi
+if [ "$static_build" = 0 ]; then
+  case " $stages " in
+    *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
+      for c in $compilers; do
+        if [ ! -f "build/$c/libycxx.a" ]; then
+          echo "tools/test: build/$c/libycxx.a missing: run the build stage without --shared-only" >&2
+          exit 2
+        fi
+      done
+      ;;
   esac
 fi
 logs=$repo/build/test-logs
@@ -298,40 +314,42 @@ for stage in $stages; do
     build)
       for c in $compilers; do
         ui_section "Build with $c"
-        for t in RelWithDebInfo Release; do
-          d=build/$c; [ $t = Release ] && d=build/$c-release
+        if [ "$static_build" = 1 ]; then
+          for t in RelWithDebInfo Release; do
+            d=build/$c; [ $t = Release ] && d=build/$c-release
+            if [ ! -f $d/build.ninja ]; then
+              step "$c $t: configure ($d)" build-$c-$t-configure cmake -S . -B $d -G Ninja \
+                -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=$t ||
+                { [ $t = Release ] || broken="$broken $c"; continue; }
+            fi
+            step "$c $t: build ($d)" build-$c-$t ninja -C $d ${jobs:+-j$jobs} ||
+              { [ $t = Release ] || broken="$broken $c"; }
+          done
+          # The library's own module units (src/**/*.cppm, DECISIONS §21) define what their lowered
+          # translation units do, and nothing attached to a named module.
+          d=build/$c-lowered
           if [ ! -f $d/build.ninja ]; then
-            step "$c $t: configure ($d)" build-$c-$t-configure cmake -S . -B $d -G Ninja \
-              -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=$t ||
-              { [ $t = Release ] || broken="$broken $c"; continue; }
+            step "$c: configure without source modules ($d)" build-$c-lowered-configure cmake -S . -B $d -G Ninja \
+              -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DYCXX_SOURCE_MODULES=OFF || continue
           fi
-          step "$c $t: build ($d)" build-$c-$t ninja -C $d ${jobs:+-j$jobs} ||
-            { [ $t = Release ] || broken="$broken $c"; }
-        done
-        # The library's own module units (src/**/*.cppm, DECISIONS §21) define what their lowered
-        # translation units do, and nothing attached to a named module.
-        d=build/$c-lowered
-        if [ ! -f $d/build.ninja ]; then
-          step "$c: configure without source modules ($d)" build-$c-lowered-configure cmake -S . -B $d -G Ninja \
-            -DCMAKE_C_COMPILER="$(cc_of $c)" -DCMAKE_CXX_COMPILER="$(cxx_of $c)" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DYCXX_SOURCE_MODULES=OFF || continue
+          step "$c: build without source modules ($d)" build-$c-lowered ninja -C $d ${jobs:+-j$jobs} ycxx ycxx_abi &&
+            step "$c: module units' symbols" build-$c-source-modules \
+              sh -c 'for a in libycxx libycxx-abi; do python3 tools/check_source_modules.py build/$1/$a.a $2/$a.a || exit; done' \
+              sh $c $d || :
+          step "$c: source module quoted includes" build-$c-source-module-includes \
+            cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-includes-test" \
+            -P tests/cmake/source-module-includes.cmake || :
+          step "$c: source module rebuild dependencies" build-$c-source-module-dependencies \
+            cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-dependencies-test" \
+            -P tests/cmake/source-module-dependencies.cmake || :
+          if [ "$c" = clang ]; then
+            step "Clang: source module scanner defaults" build-clang-source-module-scanner \
+              cmake "-DCXX=$(cxx_of clang)" "-DWORK_DIR=$PWD/$d/source-module-scanner-test" \
+              -P tests/cmake/source-module-scanner.cmake || :
+          fi
         fi
-        step "$c: build without source modules ($d)" build-$c-lowered ninja -C $d ${jobs:+-j$jobs} ycxx ycxx_abi &&
-          step "$c: module units' symbols" build-$c-source-modules \
-            sh -c 'for a in libycxx libycxx-abi; do python3 tools/check_source_modules.py build/$1/$a.a $2/$a.a || exit; done' \
-            sh $c $d || :
-        step "$c: source module quoted includes" build-$c-source-module-includes \
-          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-includes-test" \
-          -P tests/cmake/source-module-includes.cmake || :
-        step "$c: source module rebuild dependencies" build-$c-source-module-dependencies \
-          cmake "-DCXX=$(cxx_of $c)" "-DWORK_DIR=$PWD/$d/source-module-dependencies-test" \
-          -P tests/cmake/source-module-dependencies.cmake || :
-        if [ "$c" = clang ]; then
-          step "Clang: source module scanner defaults" build-clang-source-module-scanner \
-            cmake "-DCXX=$(cxx_of clang)" "-DWORK_DIR=$PWD/$d/source-module-scanner-test" \
-            -P tests/cmake/source-module-scanner.cmake || :
-        fi
-        # --shared: also the build with the shared library (build/<cc>-shared), which the suites link.
+        # The shared library (build/<cc>-shared), which the shared suites link.
         if [ $linkage = shared ]; then
           d=build/$c-shared
           if [ ! -f $d/build.ninja ]; then

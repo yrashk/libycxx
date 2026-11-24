@@ -540,9 +540,11 @@ concept __has_is_pointer_interconvertible_with_class =
 using __y_int128 = __int128;
 using __uint128 = unsigned __int128;
 #else
-struct __int128_unavailable; // never a complete type; keeps generic code well-formed
+// Distinct incomplete types keep the signed and unsigned specializations well-formed.
+struct __int128_unavailable;
+struct __uint128_unavailable;
 using __y_int128 = __int128_unavailable;
-using __uint128 = __int128_unavailable;
+using __uint128 = __uint128_unavailable;
 #endif
 
 // The exact attribute spelling on the aliases used for lock-free atomic access. Keep the

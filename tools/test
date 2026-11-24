@@ -42,7 +42,8 @@
 #                              the tests compiled in shared mode; logs and reports named
 #                              <suite>-<cc>-shared
 #   --shared-only              like --shared, with the build stage reusing completed static
-#                              builds and source-module checks from a prior run
+#                              builds and source-module checks from a prior run. Suite stages
+#                              require build/<cc>/libycxx.a for each selected compiler.
 #   --hardened                 own suite: compile the tests with -DYCXX_HARDENED=1 (the library's
 #                              run-time precondition checks) and run the death tests of
 #                              tests/ycxx/precondition (YCXX_HARDENED=1)
@@ -123,6 +124,18 @@ if [ "${YCXX_HARDENED:-0}" = 1 ] || [ -n "${ycxx_config_name}" ]; then
   case " $stages " in *" libcxx "*|*" libstdcxx "*)
     echo "tools/test: --hardened, --cxxflags and --config-name apply to the own suite (ycxx) only" >&2
     exit 2 ;;
+  esac
+fi
+if [ "$static_build" = 0 ]; then
+  case " $stages " in
+    *" ycxx "*|*" libcxx "*|*" libstdcxx "*)
+      for c in $compilers; do
+        if [ ! -f "build/$c/libycxx.a" ]; then
+          echo "tools/test: build/$c/libycxx.a missing: run the build stage without --shared-only" >&2
+          exit 2
+        fi
+      done
+      ;;
   esac
 fi
 logs=$repo/build/test-logs

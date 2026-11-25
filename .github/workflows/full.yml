@@ -332,6 +332,62 @@ jobs:
           fetch-depth: 0  # bench/check measures the pinned baseline revision in a worktree
       - name: Toolchains
         uses: ./.github/actions/setup-linux
+      - name: Benchmark environment
+        shell: bash
+        continue-on-error: true
+        env:
+          BENCH_COMPILER: ${{ matrix.compiler }}
+        run: |
+          mkdir -p build/bench
+          {
+            # GitHub logs the host image and version in Set up job, outside this container.
+            [ -z "${ImageOS:-}" ] || printf 'Runner image: %s\n' "$ImageOS"
+            [ -z "${ImageVersion:-}" ] || printf 'Runner image version: %s\n' "$ImageVersion"
+            printf 'Runner kernel: %s\n' "$(uname -r)"
+            echo 'Runner CPU as exposed to the container'
+            awk '/^(vendor_id|cpu family|model|model name|stepping|microcode|flags)[[:space:]]*:/ && !seen[$0]++' /proc/cpuinfo
+            echo 'Container release and glibc'
+            grep '^PRETTY_NAME=' /etc/os-release
+            getconf GNU_LIBC_VERSION
+            dpkg-query -W -f='${Package} ${Version}\n' libc6
+            echo 'GCC C++ toolchain'
+            gxx=${YCXX_GXX:-g++-16}
+            "$gxx" -v
+            sha256sum "$(readlink -f "$(command -v "$gxx")")"
+            if [ "$BENCH_COMPILER" = gcc ]; then
+              sha256sum "$("$gxx" -print-prog-name=cc1plus)"
+            else
+              echo 'Clang benchmark compiler'
+              # The wrapper passes Clang the GCC installation actually used by the benchmarks.
+              tools/ref-cxx clang -v -###
+              cxx=${YCXX_CLANGXX:-clang++-23}
+              executable=$(readlink -f "$(command -v "$cxx")")
+              sha256sum "$executable"
+              if package=$(dpkg-query -S "$executable" 2>/dev/null); then
+                dpkg-query -W -f='${Package} ${Version}\n' "${package%%: *}"
+              fi
+            fi
+            # ref-cxx's runpath comes from the linker name; ycxx-cxx uses the unwinder's directory.
+            ref_libdir=$(dirname "$("$gxx" -print-file-name=libstdc++.so)")
+            gcc_s=$("$gxx" -print-file-name=libgcc_s.so.1)
+            libstdcxx=$ref_libdir/libstdc++.so.6
+            if [ ! -f "$libstdcxx" ]; then
+              libstdcxx=$("$gxx" -print-file-name=libstdc++.so.6)
+            fi
+            echo 'Reference libstdc++ and libycxx unwinder'
+            for runtime in "$libstdcxx" "$gcc_s"; do
+              if [ -f "$runtime" ]; then
+                sha256sum "$(readlink -f "$runtime")"
+              else
+                printf 'Unavailable: %s\n' "$runtime"
+              fi
+            done
+            ref_gcc_s=$ref_libdir/libgcc_s.so.1
+            if [[ -f "$ref_gcc_s" && ! "$ref_gcc_s" -ef "$gcc_s" ]]; then
+              echo 'Reference unwinder from the reference runpath'
+              sha256sum "$(readlink -f "$ref_gcc_s")"
+            fi
+          } 2>&1 | tee build/bench/environment.txt
       - name: Performance gate regression tests
         run: python3 -m unittest discover -s bench -p 'test_*.py'
       - name: Benchmarks against the baseline, ${{ matrix.compiler }} (bench/check)
@@ -344,6 +400,7 @@ jobs:
           path: |
             build/bench/check*.json
             build/bench/check.md
+            build/bench/environment.txt
 
   macos-suites:
     runs-on: macos-15

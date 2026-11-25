@@ -66,6 +66,9 @@ endfunction()
 # Rewrites toolchains.env with `entries` (KEY=value items) replacing that toolchain's keys
 # (those starting with one of `owned`), keeping the other toolchain's.
 function(_ycxx_write_conf owned entries)
+  file(MAKE_DIRECTORY "${YCXX_TOOLCHAINS}")
+  # A separate lock file stays in place when toolchains.env is replaced.
+  file(LOCK "${_ycxx_conf}.lock" GUARD FUNCTION)
   set(kept "")
   if(EXISTS "${_ycxx_conf}")
     file(STRINGS "${_ycxx_conf}" lines REGEX "^YCXX_[A-Z_]+=")
@@ -89,9 +92,9 @@ function(_ycxx_write_conf owned entries)
   foreach(line IN LISTS kept entries)
     string(APPEND text "${line}\n")
   endforeach()
-  file(MAKE_DIRECTORY "${YCXX_TOOLCHAINS}")
-  file(WRITE "${_ycxx_conf}.tmp" "${text}")
-  file(RENAME "${_ycxx_conf}.tmp" "${_ycxx_conf}")
+  # Shell provisioning uses toolchains.env.tmp.
+  file(WRITE "${_ycxx_conf}.cmake.tmp" "${text}")
+  file(RENAME "${_ycxx_conf}.cmake.tmp" "${_ycxx_conf}")
 endfunction()
 
 # ---- probing ----

@@ -350,19 +350,42 @@ jobs:
             grep '^PRETTY_NAME=' /etc/os-release
             getconf GNU_LIBC_VERSION
             dpkg-query -W -f='${Package} ${Version}\n' libc6
-            echo 'Benchmark C++ compiler'
-            # Use the same driver overrides and defaults as bench/run and tools/ref-cxx.
-            case "$BENCH_COMPILER" in
-              gcc) cxx=${YCXX_GXX:-g++-16} ;;
-              clang) cxx=${YCXX_CLANGXX:-clang++-23} ;;
-            esac
-            "$cxx" -v
-            executable=$(readlink -f "$(command -v "$cxx")")
-            sha256sum "$executable"
+            echo 'GCC C++ toolchain'
+            gxx=${YCXX_GXX:-g++-16}
+            "$gxx" -v
+            sha256sum "$(readlink -f "$(command -v "$gxx")")"
             if [ "$BENCH_COMPILER" = gcc ]; then
-              sha256sum "$("$cxx" -print-prog-name=cc1plus)"
-            elif package=$(dpkg-query -S "$executable" 2>/dev/null); then
-              dpkg-query -W -f='${Package} ${Version}\n' "${package%%: *}"
+              sha256sum "$("$gxx" -print-prog-name=cc1plus)"
+            else
+              echo 'Clang benchmark compiler'
+              # The wrapper passes Clang the GCC installation actually used by the benchmarks.
+              tools/ref-cxx clang -v
+              cxx=${YCXX_CLANGXX:-clang++-23}
+              executable=$(readlink -f "$(command -v "$cxx")")
+              sha256sum "$executable"
+              if package=$(dpkg-query -S "$executable" 2>/dev/null); then
+                dpkg-query -W -f='${Package} ${Version}\n' "${package%%: *}"
+              fi
+            fi
+            # ref-cxx's runpath comes from the linker name; ycxx-cxx uses the unwinder's directory.
+            ref_libdir=$(dirname "$("$gxx" -print-file-name=libstdc++.so)")
+            gcc_s=$("$gxx" -print-file-name=libgcc_s.so.1)
+            libstdcxx=$ref_libdir/libstdc++.so.6
+            if [ ! -f "$libstdcxx" ]; then
+              libstdcxx=$("$gxx" -print-file-name=libstdc++.so.6)
+            fi
+            echo 'Reference libstdc++ and libycxx unwinder'
+            for runtime in "$libstdcxx" "$gcc_s"; do
+              if [ -f "$runtime" ]; then
+                sha256sum "$(readlink -f "$runtime")"
+              else
+                printf 'Unavailable: %s\n' "$runtime"
+              fi
+            done
+            ref_gcc_s=$ref_libdir/libgcc_s.so.1
+            if [[ -f "$ref_gcc_s" && ! "$ref_gcc_s" -ef "$gcc_s" ]]; then
+              echo 'Reference unwinder from the reference runpath'
+              sha256sum "$(readlink -f "$ref_gcc_s")"
             fi
           } 2>&1 | tee build/bench/environment.txt
       - name: Performance gate regression tests

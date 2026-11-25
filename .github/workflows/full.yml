@@ -359,7 +359,7 @@ jobs:
             else
               echo 'Clang benchmark compiler'
               # The wrapper passes Clang the GCC installation actually used by the benchmarks.
-              tools/ref-cxx clang -v
+              tools/ref-cxx clang -v -###
               cxx=${YCXX_CLANGXX:-clang++-23}
               executable=$(readlink -f "$(command -v "$cxx")")
               sha256sum "$executable"

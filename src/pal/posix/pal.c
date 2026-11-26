@@ -15,6 +15,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "thread_stack.h"
 #if defined(__linux__)
 #  include <linux/futex.h>
 #  include <sys/syscall.h>
@@ -287,18 +288,9 @@ int ycxx_pal_thread_create(ycxx_pal_handle* thread, void* (*start)(void*), void*
     free(s);
     return r;
   }
-  if (__stack_size != 0) {
-    /* A size the system cannot use is a hint to adjust or ignore, not an error. At least the
-       minimum, asked of sysconf (PTHREAD_STACK_MIN is not a constant in newer glibc, and which
-       header defines it differs between C libraries), in whole pages (Darwin's
-       pthread_attr_setstacksize rejects anything else). */
-    const long min = sysconf(_SC_THREAD_STACK_MIN), page = sysconf(_SC_PAGESIZE);
-    if (min > 0 && __stack_size < (ycxx_pal_size)min)
-      __stack_size = (ycxx_pal_size)min;
-    if (page > 0 && __stack_size % (ycxx_pal_size)page != 0 && __stack_size <= (ycxx_pal_size)-1 - (ycxx_pal_size)page)
-      __stack_size += (ycxx_pal_size)page - __stack_size % (ycxx_pal_size)page;
-    (void)pthread_attr_setstacksize(&__attr, __stack_size);
-  }
+  if (__stack_size != 0)
+    (void)pthread_attr_setstacksize(&__attr,
+        __ycxx_thread_stack_size(__stack_size, sysconf(_SC_THREAD_STACK_MIN), sysconf(_SC_PAGESIZE)));
   pthread_t t;
   r = pthread_create(&t, &__attr, &pal_thread_main, s);
   pthread_attr_destroy(&__attr);

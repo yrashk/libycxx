@@ -1783,6 +1783,17 @@ stops at the `#error`.
   (`src/hosted/parallel_scheduler_query.cpp`) like the replaceable allocation functions; a
   program's definition replaces it (own test `execution/exec_parallel_replace`).
   `__cpp_lib_parallel_scheduler` is defined only when hosted.
+- **Portable in-place stop tokens.** The standard and portable headers include the same private
+  stop-state implementation and in-place type definitions in their respective namespaces.
+  The libycxx provider uses the PAL. The `ycxx::execution_portable` CMake target supplies an
+  isolated include tree and uses the toolchain's standard library. Its completion lock lets
+  deregistration release callback storage only after the notifier finishes using it.
+- **Portable execution.** The portable build derives the sender and scheduler declarations from
+  the native execution sources. The build relocates the execution names into a libycxx-owned
+  namespace and uses the host's standard headers, with separate adapters for wait operations.
+  Customizations like `tuple_size` stay in the host's `std` and name portable types. The
+  scheduler source is compiled against the resulting interface. The POSIX stack-size helper
+  is shared between the runtime and the portable worker-thread implementation.
 - **The exposition-only machinery is real code.** basic-sender is an aggregate of indexed leaves
   with a member `get<I>` and `tuple_size`/`tuple_element`, so `auto&& [tag, data, ...children] =
   sndr` works, as [exec.snd.expos]/45 requires. A leaf has `[[no_unique_address]]` only for

@@ -92,6 +92,27 @@ Working examples: [installed package](examples/find_package),
 [add_subdirectory](examples/add_subdirectory), and [modules](examples/modules).
 The [usage guide](docs/USAGE.md) covers module flags, compiler selection, and advanced setup.
 
+### Portable execution
+
+Projects using their toolchain's standard library can use the sender, receiver, scope,
+scheduler and stop-token implementation through `ycxx::execution_portable`.
+
+```cmake
+add_subdirectory(path/to/libycxx/portable libycxx-execution)
+target_link_libraries(app PRIVATE ycxx::execution_portable)
+```
+
+Include `<ycxx/execution/execution.hpp>` and use `ycxx::execution`. The hosted provider
+uses the toolchain's standard headers and C++ runtime. It requires C++26.
+The `ycxx::stop_token_portable` target exposes the in-place stop-token family for C++20.
+A consumer using modules can link `ycxx::execution_portable_modules` and import
+`ycxx.execution.portable`.
+
+Configure with `cmake -S portable -B build/portable -G Ninja` and build with
+`cmake --build build/portable`. Set `BUILD_SHARED_LIBS=ON` for a shared scheduler library.
+Install with `cmake --install build/portable`, then use
+`find_package(libycxxExecution CONFIG REQUIRED)` to load its targets.
+
 ## Building existing projects against libycxx
 
 An installation includes compiler wrappers and build-system configuration files, so

@@ -55,6 +55,9 @@
 #      ycxx-c++ with YCXX_LINKAGE=shared, libycxx-shared.pc with the plain compiler, the link-time
 #      mode guard in both directions, tests/cmake/visibility in shared mode and its host/plugin
 #      matrix, and tests/integration/run.sh with YCXX_LINKAGE=shared.
+#  15. the portable execution target uses the toolchain library and passes the same in-place
+#      stop-token tests as the installed libycxx provider. The relocated package works through
+#      both its headers and its module with the static and shared scheduler backends.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -168,6 +171,31 @@ for c in $compilers; do
   else
     bad $c "build and install (see $log)"; continue
   fi
+  # 15. Exercise both stop-token providers and check the portable target's runtime.
+  b=$d/execution-portable
+  if x cmake -S "$repo/tests/cmake/execution-portable" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
+     x cmake --build "$b" && x ctest --test-dir "$b" --output-on-failure &&
+     links_toolchain_cxx "$b/portable_stop_token"; then
+    ok $c "portable and native stop tokens: shared behavior tests, portable uses the toolchain C++ library"
+  else
+    bad $c "portable and native stop tokens (see $log)"
+  fi
+  for shared in OFF ON; do
+    b=$d/execution-portable-install-$shared
+    if x cmake -S "$repo/portable" -B "$b/provider" $gen -DBUILD_SHARED_LIBS=$shared &&
+       x cmake --build "$b/provider" &&
+       x cmake --install "$b/provider" --prefix "$b/stage" &&
+       x mv "$b/stage" "$b/prefix" &&
+       x cmake -S "$repo/tests/cmake/execution-portable" -B "$b/consumer" $gen \
+         -DYCXX_TEST_NATIVE=OFF -DYCXX_TEST_PORTABLE_PACKAGE=ON -DCMAKE_PREFIX_PATH="$b/prefix" &&
+       x cmake --build "$b/consumer" && x ctest --test-dir "$b/consumer" --output-on-failure &&
+       links_toolchain_cxx "$b/consumer/portable_execution"; then
+      ok $c "relocated portable execution package (BUILD_SHARED_LIBS=$shared)"
+    else
+      bad $c "relocated portable execution package (BUILD_SHARED_LIBS=$shared; see $log)"
+    fi
+  done
+
   # 13. every member of the archives in one image: a shared library linked with the whole of
   # libycxx.a and libycxx-abi.a (--whole-archive, Darwin's -force_load) must not meet a duplicate
   # definition, which a static link, pulling only the members it needs, would not show (the

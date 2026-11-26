@@ -6,7 +6,7 @@
 // push and finish advances.
 #pragma once
 
-#include <ycxx/core/atomic_base.hpp>
+#include <ycxx/core/execution_wait.hpp>
 #include <ycxx/core/exec_adapt.hpp>
 #include <ycxx/core/exception.hpp>
 #include <ycxx/core/optional.hpp>
@@ -68,9 +68,9 @@ class run_loop {
         unlock();
         return nullptr;
       }
-      const unsigned __seen = __atomic_load_n(&__signal_, __ATOMIC_RELAXED);
+      const unsigned __seen = __ycxx::__detail::__exec::__load_signal(__signal_);
       unlock();
-      __ycxx::__detail::__atomic_wait_until_done(&__signal_, [&] { return __atomic_load_n(&__signal_, __ATOMIC_ACQUIRE) != __seen; });
+      __ycxx::__detail::__exec::__wait_for_signal(__signal_, __seen);
     }
   }
   // push-back ([exec.run.loop.members]/2)
@@ -83,9 +83,9 @@ class run_loop {
       __head_ = __item;
     __tail_ = __item;
     ++__count_;
-    __atomic_fetch_add(&__signal_, 1u, __ATOMIC_RELEASE);
+    // Publish and notify while the lock still keeps the loop alive.
+    __ycxx::__detail::__exec::__advance_signal(__signal_);
     unlock();
-    __ycxx::__detail::__atomic_notify(&__signal_);
   }
 
 public:
@@ -109,9 +109,9 @@ public:
   void finish() noexcept {
     lock();
     __state_ = __finishing;
-    __atomic_fetch_add(&__signal_, 1u, __ATOMIC_RELEASE);
+    // Publish and notify while the lock still keeps the loop alive.
+    __ycxx::__detail::__exec::__advance_signal(__signal_);
     unlock();
-    __ycxx::__detail::__atomic_notify(&__signal_);
   }
 };
 

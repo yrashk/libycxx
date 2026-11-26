@@ -54,6 +54,9 @@ constexpr void __precondition(bool __condition, const char*) noexcept {
 
 namespace ycxx::execution {
 using namespace ::ycxx::__portable_std::execution;
+using ::ycxx::__portable_std::execution::prop;
+using ::ycxx::__portable_std::execution::read_env;
+using ::ycxx::__portable_std::execution::write_env;
 using ::ycxx::__portable_std::forwarding_query;
 using ::ycxx::__portable_std::forwarding_query_t;
 using ::ycxx::__portable_std::get_allocator;

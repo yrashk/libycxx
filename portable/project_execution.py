@@ -15,7 +15,7 @@ NAMES = (
     'get_allocator', 'get_allocator_t', 'get_stop_token', 'get_stop_token_t',
     'stop_token_of_t', 'stop_callback_for_t', 'never_stop_token',
     'inplace_stop_source', 'inplace_stop_token', 'inplace_stop_callback',
-    'stoppable_token', 'unstoppable_token',
+    'stoppable_token', 'unstoppable_token', 'is_execution_policy_v',
 )
 HOST_HEADERS = frozenset({
     'atomic_base.hpp', 'concepts.hpp', 'coroutine.hpp', 'exception.hpp', 'exception_base.hpp',

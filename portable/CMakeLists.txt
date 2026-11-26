@@ -6,10 +6,28 @@ find_package(Threads REQUIRED)
 # Give consumers only this include tree. The full libycxx include directory would shadow
 # the toolchain's standard headers, including <atomic> and <thread>.
 set(_ycxx_portable_include "${CMAKE_CURRENT_BINARY_DIR}/include")
-foreach(_ycxx_header IN ITEMS stop_state.inc inplace_stop_token.inc stop_token_traits.inc)
+foreach(_ycxx_header IN ITEMS stop_state.inc inplace_stop_token.inc stop_token_traits.inc execution_policy.inc)
   configure_file("../include/ycxx/core/${_ycxx_header}"
     "${_ycxx_portable_include}/ycxx/core/${_ycxx_header}" COPYONLY)
 endforeach()
+
+# Some hosted libraries provide <execution> with only a subset of the policy types.
+include(CheckCXXSourceCompiles)
+block()
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+  check_cxx_source_compiles([=[
+    #include <execution>
+    using std::execution::seq;
+    using std::execution::par;
+    using std::execution::par_unseq;
+    using std::execution::unseq;
+    static_assert(std::is_execution_policy_v<std::execution::parallel_policy>);
+  ]=] YCXX_PORTABLE_HAS_HOST_EXECUTION_POLICIES)
+endblock()
+configure_file(execution_policy_config.hpp.in
+  "${_ycxx_portable_include}/ycxx/execution/detail/execution_policy_config.hpp")
 
 add_library(ycxx_stop_token_portable INTERFACE)
 add_library(ycxx::stop_token_portable ALIAS ycxx_stop_token_portable)

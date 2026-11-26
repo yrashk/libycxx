@@ -1,6 +1,7 @@
 // The libycxx sender/receiver implementation for use with a hosted C++ standard library.
 #pragma once
 
+#include <ycxx/execution/detail/execution_policy_config.hpp>
 #include <ycxx/execution/detail/standard_headers.hpp>
 #include <ycxx/execution/stop_token.hpp>
 
@@ -13,11 +14,21 @@ using ::ycxx::execution::inplace_stop_token;
 
 #include <ycxx/core/stop_token_traits.inc>
 
+#if YCXX_PORTABLE_HAS_HOST_EXECUTION_POLICIES
+using ::std::is_execution_policy_v;
 namespace execution {
-using std::execution::par;
-using std::execution::parallel_policy;
-using std::execution::parallel_unsequenced_policy;
+using ::std::execution::par;
+using ::std::execution::par_unseq;
+using ::std::execution::parallel_policy;
+using ::std::execution::parallel_unsequenced_policy;
+using ::std::execution::seq;
+using ::std::execution::sequenced_policy;
+using ::std::execution::unseq;
+using ::std::execution::unsequenced_policy;
 }
+#else
+#include <ycxx/core/execution_policy.inc>
+#endif
 
 } // namespace ycxx::__portable_std
 
@@ -54,8 +65,16 @@ constexpr void __precondition(bool __condition, const char*) noexcept {
 
 namespace ycxx::execution {
 using namespace ::ycxx::__portable_std::execution;
+using ::ycxx::__portable_std::execution::par;
+using ::ycxx::__portable_std::execution::par_unseq;
+using ::ycxx::__portable_std::execution::parallel_policy;
+using ::ycxx::__portable_std::execution::parallel_unsequenced_policy;
 using ::ycxx::__portable_std::execution::prop;
 using ::ycxx::__portable_std::execution::read_env;
+using ::ycxx::__portable_std::execution::seq;
+using ::ycxx::__portable_std::execution::sequenced_policy;
+using ::ycxx::__portable_std::execution::unseq;
+using ::ycxx::__portable_std::execution::unsequenced_policy;
 using ::ycxx::__portable_std::execution::write_env;
 using ::ycxx::__portable_std::forwarding_query;
 using ::ycxx::__portable_std::forwarding_query_t;

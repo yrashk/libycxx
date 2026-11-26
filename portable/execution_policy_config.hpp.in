@@ -1,0 +1,3 @@
+#pragma once
+
+#cmakedefine01 YCXX_PORTABLE_HAS_HOST_EXECUTION_POLICIES

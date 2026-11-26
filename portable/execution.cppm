@@ -5,6 +5,6 @@ module;
 export module ycxx.execution.portable;
 
 export extern "C++" {
-#include <ycxx/execution/execution.hpp>
-#include <ycxx/execution/stack_thread.hpp>
+#include "ycxx/execution/execution.hpp"
+#include "ycxx/execution/stack_thread.hpp"
 }

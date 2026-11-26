@@ -1,7 +1,6 @@
 // The libycxx sender/receiver implementation for use with a hosted C++ standard library.
 #pragma once
 
-#include <ycxx/execution/detail/execution_policy_config.hpp>
 #include <ycxx/execution/detail/standard_headers.hpp>
 #include <ycxx/execution/stop_token.hpp>
 
@@ -13,6 +12,13 @@ using ::ycxx::execution::inplace_stop_source;
 using ::ycxx::execution::inplace_stop_token;
 
 #include <ycxx/core/stop_token_traits.inc>
+
+#if YCXX_PORTABLE_HAS_HOST_NOSTOPSTATE
+using ::std::nostopstate;
+using ::std::nostopstate_t;
+#else
+#include <ycxx/core/nostopstate.inc>
+#endif
 
 #if YCXX_PORTABLE_HAS_HOST_EXECUTION_POLICIES
 using ::std::is_execution_policy_v;

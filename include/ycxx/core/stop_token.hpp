@@ -86,10 +86,7 @@ class inplace_stop_source;
 template <class _CallbackFn>
 class inplace_stop_callback;
 
-struct nostopstate_t {
-  explicit nostopstate_t() = default;
-};
-inline constexpr nostopstate_t nostopstate{};
+#include <ycxx/core/nostopstate.inc>
 
 // [stoptoken]
 class stop_token {

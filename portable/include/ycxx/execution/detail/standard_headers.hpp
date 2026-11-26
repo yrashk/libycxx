@@ -1,6 +1,8 @@
 // Include these headers in a global module fragment before exporting the portable declarations.
 #pragma once
 
+#include <ycxx/execution/detail/host_features.hpp>
+
 #include <atomic>
 #include <cstdint>
 #include <mutex>
@@ -24,3 +26,7 @@
 #include <utility>
 #include <variant>
 #include <version>
+
+#if YCXX_PORTABLE_HAS_HOST_NOSTOPSTATE
+#include <stop_token>
+#endif

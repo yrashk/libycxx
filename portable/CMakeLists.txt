@@ -6,12 +6,13 @@ find_package(Threads REQUIRED)
 # Give consumers only this include tree. The full libycxx include directory would shadow
 # the toolchain's standard headers, including <atomic> and <thread>.
 set(_ycxx_portable_include "${CMAKE_CURRENT_BINARY_DIR}/include")
-foreach(_ycxx_header IN ITEMS stop_state.inc inplace_stop_token.inc stop_token_traits.inc execution_policy.inc)
+foreach(_ycxx_header IN ITEMS stop_state.inc inplace_stop_token.inc stop_token_traits.inc
+    execution_policy.inc nostopstate.inc)
   configure_file("../include/ycxx/core/${_ycxx_header}"
     "${_ycxx_portable_include}/ycxx/core/${_ycxx_header}" COPYONLY)
 endforeach()
 
-# Some hosted libraries provide <execution> with only a subset of the policy types.
+# Older hosted libraries may provide only a subset of the standard execution and stop facilities.
 include(CheckCXXSourceCompiles)
 block()
   set(CMAKE_CXX_STANDARD 20)
@@ -25,9 +26,14 @@ block()
     using std::execution::unseq;
     static_assert(std::is_execution_policy_v<std::execution::parallel_policy>);
   ]=] YCXX_PORTABLE_HAS_HOST_EXECUTION_POLICIES)
+  check_cxx_source_compiles([=[
+    #include <stop_token>
+    using std::nostopstate;
+    using std::nostopstate_t;
+  ]=] YCXX_PORTABLE_HAS_HOST_NOSTOPSTATE)
 endblock()
-configure_file(execution_policy_config.hpp.in
-  "${_ycxx_portable_include}/ycxx/execution/detail/execution_policy_config.hpp")
+configure_file(host_features.hpp.in
+  "${_ycxx_portable_include}/ycxx/execution/detail/host_features.hpp")
 
 add_library(ycxx_stop_token_portable INTERFACE)
 add_library(ycxx::stop_token_portable ALIAS ycxx_stop_token_portable)

@@ -20,6 +20,18 @@ if(YCXX_TEST_PORTABLE)
   add_test(NAME portable_stop_token COMMAND portable_stop_token)
   set_tests_properties(portable_stop_token PROPERTIES TIMEOUT 20)
 
+  add_library(portable_stop_request SHARED stop_token_shared_request.cpp)
+  set_target_properties(portable_stop_request PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  target_link_libraries(portable_stop_request PRIVATE ycxx::stop_token_portable)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Keep the helper's inlined synchronization independent of the executable's ELF symbols.
+    target_link_options(portable_stop_request PRIVATE LINKER:-Bsymbolic)
+  endif()
+  add_executable(portable_stop_token_shared stop_token_shared.cpp)
+  target_link_libraries(portable_stop_token_shared PRIVATE ycxx::stop_token_portable portable_stop_request)
+  add_test(NAME portable_stop_token_shared COMMAND portable_stop_token_shared)
+  set_tests_properties(portable_stop_token_shared PROPERTIES TIMEOUT 20)
+
   if(YCXX_TEST_EXECUTION)
     add_executable(portable_execution execution.cpp)
     target_link_libraries(portable_execution PRIVATE ycxx::execution_portable)
@@ -44,7 +56,8 @@ if(YCXX_TEST_NATIVE)
   set_tests_properties(native_stop_token PROPERTIES TIMEOUT 20)
 endif()
 
-foreach(target IN ITEMS portable_stop_token native_stop_token portable_execution portable_execution_module)
+foreach(target IN ITEMS portable_stop_token portable_stop_token_shared portable_stop_request
+                        native_stop_token portable_execution portable_execution_module)
   if(TARGET ${target})
     target_include_directories(${target} PRIVATE ../../ycxx/support)
     target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)

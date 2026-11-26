@@ -1786,8 +1786,10 @@ stops at the `#error`.
 - **Portable in-place stop tokens.** The standard and portable headers include the same private
   stop-state implementation and in-place type definitions in their respective namespaces.
   The libycxx provider uses the PAL. The `ycxx::execution_portable` CMake target supplies an
-  isolated include tree and uses the toolchain's standard library. Its completion lock lets
-  deregistration release callback storage only after the notifier finishes using it.
+  isolated include tree and uses the toolchain's standard library. The requesting thread
+  publishes completion with a release operation on the callback's lock-free flag as its last
+  access to the callback. Deregistration polls the flag with acquire ordering and yields
+  between attempts. Both threads use the flag in the callback itself across shared images.
 - **Portable execution.** The portable build derives the sender and scheduler declarations from
   the native execution sources. The build relocates the execution names into a libycxx-owned
   namespace and uses the host's standard headers, with separate adapters for wait operations.

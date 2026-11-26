@@ -110,6 +110,8 @@ A consumer using modules can link `ycxx::execution_portable_modules` and import
 Use `ycxx::execution::par` and the other policy constants for bulk operations.
 The provider reuses the toolchain's policies when available and supplies libycxx's
 policy declarations when the host library lacks them.
+On macOS with a separately downloaded Clang, use libc++ headers that match the linked runtime.
+The package tests use the selected macOS SDK's headers and system libc++.
 
 Configure with `cmake -S portable -B build/portable -G Ninja` and build with
 `cmake --build build/portable`. Set `BUILD_SHARED_LIBS=ON` for a shared scheduler library.

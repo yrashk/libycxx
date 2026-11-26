@@ -76,6 +76,24 @@ bad() { ui_fail "[$1] $2"; fail=1; }
 # x CMD...: show the command, run it with its output appended to $log.
 x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
 
+# The downloaded Clang's libc++ headers can require symbols newer than the macOS runtime.
+# Use the selected SDK's headers for its stock-library fixtures.
+configure_portable() {
+  if [ "$c" = clang ] && [ "$(uname -s)" = Darwin ]; then
+    sdk=${SDKROOT:-}
+    if [ ! -d "$sdk" ]; then
+      sdk=$(xcrun --sdk "${sdk:-macosx}" --show-sdk-path) || return 1
+    fi
+    headers=$sdk/usr/include/c++/v1
+    if [ ! -d "$headers" ]; then
+      echo "macOS SDK libc++ headers not found: $headers" >>"$log"
+      return 1
+    fi
+    set -- "$@" "-DCMAKE_OSX_SYSROOT=$sdk" "-DCMAKE_CXX_FLAGS=${CXXFLAGS:-} -nostdinc++ -isystem \"$headers\""
+  fi
+  x cmake "$@"
+}
+
 # Release completed scratch builds on macOS CI. The tests keep their prefixes and logs.
 discard_ci_build() {
   if [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_OS:-}" = macOS ]; then
@@ -171,22 +189,30 @@ for c in $compilers; do
   else
     bad $c "build and install (see $log)"; continue
   fi
-  # 15. Exercise both stop-token providers and check the portable target's runtime.
+  # 15. Exercise both stop-token providers with their respective standard-library headers.
+  b=$d/execution-native
+  if x cmake -S "$repo/tests/cmake/execution-portable" -B "$b" $gen \
+       -DYCXX_TEST_PORTABLE=OFF -DCMAKE_PREFIX_PATH="$d/prefix" &&
+     x cmake --build "$b" && x ctest --test-dir "$b" --output-on-failure; then
+    ok $c "native stop tokens"
+  else
+    bad $c "native stop tokens (see $log)"
+  fi
   b=$d/execution-portable
-  if x cmake -S "$repo/tests/cmake/execution-portable" -B "$b" $gen -DCMAKE_PREFIX_PATH="$d/prefix" &&
+  if configure_portable -S "$repo/tests/cmake/execution-portable" -B "$b" $gen -DYCXX_TEST_NATIVE=OFF &&
      x cmake --build "$b" && x ctest --test-dir "$b" --output-on-failure &&
      links_toolchain_cxx "$b/portable_stop_token"; then
-    ok $c "portable and native stop tokens: shared behavior tests, portable uses the toolchain C++ library"
+    ok $c "portable stop tokens and execution use the toolchain C++ library"
   else
-    bad $c "portable and native stop tokens (see $log)"
+    bad $c "portable stop tokens and execution (see $log)"
   fi
   for shared in OFF ON; do
     b=$d/execution-portable-install-$shared
-    if x cmake -S "$repo/portable" -B "$b/provider" $gen -DBUILD_SHARED_LIBS=$shared &&
+    if configure_portable -S "$repo/portable" -B "$b/provider" $gen -DBUILD_SHARED_LIBS=$shared &&
        x cmake --build "$b/provider" &&
        x cmake --install "$b/provider" --prefix "$b/stage" &&
        x mv "$b/stage" "$b/prefix" &&
-       x cmake -S "$repo/tests/cmake/execution-portable" -B "$b/consumer" $gen \
+       configure_portable -S "$repo/tests/cmake/execution-portable" -B "$b/consumer" $gen \
          -DYCXX_TEST_NATIVE=OFF -DYCXX_TEST_PORTABLE_PACKAGE=ON -DCMAKE_PREFIX_PATH="$b/prefix" &&
        x cmake --build "$b/consumer" && x ctest --test-dir "$b/consumer" --output-on-failure &&
        links_toolchain_cxx "$b/consumer/portable_execution"; then

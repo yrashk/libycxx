@@ -1,4 +1,7 @@
+#include <version>
+#if !defined(YCXX_TEST_PORTABLE) || defined(__cpp_lib_jthread)
 #include <stop_token>
+#endif
 
 #if defined(YCXX_TEST_PORTABLE)
 #include <ycxx/execution/stop_token.hpp>
@@ -78,7 +81,9 @@ int main() {
   for (int i = 0; i != 64; ++i)
     destroy_running_callback();
 
-  // The same program can use the C++20 stop facilities supplied by its standard library.
+#if !defined(YCXX_TEST_PORTABLE) || defined(__cpp_lib_jthread)
+  // Check coexistence when the host also provides the C++20 stop facilities.
   std::stop_source standard;
   CHECK(standard.request_stop());
+#endif
 }

@@ -34,113 +34,28 @@ struct __stop_callback_node {
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] __ycxx { namespace __detail {
 using __adl_free::__stop_callback_node;
 
-class __stop_state {
-  static constexpr ycxx_pal_u32 __requested_bit = 1, __locked_bit = 2;
-  ycxx_pal_u32 __bits_ = 0;
-  __stop_callback_node* __head_ = nullptr;
-  ycxx_pal_handle __requester_ = 0; // the thread running request_stop's callbacks
-  bool* __destroyed_ = nullptr;      // set by request_stop while a callback runs; the destructor marks it
+struct __stop_platform {
+  using __word = ycxx_pal_u32;
+  using __thread_id = ycxx_pal_handle;
 
-  // Takes the list lock; returns the bits seen (with the lock bit clear).
-  ycxx_pal_u32 lock() noexcept {
-    ycxx_pal_u32 cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
-    for (int __spins = 0;; ++__spins) {
-      if (!(cur & __locked_bit)) {
-        if (__atomic_compare_exchange_n(&__bits_, &cur, cur | __locked_bit, true, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
-          return cur;
-        continue;
-      }
-      if (__spins > 64)
-        ::ycxx_pal_thread_yield();
-      cur = __atomic_load_n(&__bits_, __ATOMIC_RELAXED);
-    }
+  static __thread_id __self() noexcept { return ::ycxx_pal_thread_self(); }
+  static void __yield() noexcept { ::ycxx_pal_thread_yield(); }
+
+  static bool __finished(const unsigned char& __done) noexcept {
+    return __atomic_load_n(&__done, __ATOMIC_ACQUIRE) != 0;
   }
-  void unlock(ycxx_pal_u32 bits) noexcept { __atomic_store_n(&__bits_, bits & ~__locked_bit, __ATOMIC_RELEASE); }
-
-public:
-  constexpr __stop_state() noexcept = default;
-  constexpr ~__stop_state() {
-    if (__destroyed_)
-      *__destroyed_ = true; // destroyed from inside a callback: request_stop is running
+  static void __finish(unsigned char& __done) noexcept {
+    auto* __addr = &__done;
+    __atomic_store_n(__addr, 1, __ATOMIC_RELEASE);
+    // After publication the callback may be destroyed. The notification only uses its address.
+    ::__ycxx::__detail::__atomic_notify(__addr);
   }
-  __stop_state(const __stop_state&) = delete;
-  __stop_state& operator=(const __stop_state&) = delete;
-
-  bool stop_requested() const noexcept { return (__atomic_load_n(&__bits_, __ATOMIC_ACQUIRE) & __requested_bit) != 0; }
-
-  bool request_stop() noexcept {
-    ycxx_pal_u32 b = lock();
-    if (b & __requested_bit) {
-      unlock(b);
-      return false;
-    }
-    b |= __requested_bit;
-    __requester_ = ::ycxx_pal_thread_self();
-    __atomic_store_n(&__bits_, b | __locked_bit, __ATOMIC_RELEASE); // publish the request, keep the lock
-    while (__stop_callback_node* n = __head_) {
-      __head_ = n->next;
-      if (__head_)
-        __head_->prev = &__head_;
-      n->prev = nullptr;
-      bool __removed = false, __destroyed = false;
-      n->__removed = &__removed;
-      __destroyed_ = &__destroyed;
-      unlock(b);
-      n->invoke(n);
-      if (!__removed) {
-        n->__removed = nullptr;
-        __atomic_store_n(&n->done, 1, __ATOMIC_RELEASE);
-        ::__ycxx::__detail::__atomic_notify(&n->done);
-      }
-      // The callback destroyed this state (with every callback still registered, which it had to
-      // deregister first): nothing of *this may be touched any more.
-      if (__destroyed)
-        return true;
-      b = lock();
-    }
-    __destroyed_ = nullptr;
-    unlock(b);
-    return true;
-  }
-
-  // Registers n; false (n not registered) if a stop was already requested.
-  bool add(__stop_callback_node* n) noexcept {
-    ycxx_pal_u32 b = lock();
-    if (b & __requested_bit) {
-      unlock(b);
-      return false;
-    }
-    n->next = __head_;
-    if (__head_)
-      __head_->prev = &n->next;
-    n->prev = &__head_;
-    __head_ = n;
-    unlock(b);
-    return true;
-  }
-
-  // Deregisters n, waiting for its invocation on another thread to finish.
-  void remove(__stop_callback_node* n) noexcept {
-    ycxx_pal_u32 b = lock();
-    if (n->prev) {
-      *n->prev = n->next;
-      if (n->next)
-        n->next->prev = n->prev;
-      unlock(b);
-      return;
-    }
-    const ycxx_pal_handle __requester = __requester_;
-    unlock(b);
-    // Taken off the list by request_stop: it has run, or runs now.
-    if (__requester == ::ycxx_pal_thread_self()) {
-      // On this thread: it finished already, or this is its own invocation destroying it.
-      if (__atomic_load_n(&n->done, __ATOMIC_ACQUIRE) == 0 && n->__removed)
-        *n->__removed = true;
-      return;
-    }
-    ::__ycxx::__detail::__atomic_wait_until_done(&n->done, [n] { return __atomic_load_n(&n->done, __ATOMIC_ACQUIRE) != 0; });
+  static void __wait(unsigned char& __done) noexcept {
+    ::__ycxx::__detail::__atomic_wait_until_done(&__done, [&] { return __finished(__done); });
   }
 };
+
+#include <ycxx/core/stop_state.inc>
 
 // The shared stop state of stop_source/stop_token/stop_callback.
 struct __shared_stop_state {
@@ -158,16 +73,6 @@ struct __shared_stop_state {
   }
 };
 
-template <template <class> class>
-struct __check_type_alias_exists;
-
-// A const _Token object of unknown value: unstoppable_token's stand-in for its requires-parameter,
-// which has the same type. Declared only, as nothing ever evaluates it at run time. An object
-// rather than a reference: a constant evaluation may copy an empty object or take the address
-// of an unknown object, but not of the referent of an unknown reference.
-template <class _Token>
-extern const _Token __unknown_token;
-
 }} // namespace __ycxx::__detail
 
 namespace [[__gnu__::__visibility__(_YCXX_VISIBILITY)]] std { inline namespace __y1 {
@@ -180,30 +85,6 @@ class inplace_stop_token;
 class inplace_stop_source;
 template <class _CallbackFn>
 class inplace_stop_callback;
-
-template <class _Tp, class _CallbackFn>
-using stop_callback_for_t = typename _Tp::template callback_type<_CallbackFn>;
-
-// [stoptoken.concepts]
-template <class _Token>
-concept stoppable_token = requires(const _Token __tok) {
-  typename __ycxx::__detail::__check_type_alias_exists<_Token::template callback_type>;
-  { __tok.stop_requested() } noexcept -> same_as<bool>;
-  { __tok.stop_possible() } noexcept -> same_as<bool>;
-  { _Token(__tok) } noexcept;
-} && copyable<_Token> && equality_comparable<_Token>;
-
-// COMPILER-BUG(gcc): GCC 16 ICEs (tsubst_expr) in an importer of the std module when a
-// requires-parameter, of object or reference type, appears in a template argument inside a
-// requires-expression (nested, simple or type requirement), as in the draft's
-// `requires(const Token tok) { requires bool_constant<(!tok.stop_possible())>::value; }`.
-// A namespace-scope const _Token of unknown value takes tok's place: like tok, it is an object
-// not usable in constant expressions ([expr.const]), so the call is a constant expression in the
-// same cases. Own test: modules/import_std_unstoppable_token_gcc_ice.
-template <class _Token>
-concept unstoppable_token = stoppable_token<_Token> && requires {
-  requires bool_constant<(!__ycxx::__detail::__unknown_token<_Token>.stop_possible())>::value;
-};
 
 struct nostopstate_t {
   explicit nostopstate_t() = default;
@@ -356,110 +237,11 @@ public:
 template <class _CallbackFn>
 stop_callback(stop_token, _CallbackFn) -> stop_callback<_CallbackFn>;
 
-// [stoptoken.never]
-class never_stop_token {
-  struct __callback_type_ {
-    explicit __callback_type_(never_stop_token, auto&&) noexcept {}
-  };
+#include <ycxx/core/stop_token_traits.inc>
 
-public:
-  template <class>
-  using callback_type = __callback_type_;
-  static constexpr bool stop_requested() noexcept { return false; }
-  static constexpr bool stop_possible() noexcept { return false; }
-  bool operator==(const never_stop_token&) const = default;
-};
+using __inplace_stop_state = ::__ycxx::__detail::__stop_state;
+using __inplace_stop_callback_node = ::__ycxx::__adl_free::__stop_callback_node;
 
-// [stoptoken.inplace]
-class inplace_stop_token {
-  const inplace_stop_source* __stop_source_ = nullptr;
-
-  constexpr explicit inplace_stop_token(const inplace_stop_source* s) noexcept : __stop_source_(s) {}
-  friend class inplace_stop_source;
-  template <class>
-  friend class inplace_stop_callback;
-
-public:
-  template <class _CallbackFn>
-  using callback_type = inplace_stop_callback<_CallbackFn>;
-
-  inplace_stop_token() = default;
-  bool operator==(const inplace_stop_token&) const = default;
-  [[nodiscard]] bool stop_requested() const noexcept;
-  [[nodiscard]] bool stop_possible() const noexcept { return __stop_source_ != nullptr; }
-  void swap(inplace_stop_token& __rhs) noexcept {
-    auto* s = __stop_source_;
-    __stop_source_ = __rhs.__stop_source_;
-    __rhs.__stop_source_ = s;
-  }
-  friend void swap(inplace_stop_token& a, inplace_stop_token& b) noexcept { a.swap(b); }
-};
-
-// [stopsource.inplace]
-class inplace_stop_source {
-  mutable __ycxx::__detail::__stop_state __state_;
-
-  template <class>
-  friend class inplace_stop_callback;
-
-public:
-  constexpr inplace_stop_source() noexcept = default;
-  inplace_stop_source(inplace_stop_source&&) = delete;
-  inplace_stop_source(const inplace_stop_source&) = delete;
-  inplace_stop_source& operator=(inplace_stop_source&&) = delete;
-  inplace_stop_source& operator=(const inplace_stop_source&) = delete;
-  ~inplace_stop_source() = default;
-
-  [[nodiscard]] constexpr inplace_stop_token get_token() const noexcept { return inplace_stop_token(this); }
-  [[nodiscard]] static constexpr bool stop_possible() noexcept { return true; }
-  [[nodiscard]] bool stop_requested() const noexcept { return __state_.stop_requested(); }
-  bool request_stop() noexcept { return __state_.request_stop(); }
-};
-
-inline bool inplace_stop_token::stop_requested() const noexcept {
-  return __stop_source_ != nullptr && __stop_source_->stop_requested();
-}
-
-// [stopcallback.inplace]
-template <class _CallbackFn>
-class inplace_stop_callback : __ycxx::__adl_free::__stop_callback_node {
-  static_assert(invocable<_CallbackFn> && destructible<_CallbackFn>,
-                "inplace_stop_callback: CallbackFn must be invocable and destructible");
-
-  _CallbackFn __callback_fn_;
-  __ycxx::__detail::__stop_state* __state_ = nullptr;
-
-  static void run(__ycxx::__detail::__stop_callback_node* n) noexcept {
-    static_cast<_CallbackFn&&>(static_cast<inplace_stop_callback*>(n)->__callback_fn_)();
-  }
-
-public:
-  using callback_type = _CallbackFn;
-
-  template <class _Initializer>
-    requires constructible_from<_CallbackFn, _Initializer>
-  explicit inplace_stop_callback(inplace_stop_token __st, _Initializer&& init) noexcept(
-      is_nothrow_constructible_v<_CallbackFn, _Initializer>)
-      : __callback_fn_(static_cast<_Initializer&&>(init)) {
-    if (!__st.__stop_source_)
-      return;
-    this->invoke = &run;
-    __ycxx::__detail::__stop_state& s = __st.__stop_source_->__state_;
-    if (s.add(this))
-      __state_ = &s;
-    else
-      static_cast<_CallbackFn&&>(__callback_fn_)();
-  }
-  ~inplace_stop_callback() {
-    if (__state_)
-      __state_->remove(this);
-  }
-  inplace_stop_callback(inplace_stop_callback&&) = delete;
-  inplace_stop_callback(const inplace_stop_callback&) = delete;
-  inplace_stop_callback& operator=(inplace_stop_callback&&) = delete;
-  inplace_stop_callback& operator=(const inplace_stop_callback&) = delete;
-};
-template <class _CallbackFn>
-inplace_stop_callback(inplace_stop_token, _CallbackFn) -> inplace_stop_callback<_CallbackFn>;
+#include <ycxx/core/inplace_stop_token.inc>
 
 }} // namespace std

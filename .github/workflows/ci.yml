@@ -26,6 +26,12 @@ jobs:
       - name: Policy, builds, freestanding, CMake package, own suite (tools/test)
         run: tools/test -j4 policy build freestanding cmake ycxx
 
+      # Reuse the out-of-tree programs built by the CMake stage above.
+      - name: Verify static and shared portable builds use stock libstdc++
+        run: |
+          tests/cmake/check-portable-runtime.sh gcc libstdc++
+          tests/cmake/check-portable-runtime.sh clang libstdc++
+
       # libycxx's shared library (DECISIONS §20): the own suite with every test linked against it
       # (build/<cc>-shared); the cmake stage above already built, installed and checked it.
       - name: Own suite against the shared library (tools/test --shared)
@@ -196,6 +202,14 @@ jobs:
           test "$cmake_path" = "$YCXX_CI_CMAKE_BIN/cmake"
           cmake --version
           tools/test -j3 -c "$COMPILER" cmake
+
+      - name: Verify macOS portable builds use the toolchain C++ runtime
+        env:
+          COMPILER: ${{ matrix.compiler }}
+          CPP_RUNTIME: ${{ matrix.compiler == 'gcc' && 'libstdc++' || 'libc++' }}
+        run: |
+          . tools/toolchain/activate.sh
+          tests/cmake/check-portable-runtime.sh "$COMPILER" "$CPP_RUNTIME"
 
       - name: Test reports (composite run report, package and quickstart logs)
         if: always()

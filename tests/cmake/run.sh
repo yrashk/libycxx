@@ -55,6 +55,9 @@
 #      ycxx-c++ with YCXX_LINKAGE=shared, libycxx-shared.pc with the plain compiler, the link-time
 #      mode guard in both directions, tests/cmake/visibility in shared mode and its host/plugin
 #      matrix, and tests/integration/run.sh with YCXX_LINKAGE=shared.
+#  15. the portable execution target uses the toolchain library and passes the same in-place
+#      stop-token tests as the installed libycxx provider. The relocated package works through
+#      both its headers and its module with the static and shared scheduler backends.
 #
 #   tests/cmake/run.sh [gcc] [clang]        (default: both)
 # Compilers come from the YCXX_* variables (tools/toolchain/activate.*), else g++-16 /
@@ -72,6 +75,24 @@ ok() { ui_ok "[$1] $2"; }
 bad() { ui_fail "[$1] $2"; fail=1; }
 # x CMD...: show the command, run it with its output appended to $log.
 x() { ui_cmd "$@"; "$@" >>"$log" 2>&1; }
+
+# The downloaded Clang's libc++ headers can require symbols newer than the macOS runtime.
+# Use the selected SDK's headers for its stock-library fixtures.
+configure_portable() {
+  if [ "$c" = clang ] && [ "$(uname -s)" = Darwin ]; then
+    sdk=${SDKROOT:-}
+    if [ ! -d "$sdk" ]; then
+      sdk=$(xcrun --sdk "${sdk:-macosx}" --show-sdk-path) || return 1
+    fi
+    headers=$sdk/usr/include/c++/v1
+    if [ ! -d "$headers" ]; then
+      echo "macOS SDK libc++ headers not found: $headers" >>"$log"
+      return 1
+    fi
+    set -- "$@" "-DCMAKE_OSX_SYSROOT=$sdk" "-DCMAKE_CXX_FLAGS=${CXXFLAGS:-} -nostdinc++ -isystem \"$headers\""
+  fi
+  x cmake "$@"
+}
 
 # Release completed scratch builds on macOS CI. The tests keep their prefixes and logs.
 discard_ci_build() {
@@ -168,6 +189,39 @@ for c in $compilers; do
   else
     bad $c "build and install (see $log)"; continue
   fi
+  # 15. Exercise both stop-token providers with their respective standard-library headers.
+  b=$d/execution-native
+  if x cmake -S "$repo/tests/cmake/execution-portable" -B "$b" $gen \
+       -DYCXX_TEST_PORTABLE=OFF -DCMAKE_PREFIX_PATH="$d/prefix" &&
+     x cmake --build "$b" && x ctest --test-dir "$b" --output-on-failure; then
+    ok $c "native stop tokens"
+  else
+    bad $c "native stop tokens (see $log)"
+  fi
+  b=$d/execution-portable
+  if configure_portable -S "$repo/tests/cmake/execution-portable" -B "$b" $gen -DYCXX_TEST_NATIVE=OFF &&
+     x cmake --build "$b" && x ctest --test-dir "$b" --output-on-failure &&
+     links_toolchain_cxx "$b/portable_stop_token"; then
+    ok $c "portable stop tokens and execution use the toolchain C++ library"
+  else
+    bad $c "portable stop tokens and execution (see $log)"
+  fi
+  for shared in OFF ON; do
+    b=$d/execution-portable-install-$shared
+    if configure_portable -S "$repo/portable" -B "$b/provider" $gen -DBUILD_SHARED_LIBS=$shared &&
+       x cmake --build "$b/provider" &&
+       x cmake --install "$b/provider" --prefix "$b/stage" &&
+       x mv "$b/stage" "$b/prefix" &&
+       configure_portable -S "$repo/tests/cmake/execution-portable" -B "$b/consumer" $gen \
+         -DYCXX_TEST_NATIVE=OFF -DYCXX_TEST_PORTABLE_PACKAGE=ON -DCMAKE_PREFIX_PATH="$b/prefix" &&
+       x cmake --build "$b/consumer" && x ctest --test-dir "$b/consumer" --output-on-failure &&
+       links_toolchain_cxx "$b/consumer/portable_execution"; then
+      ok $c "relocated portable execution package (BUILD_SHARED_LIBS=$shared)"
+    else
+      bad $c "relocated portable execution package (BUILD_SHARED_LIBS=$shared; see $log)"
+    fi
+  done
+
   # 13. every member of the archives in one image: a shared library linked with the whole of
   # libycxx.a and libycxx-abi.a (--whole-archive, Darwin's -force_load) must not meet a duplicate
   # definition, which a static link, pulling only the members it needs, would not show (the

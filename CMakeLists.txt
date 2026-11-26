@@ -359,6 +359,8 @@ endforeach()
 # every image linking libycxx.so links, libycxx.so included.
 file(GLOB YCXX_PER_IMAGE_SOURCES CONFIGURE_DEPENDS src/abi/entry/*.cpp src/abi/entry/*.cppm)
 list(APPEND YCXX_PER_IMAGE_SOURCES ${YCXX_NEW_SOURCES})
+# Compiler-generated contract calls need the hidden default handler in each linked image.
+list(APPEND YCXX_PER_IMAGE_SOURCES ${YCXX_CONTRACTS_SOURCES})
 foreach(_s src/abi/rtti_classes.cpp src/abi/rtti_float16.cpp src/abi/nothrow.cpp src/hosted/cxa_demangle_entry.cpp)
   list(APPEND YCXX_PER_IMAGE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/${_s})
 endforeach()
